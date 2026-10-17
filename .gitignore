@@ -6,6 +6,7 @@
 # data (download with scripts/download_data.sh); the ownership table is committed
 data/*
 !data/ownership.csv
+!data/pattern_judgments_*.csv
 !data/README.md
 
 # third-party doc dumps (re-fetch with scripts/refresh_docs.sh; use the typesafe-docs MCP instead)
@@ -23,3 +24,6 @@ runs/**/cache/
 
 # heldout eval data: never visible to Claude, shared privately (plan 001)
 eval/heldout/
+
+# agent run outputs (answer cards + evidence ledgers, plan 007)
+runs/agent/

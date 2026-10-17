@@ -23,6 +23,13 @@ Goal: make an impression **and** get advice. Plan for 10 min: 1 min pitch · 1 m
 - MCP tools live in Claude Code: `search_logs`, `get_context` (p95 < 45 ms); kernel-panic investigation done via MCP.
 - 1,126 BGL patterns; **727 have problem severities but only 76 carry real alerts** → severity alone is a poor problem
   signal (why we judge patterns with Jev). 4.7M lines = **36,714 bursts** (lines ≠ incidents, measured).
+- Manager priority is computed in SQL (weights shown, independently reproduced). Honest finding: on severity alone the
+  top 10 holds 1/10 real alert patterns (FATAL register dumps win) → the Jev step is measured, not decorative.
+- **Jev in SQL, measured:** 1,126 patterns judged once in 20 s (≈ $0.02); priority top 10 with real alerts **1/10 → 5/10**,
+  recurrence top 10 **0/10 → 5/10** (tune period). Jev alone ≈ severity; the decomposed `dump` question is what wins.
+- **Agent (S3):** one LangGraph agent, three role recipes; every number in the answer card is verified against the SQL
+  result it cites (engineer 25/25, lead 86/86, manager 47/47); the plain ReAct baseline with the same tools: 30/34
+  (rounded / derived numbers). Jev picks the role when none is given. Each answer = one LangSmith trace.
 - OpenStack: 208k lines → **106 patterns**. The labelled anomalous VMs use only normal templates; what gives them away is
   spawn time (37–51 s vs normal ≤ 28 s) → we flag numeric outliers per pattern, not just rare templates.
 

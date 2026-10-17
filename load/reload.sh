@@ -4,7 +4,8 @@
 set -euo pipefail
 cd "$(dirname "$0")/.."
 PSQL=(psql -h "${PGHOST:-localhost}" -p "${PGPORT:-7890}" -U "${PGUSER:-postgres}" -d "${PGDATABASE:-postgres}" -v ON_ERROR_STOP=1 -q)
-for f in load/00_schema.sql load/10_bgl.sql load/20_openstack.sql load/90_publish.sql load/95_patterns_episodes.sql; do
+for f in load/00_schema.sql load/10_bgl.sql load/20_openstack.sql load/90_publish.sql load/95_patterns_episodes.sql load/96_pattern_judgments.sql; do
   echo "== $f"; "${PSQL[@]}" -f "$f" | grep -E '^Time' || true
 done
 .venv/bin/python bench/check_counts.py
+.venv/bin/python bench/check_patterns.py
