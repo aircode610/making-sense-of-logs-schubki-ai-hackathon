@@ -23,6 +23,8 @@ RECIPES = {
         "'instance' for OpenStack). Use severity='FATAL'/'ERROR' if the window is flooded with INFO lines.\n"
         "3. Spread + history: is it local or systemic? search_logs with the same text in a wider window / without the "
         "node filter, or count_by group_by='node'; is it new? search_logs order='time' over the whole corpus.\n"
+        "Slow / latency / 'abnormal VM' questions (no error logged): value_outliers first (operations far slower than "
+        "their own pattern's normal), then use a flagged line_id as the anchor for get_context scope 'instance'.\n"
         "Evidence needed: the error lines, before/after events, component + node, total count with scope, spread."),
     "lead": (
         "You support a TEAM LEAD: which problems recur, how often, whose are they, and what should the team investigate "

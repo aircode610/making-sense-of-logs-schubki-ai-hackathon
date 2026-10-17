@@ -28,8 +28,8 @@ Load the data (SereneDB reads and parses the raw files itself; schema and loader
 `reload.sh` runs `load/00_schema.sql` → `10_bgl.sql` → `20_openstack.sql` → `90_publish.sql` (`VACUUM` refresh + compact:
 the inverted index is eventually consistent, so counts are only exact once it is published) → `95_patterns_episodes.sql`
 (log templates → `patterns`, `bursts`, `episodes`; built from published rows) → `96_pattern_judgments.sql` (Jev
-judgments per pattern from the committed `data/pattern_judgments_bgl.csv`; no TypeSafe key needed) → `bench/check_counts.py`,
-`bench/check_patterns.py`. Regenerating the judgments needs a key: `scripts/judge_patterns.sh bgl` (~20 s, ≈ $0.02).
+judgments per pattern from the committed `data/pattern_judgments_{bgl,openstack}.csv`; no TypeSafe key needed) → `bench/check_counts.py`,
+`bench/check_patterns.py`. Regenerating the judgments needs a key: `scripts/judge_patterns.sh bgl` (~20 s, ≈ $0.02), `… openstack` (~3 s).
 
 Connect Claude Code to the tools: the `logs` MCP server is registered in [`.mcp.json`](.mcp.json), so running
 `claude` in this folder offers it (approve it once). Any other MCP client: stdio command `.venv/bin/python mcp_server/server.py`
@@ -61,6 +61,7 @@ computed over all matches, so frequency never comes from a sample.
 | `get_context` | What happened just before and after one line, on the same node / midplane / rack (BGL) or request / VM (OpenStack) | `dataset`, `line_id`, `before_s`/`after_s` (default 300), `scope`, optional `severity`, `limit` per side ≤ 50 | `anchor`, `before` / `after` (nearest first), `before_total` / `after_total`, per-side `truncated` |
 | `top_patterns` | Which problems recur in a period, how often, where, whose, and are they growing? | `dataset`, `start`/`end` (default: last 28 days of the dataset), `team`, `component`, `problem_only`, `problem_filter` (`jev` / `severity`), `rank_by` (`bursts` / `nodes` / `lines` / `growth`), `limit` ≤ 50 | per log pattern: template, component, team, lines, **bursts** (recurrences, 30-min gap), nodes, weeks_active, bursts in the previous period + change, `new`, `top_node_share`; both periods as absolute dates |
 | `priority_table` | Computed priority ranking of problem patterns + per-team roll-up | `dataset`, `start`/`end`, `limit`, `problem_filter` | ranked items with `score` = 100 × Σ weight × percentile of 5 inputs (bursts, change, nodes, persistence, Jev `p_problem`), the inputs, per-input contributions, the weights; per-team bursts now vs previous period; `unknown` (no cost/downtime/impact in logs) |
+| `value_outliers` | Operations far slower than normal **for their own pattern** (problems that log no error, only an unusual number: slow VM spawns, slow API calls) | `dataset`, `pattern_id`, `instance_id`, `start`/`end` (lines to flag; baseline = whole dataset), `k` (default 6), `min_excess_s` (default 2), `limit` ≤ 50 | `baselines` per pattern (n, median, p95, MAD, threshold = max(median + k×MAD, median + min_excess_s), flagged); `instances` (every flagged VM, max ratio); flagged lines with `value_s`, `ratio` to the median, ids |
 
 Full-text tokens are letters only (lowercased): numbers and hex ids inside messages are not searchable; use the
 `node` / `request_id` / `instance_id` filters for ids. Latency: p95 < 45 ms per call on the full corpus

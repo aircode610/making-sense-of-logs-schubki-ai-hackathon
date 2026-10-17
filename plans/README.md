@@ -31,3 +31,4 @@ Every plan respects: `CLAUDE.md` non-negotiables, `docs/ROLES.md` (role spec), `
 | 051 | [count_by + trend MCP tools](051-count-trend-tools.md) | Konark | done | `feat/051-count-trend-tools` |
 | 052 | [One-command reload](052-reload-publish.md) | Konark | done | `feat/051-count-trend-tools` |
 | 053 | [OpenStack patterns (SQL masks)](053-openstack-patterns.md) | Konark | done | `feat/053-openstack-patterns` |
+| 054 | [OpenStack Jev judgments + value_outliers](054-openstack-judgments-outliers.md) | Konark | done | `feat/054-openstack-judgments-outliers` |

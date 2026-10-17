@@ -11,11 +11,14 @@ from pydantic import Field
 from core import MAX_ROWS, envelope, query, render
 
 PROBLEM = "('FATAL', 'FAILURE', 'SEVERE', 'ERROR', 'CRITICAL')"
+# A problem line: problem severity, or an HTTP 5xx (nova logs failed requests at INFO; plan 054). BGL has no status.
+PROBLEM_LINE = f"(severity IN {PROBLEM} OR status >= 500)"
 P_PROBLEM_MIN = 0.5
 ProblemFilter = Annotated[Literal["jev", "severity"], Field(
     description="How 'problem pattern' is decided: 'jev' (default) = has problem-severity lines AND the stored Jev "
                 "judgment says it reports a real fault, not a diagnostic dump field (p_problem >= 0.5); "
-                "'severity' = any FATAL/FAILURE/SEVERE/ERROR line (baseline; ranks routine register dumps high).")]
+                "'severity' = any FATAL/FAILURE/SEVERE/ERROR/CRITICAL line or HTTP 5xx (baseline; ranks routine "
+                "register dumps high).")]
 # Priority weights (fixed up front, returned with every result). Inputs are percentiles (cume_dist) over the candidates.
 WEIGHTS = {"frequency": 0.30, "trend": 0.20, "spread": 0.25, "persistence": 0.15, "severity": 0.10}
 
@@ -43,7 +46,7 @@ def _base_sql(problem_only: bool, problem_filter: str = "jev", extra_where: str 
 WITH now AS (
     SELECT pattern_id, count(*) AS lines, count(DISTINCT node) AS nodes,
            count(DISTINCT date_trunc('week', ts)) AS weeks_active,
-           count(*) FILTER (WHERE severity IN {PROBLEM}) AS problem_lines
+           count(*) FILTER (WHERE {PROBLEM_LINE}) AS problem_lines
     FROM logs WHERE dataset = %(d)s AND ts >= %(s)s AND ts < %(e)s AND pattern_id IS NOT NULL GROUP BY 1
 ), top_node AS (
     SELECT pattern_id, max(n) AS top_node_lines FROM (
