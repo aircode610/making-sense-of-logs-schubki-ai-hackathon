@@ -42,3 +42,8 @@ emulation; end-to-end role answer dominated by the LLM, not the database.
 ## Results
 | Date | Change | Tool / query | Before | After | Notes |
 |---|---|---|---|---|---|
+| 2026-10-17 | BGL load, SQL-native (`load/10_bgl.sql`), search table + one inverted index, insert sorted by ts | full load 4,747,963 lines | — | **18.0 s** | parse (read_csv + regex + strptime) 16.2 s · sorted insert 1.6 s · labels 0.1 s; amd64 emulated on Apple Silicon. Raw 709 MB → 224 MB on disk (data + index, whole volume) |
+| 2026-10-17 | (baseline) | `count(*) GROUP BY severity`, `ts >= 2005-12-05` | — | 16 ms | `EXPLAIN ANALYZE`: no row scan — dataset/ts become index Terms + Range, counts come from the index term dictionary (`TsDict: severity`) |
+| 2026-10-17 | (baseline) | whole-corpus `GROUP BY component` / `severity` | — | 3–39 ms | no plain-table A/B needed (plan 002 threshold was 1 s) |
+| 2026-10-17 | (baseline) | full-text `body @@ 'parity'` count / `ts_phrase('cache parity error')` | — | 7 ms / 32 ms | 121,498 / 106,220 lines, equal to the Python token count |
+| 2026-10-17 | (baseline) | count by team (join `read_csv('/data/ownership.csv')`) | — | 51 ms | |

@@ -34,7 +34,7 @@ Full original text: **`BRIEF.md`** (verbatim; wins over this summary if they dis
   30–40 check answers against query results · 40–48 README + demo rehearsal.
 
 ## Data
-- **BGL** (search + trend data): 4,747,963 lines, 2005-06-03 → 2006-01-04 (214.7 days), severities INFO 3.74M · FATAL 855k ·
+- **BGL** (search + trend data): 4,747,963 lines, 2005-06-03 → 2006-01-04 (214.7 days), severities (regex parse, plan 002) INFO 3.74M · FATAL 856k ·
   ERROR 112k · WARNING 23k · SEVERE 19k · FAILURE 1.7k; components KERNEL 4.32M · APP 229k · DISCOVERY 97k · MMCS 89k ·
   HARDWARE 5k · MONITOR 1.7k · LINKCARD 1.2k · …; **348,460 labelled alert lines in 41 categories** (KERNDTLB 153k,
   KERNSTOR 63k, APPSEV 50k, KERNMNTF 32k, KERNTERM 23k, …). Note: 855k FATAL lines but 348k alert lines → severity ≠ problem.

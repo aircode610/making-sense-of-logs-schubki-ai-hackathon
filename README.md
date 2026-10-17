@@ -21,7 +21,12 @@ psql -h localhost -p 7890 -U postgres -d postgres -f docker/init.sql   # first s
 ./docker/secrets.sh                      # after every start: registers AI keys in SereneDB
 uv venv --python 3.12 && uv pip install -r requirements.txt
 ```
-Load, MCP server, agent and UI: _coming soon_.
+Load the data (SereneDB reads and parses the raw files itself; schema and loaders in [`load/`](load/)):
+```bash
+psql -h localhost -p 7890 -U postgres -d postgres -f load/00_schema.sql   # tables + full-text index
+psql -h localhost -p 7890 -U postgres -d postgres -f load/10_bgl.sql      # BGL: 4,747,963 rows, ~20 s
+```
+Loaders are re-runnable (each replaces its dataset's rows). MCP server, agent and UI: _coming soon_.
 
 ## Data
 Loghub **BGL** (4,747,963 lines, 214.7 days) and **OpenStack** (207,820 lines). See [`data/README.md`](data/README.md).

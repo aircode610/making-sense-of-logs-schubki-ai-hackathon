@@ -1,6 +1,6 @@
 # 002: BGL load (SQL-native, in docker SereneDB)
 
-- **Status:** approved (Amirali, 2026-10-17)
+- **Status:** done (2026-10-17)
 - **Owner:** Amirali · **Branch:** `feat/002-bgl-load` · **Date:** 2026-10-17
 - **PLAN.md block / slice:** B1 · BGL load (tools `search_logs` + `get_context` = plan 003)
 
@@ -48,10 +48,39 @@ Held-out untouched (the slice is just a `ts` filter; no tuning here).
 - Risk: Konark's OpenStack columns need more fields: schema is a contract, adding a nullable column is cheap. Pull first.
 
 ## 6. Steps
-- [ ] Branch `feat/002-bgl-load`; commit pending docs (`HELDOUT_BRIEF.md`, STATUS) there
-- [ ] awk reference counts (total, labels, severity, component, slice, `parity`, malformed) → §7
-- [ ] `00_schema.sql` + `10_bgl.sql`; dry run on first 100k lines, then full load (timed)
-- [ ] Cross-check queries; FTS check; storage A/B if needed
-- [ ] Record PERFORMANCE.md, fill §7, STATUS, plans index; tell Konark the schema
+- [x] Branch `feat/002-bgl-load`; commit pending docs (`HELDOUT_BRIEF.md`, STATUS) there
+- [x] awk reference counts (total, labels, severity, component, slice, `parity`, malformed) → §7
+- [x] `00_schema.sql` + `10_bgl.sql`; dry run on first 100k lines, then full load (timed)
+- [x] Cross-check queries; FTS check; storage A/B if needed
+- [x] Record PERFORMANCE.md, fill §7, STATUS, plans index; tell Konark the schema
 
 ## 7. Results (filled after)
+Done 2026-10-17. Every check equals the reference count from the raw file (awk / Python regex):
+
+| Check | Reference | SQL |
+|---|---|---|
+| BGL rows | 4,747,963 | 4,747,963 |
+| alert labels (`labels`) | 348,460 | 348,460 |
+| held-out slice `ts >= 2005-12-05` | 129,874 | 129,874 |
+| min / max ts | 2005-06-03 / 2006-01-04 | 2005-06-03 15:42:50 / 2006-01-04 08:00:05 |
+| severity INFO / FATAL / ERROR / WARNING / SEVERE / FAILURE | 3,735,823 / 855,501 / 112,355 / 23,357 / 19,213 / 1,714 | same |
+| component KERNEL / APP / DISCOVERY / MMCS / HARDWARE / MONITOR / LINKCARD / CMCS / BGLMASTER / SERV_NET | 4,324,967 / 228,536 / 97,172 / 88,930 / 5,148 / 1,681 / 1,170 / 211 / 145 / 3 | same |
+| slice by severity | 90,615 / 38,420 / 188 / 459 / 188 / 4 | same |
+| distinct nodes / racks / midplanes | 69,241 / 64 / 128 | same |
+| lines without a node (`NULL`, `UNKNOWN_LOCATION`, `-`) | 116,677 | 116,677 (4,747,963 − 4,631,286) |
+| empty message | 34,470 | 34,470 |
+| FTS `parity` / phrase `cache parity error` | 121,498 / 106,220 | same |
+| team node-platform / hpc-workloads / cluster-control | 4,331,285 / 228,536 / 188,142 | same |
+
+- **Load: 18.0 s** end to end (details + EXPLAIN in `PERFORMANCE.md`); 224 MB on disk. Search table kept: group-bys
+  3–85 ms, so no plain-table A/B.
+- **Deviation (better than planned):** no malformed lines. Field 6 (repeated location) sometimes holds junk with spaces,
+  which shifts positional fields; anchoring the regex on the timestamp and `(RAS|NULL) COMPONENT SEVERITY` parses all
+  4,747,963 lines. Positional awk counts in `CHALLENGE.md` (e.g. FATAL 855,195) were off by those ~320 lines; the
+  regex counts above are the correct ones.
+- **Fix:** `data/ownership.csv` had unquoted commas in two descriptions (invalid CSV); quoted them.
+- Schema has OpenStack columns ready (`request_id, instance_id, tenant_id, status, latency_ms`, all indexed): Konark's
+  loader inserts into the same `logs` table with `dataset = 'openstack'`.
+- Dictionary breaks on non-letters, so hex ids (`0x00544eb8`) are not single tokens in `body`; node ids are exact-match
+  columns. Revisit in plan 003 if search needs ids inside text.
+- Next: plan 003, `search_logs` + `get_context` (MCP).
