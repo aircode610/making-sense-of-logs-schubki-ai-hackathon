@@ -1,8 +1,13 @@
 # Status (read first; keep short and current)
 
-_Last updated: 2026-10-17, plan 006 done (Jev pattern judgment: priority top 10 alerts 1/10 → 5/10)._patterns + priority_table; 6 MCP tools)._
+_Last updated: 2026-10-17, plan 008 done (agent split: prebuilt ReAct gatherers + coverage middleware, composer subgraph)._patterns + priority_table; 6 MCP tools)._
 
-## Stage: B3 — 6 MCP tools + Jev pattern judgments; next: agent (baseline ReAct + our recipes)
+## Stage: S3 — agent answers all 3 roles with checked answer cards; next: eval harness (ours vs baseline), UI
+- **Plan 008 done:** gatherer per role = prebuilt ReAct agent (`create_agent`) + CoverageMiddleware + tool limit;
+  composer subgraph (compose ⇄ check); MCP server role-neutral; all dev questions pass again (stacked on 007).
+- **Plan 007 done:** `python -m agent.run [--role …] [--baseline] "question"`; LangGraph route → gather ⇄ tools →
+  coverage → compose → check; every number verified against cited SQL results (25/25, 86/86, 47/47; baseline 30/34);
+  Jev routes the role; one LangSmith trace per question.
 - **Plan 006 done:** Jev judges each pattern once (20 s, ≈ $0.02, stored CSV). Problem filter H18 → priority top-10 alert
   patterns 1/10 → 5/10, top by bursts 0/10 → 5/10 (tune period). Konark: flaky count right after reload seen once (plan 006 §7).
 - **Plan 005 done:** `top_patterns` + `priority_table` (score computed in SQL, reproduced independently). Measured: with

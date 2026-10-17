@@ -1,4 +1,4 @@
-"""Team-lead + manager tools over log patterns and bursts (plan 004 tables). Everything is computed in SQL:
+"""Pattern tools: recurring log patterns and a computed priority ranking, over patterns and bursts (plan 004 tables). Everything is computed in SQL:
 counts, previous-period comparison, percentile ranks and the priority score (weights inlined in the query). No LLM.
 "Problem" pattern (plan 006, DECISIONS H18): problem-severity lines AND p_problem >= 0.5, where
 p_problem = p_fault × (1 − p_dump) from the stored Jev judgment of the pattern (pattern_judgments, judged once)."""
@@ -132,7 +132,7 @@ def priority_table(
     limit: Annotated[int, Field(ge=1, le=MAX_ROWS, description="Ranked problems to return (max 50).")] = 10,
     problem_filter: ProblemFilter = "jev",
 ) -> dict:
-    """Computed priority ranking of problem patterns for a period, plus a per-team roll-up (manager questions).
+    """Computed priority ranking of problem patterns for a period, plus a per-team roll-up.
 
     score (0-100) = 100 × Σ weight × percentile (share of candidates with a value ≤ this one) among all problem
     patterns of the period, for five MEASURED

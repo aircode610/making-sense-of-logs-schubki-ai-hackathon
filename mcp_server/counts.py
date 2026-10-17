@@ -1,4 +1,4 @@
-"""Lead / manager tools: exact full-corpus counts by group, and counts over time. Counts are log LINES, never incidents."""
+"""Count tools: exact full-corpus counts by group, and counts over time. Counts are log LINES, never incidents."""
 import time
 from datetime import datetime, timedelta
 from typing import Annotated, Literal, Optional
