@@ -5,7 +5,7 @@ _Last updated: 2026-10-17, plans 002 + 050 done (BGL + OpenStack loaded), plan 0
 ## Stage: B1 — both datasets loaded + engineer tools on MCP; count/trend tools next (plan 051, Konark)
 - **Plan 003 done:** MCP server `mcp_server/` (`search_logs`, `get_context`; registered in `.mcp.json`), counts equal
   reference, p95 < 45 ms. Konark: add `count_by`/`trend` in `mcp_server/counts.py` (plan 051), register in `server.py`; reuse `core.envelope`.
-  Pending: live Claude Code check (restart + approve `logs`).
+  Live Claude Code check passed (kernel-panic investigation, plan 003 §7).
 - **Plan 002 done:** `load/00_schema.sql` (shared `logs` + `labels`, one inverted index) + `load/10_bgl.sql`: 4,747,963
   rows in 18 s, every count equals awk (table in `plans/002-bgl-load.md` §7). Konark: insert OpenStack into the same
   `logs` table (`dataset='openstack'`; columns `request_id, instance_id, tenant_id, status, latency_ms` ready).

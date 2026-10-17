@@ -1,6 +1,6 @@
 # 003: Engineer tools `search_logs` + `get_context` on a FastMCP server
 
-- **Status:** done, except the live Claude Code check (needs a restart; see §7)
+- **Status:** done (2026-10-17)
 - **Owner:** Amirali · **Branch:** `feat/003-engineer-tools` · **Date:** 2026-10-17
 - **PLAN.md block / slice:** B1 · `search_logs` + `get_context` (+ the MCP server skeleton Konark adds `count_by`/`trend` to)
 
@@ -51,7 +51,7 @@ per tool. Then the live Claude Code check. Held-out untouched.
 ## 6. Steps
 - [x] Branch; `core.py` + `search.py` + `server.py`
 - [x] Scripted checks vs reference counts + hand SQL; timing
-- [x] `.mcp.json` entry · [ ] you restart/approve; live E1-style question
+- [x] `.mcp.json` entry · [x] you restart/approve; live E1-style question
 - [x] README Tools section (both tools: purpose, inputs, outputs); PERFORMANCE, §7, STATUS, plans index
 
 ## 7. Results (filled after)
@@ -72,6 +72,12 @@ Done 2026-10-17 (all checks scripted; the tool functions and the stdio MCP proto
   thousands of INFO lines per window (1,610 in 5 min on line 500's node), which bury the FATAL neighbours.
 - Learned: plain `body @@ 'a b'` = OR; `websearch_to_tsquery` gives AND + phrase/OR/-word. `@@` not allowed inside
   `FILTER (…)`. psycopg bound params work with `@@`. `line_id` point lookups ~20 ms without an index (rows ~ file order).
-- **Pending:** live check in Claude Code (restart → approve `logs` server → one E1 question).
+- **Live check (Claude Code via `.mcp.json`):** "where did kernel panics happen, what happened around one?" →
+  `search_logs("kernel panic")` 18 lines / 18 nodes, 2005-08-15 → 2005-11-11 (`ev-ce26cfacbd`); `get_context` line
+  3069219 midplane ±600 s: 0 before / 1 after = second panic on `R43-M0-N8` 0.35 s later (`ev-841f1faee8`); scope all
+  ±120 s: nothing else in the whole system (`ev-661c83d09b`). 29–31 ms per call; Claude chose tools from descriptions alone.
+  Candidate for the worked investigation (same-midplane I/O-node panic pairs).
+- Setup note: declining the project-MCP prompt writes `disabledMcpjsonServers` to `.claude/settings.local.json`;
+  fix = `enabledMcpjsonServers` + `/mcp` (worth a line in README troubleshooting).
 - Next: Konark adds `count_by` / `trend` in `mcp_server/counts.py` (register in `server.py`); OpenStack scopes
   `request` / `instance` get tested once OpenStack is loaded.
