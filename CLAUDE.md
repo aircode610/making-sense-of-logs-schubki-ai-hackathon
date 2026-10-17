@@ -4,7 +4,7 @@ Team: **Amirali** (aircode610) + **Konark**. Public repo. Hackathon work days: S
 
 ## 👉 START HERE: `docs/STATUS.md` (where we are, who does what, next steps)
 Then, as needed: `docs/ROLES.md` (**what each role asks, evidence, answer**) · `docs/PLAN.md` (48 h parallel plan) ·
-`docs/CHALLENGE.md` (brief + rubric + checklist) · `docs/NOVELTY.md` (our edge) · `docs/PERFORMANCE.md` (DB internals) ·
+`docs/CHALLENGE.md` (brief + rubric + checklist; verbatim original `docs/BRIEF.md`) · `docs/NOVELTY.md` (our edge) · `docs/PERFORMANCE.md` (DB internals) ·
 `docs/ARCHITECTURE.md` (target system) · `docs/EVAL.md` (how we prove it) · `docs/QA_JURY.md` (jury Q&A tracker) ·
 `docs/HELDOUT.md` (held-out eval plan) · `docs/DECISIONS.md` · `docs/LESSONS.md` (what experiments 001/002 taught us).
 

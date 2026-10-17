@@ -2,7 +2,9 @@
 
 **Making Sense of Logs: The Right Insights for the Right People.** Partner: SereneDB.
 Dates: 16 Oct opening · **17–18 Oct work** · 19–20 evaluation · 21 closing. Jury Q&A: Sat 17 Oct 16:00–21:04 CEST
-(ours 18:50–19:00, see `QA_JURY.md`). Submission deadline: _TBD (fill in)_.
+(ours 18:50–19:00, see `QA_JURY.md`). Submission deadline: **Sun 18 Oct 2026, 23:59** (format: ask organisers).
+
+Full original text: **`BRIEF.md`** (verbatim; wins over this summary if they disagree).
 
 ## Brief (condensed, wording kept where it matters)
 - Build a working prototype that turns log data into useful answers for three roles. **SereneDB finds evidence and
@@ -52,6 +54,8 @@ Dates: 16 Oct opening · **17–18 Oct work** · 19–20 evaluation · 21 closin
 - [ ] Search + summary exposed as tools with clear descriptions (purpose, inputs, outputs).
 - [ ] Shows its work: executed queries + results behind every number; hypotheses and limitations labelled.
 - [ ] Runs from a clean checkout: connect to SereneDB, load base data with our loader, start the agent.
+      Organisers (2026-10-17): schema, loading SQL/scripts and ownership table are **ours, in the repo**; README must
+      say how to start SereneDB, load BGL + OpenStack, start the agent (`BRIEF.md` § clarifications).
 
 ## Expected output
 - [ ] Public repo + README (workflow, setup, run, known limitations, tool docs, ownership table).
