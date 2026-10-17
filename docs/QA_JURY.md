@@ -32,6 +32,10 @@ Goal: make an impression **and** get advice. Plan for 10 min: 1 min pitch · 1 m
   (rounded / derived numbers). Jev picks the role when none is given. Each answer = one LangSmith trace.
 - OpenStack: 208k lines → **106 patterns**. The labelled anomalous VMs use only normal templates; what gives them away is
   spawn time (37–51 s vs normal ≤ 28 s) → we flag numeric outliers per pattern, not just rare templates.
+- **Eval (S4, 18 dev questions, LangSmith experiments, Opus judge):** ours vs baseline with the same tools: claims
+  supported 0.89 vs 0.59, numbers grounded 0.99 vs 0.85, golden facts 0.79 vs 0.59, next-step specificity 4.3 vs 2.6,
+  pairwise 10-4; cost: 34 s vs 13 s per answer. Honest gaps: tool overlap across roles higher for ours; checker misses
+  scope / hypotheses sections (fix next).
 
 ## Pitch (60 s, current version — S0)
 "Logs answer different questions for different people, but an LLM reading 50 retrieved lines can't tell you how often
