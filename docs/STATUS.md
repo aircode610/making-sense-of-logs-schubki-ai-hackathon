@@ -1,11 +1,17 @@
 # Status (read first; keep short and current)
 
-_Last updated: 2026-10-17, plan 009 done (eval: ours vs baseline, deterministic + Opus judge)._patterns + priority_table; 6 MCP tools)._
+_Last updated: 2026-10-17, plan 009 done (eval: ours vs baseline), plan 053 done (OpenStack patterns, Konark)._
 
 ## Stage: S4 — eval done (dev set): ours beats the baseline on grounding and quality, at ~2.6× latency; next: checker covers all card sections, UI, worked investigation
 - **Plan 009 done:** `python -m eval.run_eval` (LangSmith experiments). Ours vs baseline: claim support 0.89 vs 0.59,
   numbers grounded 0.99 vs 0.85, golden facts 0.79 vs 0.59, rubric 4.53 vs 3.91, pairwise 10-4; 34 s vs 13 s per answer.
   Humans: rate `eval/results/human_check.md` (judge sanity); write the private question set, then run its runner.
+- **Plan 053 done (Konark):** OpenStack `pattern_id` (106 patterns, ids 100001+, HTTP status kept) → `patterns`/`bursts`/
+  `episodes` cover both datasets; 32/32 checks. ⚠️ Labelled OpenStack VMs show **no special template**: the anomaly is
+  slow spawn/build (37–51 s vs ≤ 28 s) → needs a numeric-outlier signal. One traceback = 25 ERROR patterns (group by
+  shared bursts in `top_patterns`). Details: `plans/053-openstack-patterns.md` §7.
+  Gap: no Jev judgments for OpenStack yet → `top_patterns`/`priority_table(dataset='openstack')` return 0 rows with the
+  default `problem_filter='jev'` (use `'severity'` or judge the 106 patterns: `scripts/judge_patterns.sh`).
 - **Plan 008 done:** gatherer per role = prebuilt ReAct agent (`create_agent`) + CoverageMiddleware + tool limit;
   composer subgraph (compose ⇄ check); MCP server role-neutral; all dev questions pass again (stacked on 007).
 - **Plan 007 done:** `python -m agent.run [--role …] [--baseline] "question"`; LangGraph route → gather ⇄ tools →

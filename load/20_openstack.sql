@@ -30,12 +30,35 @@ SELECT line_id,
        CASE WHEN r.tenant NOT IN ('', '-') THEN r.tenant END                    AS tenant_id,
        CAST(nullif(regexp_extract(line, 'status: (\d+) len: \d+ time: [\d.]+', 1), '') AS INTEGER) AS status,
        CAST(nullif(regexp_extract(line, 'status: \d+ len: \d+ time: ([\d.]+)', 1), '') AS DOUBLE) * 1000 AS latency_ms,
-       nullif(r.body, '')                                                       AS body
+       nullif(r.body, '')                                                       AS body,
+       -- Template (plan 053): mask variable parts, most specific first; keep the HTTP status code, merge mask runs.
+       regexp_replace(regexp_replace(regexp_replace(regexp_replace(regexp_replace(regexp_replace(regexp_replace(
+       regexp_replace(regexp_replace(
+           coalesce(r.body, ''),
+           '[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}', '<UUID>', 'g'),
+           '\d{1,3}(\.\d{1,3}){3}(,\d{1,3}(\.\d{1,3}){3})*', '<IP>', 'g'),        -- 10.11.27.243,10.11.10.1
+           '(^|[^a-zA-Z])(0x)?[0-9a-fA-F]{6,}', '\1<HEX>', 'g'),                    -- not inside words (Traceback)
+           '(status: \d+ len: )\d+ time: [\d.]+', '\1<N> time: <N>', 'g'),         -- mask len/time
+           '(status: )(\d+)', '\1#\2', 'g'),                                       -- '#' shields the status code
+           '(^|[^\d#])\d+(\.\d+)*', '\1<N>', 'g'),
+           '(<N>|<HEX>)([:./\-x,]*(<N>|<HEX>))+', '<N>', 'g'),
+           '\s+', ' ', 'g'),
+           'status: #', 'status: ', 'g')                                    AS template
 FROM p;
 
-INSERT INTO logs (dataset, line_id, ts, component, severity, request_id, instance_id, tenant_id, status, latency_ms, body)
-SELECT 'openstack', line_id, ts, component, severity, request_id, instance_id, tenant_id, status, latency_ms, body
-FROM os_stage ORDER BY ts, line_id;
+-- pattern_id = 100000 + rank of (first occurrence, component, template): stable across reloads, never a BGL id.
+CREATE TEMP TABLE os_pat AS
+SELECT component, template, (100000 + row_number() OVER (ORDER BY first_ts, component, template))::INTEGER AS pattern_id
+FROM (SELECT component, template, min(ts) AS first_ts FROM os_stage GROUP BY 1, 2);
+
+INSERT INTO logs (dataset, line_id, ts, component, severity, request_id, instance_id, tenant_id, status, latency_ms, body,
+                  pattern_id)
+SELECT 'openstack', s.line_id, s.ts, s.component, s.severity, s.request_id, s.instance_id, s.tenant_id, s.status,
+       s.latency_ms, s.body, p.pattern_id
+FROM os_stage s JOIN os_pat p ON p.component = s.component AND p.template = s.template
+ORDER BY s.ts, s.line_id;
+
+INSERT INTO pattern_templates SELECT 'openstack', pattern_id, component, template FROM os_pat;
 
 -- Evaluation only: the injected-anomaly VM ids (never read by agent tools).
 INSERT INTO labels
@@ -46,6 +69,7 @@ WHERE line ~ '^[0-9a-f]{8}-';
 -- NOTE: label.line_id for openstack is the label row number, label text is the instance id.
 
 DROP TABLE os_stage;
+DROP TABLE os_pat;
 
 DROP TABLE IF EXISTS ownership;
 CREATE TABLE ownership AS SELECT * FROM read_csv('/data/ownership.csv');
