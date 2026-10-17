@@ -1,6 +1,6 @@
 # Status (read first; keep short and current)
 
-_Last updated: 2026-10-17, plan 002 done (BGL loaded)._
+_Last updated: 2026-10-17, plans 002 + 050 done (BGL + OpenStack loaded)._
 
 ## Stage: B1 — BGL loaded and verified; OpenStack load + tools next
 - **Plan 002 done:** `load/00_schema.sql` (shared `logs` + `labels`, one inverted index) + `load/10_bgl.sql`: 4,747,963
@@ -9,6 +9,9 @@ _Last updated: 2026-10-17, plan 002 done (BGL loaded)._
 - Repo set up: docs, skills, MCPs (serenedb-docs, typesafe-docs, langchain-docs), docker, data scripts, ownership table.
 - Data downloaded locally: BGL 4,747,963 lines · OpenStack 207,820 lines (`data/README.md`).
 - Side-quest results and code archived in `archive/side-quest/` (read `docs/LESSONS.md` instead of the archive).
+
+- **Plan 050 done (Konark):** `load/20_openstack.sql`: 207,820 OpenStack rows + `ownership` table in ~1.2 s, all counts equal awk/grep
+  (`plans/050-openstack-load.md` §7). Next: plan 051 `count_by` + `trend` tools.
 
 ## First things in a fresh session (setup gaps, not yet done)
 - [x] Approve the 3 docs MCP servers on first `claude` start in this repo (`.mcp.json`).
