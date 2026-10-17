@@ -33,7 +33,17 @@ judgments per pattern from the committed `data/pattern_judgments_bgl.csv`; no Ty
 
 Connect Claude Code to the tools: the `logs` MCP server is registered in [`.mcp.json`](.mcp.json), so running
 `claude` in this folder offers it (approve it once). Any other MCP client: stdio command `.venv/bin/python mcp_server/server.py`
-(DB via `PGHOST`/`PGPORT`/`PGUSER`/`PGDATABASE`, default `localhost:7890`). Agent and UI: _coming soon_.
+(DB via `PGHOST`/`PGPORT`/`PGUSER`/`PGDATABASE`, default `localhost:7890`). UI: _coming soon_.
+
+Ask the agent (needs `ANTHROPIC_API_KEY` in `.env`; LangSmith tracing if `LANGSMITH_*` are set):
+```bash
+.venv/bin/python -m agent.run --role engineer "What failed on the R43-M0 midplane around 2005-08-19 13:56, and what happened just before and after?"
+.venv/bin/python -m agent.run --role lead "Which problems recurred most in November 2005 (2005-11-01 to 2005-11-29), and which teams own them?"
+.venv/bin/python -m agent.run --role manager "Based on November 2005, which problems deserve attention first and what should happen next?"
+.venv/bin/python -m agent.run "Is the rts panic problem getting worse in November 2005?"   # no --role: Jev routes the question
+.venv/bin/python -m agent.run --baseline --role manager "…"                                # the reference ReAct agent
+```
+Each run prints the answer card + evidence (SQL) + the LangSmith trace URL, and saves `runs/agent/<time>-<kind>-<role>.json`.
 
 ## Data
 Loghub **BGL** (4,747,963 lines, 214.7 days) and **OpenStack** (207,820 lines). See [`data/README.md`](data/README.md).
@@ -55,6 +65,26 @@ computed over all matches, so frequency never comes from a sample.
 Full-text tokens are letters only (lowercased): numbers and hex ids inside messages are not searchable; use the
 `node` / `request_id` / `instance_id` filters for ids. Latency: p95 < 45 ms per call on the full corpus
 ([`docs/PERFORMANCE.md`](docs/PERFORMANCE.md)).
+
+## Agent (`agent/`, LangGraph)
+```
+route ─► gather ⇄ tools ─► coverage ─► compose ─► check ─► END
+           ▲                  │           ▲          │
+           └── nudge (≤ 2) ───┘           └─ revise ─┘ (≤ 1)
+```
+- **route:** role given, or picked by **Jev** (calibrated choice, run inside SereneDB); LLM fallback.
+- **gather ⇄ tools:** the LLM follows the role's **evidence recipe** with the role's tool subset (engineer: search →
+  context → spread; lead: top_patterns → trend → counts by team; manager: priority_table → team roll-up); tool calls run
+  concurrently; every result envelope enters an **evidence ledger** keyed by `evidence_id`.
+- **coverage:** deterministic role checklist (which tools must have run); missing evidence → nudge back.
+- **compose:** the LLM writes a structured **answer card** (answer, scope, facts with evidence ids, ranked problems,
+  labelled hypotheses, unknowns, next steps) from the ledger only.
+- **check:** deterministic **claim checker**: every number must be found in a result the item cites, no invented money /
+  downtime / customer impact, role checklist; one revision round, then unverified items are marked.
+  **Confidence = computed** (verified-number rate, halved if the checklist is incomplete), never self-reported.
+- **Baseline:** the brief's reference design (`create_agent`, same tools, role prompt, free text).
+- **Tracing:** one LangSmith trace per question (`ours:<role>` / `baseline:<role>`), tags (kind, role, model), metadata
+  (question, git sha, route + Jev probabilities, evidence ids, numbers verified, confidence, revisions, latency).
 
 ## Worked investigation
 _Coming soon._
