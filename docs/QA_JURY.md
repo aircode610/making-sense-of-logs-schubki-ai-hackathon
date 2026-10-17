@@ -35,6 +35,10 @@ Goal: make an impression **and** get advice. Plan for 10 min: 1 min pitch · 1 m
 - **`value_outliers` (SQL median + MAD per pattern, rule fixed before looking at labels):** finds **4/4** labelled
   anomalous VMs, ranked as the 4 most extreme (2.6×, 2.1×, 1.6×, 1.5× normal), 2 mild extra flags; ~100 ms. The engineer
   agent answers "were any VMs abnormally slow?" with all of them, checker 55/55. All 100 lines of those VMs are INFO: no error or warning to search for.
+- **Eval (S4, 18 dev questions, LangSmith experiments, Opus judge):** ours vs baseline with the same tools: claims
+  supported 0.89 vs 0.59, numbers grounded 0.99 vs 0.85, golden facts 0.79 vs 0.59, next-step specificity 4.3 vs 2.6,
+  pairwise 10-4; cost: 34 s vs 13 s per answer. Honest gaps: tool overlap across roles higher for ours; checker misses
+  scope / hypotheses sections (fix next).
 
 ## Pitch (60 s, current version — S0)
 "Logs answer different questions for different people, but an LLM reading 50 retrieved lines can't tell you how often

@@ -74,8 +74,8 @@ Done 2026-10-17.
   `value_outliers` was added there as well as to the engineer recipe in `agent/prompts.py`.
 - **Fix found by the agent run:** the composer shows only 12 rows per result (`ledger_json`), and the 4 HTTP rows came
   first, so the first run reported "only 4 of 6 VMs visible". Added an `instances` field (one row per flagged VM); the
-  re-run names all 6. **Then (asked by Konark):** `ledger_json` (`agent/checker.py`) now passes every tool result in
-  full (tools already cap rows at 50). Re-run on 4 questions, all checker-passed: slow VMs 57/57 (says "not truncated"),
+  re-run names all 6. **Then (asked by Konark):** `ledger_json` (`agent/checker.py`) by default passes every tool result in
+  full (tools already cap rows at 50; the eval judge keeps its `max_rows=8`). Re-run on 4 questions, all checker-passed: slow VMs 57/57 (says "not truncated"),
   R43-M0 kernel panics 27/27 (43 s), lead Nov 2005 92/92 (28 s), manager Nov 2005 37/37 (36 s).
 - **Experiment, reverted (asked by Konark): drop the severity gate, Jev only** (`_problem_where` in
   `mcp_server/patterns.py`: `jev` → only `p_fault × (1 − p_dump) ≥ 0.5`). Measured with Amirali's scripts (BGL tune

@@ -11,7 +11,7 @@ import outliers
 import patterns
 import search
 
-mcp = FastMCP("logs", instructions=(
+mcp = FastMCP("logs", log_level="WARNING", instructions=(
     "Tools over BGL (supercomputer RAS logs, 2005-06-03 → 2006-01-04) and OpenStack (nova) logs in SereneDB. "
     "Every result includes the SQL that ran, its filters and scope, total_matches and a truncated flag: cite them. "
     "Numbers come only from tool results; returned lines are samples, totals are exact. Lines are not incidents."))

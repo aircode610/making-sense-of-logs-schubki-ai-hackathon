@@ -95,6 +95,34 @@ Each `gather_<role>` is a prebuilt ReAct agent (LangChain `create_agent`, the su
 - **Tracing:** one LangSmith trace per question (`ours:<role>` / `baseline:<role>`), tags (kind, role, model), metadata
   (question, git sha, route + Jev probabilities, evidence ids, numbers verified, confidence, revisions, latency).
 
+## Evaluation (ours vs the reference ReAct agent with the same tools)
+`.venv/bin/python -m eval.run_eval` runs both systems on 18 dev questions (6 per role) as LangSmith experiments, with
+deterministic metrics (golden facts from hand-checked SQL, numbers found in the evidence, tool use, forbidden claims,
+cost) and an Opus judge (claim support against the evidence, role rubric, pairwise in both orders). Details: `docs/EVAL.md`;
+latest report: `eval/results/20261017-174933.md`.
+
+| Metric (18 dev questions, 6 per role) | ours | baseline |
+|---|---|---|
+| E1 golden facts in the answer | **0.79** | 0.59 |
+| E2a numbers found in the run's own tool results | **0.99** | 0.85 |
+| E2b numbers found in the result the fact cites (ours) | **1.00** | — |
+| E2c claims supported by the evidence (judge) | **0.89** | 0.59 |
+| E3 causes stated as fact, per answer (judge) ↓ | **0.11** | 0.39 |
+| E3 states what the logs cannot establish | **1.00** | 0.11 |
+| E5 invented money / downtime / impact (regex + judge) | 0 | 0 |
+| E7 required tools called | **1.00** | 0.83 |
+| Q rubric mean 1-5 (judge) | **4.53** | 3.91 |
+| Q role fit 1-5 (judge) | **4.83** | 4.17 |
+| Q next-step specificity 1-5 (judge) | **4.28** | 2.56 |
+| Q pairwise, both orders, consistent wins | **10** | 4 (4 inconsistent) |
+| E4 evidence overlap between roles on the same topic ↓ | **0.02** | 0.04 |
+| E4 tool overlap between roles on the same topic ↓ | 0.39 | **0.28** |
+| E8 seconds per answer ↓ | 34 | **13** |
+| E8 input / output tokens ↓ | 54k / 4.8k | **33k / 1.6k** |
+
+Dev questions were written by us after seeing the data; a separate human-written private question set exists (its
+runner prints aggregates only).
+
 ## Worked investigation
 _Coming soon._
 

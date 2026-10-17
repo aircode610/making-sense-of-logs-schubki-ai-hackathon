@@ -1,0 +1,353 @@
+# Dev question set (plan 009). Written by Claude after seeing the data, so for development only; the honest test is the
+# human-written private question set (see docs, same format). BGL questions use the tune part only (< 2005-12-05).
+# golden[].sql is the hand-written reference query; eval/build_golden.py runs it once and stores `value`.
+# match: number (default) | date (YYYY-MM-DD HH:MM prefix) | text. must_mention: strings the answer must contain.
+# topic: questions sharing a topic are the same subject asked by different roles (E4 role distinctness).
+
+- id: D-E01
+  role: engineer
+  pattern: E1
+  dataset: bgl
+  question: What failed on the R43-M0 midplane around 2005-08-19 13:56, and what happened just before and after?
+  golden:
+  - fact: kernel panic lines on R43-M0, 2005-08-19 13:40-14:15
+    sql: SELECT count(*) FROM logs WHERE dataset='bgl' AND midplane='R43-M0' AND body @@ websearch_to_tsquery('kernel panic') AND ts >= '2005-08-19 13:40' AND ts < '2005-08-19 14:15'
+    value: 2
+  - fact: first panic time
+    match: date
+    sql: SELECT strftime(min(ts), '%Y-%m-%d %H:%M') FROM logs WHERE dataset='bgl' AND midplane='R43-M0' AND body @@ websearch_to_tsquery('kernel panic') AND ts >= '2005-08-19 13:40' AND ts < '2005-08-19
+      14:15'
+    value: 2005-08-19 13:56
+  must_mention:
+  - R43-M0
+  - kernel panic
+  required_tools:
+  - search_logs
+  - get_context
+  expected_first_tool: search_logs
+- id: D-E02
+  role: engineer
+  pattern: E2
+  dataset: bgl
+  question: Find 'data TLB error interrupt' in June 2005 (2005-06-01 to 2005-07-01). Where and when did it start, and how widespread was it?
+  golden:
+  - fact: data TLB error interrupt lines in June 2005
+    sql: SELECT count(*) FROM logs WHERE dataset='bgl' AND body @@ websearch_to_tsquery('"data TLB error interrupt"') AND ts >= '2005-06-01' AND ts < '2005-07-01'
+    value: 152659
+  - fact: distinct nodes in June 2005
+    sql: SELECT count(DISTINCT node) FROM logs WHERE dataset='bgl' AND body @@ websearch_to_tsquery('"data TLB error interrupt"') AND ts >= '2005-06-01' AND ts < '2005-07-01'
+    value: 467
+  - fact: first occurrence
+    match: date
+    sql: SELECT strftime(min(ts), '%Y-%m-%d %H:%M') FROM logs WHERE dataset='bgl' AND body @@ websearch_to_tsquery('"data TLB error interrupt"') AND ts >= '2005-06-01' AND ts < '2005-07-01'
+    value: 2005-06-05 00:08
+  must_mention:
+  - data TLB
+  required_tools:
+  - search_logs
+  - get_context
+  expected_first_tool: search_logs
+- id: D-E03
+  role: engineer
+  pattern: E3
+  dataset: openstack
+  question: What happened to OpenStack instance 9fafc51c-d0dd-41df-99e9-6c79d8334eaf, step by step across the nova services?
+  golden:
+  - fact: log lines for the instance
+    sql: SELECT count(*) FROM logs WHERE dataset='openstack' AND instance_id='9fafc51c-d0dd-41df-99e9-6c79d8334eaf'
+    value: 25
+  - fact: first line time
+    match: date
+    sql: SELECT strftime(min(ts), '%Y-%m-%d %H:%M') FROM logs WHERE dataset='openstack' AND instance_id='9fafc51c-d0dd-41df-99e9-6c79d8334eaf'
+    value: 2017-05-16 22:51
+  must_mention:
+  - 9fafc51c
+  required_tools:
+  - search_logs
+  - get_context
+  expected_first_tool: search_logs
+- id: D-E04
+  role: engineer
+  pattern: E4
+  dataset: openstack
+  question: Why did nova-api return HTTP 503 errors, when did it happen, and what happened around those requests?
+  golden:
+  - fact: nova-api requests with status 503
+    sql: SELECT count(*) FROM logs WHERE dataset='openstack' AND status = 503
+    value: 2
+  - fact: first 503
+    match: date
+    sql: SELECT strftime(min(ts), '%Y-%m-%d %H:%M') FROM logs WHERE dataset='openstack' AND status = 503
+    value: 2017-05-16 06:25
+  must_mention:
+  - '503'
+  required_tools:
+  - search_logs
+  - get_context
+  expected_first_tool: search_logs
+- id: D-E05
+  role: engineer
+  pattern: E2
+  dataset: bgl
+  topic: ciod-nov
+  question: 'On 2005-11-17 BGL I/O nodes started logging ''ciod: Error reading message prefix ... Link has been severed''. What failed, where did it start, and what happened just before?'
+  golden:
+  - fact: Link has been severed (ciod prefix) lines on 2005-11-17
+    sql: 'SELECT count(*) FROM logs l JOIN patterns p ON p.dataset=l.dataset AND p.pattern_id=l.pattern_id WHERE l.dataset=''bgl'' AND p.template = ''ciod: Error reading message prefix on CioStream socket
+      to <N>, Link has been severed'' AND l.ts >= ''2005-11-17'' AND l.ts < ''2005-11-18'''
+    value: 1008
+  - fact: first occurrence
+    match: date
+    sql: 'SELECT strftime(min(l.ts), ''%Y-%m-%d %H:%M'') FROM logs l JOIN patterns p ON p.dataset=l.dataset AND p.pattern_id=l.pattern_id WHERE l.dataset=''bgl'' AND p.template = ''ciod: Error reading message
+      prefix on CioStream socket to <N>, Link has been severed'''
+    value: 2005-11-17 05:33
+  must_mention:
+  - ciod
+  required_tools:
+  - search_logs
+  - get_context
+  expected_first_tool: search_logs
+- id: D-E06
+  role: engineer
+  pattern: E1
+  dataset: bgl
+  topic: mcheck-oct
+  question: BGL logged 'machine check interrupt' errors in October 2005 (2005-10-01 to 2005-11-01). Where and when did they occur, and what happened around the first one?
+  golden:
+  - fact: machine check interrupt lines (exact template) in October 2005
+    sql: SELECT count(*) FROM logs l JOIN patterns p ON p.dataset=l.dataset AND p.pattern_id=l.pattern_id WHERE l.dataset='bgl' AND p.template='machine check interrupt' AND l.ts >= '2005-10-01' AND l.ts
+      < '2005-11-01'
+    value: 37
+  - fact: first in October
+    match: date
+    sql: SELECT strftime(min(l.ts), '%Y-%m-%d %H:%M') FROM logs l JOIN patterns p ON p.dataset=l.dataset AND p.pattern_id=l.pattern_id WHERE l.dataset='bgl' AND p.template='machine check interrupt' AND
+      l.ts >= '2005-10-01' AND l.ts < '2005-11-01'
+    value: 2005-10-02 08:34
+  must_mention:
+  - machine check
+  required_tools:
+  - search_logs
+  - get_context
+  expected_first_tool: search_logs
+- id: D-L01
+  role: lead
+  pattern: L1
+  dataset: bgl
+  topic: ciod-nov
+  question: Which problems recurred most in November 2005 (2005-11-01 to 2005-11-29), how often, and which teams own them? What should the team investigate first?
+  golden:
+  - fact: bursts of the ciod 'Link has been severed' pattern started in the period
+    sql: 'SELECT count(*) FROM bursts b JOIN patterns p USING (dataset, pattern_id) WHERE b.dataset=''bgl'' AND p.template=''ciod: Error reading message prefix on CioStream socket to <N>, Link has been
+      severed'' AND b.start_ts >= ''2005-11-01'' AND b.start_ts < ''2005-11-29'''
+    value: 27
+  - fact: bursts of 'rts panic! - stopping execution' in the period
+    sql: SELECT count(*) FROM bursts b JOIN patterns p USING (dataset, pattern_id) WHERE b.dataset='bgl' AND p.template='rts panic! - stopping execution' AND b.start_ts >= '2005-11-01' AND b.start_ts <
+      '2005-11-29'
+    value: 33
+  must_mention:
+  - hpc-workloads
+  - node-platform
+  required_tools:
+  - top_patterns
+  expected_first_tool: top_patterns
+- id: D-L02
+  role: lead
+  pattern: L2
+  dataset: bgl
+  topic: mcheck-oct
+  question: How did the 'machine check interrupt' problem trend week over week in October 2005 (2005-10-01 to 2005-11-01), and which team owns it?
+  golden:
+  - fact: bursts of 'machine check interrupt' started in October 2005
+    sql: SELECT count(*) FROM bursts b JOIN patterns p USING (dataset, pattern_id) WHERE b.dataset='bgl' AND p.template='machine check interrupt' AND b.start_ts >= '2005-10-01' AND b.start_ts < '2005-11-01'
+    value: 34
+  must_mention:
+  - node-platform
+  required_tools:
+  - top_patterns
+  - trend
+  expected_first_tool: top_patterns
+- id: D-L03
+  role: lead
+  pattern: L3
+  dataset: openstack
+  question: In OpenStack, how many requests failed with HTTP 404 and 503, on which nova service, and which team owns that service?
+  golden:
+  - fact: requests with status 404
+    sql: SELECT count(*) FROM logs WHERE dataset='openstack' AND status = 404
+    value: 3969
+  - fact: requests with status 503
+    sql: SELECT count(*) FROM logs WHERE dataset='openstack' AND status = 503
+    value: 2
+  must_mention:
+  - nova-api
+  - cloud-api
+  required_tools:
+  - count_by
+  expected_first_tool: count_by
+- id: D-L04
+  role: lead
+  pattern: L4
+  dataset: bgl
+  question: Is 'rts panic! - stopping execution' one bad node or fleet-wide in October 2005 (2005-10-01 to 2005-11-01)?
+  golden:
+  - fact: distinct nodes with rts panic in October 2005
+    sql: SELECT count(DISTINCT l.node) FROM logs l JOIN patterns p ON p.dataset=l.dataset AND p.pattern_id=l.pattern_id WHERE l.dataset='bgl' AND p.template='rts panic! - stopping execution' AND l.ts >=
+      '2005-10-01' AND l.ts < '2005-11-01'
+    value: 38
+  - fact: rts panic lines in October 2005
+    sql: SELECT count(*) FROM logs l JOIN patterns p ON p.dataset=l.dataset AND p.pattern_id=l.pattern_id WHERE l.dataset='bgl' AND p.template='rts panic! - stopping execution' AND l.ts >= '2005-10-01'
+      AND l.ts < '2005-11-01'
+    value: 46
+  must_mention:
+  - node-platform
+  required_tools:
+  - top_patterns
+  expected_first_tool: top_patterns
+- id: D-L05
+  role: lead
+  pattern: L1
+  dataset: bgl
+  question: Across the whole BGL corpus, which components logged the most FATAL lines, and which teams own them?
+  golden:
+  - fact: FATAL lines in KERNEL (whole BGL)
+    sql: SELECT count(*) FROM logs WHERE dataset='bgl' AND severity='FATAL' AND component='KERNEL'
+    value: 626756
+  - fact: FATAL lines in APP (whole BGL)
+    sql: SELECT count(*) FROM logs WHERE dataset='bgl' AND severity='FATAL' AND component='APP'
+    value: 228536
+  must_mention:
+  - node-platform
+  - hpc-workloads
+  required_tools:
+  - count_by
+  expected_first_tool: count_by
+- id: D-L06
+  role: lead
+  pattern: L6
+  dataset: bgl
+  question: Which recurring problems got worse in October 2005 (2005-10-01 to 2005-11-01) compared with September, and who owns them?
+  golden:
+  - fact: bursts of 'machine check interrupt' in October 2005
+    sql: SELECT count(*) FROM bursts b JOIN patterns p USING (dataset, pattern_id) WHERE b.dataset='bgl' AND p.template='machine check interrupt' AND b.start_ts >= '2005-10-01' AND b.start_ts < '2005-11-01'
+    value: 34
+  must_mention:
+  - node-platform
+  required_tools:
+  - top_patterns
+  expected_first_tool: top_patterns
+- id: D-M01
+  role: manager
+  pattern: M1
+  dataset: bgl
+  topic: ciod-nov
+  question: Based on November 2005 (2005-11-01 to 2005-11-29), what should we prioritise next?
+  golden:
+  - fact: bursts of the ciod 'Link has been severed' pattern in the period
+    sql: 'SELECT count(*) FROM bursts b JOIN patterns p USING (dataset, pattern_id) WHERE b.dataset=''bgl'' AND p.template=''ciod: Error reading message prefix on CioStream socket to <N>, Link has been
+      severed'' AND b.start_ts >= ''2005-11-01'' AND b.start_ts < ''2005-11-29'''
+    value: 27
+  - fact: nodes with that pattern in the period
+    sql: 'SELECT count(DISTINCT l.node) FROM logs l JOIN patterns p ON p.dataset=l.dataset AND p.pattern_id=l.pattern_id WHERE l.dataset=''bgl'' AND p.template=''ciod: Error reading message prefix on CioStream
+      socket to <N>, Link has been severed'' AND l.ts >= ''2005-11-01'' AND l.ts < ''2005-11-29'''
+    value: 1024
+  must_mention:
+  - hpc-workloads
+  must_not:
+  - $
+  - revenue
+  - downtime of
+  - customers affected
+  required_tools:
+  - priority_table
+  expected_first_tool: priority_table
+- id: D-M02
+  role: manager
+  pattern: M1
+  dataset: bgl
+  topic: mcheck-oct
+  question: Based on October 2005 (2005-10-01 to 2005-11-01), which observed problems deserve attention first and what should happen next?
+  golden:
+  - fact: bursts of 'machine check interrupt' in October 2005
+    sql: SELECT count(*) FROM bursts b JOIN patterns p USING (dataset, pattern_id) WHERE b.dataset='bgl' AND p.template='machine check interrupt' AND b.start_ts >= '2005-10-01' AND b.start_ts < '2005-11-01'
+    value: 34
+  must_mention:
+  - node-platform
+  must_not:
+  - $
+  - revenue
+  - downtime of
+  - customers affected
+  required_tools:
+  - priority_table
+  expected_first_tool: priority_table
+- id: D-M03
+  role: manager
+  pattern: M2
+  dataset: bgl
+  question: Which team's area carried the most risk in September 2005 (2005-09-01 to 2005-10-01), and is it getting better or worse?
+  golden:
+  - fact: BGL log lines owned by node-platform in September 2005
+    sql: SELECT count(*) FROM logs l JOIN ownership o ON o.dataset=l.dataset AND o.component=l.component WHERE l.dataset='bgl' AND o.team='node-platform' AND l.ts >= '2005-09-01' AND l.ts < '2005-10-01'
+    value: 83298
+  must_mention:
+  - node-platform
+  must_not:
+  - $
+  - revenue
+  - downtime of
+  - customers affected
+  required_tools:
+  - priority_table
+  expected_first_tool: priority_table
+- id: D-M04
+  role: manager
+  pattern: M4
+  dataset: bgl
+  question: If we can fix only one thing based on August 2005 (2005-08-01 to 2005-09-01), which one and why?
+  golden:
+  - fact: kernel panic bursts in August 2005
+    sql: SELECT count(*) FROM bursts b JOIN patterns p USING (dataset, pattern_id) WHERE b.dataset='bgl' AND p.template='kernel panic' AND b.start_ts >= '2005-08-01' AND b.start_ts < '2005-09-01'
+    value: 5
+  must_not:
+  - $
+  - revenue
+  - downtime of
+  - customers affected
+  required_tools:
+  - priority_table
+  expected_first_tool: priority_table
+- id: D-M05
+  role: manager
+  pattern: M5
+  dataset: bgl
+  question: What can't the logs tell us about the problems we saw in November 2005 (2005-11-01 to 2005-11-29)?
+  golden: []
+  must_mention:
+  - cost
+  - downtime
+  - customer
+  must_not:
+  - $
+  - revenue
+  - downtime of
+  - customers affected
+  required_tools:
+  - priority_table
+  expected_first_tool: priority_table
+- id: D-M06
+  role: manager
+  pattern: M3
+  dataset: bgl
+  question: Is overall reliability on BGL improving from September to November 2005 (2005-09-01 to 2005-11-29)?
+  golden:
+  - fact: FATAL lines in November 2005 (to 11-29)
+    sql: SELECT count(*) FROM logs WHERE dataset='bgl' AND severity='FATAL' AND ts >= '2005-11-01' AND ts < '2005-11-29'
+    value: 42801
+  must_not:
+  - $
+  - revenue
+  - downtime of
+  - customers affected
+  required_tools:
+  - priority_table
+  expected_first_tool: priority_table

@@ -1,14 +1,17 @@
 # Status (read first; keep short and current)
 
-_Last updated: 2026-10-17, plan 008 done (agent split: prebuilt ReAct gatherers + coverage middleware, composer subgraph), plans 053–054 done (OpenStack patterns, Jev judgments, `value_outliers`; 7 MCP tools)._
+_Last updated: 2026-10-17, plan 009 done (eval: ours vs baseline), plans 053–054 done (OpenStack patterns, Jev judgments, `value_outliers`; 7 MCP tools)._
 
-## Stage: S3 — agent answers all 3 roles with checked answer cards; next: eval harness (ours vs baseline), UI
+## Stage: S4 — eval done (dev set): ours beats the baseline on grounding and quality, at ~2.6× latency; next: checker covers all card sections, UI, worked investigation
 - **Plan 054 done (Konark):** Jev judged the 106 OpenStack patterns (3.2 s) → `top_patterns(openstack)` 0 → 8 real
   faults (+ the 503). New MCP tool **`value_outliers`** (slow operations vs their own pattern's median/MAD, p95 99 ms): catches
   **4/4 labelled anomalous VMs** (top 4 by ratio; 2 extra mild flags); engineer agent uses it (checker 55/55).
   Amirali: `value_outliers` added to `ROLE_TOOLS["engineer"]` + one recipe line; composer now reads **full** tool
   results (`ledger_json` no longer cuts to 12 rows; 4 dev questions re-run, all pass); **H18 amended: HTTP ≥ 500 counts
   as a problem line** (2 lines, BGL unchanged; `top_patterns(openstack)` → 9). Details `plans/054-…` §7.
+- **Plan 009 done:** `python -m eval.run_eval` (LangSmith experiments). Ours vs baseline: claim support 0.89 vs 0.59,
+  numbers grounded 0.99 vs 0.85, golden facts 0.79 vs 0.59, rubric 4.53 vs 3.91, pairwise 10-4; 34 s vs 13 s per answer.
+  Humans: rate `eval/results/human_check.md` (judge sanity); write the private question set, then run its runner.
 - **Plan 053 done (Konark):** OpenStack `pattern_id` (106 patterns, ids 100001+, HTTP status kept) → `patterns`/`bursts`/
   `episodes` cover both datasets; 32/32 checks. ⚠️ Labelled OpenStack VMs show **no special template**: the anomaly is
   slow spawn/build (37–51 s vs ≤ 28 s) → needs a numeric-outlier signal. One traceback = 25 ERROR patterns (group by
@@ -74,5 +77,7 @@ count/trend tools. **Jury Q&A today 18:50–19:00 CEST** (`docs/QA_JURY.md`).
 - UI: Streamlit (default) vs something nicer if time allows.
 
 ## Results table (fill after each eval run)
-| Run | E1 | E2 | E4 | E6 | E7 | latency | $ |
-|---|---|---|---|---|---|---|---|
+| Run | E1 | E2a / E2c | E4 evid. | E6 | E7 | rubric | pairwise | latency |
+|---|---|---|---|---|---|---|---|---|
+| dev 2026-10-17 ours (`151ec54`) | 0.79 | 0.99 / 0.89 | 0.02 | priority top-10 5/10 (plan 006) | 1.00 | 4.53 | 10 | 34 s |
+| dev 2026-10-17 baseline | 0.59 | 0.85 / 0.59 | 0.04 | — | 0.83 | 3.91 | 4 | 13 s |
