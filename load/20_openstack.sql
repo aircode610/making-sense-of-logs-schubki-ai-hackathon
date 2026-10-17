@@ -1,11 +1,8 @@
--- Load OpenStack (3 files) into logs + labels, and the ownership table. Re-runnable (replaces OpenStack rows).
+-- Load OpenStack (3 files) into logs + labels, and the ownership table. Expects empty tables: reload = ./load/reload.sh.
 -- Run after 00_schema.sql: psql -h localhost -p 7890 -U postgres -d postgres -f load/20_openstack.sql
 -- Line: <file>.log.<stamp> date time pid LEVEL module [req-id user tenant - - -] message
 -- line_id = running line number over abnormal (1..18434), normal1, normal2 in that order.
 \timing on
-
-DELETE FROM logs   WHERE dataset = 'openstack';
-DELETE FROM labels WHERE dataset = 'openstack';
 
 CREATE TEMP TABLE os_stage AS
 WITH raw AS (

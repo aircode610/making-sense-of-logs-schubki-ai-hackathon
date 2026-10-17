@@ -1,6 +1,6 @@
 # 051: `count_by` + `trend` MCP tools
 
-- **Status:** draft
+- **Status:** done (2026-10-17)
 - **Owner:** Konark · **Branch:** `feat/051-count-trend-tools` (from `main` after 050 is merged) · **Date:** 2026-10-17
 - **PLAN.md block / slice:** B1 · `count_by` + `trend` (Amirali: `search_logs` + `get_context`, plan 003)
 
@@ -44,9 +44,25 @@ load/20_openstack.sql`). Also one call through an MCP client to prove the tool s
 - Risk: BGL needs loading locally (18 s) to test; fine.
 
 ## 6. Steps
-- [ ] Pull; merge 050 into the branch base; check whether `mcp_server/` exists on `main`
-- [ ] `counts.py`: `run` helper, `count_by`, `trend`, envelope
-- [ ] `bench/check_counts.py` against reference counts + timings; MCP stdio smoke test
-- [ ] PERFORMANCE.md, §7 here, STATUS, plans index; tell Amirali the envelope; commit only when asked
+- [x] Pull; merge 050 into the branch base; check whether `mcp_server/` exists on `main`
+- [x] `counts.py`: `run` helper, `count_by`, `trend`, envelope
+- [x] `bench/check_counts.py` against reference counts + timings; MCP stdio smoke test
+- [x] PERFORMANCE.md, §7 here, STATUS, plans index; tell Amirali the envelope; commit only when asked
 
 ## 7. Results (filled after)
+`bench/check_counts.py`: 29 checks all pass (BGL severity/component/slice, OpenStack component/severity, team across both
+datasets, FTS `parity` 121,498 and phrase 106,220, team where severity=ERROR, trend buckets sum to `count_by` totals for 5
+filter sets, zero-filled day buckets = 92 / 0 / 5,655, equal to `grep` on the raw file). **16 calls: median 7 ms, p95 45 ms,
+max 76 ms** (target 200 ms). MCP stdio smoke test lists 4 tools; `count_by` / `trend` return the shared envelope.
+
+- **Files:** `mcp_server/counts.py` (tools), registered in `mcp_server/server.py`; `bench/check_counts.py`.
+- **Envelope:** reuses Amirali's `core.envelope` (tool, params, sql, filters, scope, rows, truncated, elapsed_ms, evidence_id)
+  plus `total_lines`, `groups_total` (count_by) and `bucket`, `first_ts`, `last_ts`, `groups` (trend).
+- **Team join:** `LEFT JOIN ownership` (aliased subquery) only when team is grouped / filtered; no slowdown (group-by ≤ 110 ms).
+- **Deviation:** `generate_series` bounds are inlined literals (from DB min/max, not caller input) because bound params
+  there broke the wire protocol (`unexpected field count in "D" message`). Other values stay bound.
+- **⚠️ Finding (reload):** right after reloads, queries gave wrong numbers (INFO off by one in `GROUP BY` vs `WHERE`, once
+  every BGL row doubled, once FATAL off by one) and then settled. Cause (SereneDB docs, `maintenance.md`): the inverted index is
+  **eventually consistent**; writes are published by a background refresh (~1 s) or `VACUUM (REFRESH_TABLE)`. Fix (plan 052):
+  `load/reload.sh` = DROP + load + `90_publish.sql` (refresh + compact) + `bench/check_counts.py`; 2 runs, all checks pass.
+- Trend direction (rising / falling) is left to the agent layer (B3), as planned.
