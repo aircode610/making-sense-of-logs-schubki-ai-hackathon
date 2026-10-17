@@ -6,6 +6,7 @@ sys.path.insert(0, str(Path(__file__).parent))
 
 from mcp.server.fastmcp import FastMCP
 
+import counts
 import search
 
 mcp = FastMCP("logs", instructions=(
@@ -17,7 +18,8 @@ READ_ONLY = {"readOnlyHint": True, "destructiveHint": False, "idempotentHint": T
 
 mcp.tool(annotations={"title": "Search logs", **READ_ONLY})(search.search_logs)
 mcp.tool(annotations={"title": "Events around a line", **READ_ONLY})(search.get_context)
-# Konark (plan 051): register count_by / trend from counts.py here.
+mcp.tool(annotations={"title": "Counts by group", **READ_ONLY})(counts.count_by)
+mcp.tool(annotations={"title": "Counts over time", **READ_ONLY})(counts.trend)
 
 if __name__ == "__main__":
     mcp.run()

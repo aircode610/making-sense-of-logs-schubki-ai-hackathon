@@ -1,6 +1,6 @@
 # Status (read first; keep short and current)
 
-_Last updated: 2026-10-17, plans 002 + 050 done (BGL + OpenStack loaded), plan 003 done (engineer tools on MCP)._
+_Last updated: 2026-10-17, plans 002, 003, 050, 051 done, plan 003 done (engineer tools on MCP)._
 
 ## Stage: B1 — both datasets loaded + engineer tools on MCP; count/trend tools next (plan 051, Konark)
 - **Plan 003 done:** MCP server `mcp_server/` (`search_logs`, `get_context`; registered in `.mcp.json`), counts equal
@@ -15,6 +15,10 @@ _Last updated: 2026-10-17, plans 002 + 050 done (BGL + OpenStack loaded), plan 0
 
 - **Plan 050 done (Konark):** `load/20_openstack.sql`: 207,820 OpenStack rows + `ownership` table in ~1.2 s, all counts equal awk/grep
   (`plans/050-openstack-load.md` §7). Next: plan 051 `count_by` + `trend` tools.
+
+- **Plan 051 done (Konark):** MCP tools `count_by` + `trend` (`mcp_server/counts.py`), 29 checks vs awk/grep pass
+  (`bench/check_counts.py`), median 7 ms / p95 45 ms. ⚠️ **Reload = `./load/reload.sh`** (DROP + load +
+  `VACUUM` refresh/compact + count check, ~21 s): the index is eventually consistent, counts right after a bulk insert can be off (plan 052).
 
 ## First things in a fresh session (setup gaps, not yet done)
 - [x] Approve the 3 docs MCP servers on first `claude` start in this repo (`.mcp.json`).

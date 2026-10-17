@@ -1,5 +1,9 @@
--- Shared schema for both datasets (contract: plans/002-bgl-load.md). Idempotent.
+-- Shared schema for both datasets (contract: plans/002-bgl-load.md). DROPS and recreates the tables: a full reload is
+-- 00 → 10 → 20 → 90 (`./load/reload.sh`).
 -- Run: psql -h localhost -p 7890 -U postgres -d postgres -f load/00_schema.sql
+
+DROP TABLE IF EXISTS logs;
+DROP TABLE IF EXISTS labels;
 
 -- Lowercase alpha tokens, with frequency/position/norm for BM25 + phrase queries (same as otel_logs).
 CREATE TEXT SEARCH DICTIONARY IF NOT EXISTS log_body_dict AS
@@ -7,7 +11,7 @@ CREATE TEXT SEARCH DICTIONARY IF NOT EXISTS log_body_dict AS
     WITH (frequency, position, norm);
 
 -- One row per log line. Columns a dataset doesn't have stay NULL.
-CREATE TABLE IF NOT EXISTS logs (
+CREATE TABLE logs (
     dataset     VARCHAR   NOT NULL,  -- 'bgl' | 'openstack'
     line_id     BIGINT    NOT NULL,  -- line number in the raw file (per dataset/file): stable evidence id
     ts          TIMESTAMP NOT NULL,
@@ -31,7 +35,7 @@ CREATE INDEX IF NOT EXISTS logs_idx ON logs USING inverted (
 );
 
 -- Ground-truth labels: evaluation only, never read by agent tools.
-CREATE TABLE IF NOT EXISTS labels (
+CREATE TABLE labels (
     dataset VARCHAR NOT NULL,
     line_id BIGINT  NOT NULL,
     label   VARCHAR NOT NULL

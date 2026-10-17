@@ -23,10 +23,10 @@ uv venv --python 3.12 && uv pip install -r requirements.txt
 ```
 Load the data (SereneDB reads and parses the raw files itself; schema and loaders in [`load/`](load/)):
 ```bash
-psql -h localhost -p 7890 -U postgres -d postgres -f load/00_schema.sql   # tables + full-text index
-psql -h localhost -p 7890 -U postgres -d postgres -f load/10_bgl.sql      # BGL: 4,747,963 rows, ~20 s
+./load/reload.sh   # drops + recreates tables, loads BGL (4,747,963 rows) + OpenStack (207,820) + ownership, publishes the index, then checks counts (~21 s)
 ```
-Loaders are re-runnable (each replaces its dataset's rows).
+`reload.sh` runs `load/00_schema.sql` → `10_bgl.sql` → `20_openstack.sql` → `90_publish.sql` (`VACUUM` refresh + compact:
+the inverted index is eventually consistent, so counts are only exact once it is published) → `bench/check_counts.py`.
 
 Connect Claude Code to the tools: the `logs` MCP server is registered in [`.mcp.json`](.mcp.json), so running
 `claude` in this folder offers it (approve it once). Any other MCP client: stdio command `.venv/bin/python mcp_server/server.py`
