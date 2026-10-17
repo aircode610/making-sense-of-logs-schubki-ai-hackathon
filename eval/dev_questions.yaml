@@ -129,6 +129,40 @@
   - search_logs
   - get_context
   expected_first_tool: search_logs
+- id: D-E07
+  role: engineer
+  pattern: E4
+  dataset: openstack
+  question: Were any OpenStack VMs abnormally slow to start? Which ones, and how slow compared with normal?
+  golden:
+  - fact: slowest spawn time in seconds
+    sql: SELECT round(max(CAST(regexp_extract(body, 'Took ([\d.]+) seconds to spawn', 1) AS DOUBLE)), 2) FROM logs WHERE dataset='openstack' AND body LIKE '%seconds to spawn the instance%'
+    value: 50.72
+  - fact: normal (median) spawn time in seconds
+    sql: SELECT round(median(CAST(regexp_extract(body, 'Took ([\d.]+) seconds to spawn', 1) AS DOUBLE)), 2) FROM logs WHERE dataset='openstack' AND body LIKE '%seconds to spawn the instance%'
+    value: 19.74
+  must_mention:
+  - a445709b
+  required_tools:
+  - value_outliers
+  expected_first_tool: value_outliers
+- id: D-E08
+  role: engineer
+  pattern: E5
+  dataset: bgl
+  question: BGL KERNEL logged FATAL lines on 2005-11-17 between 05:00 and 06:00. Is that rate unusual compared with the previous 7 days?
+  golden:
+  - fact: KERNEL FATAL lines 2005-11-17 05:00-06:00
+    sql: SELECT count(*) FROM logs WHERE dataset='bgl' AND component='KERNEL' AND severity='FATAL' AND ts >= '2005-11-17 05:00' AND ts < '2005-11-17 06:00'
+    value: 245
+  - fact: KERNEL FATAL lines in the previous 7 days
+    sql: SELECT count(*) FROM logs WHERE dataset='bgl' AND component='KERNEL' AND severity='FATAL' AND ts >= '2005-11-10 05:00' AND ts < '2005-11-17 05:00'
+    value: 8044
+  must_mention:
+  - KERNEL
+  required_tools:
+  - rate_vs_baseline
+  expected_first_tool: rate_vs_baseline
 - id: D-L01
   role: lead
   pattern: L1

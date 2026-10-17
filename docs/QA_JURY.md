@@ -17,7 +17,7 @@ Goal: make an impression **and** get advice. Plan for 10 min: 1 min pitch · 1 m
 | S3 agent + 3 roles | one question, three answer cards | role recipes, checker |
 | S4 eval | baseline vs ours table | measured wins |
 
-## Numbers we can show now (S2, 2026-10-17, plans 002–008 + 050–054)
+## Numbers we can show now (S2, 2026-10-17, plans 002–009 + 050–055)
 - Load by SereneDB itself: BGL 4.7M + OpenStack 208k lines + templates + bursts in **≈ 31 s** (emulated amd64); counts
   equal awk. Group-bys 3–85 ms straight from the inverted index.
 - MCP tools live in Claude Code: `search_logs`, `get_context` (p95 < 45 ms); kernel-panic investigation done via MCP.
@@ -39,6 +39,11 @@ Goal: make an impression **and** get advice. Plan for 10 min: 1 min pitch · 1 m
   supported 0.89 vs 0.59, numbers grounded 0.99 vs 0.85, golden facts 0.79 vs 0.59, next-step specificity 4.3 vs 2.6,
   pairwise 10-4; cost: 34 s vs 13 s per answer. Honest gaps: tool overlap across roles higher for ours; checker misses
   scope / hypotheses sections (fix next).
+
+- **Engineer baseline (`rate_vs_baseline`):** "is this rate unusual here?" vs same-length windows of the previous week,
+  never pretending a baseline exists before the data starts ("baseline only 8 h"). Engineer eval 8 questions: ours vs
+  baseline pairwise **8-0**, claims supported 0.88 vs 0.47. Honest: as a fault detector "unusual" only beats raw volume
+  for alert onsets (17 % vs 14 % precision), so we present it as context for an engineer, not as anomaly detection.
 
 ## Pitch (60 s, current version — S0)
 "Logs answer different questions for different people, but an LLM reading 50 retrieved lines can't tell you how often

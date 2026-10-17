@@ -42,7 +42,7 @@ TURN_TOOL_CALLS = 8      # per gather turn (ToolCallLimitMiddleware run_limit re
 MAX_NUDGES = 2
 MAX_REVISIONS = 1
 ROLE_TOOLS = {
-    "engineer": ["search_logs", "get_context", "count_by", "trend", "value_outliers"],
+    "engineer": ["search_logs", "get_context", "count_by", "trend", "rate_vs_baseline", "value_outliers"],
     "lead": ["top_patterns", "trend", "count_by", "search_logs"],
     "manager": ["priority_table", "count_by", "top_patterns", "trend"],
 }
