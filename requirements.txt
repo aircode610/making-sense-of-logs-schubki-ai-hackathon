@@ -1,12 +1,12 @@
-# Top-level deps; pin after the first working install (uv pip freeze).
-langgraph
-langchain
-langchain-anthropic
-langchain-mcp-adapters
-langsmith
-mcp
+# Top-level deps, pinned 2026-10-17 (plan 000) from `uv pip freeze` on Python 3.12.
+langgraph==1.2.16
+langchain==1.4.6
+langchain-anthropic==1.7.6
+langchain-mcp-adapters==0.3.2
+langsmith==0.14.11
+mcp==1.30.0
 typesafe-sdk==0.7.3
-psycopg[binary]
+psycopg[binary]==3.3.6
 drain3==0.9.11
-streamlit
-python-dotenv
+streamlit==1.66.0
+python-dotenv==1.2.4
