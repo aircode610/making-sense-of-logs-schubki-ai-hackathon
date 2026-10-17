@@ -1,6 +1,6 @@
 # Status (read first; keep short and current)
 
-_Last updated: 2026-10-17, S0 setup._
+_Last updated: 2026-10-17, plan 000 done._
 
 ## Stage: S0 — setup done, nothing built yet
 - Repo set up: docs, skills, MCPs (serenedb-docs, typesafe-docs, langchain-docs), docker, data scripts, ownership table.
@@ -8,11 +8,13 @@ _Last updated: 2026-10-17, S0 setup._
 - Side-quest results and code archived in `archive/side-quest/` (read `docs/LESSONS.md` instead of the archive).
 
 ## First things in a fresh session (setup gaps, not yet done)
-- [ ] Approve the 3 docs MCP servers on first `claude` start in this repo (`.mcp.json`).
-- [ ] Old repo's SereneDB container is also named `serenedb` on port 7890: run `docker compose down` in
+- [x] Approve the 3 docs MCP servers on first `claude` start in this repo (`.mcp.json`).
+- [x] Old repo's SereneDB container is also named `serenedb` on port 7890: run `docker compose down` in
       `../jev-serenedb-side-quest` before `docker compose up -d` here (new, empty volume → data must be loaded).
-- [ ] Plan 000: port the held-out guard (`.claude/hooks/` + `.claude/settings.json`) **before** anyone creates `eval/heldout/`.
-- [ ] `uv venv` + install, then pin `requirements.txt`; add `ANTHROPIC_API_KEY`, `LANGSMITH_API_KEY` to `.env`.
+- [x] Plan 001: held-out guard live (hook + deny rules, `eval/heldout/` gitignored); BGL slice fixed at `>= 2005-12-05` (H13).
+- [ ] Amirali + Konark: write `eval/heldout/questions.yaml` (~10 per role, **without Claude**); golden SQL after B1.
+- [x] `uv venv` + install, then pin `requirements.txt` (plan 000). SereneDB up, `init.sql` + secrets done, Jev from SQL works.
+- [x] Keys filled; Anthropic + LangSmith verified (LangSmith account is **EU**: `LANGSMITH_ENDPOINT` required).
 - [ ] Konark: clone, own `.env` (keys shared privately, never in git), run the README setup (first clean-checkout test).
 - [ ] Ask organisers: submission deadline + format (repo link, video?, slides upload).
 - [ ] Later plans still missing: dev question set for eval, demo script + slides (5 min), MCP connection steps for judges.
@@ -30,7 +32,7 @@ Plan: `docs/PLAN.md` (vertical slices, mixed). B1: Amirali = BGL load + search/c
 count/trend tools. **Jury Q&A today 18:50–19:00 CEST** (`docs/QA_JURY.md`).
 
 ## Open decisions
-- Exact strong agent model (default Claude Opus 5.5; compare others on E2/E4 if time).
+- Exact strong agent model: Sonnet 5.5 in `.env.example` (2026-10-17); CLAUDE.md still says Opus 5.5 (compare on E2/E4).
 - Episode gap (30 min draft) and "problem pattern" thresholds: freeze after the first data look (`docs/ROLES.md`).
 - Worked investigation topic: pick in B1.
 - UI: Streamlit (default) vs something nicer if time allows.

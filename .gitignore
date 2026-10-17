@@ -20,3 +20,6 @@ __pycache__/
 runs/**/cache/
 *.log
 !data/raw/*.log
+
+# heldout eval data: never visible to Claude, shared privately (plan 001)
+eval/heldout/

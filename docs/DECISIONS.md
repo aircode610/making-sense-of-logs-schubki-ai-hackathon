@@ -16,3 +16,5 @@ Side-quest decisions D1–D14 are in `archive/side-quest/docs/DECISIONS.md`. Hac
 | H10 | 2026-10-17 | **Held-out eval kept** (`docs/HELDOUT.md`): held-out questions + a BGL time slice; only `eval/run_heldout.py` (written together) touches it; guard hook ported. | Show generalization, not demo-tuning. |
 | H11 | 2026-10-17 | **Performance is a first-class goal** (`docs/PERFORMANCE.md`): sort order/zonemaps, inverted + ART indexes, rollups, streaming; every change benchmarked. | Huge-datasets award, execution score. |
 | H12 | 2026-10-17 | **Work split = vertical slices, mixed** (`docs/PLAN.md`): both touch every layer, swap halfway. | Parallelism without silos. |
+| H13 | 2026-10-17 | **BGL held-out slice = `ts >= 2005-12-05 00:00`** (last 30 days; 129,874 lines, 13,597 alert lines). Tuning uses only earlier data; `eval/heldout/` gitignored. | Fixed before any data load or tuning, so E6 on the slice is unbiased. |
+| H14 | 2026-10-17 | **Default agent model = Claude Sonnet 5.5** (`.env.example`), refines H8; still a strong model. | Amirali's choice; Opus remains an option to compare on E2/E4. |
