@@ -47,3 +47,7 @@ emulation; end-to-end role answer dominated by the LLM, not the database.
 | 2026-10-17 | (baseline) | whole-corpus `GROUP BY component` / `severity` | — | 3–39 ms | no plain-table A/B needed (plan 002 threshold was 1 s) |
 | 2026-10-17 | (baseline) | full-text `body @@ 'parity'` count / `ts_phrase('cache parity error')` | — | 7 ms / 32 ms | 121,498 / 106,220 lines, equal to the Python token count |
 | 2026-10-17 | (baseline) | count by team (join `read_csv('/data/ownership.csv')`) | — | 51 ms | |
+| 2026-10-17 | MCP tool (plan 003) | `search_logs("parity")`, whole corpus, 2 queries (rows + summary) | — | p50 11 / p95 14 ms | 20 runs, Python call incl. psycopg round trips |
+| 2026-10-17 | MCP tool | `search_logs` relevance (BM25), July filter | — | p50 16 / p95 19 ms | WAND top-k via `optimize_top_k` |
+| 2026-10-17 | MCP tool | `get_context` node ±300 s (busy node: 499 before / 1,610 after) | — | p50 34 / p95 41 ms | 4 queries (2 lists + 2 counts) |
+| 2026-10-17 | MCP tool | `get_context` midplane ±60 s | — | p50 22 / p95 28 ms | |

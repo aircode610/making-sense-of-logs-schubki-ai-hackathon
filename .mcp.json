@@ -11,6 +11,13 @@
     "langchain-docs": {
       "type": "http",
       "url": "https://docs.langchain.com/mcp"
+    },
+    "logs": {
+      "type": "stdio",
+      "command": ".venv/bin/python",
+      "args": [
+        "mcp_server/server.py"
+      ]
     }
   }
 }

@@ -21,3 +21,4 @@ Every plan respects: `CLAUDE.md` non-negotiables, `docs/ROLES.md` (role spec), `
 | 000 | [Fresh-session setup checks](000-setup.md) | Amirali | done | `feat/000-setup` |
 | 001 | [Held-out guard + split definition](001-heldout-guard.md) | Amirali | done | `feat/001-heldout-guard` |
 | 002 | [BGL load (SQL-native)](002-bgl-load.md) | Amirali | done | `feat/002-bgl-load` |
+| 003 | [Engineer tools: search_logs + get_context (MCP)](003-engineer-tools.md) | Amirali | done (live check pending) | `feat/003-engineer-tools` |
