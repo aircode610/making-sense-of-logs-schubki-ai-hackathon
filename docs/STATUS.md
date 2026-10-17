@@ -1,8 +1,10 @@
 # Status (read first; keep short and current)
 
-_Last updated: 2026-10-17, plan 005 done (top_patterns + priority_table; 6 MCP tools)._
+_Last updated: 2026-10-17, plan 006 done (Jev pattern judgment: priority top 10 alerts 1/10 → 5/10)._patterns + priority_table; 6 MCP tools)._
 
-## Stage: B3 — 6 MCP tools (search, context, count, trend, top_patterns, priority); next: Jev pattern judgment (Amirali)
+## Stage: B3 — 6 MCP tools + Jev pattern judgments; next: agent (baseline ReAct + our recipes)
+- **Plan 006 done:** Jev judges each pattern once (20 s, ≈ $0.02, stored CSV). Problem filter H18 → priority top-10 alert
+  patterns 1/10 → 5/10, top by bursts 0/10 → 5/10 (tune period). Konark: flaky count right after reload seen once (plan 006 §7).
 - **Plan 005 done:** `top_patterns` + `priority_table` (score computed in SQL, reproduced independently). Measured: with
   severity as the problem filter, priority top 10 holds 1/10 alert patterns (register dumps win) → next plan = Jev
   "real fault or routine?" per pattern, re-measure.

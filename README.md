@@ -27,7 +27,9 @@ Load the data (SereneDB reads and parses the raw files itself; schema and loader
 ```
 `reload.sh` runs `load/00_schema.sql` → `10_bgl.sql` → `20_openstack.sql` → `90_publish.sql` (`VACUUM` refresh + compact:
 the inverted index is eventually consistent, so counts are only exact once it is published) → `95_patterns_episodes.sql`
-(log templates → `patterns`, `bursts`, `episodes`; built from published rows) → `bench/check_counts.py`.
+(log templates → `patterns`, `bursts`, `episodes`; built from published rows) → `96_pattern_judgments.sql` (Jev
+judgments per pattern from the committed `data/pattern_judgments_bgl.csv`; no TypeSafe key needed) → `bench/check_counts.py`,
+`bench/check_patterns.py`. Regenerating the judgments needs a key: `scripts/judge_patterns.sh bgl` (~20 s, ≈ $0.02).
 
 Connect Claude Code to the tools: the `logs` MCP server is registered in [`.mcp.json`](.mcp.json), so running
 `claude` in this folder offers it (approve it once). Any other MCP client: stdio command `.venv/bin/python mcp_server/server.py`
@@ -47,8 +49,8 @@ computed over all matches, so frequency never comes from a sample.
 |---|---|---|---|
 | `search_logs` | Find log lines by message text and/or filters (engineer: locate an error, when it started, how widespread) | `query_text` (web-search syntax: words = AND, `"phrase"`, `OR`, `-word`; optional), `dataset`, `start`/`end`, `component`, `severity`, `node`, `midplane`, `rack`, `request_id`, `instance_id`, `pattern_id`, `order` (`time` / `recent` / `relevance` = BM25), `limit` ≤ 50 | matching lines (`line_id, ts, component, severity, node, body`, …) + over all matches: `total_matches`, `first_ts`, `last_ts`, `distinct_nodes` |
 | `get_context` | What happened just before and after one line, on the same node / midplane / rack (BGL) or request / VM (OpenStack) | `dataset`, `line_id`, `before_s`/`after_s` (default 300), `scope`, optional `severity`, `limit` per side ≤ 50 | `anchor`, `before` / `after` (nearest first), `before_total` / `after_total`, per-side `truncated` |
-| `top_patterns` | Team lead: which problems recur in a period, how often, where, whose, growing? | `dataset`, `start`/`end` (default: last 28 days of the dataset), `team`, `component`, `problem_only`, `rank_by` (`bursts` / `nodes` / `lines` / `growth`), `limit` ≤ 50 | per log pattern: template, component, team, lines, **bursts** (recurrences, 30-min gap), nodes, weeks_active, bursts in the previous period + change, `new`, `top_node_share`; both periods as absolute dates |
-| `priority_table` | Manager: computed priority of problem patterns + team roll-up | `dataset`, `start`/`end`, `limit` | ranked items with `score` = 100 × Σ weight × percentile of 5 measured inputs (bursts, change, nodes, persistence, problem share), the inputs, per-input contributions, the weights; per-team bursts now vs previous period; `unknown` (no cost/downtime/impact in logs) |
+| `top_patterns` | Team lead: which problems recur in a period, how often, where, whose, growing? | `dataset`, `start`/`end` (default: last 28 days of the dataset), `team`, `component`, `problem_only`, `problem_filter` (`jev` / `severity`), `rank_by` (`bursts` / `nodes` / `lines` / `growth`), `limit` ≤ 50 | per log pattern: template, component, team, lines, **bursts** (recurrences, 30-min gap), nodes, weeks_active, bursts in the previous period + change, `new`, `top_node_share`; both periods as absolute dates |
+| `priority_table` | Manager: computed priority of problem patterns + team roll-up | `dataset`, `start`/`end`, `limit`, `problem_filter` | ranked items with `score` = 100 × Σ weight × percentile of 5 inputs (bursts, change, nodes, persistence, Jev `p_problem`), the inputs, per-input contributions, the weights; per-team bursts now vs previous period; `unknown` (no cost/downtime/impact in logs) |
 
 Full-text tokens are letters only (lowercased): numbers and hex ids inside messages are not searchable; use the
 `node` / `request_id` / `instance_id` filters for ids. Latency: p95 < 45 ms per call on the full corpus
