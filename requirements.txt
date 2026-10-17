@@ -1,0 +1,12 @@
+# Top-level deps; pin after the first working install (uv pip freeze).
+langgraph
+langchain
+langchain-anthropic
+langchain-mcp-adapters
+langsmith
+mcp
+typesafe-sdk==0.7.3
+psycopg[binary]
+drain3==0.9.11
+streamlit
+python-dotenv

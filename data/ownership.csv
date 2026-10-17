@@ -1,0 +1,14 @@
+dataset,component,team,description
+bgl,KERNEL,node-platform,Compute-node kernel (memory/cache parity, torus, CIOD, interrupts)
+bgl,HARDWARE,node-platform,Node and midplane hardware events
+bgl,LINKCARD,node-platform,Link cards between midplanes
+bgl,APP,hpc-workloads,User job / application runtime messages
+bgl,MMCS,cluster-control,Midplane management control system
+bgl,CMCS,cluster-control,Core management control system
+bgl,BGLMASTER,cluster-control,Master control daemon
+bgl,DISCOVERY,cluster-control,Hardware discovery service
+bgl,MONITOR,cluster-control,Environmental monitoring (power, temperature)
+bgl,SERV_NET,cluster-control,Service network
+openstack,nova-api,cloud-api,Nova REST API (request handling and latency)
+openstack,nova-scheduler,cloud-compute,Nova scheduler (host selection)
+openstack,nova-compute,cloud-compute,Nova compute agent (VM lifecycle on hosts)

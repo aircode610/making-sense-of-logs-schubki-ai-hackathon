@@ -1,0 +1,29 @@
+# Decision log
+
+Append-only. Newest at the bottom. Each entry: date, decision, why. Product-level rules live in `docs/PRODUCT.md`.
+
+## 2026-10-09: experiment setup
+| # | Decision | Why / notes |
+|---|---|---|
+| D1 | **LLM = latest Gemini Flash: `gemini-3.8-flash`** (explanation layer + LLM baselines). Embeddings: `gemini-embedding-001` (768 dims; `gemini-embedding-2` exists, evaluate later). | Key works; OpenAI key is invalid. First call took ~5 s with default thinking, so baselines must set a **minimal thinking budget** and report latency. |
+| D2 | **Template miner = Drain3** (`pip install drain3`, logpai/IBM) + our generic masks. | Standard, online (incremental), configurable masking, persistence, extensible. Generic, not dataset-specific. |
+| D3 | **Pattern id per row lives in `log_attributes.pattern_id`** (OTel schema untouched). Expression index only if measured hot. | `otel_logs` has no row id; the pattern must travel with the row. |
+| D4 | **Evaluation protocol:** per dataset a fixed-seed split into **dev** (tune prompts/thresholds) and **held-out test** (final numbers only). Held-out must be a good size and contain **novelty in every brick**: unseen Patterns, unseen Evidence situations, unseen Verdict cases, unseen Findings (e.g. hold out whole jobs/incidents/time ranges so some templates never appear in dev; split report states novelty counts as aggregates only). Pin **`jev-1.13.0`** (not `jev-latest`). | Credible reliability numbers; tests generalization. |
+| D5 | **Held-out is never seen by Claude.** Enforced by `.claude/settings.json` (deny rules + PreToolUse hook `.claude/hooks/guard_eval_data.sh`): no read/search/write of `dataset/heldout/**`; only `scripts/make_split.py` and `scripts/eval_heldout.py` may reference it in code, run as plain `python3 scripts/<name>.py <args>`, printing **aggregate metrics / split summaries only**. Both scripts are reviewed by the user in the experiment plan before running. Docs (`.md`/`.txt`) may name the folder. | User requirement. The hook is a strong tripwire, not a cryptographic guarantee; any change to the guard must be stated to the user. |
+| D6 | **Questions** are generated from ground truth with fixed wording per dataset + 2–3 paraphrases each, for **all** examples (dev and held-out; held-out ones generated inside `make_split.py`). Start with the warm-up dataset (Hadoop). | Datasets have answers, not questions; paraphrases test "question never gates evidence". |
+| D7 | **Baselines:** (a) fast LLM on the same evidence, (b) fast LLM on raw logs, (c) classifier (TF-IDF + logistic regression) where labels allow, (d) rule "first error = root cause". LLM = `gemini-3.8-flash` with minimal thinking. | Fairness: similar latency class to Jev. |
+| D8 | **Stack: Python everywhere. Jev (TypeSafe SDK), SereneDB, LangChain** for orchestration. **Maximum traceability:** every step of every example is recorded as a trace through the 4 bricks (Pattern → Evidence → Verdict → Finding) with inputs, outputs, SQL, latency, cost. First "UI" = a trace viewer that lets us read each example's full trace. Tracing backend chosen in the first plan (e.g. LangSmith vs our own trace table in SereneDB). | User requirement; debuggability; demo story. |
+| D9 | **Workflow: one git branch per experiment; a full written plan in `plans/` is approved by the user before any experiment work.** | Keeps work inside the guardrails. |
+| D10 | Anthropic models not used for now. | User decision. |
+
+## 2026-10-11: fairness
+| # | Decision | Why / notes |
+|---|---|---|
+| D12 | **Experiment 001 closed after one held-out run** (Jev 0.32 vs LLM 0.42 vs raw-logs LLM 0.54 vs classifier 0.66 macro-F1). Results stand as measured; no further tuning on Hadoop. For 002: freeze evidence choices by grouped cross-validation on dev, compare evidence selection against the raw-logs baseline early, keep the classifier as a reference. | Dev-tuned evidence did not generalize; avoid repeating it. |
+| D11 | **Fair comparison is the goal, not a Jev win.** Every experiment variant (evidence, class options, shuffles, any prompt or evidence change) is applied to **both** Jev and the LLM baseline; both get the identical evidence state and class options, verified per question in the trace viewer. Variants are frozen by the **average** of both models' scores. Exact inputs of both models are traced. | User requirement; avoids tuning the pipeline to one model and biasing the comparison. |
+
+## 2026-10-11: experiment 002 scope
+| # | Decision | Why / notes |
+|---|---|---|
+| D13 | **Experiment 002 (GAIA) covers all three roles in one pipeline** (plan `plans/002-gaia-question-design.md`, approved). Engineer = main, fully measured part; team lead (same-problem / new-vs-repeat judgments) and manager (which-to-fix-first, impact Scores) = smaller measured slices built on the engineer's incidents. Jev questions are designed per role; every variant mirrored for the LLM (D11). Manager truth = a **pre-registered impact rule** (failed requests × customer-facing weight, ties by affected minutes), reported as a proxy. July 2021 (webservice1 only) stays held-out; Aug 1–10 forced to dev (Claude read Aug 1–5 logs). | Calibrate experiments to the brief (question → evidence → recommendation for 3 roles), so the demo design is measured before it is built. Replaces "engineer role only" as the current focus. |
+| D14 | **Experiment 002 closed after one held-out run (2026-10-12)**: Jev 0.85 vs LLM 0.90 macro-F1 (dev 0.80 vs 0.97), raw-logs LLM 0.38, classifier 0.67; root service 0.64 both (July has no db logs); lead 0.85 / 0.87; manager 100% both. Not re-run. Frozen config kept as the 002 reference: E1 evidence + Q7 questions. Plan amendments 1 (held-out = Aug 25–31 + July) and 2 (raw-logs baseline on one wording) were approved before running. | CV-based freezing generalized this time (Jev improved on new data); lead/manager are saturated on GAIA, so BGL (003) must separate the methods. |

@@ -1,0 +1,19 @@
+# DOCS_TEST: example_017
+
+statement ok
+CREATE SEQUENCE id_sequence START 1;
+
+statement ok
+CREATE TABLE tbl (
+    id INTEGER DEFAULT nextval('id_sequence'),
+    s VARCHAR
+);
+
+# DOCS_TEST_BODY
+
+statement error
+DROP SEQUENCE id_sequence;
+----
+db error: ERROR: Cannot drop entry "id_sequence" because there are entries that depend on it.
+table "tbl" depends on sequence "id_sequence".
+Use DROP...CASCADE to drop all dependents.

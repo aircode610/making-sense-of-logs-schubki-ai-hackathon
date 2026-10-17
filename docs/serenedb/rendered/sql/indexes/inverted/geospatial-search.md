@@ -1,0 +1,141 @@
+---
+title: Geospatial Search
+sidebar_position: 9
+split: headings
+---
+
+import SqlLogicTest from "@site/src/components/SqlLogicTest";
+import DocCallout from "@site/src/components/DocCallout";
+
+The [inverted index](./index.md) indexes geographic shapes for fast spatial predicates — finding which points fall inside a region, which regions contain a location and so on. Geometries can be stored either as [GeoJSON](https://geojson.org/) in a `JSON` column or as values of the native `GEOMETRY` type, and both are indexed with a geospatial text search dictionary.
+
+## Creating a geospatial index
+
+Use the `encode_geojson` dictionary template on a `JSON` column holding GeoJSON. The column type must be `JSON` or `GEOMETRY` — a plain `VARCHAR` is rejected for geo analyzers:
+
+```sql
+SELECT id FROM geo_idx
+WHERE ST_Intersects(geo, '{"type":"Polygon","coordinates":[[[37.610,55.700],[37.620,55.700],[37.620,55.710],[37.610,55.710],[37.610,55.700]]]}')
+ORDER BY id;
+-- result:
+id
+1
+2
+3
+6
+```
+
+The `encode_geojson` template indexes `Point`, `LineString`, `Polygon`, `MultiPoint`, `MultiLineString` and `MultiPolygon` geometries; `GeometryCollection` is rejected. GeoJSON coordinates are `[longitude, latitude]`. Each geometry is reduced to [S2](http://s2geometry.io/) cell-ID terms — a cell covering for a shape, one ancestor cell per level for a point. A query shape is covered the same way, so rows match when their cells overlap. An `encode_geopoint` template is also available for extracting a point from latitude/longitude fields of a JSON object, and the `encode_geojson` template accepts `coding = 's2point'` to store a compact S2 encoding of each geometry instead of the source value.
+
+### Indexing a `GEOMETRY` column
+
+The native [`GEOMETRY`](../../data_types/geometry.md) type is indexed the same way — point it at the `encode_geojson` template (typically with `coding = 's2point'`). `GEOMETRY` values carry WKB internally and are written from WKT with a coordinate reference system; WKT uses the same `longitude latitude` axis order as GeoJSON:
+
+```sql
+SELECT id FROM geo_shapes_idx
+WHERE ST_Intersects(geo, '{"type":"Polygon","coordinates":[[[37.610,55.700],[37.620,55.700],[37.620,55.710],[37.610,55.710],[37.610,55.700]]]}')
+ORDER BY id;
+-- result:
+id
+1
+2
+3
+6
+```
+
+Query shapes may be supplied as GeoJSON text (as above) **or** as `GEOMETRY` literals. For example, `ST_Distance_Centroid` accepts a `GEOMETRY` centroid:
+
+```sql
+SELECT id FROM geo_shapes_idx
+WHERE ST_Distance_Centroid(geo, 'POINT(37.616 55.704)'::GEOMETRY('OGC:CRS84')) < 500.0
+ORDER BY id;
+-- result:
+id
+1
+2
+3
+6
+```
+
+### Indexing latitude/longitude with `encode_geopoint`
+
+When your data already stores coordinates as separate latitude and longitude fields of a JSON object, the `encode_geopoint` template builds a point from them directly — no GeoJSON assembly needed. Name the two fields with the `latitude` and `longitude` options:
+
+```sql
+SELECT id
+FROM places_idx
+WHERE ST_Intersects(
+        loc,
+        '{"type":"Polygon","coordinates":[[[37.610,55.700],[37.620,55.700],[37.620,55.710],[37.610,55.710],[37.610,55.700]]]}'
+     )
+ORDER BY id;
+-- result:
+id
+1
+2
+3
+```
+
+## Spatial predicates
+
+### `ST_Intersects`
+
+`ST_Intersects(field, shape)` matches rows whose indexed geometry shares any space with the query `shape` — the bounding-box query at the top of this page finds every point and polygon intersecting that region. Intersection with a `Point` matches the polygons that cover it:
+
+```sql
+SELECT id FROM geo_idx
+WHERE ST_Intersects(geo, '{"type":"Point","coordinates":[37.615,55.706]}')
+ORDER BY id;
+-- result:
+id
+6
+```
+
+`ST_Intersects` is commutative — the field and shape arguments may be swapped.
+
+### `ST_Contains`
+
+`ST_Contains` is directional, so argument order matters:
+
+- `ST_Contains(query_shape, field)` — rows whose indexed geometry is **fully contained within** `query_shape`:
+
+  ```sql
+SELECT id FROM geo_idx
+WHERE ST_Contains('{"type":"Polygon","coordinates":[[[37.610,55.700],[37.620,55.700],[37.620,55.710],[37.610,55.710],[37.610,55.700]]]}', geo)
+ORDER BY id;
+-- result:
+id
+1
+2
+3
+6
+```
+
+- `ST_Contains(field, query_shape)` — rows whose indexed geometry **fully contains** `query_shape` (e.g. which polygon contains a point):
+
+  ```sql
+SELECT id FROM geo_idx
+WHERE ST_Contains(geo, '{"type":"Point","coordinates":[37.615,55.706]}')
+ORDER BY id;
+-- result:
+id
+6
+```
+
+### Distance predicates
+
+`ST_Distance_Between(field, centroid, min, max [, incl_min [, incl_max]])` matches rows within a geodesic distance range of a centroid, and `ST_Distance_Centroid(field, centroid)` returns the geodesic distance for ordering within an index scan. See the [function reference](../../functions/search/geo.md).
+
+<DocCallout type="attention">
+
+The indexed column must be `JSON` or `GEOMETRY`. GeoJSON uses `[longitude, latitude]` coordinate order.
+
+</DocCallout>
+
+## See also
+
+- [Inverted Index](./index.md) · [Full-Text Search](./full-text-search.md)
+- [Geospatial Search Functions](../../functions/search/geo.md) — `ST_*` reference
+- [CREATE TEXT SEARCH DICTIONARY](../../statements/create_text_search_dictionary/index.md)
+- [`GEOMETRY` data type](../../data_types/geometry.md)
+

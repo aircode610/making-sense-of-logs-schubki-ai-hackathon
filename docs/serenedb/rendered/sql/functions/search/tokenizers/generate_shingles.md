@@ -1,0 +1,307 @@
+---
+title: "generate_shingles"
+split: headings
+---
+
+import SqlLogicTest from "@site/src/components/SqlLogicTest";
+
+# generate_shingles
+
+The `generate_shingles` template joins the tokens of a nested analyzer into word n-grams — shingles — so a multi-word sequence becomes a single term. It wraps another tokenizer, takes the base tokens that tokenizer produces, and emits the concatenation of every window of `MIN_GRAM` to `MAX_GRAM` consecutive tokens. With the default `MIN_GRAM` and `MAX_GRAM` of 2, `quick brown fox` yields the bigram terms `quick brown` and `brown fox` alongside the three words themselves, so a two-word sequence is matched by one term lookup instead of by combining two.
+
+Where [`generate_ngrams`](./generate_ngrams.md) cuts a token into character fragments, `generate_shingles` builds terms above the token level, and the nested tokenizer decides what a token is. `FREQUENCY` and `POSITION` are the interesting feature flags here; `OFFSET` stores where each word and shingle sits in the value, for [highlighting](#highlighting).
+
+In the [expression form](../../../statements/create_text_search_dictionary/index.md#the-analyzer-expression) the nested analyzer is the first argument and may be a chain, and the remaining arguments are the options below in order: `generate_shingles(split_text_csv(' ') | normalize_tokens(case := 'lower'), 2, 2)` sets `MIN_GRAM` and `MAX_GRAM`.
+
+**As a function:** `generate_shingles(value, min_gram := 2, max_gram := 2, output_unigrams := true, fallback_unigrams := false, frequent_words := [], token_separator := ' ')` — the value first, then the options in the order below. See [tokenizer functions](./index.md) for how a value, a list and a chain of calls behave.
+
+```sql
+SELECT generate_shingles(['quick', 'brown', 'fox'], 2, 2) AS tokens;
+-- result:
+tokens
+{quick,"quick brown",brown,"brown fox",fox}
+```
+
+## Options
+
+| Option | Type | Default | Description |
+|---|---|---|---|
+| `MIN_GRAM` | integer | `2` | Minimum shingle size, in base tokens. Between `2` and `16` |
+| `MAX_GRAM` | integer | `2` | Maximum shingle size, in base tokens. Between `2` and `16`, and at least `MIN_GRAM` |
+| `OUTPUT_UNIGRAMS` | boolean | `true` | Also index each base token on its own, alongside the shingles |
+| `FALLBACK_UNIGRAMS` | boolean | `false` | Index the unigrams only when the value produced fewer than `MIN_GRAM` base tokens |
+| `FREQUENT_WORDS` | string | `''` | A list of words, `['the', 'of']`, or one string of comma-separated, individually double-quoted words, as in `'"the","of"'`. When non-empty, only `MIN_GRAM`-wide shingles stay dense and wider widths are indexed only for windows containing one of these words |
+| `TOKEN_SEPARATOR` | string | `' '` | Written between the words of a shingle. An empty value concatenates them |
+
+Both sizes are validated, not clamped: a value outside 2–16 is rejected with `"min_gram" must be between 2 and 16` (likewise for `max_gram`), and `MAX_GRAM` below `MIN_GRAM` with `"max_gram" must be >= "min_gram"`. A `FREQUENT_WORDS` string needs the quoted list form — anything else fails with `Invalid format of list of words(should be comma-separated and quoted)`. An empty `TOKEN_SEPARATOR` means what it says: the words of a shingle are run together.
+
+The nested analyzer is the first argument and is required — `generate_shingles(2, 3)` fails with `generate_shingles() requires a nested analyzer as its first argument`. Nesting is recursive: the first argument may itself be a chain or a wrapper.
+
+The template supports the `FREQUENCY`, `POSITION`, `OFFSET` and `NORM` [feature flags](../../../statements/create_text_search_dictionary/index.md#feature-flags), with `POSITION` and `NORM` each requiring `FREQUENCY` and `OFFSET` requiring `POSITION`. `OFFSET` also needs a nested tokenizer that produces text offsets; over one that doesn't, such as a [`union`](../../../statements/create_text_search_dictionary/union.md), it is rejected at `CREATE TEXT SEARCH DICTIONARY` time with `Unsupported index features are specified: offset`.
+
+## Tokenization
+
+The nested tokenizer runs first and produces the base token stream, with a position per token. For each base token, in stream order, the template emits that token as a unigram — only when `OUTPUT_UNIGRAMS` is true — and then the concatenation of the token with its followers, once for every width from `MIN_GRAM` up to the widest width still available at that token, narrowest first.
+
+Positions are 1-based. A nested tokenizer that reports dense positions — the usual case, a [`pipeline`](../../../statements/create_text_search_dictionary/pipeline/index.md) included as long as none of its steps assigns positions of its own — has the tokens it delivers numbered `1`, `2`, `3` … in delivery order. A step that drops tokens, a [stop word](./remove_stopwords.md) filter for instance, therefore leaves no hole behind: the surviving neighbours are adjacent and do form a shingle. A nested tokenizer that assigns its own positions can instead stack several tokens on one position, as [`find_nearest_words`](./find_nearest_words.md) does with the neighbours of one source word.
+
+The available width is capped three ways: by `MAX_GRAM`, by the end of the value, and by the run of tokens whose positions rise by exactly one, so a window spans neither a repeated nor a skipped position. Windows therefore shrink toward the tail of the value: with `MIN_GRAM = MAX_GRAM = 2` the three words of `quick brown fox` give five terms, because the last word starts no window. Tokens inside a shingle are joined by `TOKEN_SEPARATOR`, a space unless you say otherwise, so a shingle term reads as the words themselves. Setting it to `''` runs the words together, which is what a language without spaces wants; setting it to a character your tokens cannot contain keeps a shingle term unambiguous, at the cost of readable terms.
+
+The separator is what keeps a shingle distinguishable from a base token that happens to look like one, and nothing splits a term back apart: a shingle is opaque bytes to everything downstream. With the default space, a base token that itself contains a space collides with the shingle of the two words around it, and with `TOKEN_SEPARATOR = ''` the collisions are wider still — `ab` + `c`, `a` + `bc` and the single token `abc` all index as `abc`. The effect is broader recall, never an error, and it is the same trade Lucene makes.
+
+With a nested tokenizer that splits on spaces:
+
+| Input | Options | Tokens |
+|---|---|---|
+| `quick brown fox` | `MIN_GRAM = 2`, `MAX_GRAM = 2` | `{quick, quick brown, brown, brown fox, fox}` |
+| `a b c` | `MIN_GRAM = 2`, `MAX_GRAM = 2`, `OUTPUT_UNIGRAMS = false` | `{a b, b c}` |
+| `a b c d` | `MIN_GRAM = 2`, `MAX_GRAM = 3` | `{a, a b, a b c, b, b c, b c d, c, c d, d}` |
+| `a b c` | `MIN_GRAM = 2`, `MAX_GRAM = 2`, `TOKEN_SEPARATOR = ''` | `{a, ab, b, bc, c}` |
+| `lonely` | `MIN_GRAM = 2`, `MAX_GRAM = 2` | `{lonely}` |
+| `solo` | `MIN_GRAM = 2`, `OUTPUT_UNIGRAMS = false` | `{}` |
+| `solo` | `MIN_GRAM = 2`, `OUTPUT_UNIGRAMS = false`, `FALLBACK_UNIGRAMS = true` | `{solo}` |
+| `the quick brown` | `MIN_GRAM = 2`, `MAX_GRAM = 3`, `FREQUENT_WORDS = '"the","of"'` | `{the, the⟨S⟩quick, the⟨S⟩quick⟨S⟩brown, quick, quick⟨S⟩brown, brown}` |
+| `quick the brown` | `MIN_GRAM = 2`, `MAX_GRAM = 2`, nested tokenizer drops `the` | `{quick, quick⟨S⟩brown, brown}` |
+
+Every term produced from one window carries the position of that window's first base token, so a unigram and the shingles that start with it all share a position. In the last row the two surviving words arrive at positions 1 and 2, so the bigram is built straight across the word the nested tokenizer dropped.
+
+A base token that cannot start a window of at least `MIN_GRAM` tokens — the tail of the value, or a token whose next neighbour is not one position further on — is emitted as a unigram only if `OUTPUT_UNIGRAMS` is true, or if `FALLBACK_UNIGRAMS` is true and the whole value produced fewer than `MIN_GRAM` base tokens. That second condition is per value, not per window, as the two `solo` rows show. With `OUTPUT_UNIGRAMS = false` the last `MIN_GRAM - 1` tokens of a value therefore contribute no term of their own; they are still carried inside the shingles that start earlier.
+
+`FREQUENT_WORDS` makes the widths above `MIN_GRAM` adaptive. Width `MIN_GRAM` is always emitted, and a wider width only when at least one token of that particular window is byte-identical to a listed word. An intermediate width can therefore be skipped: with `MIN_GRAM = 2`, `MAX_GRAM = 4` and `FREQUENT_WORDS = '"the"'`, the token `alpha` of `alpha beta gamma the delta` yields the 2-token and the 4-token window but not the 3-token one, because only the widest of the three reaches `the`. The comparison is against the tokens the nested tokenizer emits, so it is case-sensitive and must be spelled the way that tokenizer spells them — a lowercase list if the base lowercases. Setting `FREQUENT_WORDS` also turns `OUTPUT_UNIGRAMS` on, overriding an explicit `false`.
+
+On a `VARCHAR[]` or `VARCHAR[N]` column every element is analyzed on its own, so no shingle spans two elements.
+
+A value whose base stream holds fewer than `MIN_GRAM` tokens produces no shingles, only the unigrams described above; a value the nested tokenizer produces no tokens for produces no terms; and a value the nested tokenizer fails on contributes nothing. The shingle layer is byte-oriented and copies token bytes verbatim, so case folding, accent handling, Unicode normalization and tolerance of invalid UTF-8 are entirely the nested tokenizer's business.
+
+## Phrase search
+
+[`ts_phrase`](../full-text.md#ts_phrase), [`phraseto_tsquery`](../full-text.md#phraseto_tsquery), the quoted phrases of [`to_tsquery`](../full-text.md#to_tsquery) and `##` work on a shingle column, and a phrase the column indexes as one shingle is a single term lookup. That is any phrase of `MIN_GRAM` to `MAX_GRAM` words, except that with `FREQUENT_WORDS` a phrase wider than `MIN_GRAM` has to contain a listed word. Every other phrase needs `position`:
+
+| Dictionary | One-shingle phrases | Longer phrases, exact gaps | Slop, `[min, max]` gaps, pattern parts |
+|---|---|---|---|
+| `WITH (frequency, position)` | yes | yes | yes, with `OUTPUT_UNIGRAMS` on |
+| no `position` | yes | no | no |
+
+A phrase the dictionary cannot answer fails with `ts_phrase on this shingle column needs positions: its shingles do not cover the phrase`. Leaving `position` out keeps the index smaller. A row ranks by how often the phrase occurs in it.
+
+A phrase of one word looks up that word, so it needs `OUTPUT_UNIGRAMS`. Without it the phrase fails with `ts_phrase on a shingle column without unigrams can't match a single word`. `FALLBACK_UNIGRAMS` doesn't help here: it indexes words only for values too short to form a shingle.
+
+With `position`, every run of two or more adjacent words in a phrase is looked up as shingles, also in a phrase with pattern parts, alternatives or `[min, max]` gaps. A phrase with slop matches word by word. In `EXPLAIN` a shingle is a term like any other: a phrase that is one shingle is a single `Term`, a covered phrase lists its shingles as `Term:` parts, and every phrase on a shingle column shows the column's `Separator`.
+
+A shingle joins tokens at consecutive positions. If the base dictionary puts several tokens at one position, like the synonyms of [`expand_solr_synonyms`](./expand_solr_synonyms.md) or [`expand_wordnet_synonyms`](./expand_wordnet_synonyms.md), a shingle continues from just one of them. On such a column every phrase of two or more words matches word by word, so it needs `position` and `OUTPUT_UNIGRAMS`.
+
+A pattern part of `##` (`ts_like`, `ts_starts_with`, `ts_regexp`, `ts_levenshtein` or `ts_between`) matches single words, never a shingle: it skips every term that contains `TOKEN_SEPARATOR`, a base token that contains it included. With `TOKEN_SEPARATOR = ''` a shingle can't be told apart from a word, so a phrase with a pattern part fails with `## pattern parts on a shingle column need a token separator`.
+
+```sql
+CREATE TEXT SEARCH DICTIONARY shingle_phrase AS
+    generate_shingles(split_text_csv(' '), 2, 2)
+    WITH (frequency, position);
+
+CREATE TABLE shingle_phrases(pk INTEGER PRIMARY KEY, body TEXT);
+
+CREATE INDEX shingle_phrases_idx ON shingle_phrases
+    USING inverted(pk, body shingle_phrase);
+
+INSERT INTO shingle_phrases VALUES
+    (1, 'the quick brown fox'),
+    (2, 'quick brown cat brown fox');
+
+VACUUM (REFRESH_TABLE) shingle_phrases;
+
+SELECT pk FROM shingle_phrases_idx WHERE body @@ ts_phrase('quick brown') ORDER BY pk;
+-- result:
+pk
+1
+2
+
+SELECT pk FROM shingle_phrases_idx WHERE body @@ ts_phrase('quick brown fox') ORDER BY pk;
+-- result:
+pk
+1
+
+
+DROP TABLE shingle_phrases CASCADE;
+
+DROP TEXT SEARCH DICTIONARY shingle_phrase;
+```
+
+## Highlighting
+
+[`ts_offsets`](../highlighting.md#ts_offsets) and [`ts_highlight`](../highlighting.md#virtual-column) work on a shingle column. A word covers its own text and a shingle runs from the start of its first word to the end of its last, so a phrase is marked from its first word to its last, whether one shingle or several cover it. With `OFFSET` the index stores these offsets and highlighting reads them back; without it they are found on the fly from the nested tokenizer. If the nested tokenizer produces no text offsets, every match covers the whole value.
+
+```sql
+CREATE TEXT SEARCH DICTIONARY shingle_marks AS
+    generate_shingles(split_text_csv(' '), 2, 2)
+    WITH (frequency, position);
+
+CREATE TABLE shingle_notes(pk INTEGER PRIMARY KEY, body TEXT);
+
+CREATE INDEX shingle_notes_idx ON shingle_notes
+    USING inverted(pk, body shingle_marks);
+
+INSERT INTO shingle_notes VALUES
+    (1, 'the quick brown fox jumps'),
+    (2, 'quick brown cat and quick brown fox');
+
+VACUUM (REFRESH_TABLE) shingle_notes;
+
+SELECT pk, ts_offsets(body) AS offsets, ts_highlight(body) AS snippet
+FROM shingle_notes_idx WHERE body @@ ts_phrase('quick brown fox') ORDER BY pk;
+-- result:
+pk	offsets	snippet
+1	{4,19}	the <b>quick brown fox</b> jumps
+2	{20,35}	quick brown cat and <b>quick brown fox</b>
+
+
+DROP TABLE shingle_notes CASCADE;
+
+DROP TEXT SEARCH DICTIONARY shingle_marks;
+
+
+CREATE TEXT SEARCH DICTIONARY shingle_join AS
+    generate_shingles(split_text_csv(' '), 2, 2, token_separator := '');
+
+SELECT ts_lexize('shingle_join', 'quick brown fox');
+-- result:
+ts_lexize
+{quick,quickbrown,brown,brownfox,fox}
+
+CREATE TEXT SEARCH DICTIONARY shingle_sep AS
+    generate_shingles(split_text_csv(' '), 2, 2, token_separator := '::');
+
+SELECT ts_lexize('shingle_sep', 'quick brown fox');
+-- result:
+ts_lexize
+{quick,quick::brown,brown,brown::fox,fox}
+
+SELECT generate_shingles(['quick', 'brown'], 2, 2) AS spaced,
+       generate_shingles(['quick', 'brown'], 2, 2, token_separator := '') AS joined;
+-- result:
+spaced	joined
+{quick,"quick brown",brown}	{quick,quickbrown,brown}
+
+DROP TEXT SEARCH DICTIONARY shingle_join;
+
+DROP TEXT SEARCH DICTIONARY shingle_sep;
+
+
+CREATE TEXT SEARCH DICTIONARY shingle_bad_size AS
+    generate_shingles(split_text_csv(' '), 3, 2);
+
+CREATE TEXT SEARCH DICTIONARY shingle_store AS
+    generate_shingles(split_text_csv(' '), store_tokens := false);
+
+CREATE TEXT SEARCH DICTIONARY shingle_filler AS
+    generate_shingles(split_text_csv(' '), filler_token := '_');
+
+CREATE TEXT SEARCH DICTIONARY shingle_offset AS
+    generate_shingles(split_text_csv(' '))
+    WITH (frequency, position, offset);
+
+CREATE TEXT SEARCH DICTIONARY shingle_offset_union AS
+    generate_shingles([split_text_csv(' '), split_text_csv(',')])
+    WITH (frequency, position, offset);
+
+CREATE TEXT SEARCH DICTIONARY shingle_norm_ok AS
+    generate_shingles(split_text_csv(' '))
+    WITH (frequency, position, norm);
+
+SELECT array_length(ts_lexize('shingle_norm_ok', 'quick brown fox'), 1) AS n;
+-- result:
+n
+5
+
+DROP TABLE shingle_docs CASCADE;
+
+DROP TEXT SEARCH DICTIONARY shingle_bigram;
+
+DROP TEXT SEARCH DICTIONARY shingle_escalate;
+
+DROP TEXT SEARCH DICTIONARY shingle_norm_ok;
+```
+
+## Examples
+
+Create a bigram dictionary over a space-delimited base. Every window of two words becomes one term, and the words themselves stay indexed alongside them:
+
+```sql
+CREATE TEXT SEARCH DICTIONARY shingle_bigram AS
+    generate_shingles(split_text_csv(' '), 2, 2);
+
+SELECT ts_lexize('shingle_bigram', 'quick brown fox');
+-- result:
+ts_lexize
+{quick,"quick brown",brown,"brown fox",fox}
+```
+
+### Adaptive width with frequent words
+
+With `MIN_GRAM = 2`, `MAX_GRAM = 3` and `FREQUENT_WORDS`, a window that contains a listed word escalates to the trigram while an all-rare window keeps only its bigram, so `the quick brown` gives six terms where the all-rare `quick brown fox` gives five:
+
+```sql
+CREATE TEXT SEARCH DICTIONARY shingle_escalate AS
+    generate_shingles(split_text_csv(' '), 2, 3, frequent_words := ['the', 'of']);
+
+
+SELECT array_length(ts_lexize('shingle_escalate', 'the quick brown'), 1) AS n;
+-- result:
+n
+6
+
+SELECT array_length(ts_lexize('shingle_escalate', 'quick brown fox'), 1) AS n;
+-- result:
+n
+5
+
+
+CREATE TABLE shingle_docs(pk INTEGER PRIMARY KEY, body TEXT);
+
+CREATE INDEX shingle_docs_idx ON shingle_docs
+    USING inverted(pk, body shingle_bigram);
+
+INSERT INTO shingle_docs VALUES (1, 'quick brown fox'), (2, 'lazy dog sleeps');
+
+VACUUM (REFRESH_TABLE) shingle_docs;
+
+SELECT count(*) FROM shingle_docs_idx;
+-- result:
+count
+2
+
+SELECT pk FROM shingle_docs_idx WHERE body @@ 'quick' ORDER BY pk;
+-- result:
+pk
+1
+
+SELECT pk FROM shingle_docs_idx WHERE body @@ 'dog' ORDER BY pk;
+-- result:
+pk
+2
+```
+
+### Expression form
+
+The bigram dictionary over a lowercasing chain, written as an expression:
+
+```sql
+CREATE TEXT SEARCH DICTIONARY shingle_expr AS generate_shingles(split_text_csv(' ') | normalize_tokens(case := 'lower'), 2, 2);
+
+SELECT array_length(ts_lexize('shingle_expr', 'Quick Brown Fox'), 1) AS n;
+-- result:
+n
+5
+
+SELECT 'quick' = ANY(ts_lexize('shingle_expr', 'Quick Brown Fox')) AS has_unigram;
+-- result:
+has_unigram
+t
+```
+
+## See also
+
+- [`generate_wildcard_ngrams`](./generate_wildcard_ngrams.md) — the other template that wraps a single nested analyzer
+- [`generate_ngrams`](./generate_ngrams.md) — character n-grams, one level below the token
+- [`pipeline`](../../../statements/create_text_search_dictionary/pipeline/index.md) — chain analyzers to build the base token stream
+- [`split_text_csv`](./split_text_csv.md) — a minimal base tokenizer that cuts on one separator
+- [CREATE TEXT SEARCH DICTIONARY](../../../statements/create_text_search_dictionary/index.md)
+

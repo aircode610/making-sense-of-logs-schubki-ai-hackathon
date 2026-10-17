@@ -1,0 +1,451 @@
+<title>Jev Hadoop Experiment 001</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=Instrument+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: one reading column (lab notebook), wide tables/charts scroll in their own boxes; story order = real chronology. */
+:root {
+  --bg: #F3F5F3; --surface: #FFFFFF; --ink: #15201D; --muted: #5A6763; --line: #D6DDDA;
+  --accent: #0B7A68; --accent-soft: #D7EEE8; --bar: #A9B5B1;
+  --good: #2C7A33; --good-soft: #E0F1E1; --bad: #B23A2E; --bad-soft: #F8E1DE; --warn: #8F6200; --warn-soft: #F7EDD2;
+  --code-bg: #EBEFED;
+  --f-display: "Bricolage Grotesque", "Avenir Next", "Segoe UI", sans-serif;
+  --f-body: "Instrument Sans", "Helvetica Neue", Arial, sans-serif;
+  --f-mono: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #0E1412; --surface: #151D1B; --ink: #E4EBE8; --muted: #9AA7A3; --line: #2A3532;
+  --accent: #3FC6AD; --accent-soft: #123A33; --bar: #4E5C58;
+  --good: #72C778; --good-soft: #17301A; --bad: #F08074; --bad-soft: #3A1B17; --warn: #E2B651; --warn-soft: #332910;
+  --code-bg: #1C2624; color-scheme: dark; } }
+:root[data-theme="dark"] {
+  --bg: #0E1412; --surface: #151D1B; --ink: #E4EBE8; --muted: #9AA7A3; --line: #2A3532;
+  --accent: #3FC6AD; --accent-soft: #123A33; --bar: #4E5C58;
+  --good: #72C778; --good-soft: #17301A; --bad: #F08074; --bad-soft: #3A1B17; --warn: #E2B651; --warn-soft: #332910;
+  --code-bg: #1C2624; color-scheme: dark; }
+
+* { box-sizing: border-box; }
+body { background: var(--bg); color: var(--ink); font: 400 16px/1.6 var(--f-body); }
+.wrap { max-width: 920px; margin: 0 auto; padding-inline: 20px; padding-block: 40px 80px; display: grid; gap: 56px; }
+h1, h2, h3 { font-family: var(--f-display); text-wrap: balance; margin: 0; line-height: 1.15; }
+h1 { font-size: clamp(2rem, 5vw, 3.1rem); font-weight: 700; letter-spacing: -0.02em; }
+h2 { font-size: 1.65rem; font-weight: 700; letter-spacing: -0.01em; }
+h3 { font-size: 1.15rem; font-weight: 500; }
+p { margin: 0; max-width: 68ch; }
+a { color: var(--accent); }
+section { display: grid; gap: 18px; min-width: 0; }
+.eyebrow { font: 500 0.75rem/1 var(--f-mono); letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
+.lede { font-size: 1.12rem; color: var(--muted); }
+code, .mono { font-family: var(--f-mono); font-size: 0.86em; }
+code { background: var(--code-bg); padding: 1px 5px; border-radius: 4px; }
+pre { background: var(--code-bg); padding: 14px 16px; border-radius: 8px; overflow-x: auto; margin: 0; font: 0.82rem/1.55 var(--f-mono); }
+nav.toc { display: flex; flex-wrap: wrap; gap: 8px 18px; font-size: 0.9rem; border-block: 1px solid var(--line); padding-block: 12px; }
+nav.toc a { color: var(--muted); text-decoration: none; }
+nav.toc a:hover, nav.toc a:focus-visible { color: var(--accent); text-decoration: underline; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+/* headline figures: these four numbers are the point of the summary */
+.figures { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 12px; }
+.fig { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 16px; display: grid; gap: 4px; align-content: start; }
+.fig .k { font-size: 0.8rem; color: var(--muted); }
+.fig .v { font: 700 1.9rem/1.1 var(--f-display); font-variant-numeric: tabular-nums; }
+.fig .vs { font-size: 0.85rem; color: var(--muted); font-variant-numeric: tabular-nums; }
+
+/* timeline: a real chronology, so numbered */
+ol.timeline { list-style: none; margin: 0; padding: 0; display: grid; gap: 0; counter-reset: step; }
+ol.timeline > li { counter-increment: step; display: grid; grid-template-columns: 44px 1fr; gap: 14px; padding-block: 16px; border-top: 1px solid var(--line); }
+ol.timeline > li::before { content: counter(step, decimal-leading-zero); font: 500 0.95rem/1.6 var(--f-mono); color: var(--accent); }
+ol.timeline > li > div { display: grid; gap: 8px; min-width: 0; }
+.when { font: 500 0.72rem/1 var(--f-mono); color: var(--muted); letter-spacing: 0.06em; text-transform: uppercase; }
+ul.tight { margin: 0; padding-left: 1.1em; display: grid; gap: 4px; }
+
+.pill { display: inline-block; font: 600 0.72rem/1 var(--f-mono); letter-spacing: 0.04em; text-transform: uppercase; padding: 4px 7px; border-radius: 999px; white-space: nowrap; }
+.pill.good { background: var(--good-soft); color: var(--good); }
+.pill.bad { background: var(--bad-soft); color: var(--bad); }
+.pill.warn { background: var(--warn-soft); color: var(--warn); }
+.pill.neutral { background: var(--code-bg); color: var(--muted); }
+
+.tablebox { overflow-x: auto; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); }
+table { border-collapse: collapse; width: 100%; font-size: 0.88rem; }
+th, td { text-align: left; padding: 9px 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
+th { font-weight: 600; color: var(--muted); font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.04em; white-space: nowrap; }
+tr:last-child td { border-bottom: 0; }
+td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; font-family: var(--f-mono); font-size: 0.84rem; white-space: nowrap; }
+tr.hl td { background: var(--accent-soft); }
+tr.hl td:first-child { font-weight: 600; }
+
+/* charts: one measure each, Jev highlighted, others neutral, value labels direct */
+.charts { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; }
+.chart { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 16px; display: grid; gap: 10px; min-width: 0; }
+.chart h3 { font-size: 0.98rem; }
+.chart .note { font-size: 0.78rem; color: var(--muted); }
+.row { display: grid; grid-template-columns: 112px 1fr 58px; gap: 8px; align-items: center; font-size: 0.8rem; }
+.row .lab { color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.row.jev .lab { color: var(--ink); font-weight: 600; }
+.track { height: 14px; position: relative; }
+.track::before { content: ""; position: absolute; inset: 6px 0 auto 0; height: 1px; background: var(--line); }
+.bar { position: relative; height: 14px; border-radius: 0 4px 4px 0; background: var(--bar); min-width: 2px; }
+.row.jev .bar { background: var(--accent); }
+.row .val { text-align: right; font: 500 0.78rem var(--f-mono); font-variant-numeric: tabular-nums; }
+.row:hover .bar, .row:focus-within .bar { filter: brightness(1.12); }
+
+.ledger { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 12px; }
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 16px; display: grid; gap: 8px; align-content: start; min-width: 0; }
+.card h3 { font-size: 1rem; }
+.card p { font-size: 0.92rem; color: var(--muted); }
+.card .delta { font: 500 0.8rem var(--f-mono); color: var(--ink); }
+
+.example { display: grid; gap: 14px; }
+.logline { font: 0.8rem/1.5 var(--f-mono); background: var(--code-bg); border-left: 3px solid var(--bad); padding: 10px 12px; border-radius: 0 6px 6px 0; overflow-x: auto; white-space: pre; }
+.probs { display: grid; gap: 6px; max-width: 520px; }
+.probs .row { grid-template-columns: 160px 1fr 48px; }
+.callout { border: 1px solid var(--line); background: var(--surface); border-radius: 10px; padding: 16px; display: grid; gap: 6px; }
+.callout.warn { border-color: var(--warn); }
+.small { font-size: 0.85rem; color: var(--muted); }
+pre.mermaid { background: var(--surface); border: 1px solid var(--line); text-align: center; }
+footer { font-size: 0.85rem; color: var(--muted); border-top: 1px solid var(--line); padding-top: 16px; display: grid; gap: 6px; }
+@media (max-width: 520px) { .row { grid-template-columns: 86px 1fr 50px; } .probs .row { grid-template-columns: 120px 1fr 44px; } ol.timeline > li { grid-template-columns: 34px 1fr; } }
+@media (prefers-reduced-motion: no-preference) { .bar { transition: filter .15s; } }
+</style>
+
+<div class="wrap">
+
+<header style="display:grid;gap:16px">
+  <div class="eyebrow">Jev × SereneDB · experiment 001 · Loghub Hadoop · dev split · Oct 9–11, 2026</div>
+  <h1>Can a decision model explain why a job failed?</h1>
+  <p class="lede">We built a small, fully traced pipeline that answers an engineer's question, <em>"Why did Hadoop job X fail?"</em>, from logs alone. SereneDB finds and counts the evidence, Jev (TypeSafe's System One model) makes the judgment, and every claim can be followed back to SQL and raw log lines. This report covers every decision we made on the way, what worked, what didn't, and what changed because of it.</p>
+  <nav class="toc" aria-label="Sections">
+    <a href="#summary">Summary</a><a href="#setup">Setup decisions</a><a href="#pipeline">Pipeline</a><a href="#timeline">What happened</a>
+    <a href="#ledger">What worked</a><a href="#results">Results</a><a href="#example">One example</a><a href="#glossary">Glossary</a><a href="#next">Next</a>
+  </nav>
+</header>
+
+<section id="summary">
+  <div class="eyebrow">Summary · fair, mirrored comparison · dev and held-out</div>
+  <h2>On new data, Jev was fastest and cheapest but least accurate</h2>
+  <div class="figures">
+    <div class="fig"><span class="k">Held-out macro-F1 · Jev</span><span class="v">0.32</span><span class="vs">LLM same input 0.42 · LLM raw logs 0.54 · classifier 0.66</span></div>
+    <div class="fig"><span class="k">Dev macro-F1 · Jev</span><span class="v">0.51</span><span class="vs">LLM same input 0.49 · a tie on the tuning set</span></div>
+    <div class="fig"><span class="k">Median latency (held-out)</span><span class="v">242 ms</span><span class="vs">LLM 1,809 ms · raw-logs LLM 1,462 ms</span></div>
+    <div class="fig"><span class="k">Cost per 1,000 questions</span><span class="v">$0.08</span><span class="vs">LLM $1.37 · raw-logs LLM $6.01</span></div>
+  </div>
+  <p>We tuned on 105 dev questions and tested once on 80 held-out questions (20 jobs, including fault situations dev never had). Every variant ran on <strong>both</strong> Jev and a fast LLM with identical evidence, verified per question. On dev, Jev and the LLM tied on accuracy and Jev was better calibrated. <strong>On held-out the evidence setup we tuned on dev did not generalize:</strong> Jev fell to 0.32 macro-F1, below the LLM on the same input (0.42), the LLM on raw logs (0.54) and a classifier trained on dev (0.66). Jev stayed 7–8× faster and about 18× cheaper. This report shows every decision that led here, including the ones that didn't work.</p>
+</section>
+
+<section id="setup">
+  <div class="eyebrow">Before any code</div>
+  <h2>The decisions that shaped the experiment</h2>
+  <div class="tablebox"><table>
+    <thead><tr><th>Decision</th><th>What we chose</th><th>Why</th></tr></thead>
+    <tbody>
+      <tr><td>Product reading of the brief</td><td>Question → evidence → recommendation; interactive Q&amp;A first; all three roles in the final demo</td><td>The brief starts from a question and asks for "reliable summaries"</td></tr>
+      <tr><td>Reliability rule</td><td>Every number comes from SQL; every confidence is computed; every claim cites evidence; "don't know" beats a guess</td><td>An LLM's stated confidence is closer to a guess; Jev's is derived from a probability distribution</td></tr>
+      <tr><td>Lean rule</td><td>A component stays only if an ablation shows it helps</td><td>Avoid a pipeline full of parts that don't move the numbers</td></tr>
+      <tr><td>Generalization rule</td><td>Only generic deterministic steps (masks, counts); the question never gates evidence</td><td>Anyone's logs should work without hand-written rules</td></tr>
+      <tr><td>Input format</td><td>OpenTelemetry logs over OTLP into SereneDB's <code>otel_logs</code></td><td>Standard input contract; any OTel app can plug in</td></tr>
+      <tr><td>Data model</td><td>Four bricks: Pattern → Evidence → Verdict → Finding</td><td>Every answer is built from parts you can click through</td></tr>
+      <tr><td>Dataset</td><td>OpenRCA rejected as main (faults show mostly in metrics); Loghub Hadoop as warm-up, GAIA main, BGL for calibration</td><td>Log-only data with known answers</td></tr>
+      <tr><td>Models</td><td>Jev pinned to <code>jev-1.13.0</code>; baseline LLM <code>gemini-3.8-flash</code> with thinking off</td><td>Default thinking took 18 s for a one-word answer; thinking off took 2.5 s, a fair latency class</td></tr>
+      <tr><td>Evaluation discipline</td><td>Dev for tuning, held-out touched once; Claude is blocked from held-out data by a hook</td><td>Numbers we can trust; no tuning on the test set</td></tr>
+      <tr><td>Workflow</td><td>Every experiment gets a written plan, approved before work, on its own branch</td><td>Nothing drifts outside the guardrails</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<section id="pipeline">
+  <div class="eyebrow">How it works</div>
+  <h2>Four bricks, each one traced</h2>
+  <pre class="mermaid">
+flowchart LR
+  L[Raw Hadoop logs] --> P1[Parse + Drain3 patterns] --> O[(SereneDB otel_logs via OTLP)]
+  Q[Question: why did job X fail?] --> B1
+  O --> B1[1 Pattern: SQL counts, rarity, job facts]
+  B1 --> B2[2 Evidence: rank + numbers to words]
+  B2 --> B3[3 Verdict: one Jev request]
+  B3 --> B4[4 Finding: answer, confidence, badge, citation]
+  </pre>
+  <div class="tablebox"><table>
+    <thead><tr><th>Brick</th><th>Tool</th><th>What it does</th><th class="num">Time</th></tr></thead>
+    <tbody>
+      <tr><td>Ingest</td><td>Python, Drain3, OTLP</td><td>Parse lines, glue stack traces, mask variable parts (IDs, IPs, numbers) so lines collapse into templates. 115,455 dev lines became 245 patterns.</td><td class="num">once</td></tr>
+      <tr><td>1 Pattern</td><td>SereneDB SQL</td><td>For the job in the question: its patterns with counts, containers affected, first time seen, how many of the 35 jobs share each pattern, job duration</td><td class="num">~15 ms</td></tr>
+      <tr><td>2 Evidence</td><td>Python</td><td>Pick and rank up to 12 items; turn numbers into words Jev reads well: "rare: seen in 3 of 35 jobs", "early in the job", "3.1× longer than a typical job"</td><td class="num">~0 ms</td></tr>
+      <tr><td>3 Verdict</td><td>Jev</td><td>One request, two questions in parallel: which of 4 classes, and which evidence item proves it (evidence inside the choices)</td><td class="num">~230 ms</td></tr>
+      <tr><td>4 Finding</td><td>Python</td><td>Answer card: class, computed confidence, "auto" or "needs review" badge, cited log pattern</td><td class="num">~0 ms</td></tr>
+    </tbody>
+  </table></div>
+  <p class="small">Every step writes its full input and output to a <code>traces</code> table. A Streamlit dashboard shows each question's path through the bricks next to every baseline's exact prompt and reply.</p>
+</section>
+
+<section id="timeline">
+  <div class="eyebrow">Chronology</div>
+  <h2>What we tried, in order</h2>
+  <ol class="timeline">
+    <li><div>
+      <span class="when">Setup</span>
+      <h3>Learned the tools, then made them talk to each other</h3>
+      <p>Pulled the full Jev and SereneDB docs into the repo. Found that SereneDB can call Jev straight from SQL (<code>ai_system_one</code>) and accepts OpenTelemetry logs natively. Measured Jev from SQL: 9 log templates × 4 questions in 313 ms.</p>
+    </div></li>
+    <li><div>
+      <span class="when">Setup</span>
+      <h3>Tested which Jev techniques sharpen answers</h3>
+      <ul class="tight">
+        <li><span class="pill good">worked</span> Evidence inside the choices: picked the root-cause log template at 0.92 confidence in 457 ms</li>
+        <li><span class="pill good">worked</span> Many questions in one request: 1 → 11 questions added only ~30 ms</li>
+        <li><span class="pill good">worked</span> Structured yes/no definitions with examples: gap between "yes" and "no" probabilities grew from 0.49 to 0.84</li>
+        <li><span class="pill neutral">fine</span> Option order and repeats were already stable</li>
+      </ul>
+    </div></li>
+    <li><div>
+      <span class="when">Experiment design</span>
+      <h3>Split the data so the held-out set contains new situations</h3>
+      <p>55 jobs grouped by cluster run and application. Dev: 35 jobs, 105 questions. Held-out: 20 jobs, 80 questions, including PageRank + network disconnection and PageRank + disk full (never in dev), 11 new templates, and one question wording never used in dev. The split script moved the held-out files away and printed only counts.</p>
+    </div></li>
+    <li><div>
+      <span class="when">Run 1</span>
+      <h3>First results: Jev beat the LLM, but everything was weak</h3>
+      <p>Best Jev variant (A2) reached macro-F1 0.48 vs 0.38 for the LLM (before the fairness fixes below; the fair mirrored number is 0.48 vs 0.34). But accuracy was only 40%. The confusion table showed the reason: <strong>37 of 60 machine-down questions were answered "normal"</strong>.</p>
+      <ul class="tight">
+        <li><span class="pill good">worked</span> Class definitions with "covers / does not cover": macro-F1 0.41 → 0.48</li>
+        <li><span class="pill bad">didn't</span> More evidence fields alone (A1): no gain over A0</li>
+        <li><span class="pill bad">didn't</span> Three shuffled option orders (A3): no gain, double the cost. Cut.</li>
+      </ul>
+    </div></li>
+    <li><div>
+      <span class="when">Debugging</span>
+      <h3>Traced one wrong answer to its evidence</h3>
+      <p>A machine-down job's evidence was two lines: one ERROR and one common WARN. Of its 2,735 log lines, the WARN-or-worse filter kept 4. On that evidence, "normal 0.62" was a reasonable judgment. <strong>The problem was the evidence step, not the model.</strong></p>
+    </div></li>
+    <li><div>
+      <span class="when">Fairness audit</span>
+      <h3>Checked whether we were making the LLM's job harder</h3>
+      <p>We were. Jev received full class definitions (definition, what it covers, what it doesn't); the LLM only got one line each. Fixed it, stored the exact LLM prompt in every trace, and re-ran. The LLM did not improve (macro-F1 0.38 → 0.35). On the walkthrough example it still answered "normal" at 0.95, three times out of three.</p>
+    </div></li>
+    <li><div>
+      <span class="when">Engineering</span>
+      <h3>Fixed what the runs exposed</h3>
+      <ul class="tight">
+        <li>LLM calls had no timeout and hung for 10 minutes: added a 60 s timeout and 2 retries</li>
+        <li>Failed calls are recorded as errors and never cached</li>
+        <li>Shuffle seeds used Python's per-run <code>hash()</code>: switched to a stable hash so reruns are identical</li>
+        <li>Hadoop timestamps have no timezone: pinned to UTC</li>
+      </ul>
+    </div></li>
+    <li><div>
+      <span class="when">Diagnosis</span>
+      <h3>Looked for the missing signal in dev data</h3>
+      <p>Rare INFO-level patterns turned out to be strongly tied to failures, and failed jobs ran much longer:</p>
+      <div class="tablebox"><table>
+        <thead><tr><th>INFO pattern (was filtered out)</th><th class="num">Jobs</th><th class="num">Machine down</th></tr></thead>
+        <tbody>
+          <tr><td class="mono">TaskAttempt killed because it ran on unusable node …</td><td class="num">8</td><td class="num">88%</td></tr>
+          <tr><td class="mono">Cannot assign container … NodeId …</td><td class="num">6</td><td class="num">83%</td></tr>
+          <tr><td class="mono">Releasing unassigned and invalid container …</td><td class="num">3</td><td class="num">100%</td></tr>
+        </tbody>
+      </table></div>
+      <p class="small">Median job duration: normal 7.6 min, network disconnection 12.7, disk full 20.0, machine down 27.5. Labels were used only for this diagnosis, never by the pipeline.</p>
+    </div></li>
+    <li><div>
+      <span class="when">Fairness</span>
+      <h3>Made every comparison mirrored</h3>
+      <p>Until here, variants A0–A3 had only been measured on Jev, and the LLM only saw the frozen variant's evidence. The goal is a fair comparison, not a Jev win, so every variant now runs on both models with identical evidence, identical class options and the same shuffled orders. The dashboard shows both models' exact inputs side by side with an automatic identical-input check, and variants are frozen by the average score of both models.</p>
+    </div></li>
+    <li><div>
+      <span class="when">Amendment A4</span>
+      <h3>Changed the evidence step, kept everything else</h3>
+      <p>Evidence now means "unusual for this job": patterns seen in at most 25% of jobs at any severity, plus all WARN-or-worse, ranked rarest first; and the job's duration compared with the typical job. Generic, label-free, no Hadoop rules.</p>
+      <ul class="tight">
+        <li><span class="pill good">worked</span> Jev macro-F1 0.48 → 0.51, Brier 1.01 → 0.84</li>
+        <li><span class="pill good">worked</span> The LLM gained even more: 0.34 → 0.49 (fair mirrored run, A2 → A4). The evidence step matters most for both.</li>
+        <li><span class="pill warn">mixed</span> Rare INFO lines also bring noise: "lack of space for maps" (scheduler slots) made Jev say "disk full" on one example</li>
+      </ul>
+    </div></li>
+    <li><div>
+      <span class="when">Amendment 3 · confidence</span>
+      <h3>Looked for any signal that makes "auto" answers safe</h3>
+      <p>Re-scored the existing answers of both models offline with seven confidence signals: computed confidence, top probability, top-two margin, citation confidence, answer/citation consistency, shuffle agreement and agreement across question wordings. None reaches 90% accuracy at any coverage, for either model. Jev ranks its own answers better (its most confident third is 54% right vs 37%).</p>
+      <p>The cause is in the data: 5 jobs labelled machine down or disk full show no trace of the fault in their logs. <strong>Both models answer "normal" on all 15 of their questions</strong>, with high confidence. On that evidence, "normal" is the honest reading. Decision: keep the current confidence and re-test on GAIA.</p>
+    </div></li>
+    <li><div>
+      <span class="when">Held-out · run once</span>
+      <h3>Tested the frozen setup on 20 unseen jobs</h3>
+      <p>Frozen setup A4, identical input for Jev and the LLM (verified 80/80), plus the raw-logs LLM, the rules and a classifier trained on all dev jobs. Claude never saw the held-out data; the script printed aggregates only.</p>
+      <ul class="tight">
+        <li><span class="pill bad">didn't hold</span> Jev 0.51 → 0.32 macro-F1; LLM on the same input 0.49 → 0.42</li>
+        <li><span class="pill good">surprise</span> LLM on raw logs 0.38 → 0.54, classifier 0.48 → 0.66</li>
+        <li><span class="pill warn">reading</span> our evidence selection was tuned on dev and seems to discard information on new data; the held-out set also has situations dev never had, and only 20 jobs</li>
+        <li><span class="pill bad">split flaw</span> found afterwards: held-out was 100% PageRank while dev was 71% WordCount, and the duration comparison ignored job type (normal PageRank jobs run about 4.9 min vs 13.1 for WordCount). Failing PageRank jobs could look "shorter than typical", which reads like "normal".</li>
+      </ul>
+    </div></li>
+  </ol>
+</section>
+
+<section id="ledger">
+  <div class="eyebrow">Ledger · effect on each model</div>
+  <h2>Which techniques made it work better, and for whom</h2>
+  <div class="ledger">
+    <div class="card"><span class="pill good">both</span><h3>Rarity-first evidence (A4)</h3><p>Pick what's unusual for this job across the corpus, at any severity, plus duration vs typical. The same idea as inverse document frequency.</p><span class="delta">Jev 0.48 → 0.51 · LLM 0.34 → 0.49</span></div>
+    <div class="card"><span class="pill good">both</span><h3>Structured class definitions</h3><p>Each option says what it covers and what it doesn't. Boundaries need to be written down, Jev reads literally.</p><span class="delta">Jev 0.43 → 0.48 · LLM 0.31 → 0.34</span></div>
+    <div class="card"><span class="pill warn">Jev only</span><h3>Richer evidence fields</h3><p>Timing, rarity and an example line per item. Small gain for Jev, a large loss for the LLM, which latched onto the extra text.</p><span class="delta">Jev 0.41 → 0.43 · LLM 0.44 → 0.31</span></div>
+    <div class="card"><span class="pill good">design</span><h3>Numbers turned into words</h3><p>SQL computes counts and times; Python phrases them ("rare: 3 of 35 jobs", "3.1× longer"). Both models get the same words.</p><span class="delta">shared input, not ablated</span></div>
+    <div class="card"><span class="pill good">Jev</span><h3>Evidence inside the choices</h3><p>The evidence items are the options of a second Choice question, so Jev selects its citation instead of writing one.</p><span class="delta">every answer cites a line</span></div>
+    <div class="card"><span class="pill good">Jev</span><h3>Computed confidence</h3><p>Jev's confidence comes from its probability distribution and is better calibrated in every variant. The LLM states numbers like 0.90 on wrong answers.</p><span class="delta">Brier 0.84 vs 0.92 · ECE 0.32 vs 0.43</span></div>
+    <div class="card"><span class="pill bad">neither</span><h3>Shuffled option orders</h3><p>Three extra orders per question. No gain for Jev; for the LLM 4× the calls and an 11 s median.</p><span class="delta">cut</span></div>
+    <div class="card"><span class="pill bad">neither</span><h3>WARN-or-worse evidence filter</h3><p>Kept about 4 of 2,700 lines per job and hid the failure signal in INFO lines.</p><span class="delta">replaced by A4</span></div>
+    <div class="card"><span class="pill bad">didn't</span><h3>Raw logs to an LLM</h3><p>More text, more ways to latch onto the wrong signal, 70× Jev's cost.</p><span class="delta">macro-F1 0.38 · $5.51 / 1k</span></div>
+    <div class="card"><span class="pill bad">neither</span><h3>Alternative confidence signals</h3><p>Top probability, margins, citation consistency, shuffle and wording agreement. None makes "auto" answers 90% accurate for either model; the blocker is failure labels with no trace in the logs.</p><span class="delta">AURC Jev 0.42–0.45 · LLM 0.51–0.53</span></div>
+  </div>
+</section>
+
+<section id="results">
+  <div class="eyebrow">Results · dev, 105 questions · fair, mirrored</div>
+  <h2>Every variant on both models, then the frozen setup against every baseline</h2>
+  <div class="charts" id="charts"></div>
+  <div class="tablebox"><table>
+    <thead><tr><th>Variant</th><th class="num">Jev F1</th><th class="num">LLM F1</th><th class="num">Jev Brier</th><th class="num">LLM Brier</th><th class="num">Jev ECE</th><th class="num">LLM ECE</th></tr></thead>
+    <tbody>
+      <tr><td>A0 · basic evidence, label names</td><td class="num">0.41</td><td class="num">0.44</td><td class="num">0.95</td><td class="num">1.14</td><td class="num">0.36</td><td class="num">0.55</td></tr>
+      <tr><td>A1 · + timing, rarity, example line</td><td class="num">0.43</td><td class="num">0.31</td><td class="num">1.02</td><td class="num">1.28</td><td class="num">0.45</td><td class="num">0.64</td></tr>
+      <tr><td>A2 · + structured definitions</td><td class="num">0.48</td><td class="num">0.34</td><td class="num">1.01</td><td class="num">1.29</td><td class="num">0.43</td><td class="num">0.64</td></tr>
+      <tr><td>A3 · + 3 shuffled orders</td><td class="num">0.48</td><td class="num">0.37</td><td class="num">1.01</td><td class="num">1.27</td><td class="num">0.43</td><td class="num">0.63</td></tr>
+      <tr class="hl"><td>A4 · rarity evidence (frozen)</td><td class="num">0.51</td><td class="num">0.49</td><td class="num">0.84</td><td class="num">0.92</td><td class="num">0.32</td><td class="num">0.43</td></tr>
+    </tbody>
+  </table></div>
+  <div class="tablebox"><table>
+    <thead><tr><th>Frozen setup (A4) vs baselines</th><th class="num">Accuracy</th><th class="num">Macro-F1</th><th class="num">95% CI</th><th class="num">Brier</th><th class="num">ECE</th><th class="num">p50</th><th class="num">$ / 1k</th></tr></thead>
+    <tbody>
+      <tr class="hl"><td>Jev</td><td class="num">0.48</td><td class="num">0.51</td><td class="num">0.39–0.59</td><td class="num">0.84</td><td class="num">0.32</td><td class="num">233 ms</td><td class="num">0.08</td></tr>
+      <tr><td>LLM, identical input</td><td class="num">0.48</td><td class="num">0.49</td><td class="num">0.39–0.59</td><td class="num">0.92</td><td class="num">0.43</td><td class="num">1,863 ms</td><td class="num">1.33</td></tr>
+      <tr><td>LLM, raw logs</td><td class="num">0.33</td><td class="num">0.38</td><td class="num">0.27–0.46</td><td class="num">1.20</td><td class="num">0.59</td><td class="num">1,927 ms</td><td class="num">5.51</td></tr>
+      <tr><td>Classifier, stratified 5-fold</td><td class="num">0.57</td><td class="num">0.48</td><td class="num">0.37–0.58</td><td class="num">0.65</td><td class="num">0.22</td><td class="num">~0</td><td class="num">0 *</td></tr>
+      <tr><td>Classifier, leave-one-run-out</td><td class="num">0.43</td><td class="num">0.23</td><td class="num">0.18–0.28</td><td class="num">0.84</td><td class="num">0.12</td><td class="num">~0</td><td class="num">0 *</td></tr>
+      <tr><td>Keyword rules</td><td class="num">0.57</td><td class="num">0.36</td><td class="num">0.25–0.45</td><td class="num">0.86</td><td class="num">0.43</td><td class="num">0</td><td class="num">0</td></tr>
+    </tbody>
+  </table></div>
+  <p class="small">* The classifier needs labelled training data from the same environment. Competitive when trained on similar runs (0.48), it collapses on unseen situations (0.23). Keyword rules reach 0.57 accuracy mostly by always answering "machine down"; their macro-F1 is 0.36.</p>
+  <div class="tablebox"><table>
+    <thead><tr><th>Consistency (frozen setup)</th><th class="num">Jev</th><th class="num">LLM</th></tr></thead>
+    <tbody>
+      <tr><td>Same answer across 3 repeated runs</td><td class="num">0.91</td><td class="num">0.89</td></tr>
+      <tr><td>Same answer across question wordings</td><td class="num">0.91</td><td class="num">0.71</td></tr>
+      <tr><td>Same answer across shuffled option orders (A3)</td><td class="num">0.96</td><td class="num">0.88</td></tr>
+    </tbody>
+  </table></div>
+  <h3>Held-out (run once, 80 questions)</h3>
+  <div class="tablebox"><table>
+    <thead><tr><th>System</th><th class="num">Accuracy</th><th class="num">Macro-F1</th><th class="num">95% CI</th><th class="num">Brier</th><th class="num">ECE</th><th class="num">p50</th><th class="num">$ / 1k</th></tr></thead>
+    <tbody>
+      <tr class="hl"><td>Jev A4 (frozen)</td><td class="num">0.33</td><td class="num">0.32</td><td class="num">0.22–0.41</td><td class="num">1.03</td><td class="num">0.50</td><td class="num">242 ms</td><td class="num">0.08</td></tr>
+      <tr><td>LLM, identical input</td><td class="num">0.41</td><td class="num">0.42</td><td class="num">0.31–0.52</td><td class="num">1.06</td><td class="num">0.52</td><td class="num">1,809 ms</td><td class="num">1.37</td></tr>
+      <tr><td>LLM, raw logs</td><td class="num">0.53</td><td class="num">0.54</td><td class="num">0.42–0.66</td><td class="num">0.86</td><td class="num">0.42</td><td class="num">1,462 ms</td><td class="num">6.01</td></tr>
+      <tr><td>Classifier, trained on all dev</td><td class="num">0.65</td><td class="num">0.66</td><td class="num">0.53–0.75</td><td class="num">0.64</td><td class="num">0.33</td><td class="num">~0</td><td class="num">0 *</td></tr>
+      <tr><td>Keyword rules</td><td class="num">0.40</td><td class="num">0.27</td><td class="num">0.20–0.33</td><td class="num">1.20</td><td class="num">0.60</td><td class="num">0</td><td class="num">0</td></tr>
+    </tbody>
+  </table></div>
+  <div class="tablebox"><table>
+    <thead><tr><th>Success criterion (set before running)</th><th>Dev</th><th>Held-out</th></tr></thead>
+    <tbody>
+      <tr><td>H1 · Jev macro-F1 within 0.05 of the LLM</td><td><span class="pill good">met</span> 0.51 vs 0.49</td><td><span class="pill bad">not met</span> 0.32 vs 0.42</td></tr>
+      <tr><td>H2 · Jev Brier score at or below the LLM's</td><td><span class="pill good">met</span> 0.84 vs 0.92</td><td><span class="pill warn">even</span> 1.03 vs 1.06</td></tr>
+      <tr><td>H3 · at least 5× faster and 5× cheaper</td><td><span class="pill good">met</span> 8×, 17×</td><td><span class="pill good">met</span> 7.5×, 18×</td></tr>
+      <tr><td>H4 · 90% accuracy on "auto" answers, covering 60%+</td><td><span class="pill bad">not met</span></td><td><span class="pill bad">not met</span></td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<section id="example">
+  <div class="eyebrow">One question, end to end</div>
+  <h2>Where Jev was right and the LLM was confidently wrong (variant A2)</h2>
+  <div class="example">
+    <p><strong>Question:</strong> "Why did Hadoop job <code>application_1445062781478_0015</code> fail?" · <strong>Truth:</strong> machine down. Run A2.</p>
+    <p>Out of 2,735 lines, SQL found two WARN-or-worse patterns. One was common (in 30 of 35 jobs). The other was rare (7 of 35) and appeared early:</p>
+    <div class="logline">2015-10-17 15:45:59,146 ERROR [RMCommunicator Allocator] RMContainerAllocator:
+Container complete event for unknown container id container_1445062781478_0015_01_000012</div>
+    <p>Of the 7 dev jobs with this line, 6 are machine-down jobs: when a machine dies, the scheduler hears about containers it can no longer match. Jev's answer, with the probabilities it returned:</p>
+    <div class="probs" role="img" aria-label="Jev root cause probabilities: machine down 0.83, normal 0.13, network disconnection 0.02, disk full 0.02">
+      <div class="row jev"><span class="lab">machine down</span><div class="track"><div class="bar" style="width:83%"></div></div><span class="val">0.83</span></div>
+      <div class="row"><span class="lab">normal</span><div class="track"><div class="bar" style="width:13%"></div></div><span class="val">0.13</span></div>
+      <div class="row"><span class="lab">network disconnection</span><div class="track"><div class="bar" style="width:2%"></div></div><span class="val">0.02</span></div>
+      <div class="row"><span class="lab">disk full</span><div class="track"><div class="bar" style="width:2%"></div></div><span class="val">0.02</span></div>
+    </div>
+    <div class="tablebox"><table>
+      <thead><tr><th>System</th><th>Answer</th><th class="num">Confidence</th><th class="num">Latency</th><th class="num">Cost</th></tr></thead>
+      <tbody>
+        <tr class="hl"><td>Jev</td><td>machine down <span class="pill good">right</span>, cites the ERROR line</td><td class="num">0.77 computed</td><td class="num">236 ms</td><td class="num">$0.00005</td></tr>
+        <tr><td>LLM, same evidence and definitions</td><td>normal <span class="pill bad">wrong</span>, cites nothing</td><td class="num">0.95 stated, ×3 runs</td><td class="num">4,297 ms</td><td class="num">$0.0012</td></tr>
+        <tr><td>LLM, raw logs</td><td>network disconnection <span class="pill bad">wrong</span></td><td class="num">0.85 stated</td><td class="num">2,158 ms</td><td class="num">$0.0038</td></tr>
+      </tbody>
+    </table></div>
+    <div class="callout warn"><strong>The same example under A4 (frozen)</strong><p class="small">A4 also brings in a rare INFO line, "Going to preempt … due to lack of space for maps". Jev read "space" literally and answered disk full, at low confidence (0.36), so the answer card says "needs review". The LLM, given the identical input, answered normal at a stated 0.90. Both are wrong here; only one of them says it isn't sure.</p></div>
+  </div>
+</section>
+
+<section id="glossary">
+  <div class="eyebrow">Glossary</div>
+  <h2>Every label in this report</h2>
+  <div class="tablebox"><table>
+    <thead><tr><th>Term</th><th>Meaning</th></tr></thead>
+    <tbody>
+      <tr><td>A0–A4</td><td>Variants, each run on both Jev and the LLM with identical input. Each changes one thing: A0 minimal evidence and label names; A1 adds timing, rarity and an example line; A2 adds structured class definitions; A3 adds shuffled option orders; A4 switches evidence to rarity-first at any severity, plus duration vs typical</td></tr>
+      <tr><td>B1–B4</td><td>Baselines. B1 the LLM on Jev's exact evidence for each variant; B2 the LLM on raw log lines; B3 a TF-IDF + logistic regression classifier on pattern counts; B4 hand-written keyword rules</td></tr>
+      <tr><td>Ablation</td><td>Change one component at a time and measure its effect</td></tr>
+      <tr><td>Template / pattern</td><td>A log line with its variable parts masked, e.g. <code>Container complete event for unknown container id &lt;ID&gt;</code>. Mined with Drain3</td></tr>
+      <tr><td>Rarity</td><td>In how many jobs a pattern appears. Rare patterns carry more information (the idea behind inverse document frequency)</td></tr>
+      <tr><td>Macro-F1</td><td>F1 computed for each class and averaged equally. Used because classes are imbalanced: machine down is 57% of dev</td></tr>
+      <tr><td>Brier score</td><td>Squared error between predicted probabilities and the truth. 0 is perfect, 2 is confidently wrong. Rewards being right and honest about uncertainty</td></tr>
+      <tr><td>ECE</td><td>Expected calibration error: when a system says 80%, how far is it from being right 80% of the time</td></tr>
+      <tr><td>Selective accuracy</td><td>Accuracy on the questions answered automatically, above a confidence threshold</td></tr>
+      <tr><td>95% CI</td><td>Bootstrap interval: the metric recomputed on 1,000 resamples of the questions</td></tr>
+      <tr><td>Stratified / leave-one-run-out CV</td><td>Two ways to test the classifier: folds that keep class balance, or holding out a whole cluster run it never trained on</td></tr>
+    </tbody>
+  </table></div>
+  <p class="small">Full explanations, formulas and references (Drain, Loghub, Brier, ECE, selective prediction, LLM verbalized confidence, option-order bias) are in <code>docs/PIPELINE.md</code>.</p>
+</section>
+
+<section id="next">
+  <div class="eyebrow">Next</div>
+  <h2>What we take into experiment 002 (GAIA)</h2>
+  <ul class="tight">
+    <li><strong>Stratify the split by job type or service</strong> and compare each job with its own kind (per-service baselines), not with the whole corpus.</li>
+    <li><strong>Choose evidence settings with grouped cross-validation on dev,</strong> not one dev score; the single-score choice overfit here.</li>
+    <li><strong>Explore Jev's question design</strong> beyond two fixed questions: an explicit "can't tell" option, fault-or-not first, symptom-level yes/no questions, a judgment per evidence item, graded scores, a broader generic fault taxonomy, choosing the culprit service from data, and several wordings averaged. Every design is mirrored for the LLM.</li>
+    <li><strong>Compare evidence selection against raw logs early.</strong> On new data the raw-logs LLM beat our selected evidence, so selection must prove it keeps the useful information.</li>
+    <li><strong>Keep the trained classifier as an honest reference.</strong> It was the strongest system on held-out, though it needs labelled data from the same environment.</li>
+    <li><strong>Add cross-job and time-window evidence</strong> (what other jobs and services saw at the same time), and use GAIA's service-level fault labels.</li>
+    <li><strong>Re-test "auto" answers (H4)</strong> once evidence and labels line up.</li>
+  </ul>
+</section>
+
+<footer>
+  <span>Source: branch <code>exp/001-hadoop-minimal</code> · plan <code>plans/001-hadoop-minimal.md</code> · results <code>runs/001/dev_results.md</code> · walkthrough <code>runs/001/walkthrough.md</code></span>
+  <span>Models: Jev <code>jev-1.13.0</code>, Gemini <code>gemini-3.8-flash</code> with thinking off. Gemini cost uses an assumed list price. Dev numbers come from the tuning split; held-out numbers from one final run.</span>
+</footer>
+</div>
+
+<script>
+/* One measure per chart; Jev highlighted, others neutral. Bars share a zero baseline. */
+const charts = [
+  { title: "Macro-F1 · frozen setup", note: "higher is better", max: 0.6, fmt: v => v.toFixed(2), data: [
+    ["Jev", 0.506, 1], ["LLM same input", 0.494], ["Classifier (strat.)", 0.482], ["LLM raw logs", 0.375], ["Rules", 0.360] ] },
+  { title: "Brier score · frozen setup", note: "lower is better · 0 = perfect", max: 1.3, fmt: v => v.toFixed(2), data: [
+    ["Jev", 0.836, 1], ["LLM same input", 0.924], ["Classifier (strat.)", 0.649], ["LLM raw logs", 1.196], ["Rules", 0.857] ] },
+  { title: "Median latency (ms)", note: "lower is better · per question", max: 2000, fmt: v => Math.round(v).toLocaleString(), data: [
+    ["Jev", 233, 1], ["LLM same input", 1863], ["LLM raw logs", 1927] ] },
+  { title: "Cost per 1,000 questions ($)", note: "lower is better", max: 6, fmt: v => "$" + v.toFixed(2), data: [
+    ["Jev", 0.079, 1], ["LLM same input", 1.328], ["LLM raw logs", 5.513] ] },
+];
+const host = document.getElementById("charts");
+for (const c of charts) {
+  const el = document.createElement("figure");
+  el.className = "chart"; el.style.margin = "0";
+  el.innerHTML = `<h3>${c.title}</h3><span class="note">${c.note}</span>`;
+  for (const [name, v, jev] of c.data) {
+    const row = document.createElement("div");
+    row.className = "row" + (jev ? " jev" : "");
+    row.title = `${name}: ${c.fmt(v)}`;
+    row.tabIndex = 0;
+    row.innerHTML = `<span class="lab">${name}</span><div class="track"><div class="bar" style="width:${Math.max(0.5, v / c.max * 100)}%"></div></div><span class="val">${c.fmt(v)}</span>`;
+    el.appendChild(row);
+  }
+  host.appendChild(el);
+}
+</script>

@@ -1,0 +1,252 @@
+---
+title: Maintenance & Introspection
+sidebar_position: 12
+split: headings
+---
+
+import SqlLogicTest from "@site/src/components/SqlLogicTest";
+import DocCallout from "@site/src/components/DocCallout";
+
+An inverted index is **eventually consistent**. Writes to the base table are buffered and become searchable only after the index is *refreshed*; segments are *compacted* in the background to keep queries fast; and per-term statistics used by scorers can be *recomputed*. This page covers that lifecycle and how to inspect an index.
+
+```mermaid
+flowchart LR
+    w["INSERT / UPDATE / DELETE"] --> buf["pending writes"]
+    buf -->|refresh| vis["searchable"]
+    vis -->|compaction| merged["fewer, larger segments"]
+```
+
+## Visibility and the refresh model
+
+A newly written row is not searchable until a refresh publishes it to readers. There are two ways a refresh happens:
+
+- **Automatically** — a background thread refreshes each index on an interval (`refresh_interval`, default 1000 ms).
+- **Explicitly** — run `VACUUM (REFRESH_TABLE)` to publish pending writes immediately. This is what you want right after a bulk load, before querying:
+
+```sql
+VACUUM (REFRESH_TABLE) my_logs;
+
+SELECT id FROM logs_idx WHERE msg @@ 'disk' ORDER BY id;
+-- result:
+id
+1
+```
+
+## Background intervals
+
+Three `WITH` options control the background lifecycle of an inverted index (set at `CREATE INDEX`) and of a search table (set at `CREATE TABLE … WITH (storage = 'search', …)`); `0` disables each:
+
+| Option | Default | Controls |
+|---|---|---|
+| `refresh_interval` | `1000` | Milliseconds between automatic refreshes |
+| `compaction_interval` | `1000` | Milliseconds between automatic segment compactions |
+| `cleanup_interval_step` | `1` | Commit ticks between cleanup passes |
+
+View-backed indexes have a fourth interval, `reindex_interval`, which re-scans the view's *source* for new, changed and removed data — see [Refreshing the index](./views.md#refreshing-the-index).
+
+## Background compaction
+
+Compaction is on by default, for inverted indexes and search tables alike: every `compaction_interval` milliseconds a background task merges segments of similar size into larger ones, so a table loaded in many small batches does not keep one segment per batch. Three more `WITH` options shape each merge:
+
+| Option | Default | Controls |
+|---|---|---|
+| `compaction_max_segments` | `10` | Segments merged by one background compaction |
+| `compaction_max_segments_bytes` | `5368709120` (5 GB) | Size budget of one background compaction |
+| `compaction_floor_segment_bytes` | `2097152` (2 MB) | Segments smaller than this count as equal-sized when choosing what to merge |
+
+The session settings of the same names hold the defaults a new index or search table takes.
+
+- **Disable** background compaction with `compaction_interval = 0`, in `WITH` at creation or later with `ALTER INDEX … SET` for an index and [`ALTER TABLE … SET`](../../statements/alter_table/index.md#set--reset-storage-options) for a search table. Segments are then merged only when you ask for it.
+- **Enable** it again, or change how often it runs, the same way with a non-zero interval. `RESET (compaction_interval)` returns to the session default. The change applies to the running background task at once.
+- **Compact manually** at any time, whether background compaction is enabled or not, with `VACUUM (COMPACT_INDEX)` or `VACUUM (COMPACT_TABLE)` — see [below](#manual-maintenance-with-vacuum).
+
+```sql
+ALTER INDEX logs_idx SET (compaction_interval = 0);
+
+ALTER TABLE my_events SET (compaction_interval = 0);
+
+VACUUM (COMPACT_TABLE) my_events;
+
+ALTER TABLE my_events RESET (compaction_interval);
+
+ALTER INDEX logs_idx RESET (compaction_interval);
+```
+
+## Manual maintenance with `VACUUM`
+
+Each operation comes in a family scoped to a single index, a table, a schema, a database, or instance-wide (`*_ALL`, which takes no argument). At most one maintenance option may appear per `VACUUM` statement.
+
+| Operation | Forms | Effect |
+|---|---|---|
+| Refresh | `REFRESH_INDEX` · `REFRESH_TABLE` · `REFRESH_SCHEMA` · `REFRESH_DATABASE` · `REFRESH_ALL` | Publish pending writes to readers |
+| Compact | `COMPACT_INDEX` · `COMPACT_TABLE` · `COMPACT_SCHEMA` · `COMPACT_DATABASE` · `COMPACT_ALL` | Merge segments to reclaim space and speed queries |
+| Recompute statistics | `RECOMPUTE_STATS_COLUMN` · `RECOMPUTE_STATS_TABLE` · `RECOMPUTE_STATS_SCHEMA` · `RECOMPUTE_STATS_DATABASE` · `RECOMPUTE_STATS_ALL` | Rebuild the term statistics used by relevance scoring and planning |
+
+```sql
+VACUUM (COMPACT_TABLE) my_logs;
+```
+
+```sql
+VACUUM (RECOMPUTE_STATS_TABLE) my_logs;
+```
+
+Recompute statistics after large changes in data distribution so that [relevance scores](./ranking.md) and planning stay accurate.
+
+## Refreshing view-backed indexes
+
+A [view- or external-data-backed index](./views.md) holds a snapshot of its source and does not track later changes on its own. `REINDEX INDEX <name>` refreshes it in one pass, incrementally for Iceberg tables and file globs, and the `reindex_interval` index option repeats that pass in the background. See [Refreshing the index](./views.md#refreshing-the-index).
+
+## Schema changes on an indexed table
+
+An inverted index pins every column it reads, including columns reached only through an [indexed expression](./modeling.md#indexing-expressions) — for example a struct sub-field such as `(s['id']::INTEGER)` pins the whole `s` column.
+
+- **`RENAME` column, table or index** — allowed; the index keys columns by id and follows the rename automatically.
+- **`ADD COLUMN`** — allowed; it is index-neutral (existing rows are backfilled).
+- **`ALTER COLUMN … TYPE`** on a pinned column — rejected; the index stores values of the old type. Drop the index first, change the type, then recreate it.
+- **`ADD` / `DROP` / `RENAME` of a struct field** on a pinned column — rejected for the same reason, even when the indexed expression targets a *different* sub-field (the whole column is pinned). Drop the index first.
+- **`DROP COLUMN`** on a pinned column — allowed; it cascade-drops every index that covers the column.
+- **`DROP COLUMN`** on any other column — allowed, including one that comes before a pinned column; the index keeps its columns by stable id.
+
+## Performance
+
+Tuning is mostly about the background cadence and segment layout; use only the options that exist:
+
+- **Refresh vs. compaction cadence** — lower `refresh_interval` for fresher results, raise it (or `0`) to reduce overhead on write-heavy tables; `compaction_interval` / `cleanup_interval_step` govern how aggressively segments merge.
+- **Row-group size** — `row_group_size` controls the columnstore batch size for stored (`INCLUDE`d) columns and for norm columns alike; norms share this one setting. It must be a multiple of the vector size (2048), and it is also the unit a scan hands to one worker: an index whose segments hold few row groups cannot spread a scan over more threads than it has row groups, so lower it when rows are expensive to materialise and the index is small. It is fixed at `CREATE INDEX` and applies to segments written afterwards.
+- **Build then index** — for a bulk load, create the table, load the data, then create the index; this produces a more compact index than loading into an already-indexed table.
+- **Top-K** — set [`optimize_top_k`](./ranking.md#top-k-queries-and-wand-pruning) to accelerate `ORDER BY <scorer> … LIMIT k`.
+- **Write memory** — [`segment_memory_max`](#write-memory) bounds what a write holds in memory, and sets the segment size it produces.
+
+## Write memory {#write-memory}
+
+Memory held while writing to a search table is bounded by `segment_memory_max`, set in the table's `CREATE TABLE ... WITH (segment_memory_max = …)` clause and defaulting to 256 MB. Estimate the peak for one writing transaction as:
+
+| Write | Peak memory |
+| :--- | :--- |
+| Serial `INSERT` / `UPDATE` | ≈ 1.5 × `segment_memory_max` |
+| Parallel `INSERT` | ≈ `segment_memory_max` × threads |
+
+Lower it to cap what a write can hold, raise it for larger segments and less compaction work.
+
+```sql
+CREATE TABLE docs (id BIGINT, body TEXT)
+  WITH (storage = 'search', segment_memory_max = 134217728);  -- 128 MB
+```
+
+<DocCallout type="tip">
+
+`DELETE` sits outside this bound, but costs little: only a rowid per removed row is held until the transaction commits, so even a million-row `DELETE` is a handful of megabytes.
+
+</DocCallout>
+
+## Session settings {#session-settings}
+
+Beyond the per-index `WITH` options, a few **`sdb_`-prefixed session settings** tune search at query time. Set them per connection with `SET` (and restore with `RESET`); they affect only the current session:
+
+| Setting | Default | Effect |
+| :--- | :--- | :--- |
+| `sdb_disable_top_k_optimization` | `false` | When `true`, the optimizer does **not** pull `ORDER BY <scorer> DESC LIMIT k` into the index scan, so [WAND top-K pruning](./ranking.md#top-k-queries-and-wand-pruning) never engages. Useful to A/B the optimization or work around a plan regression. |
+| `sdb_levenshtein_max_terms` | `50` | Maximum number of dictionary terms a fuzzy predicate ([`ts_levenshtein`](../../functions/search/full-text.md#ts_levenshtein)) expands to, per index segment. The terms closest to the query survive; the rest neither match nor contribute to scoring. Raise it for wide expansions, or set `0` to match every term within the edit distance. A predicate on a column that a `ts_dict_*` query enumerates is exempt, since there the terms are the result; other predicates in the same query keep the cap. |
+| `sdb_ivf_search_nprobe` | `8` | Number of IVF cluster lists scanned per [vector](./vector-search.md) kNN query (`ORDER BY <dist> LIMIT k`). Higher = better recall, slower queries. Does not affect range (`WHERE <dist> < r`) queries. |
+| `sdb_rerank_factor` | `4` | For a quantized (`quant` other than `none`) [vector](./vector-search.md#quantization) index, the candidate pool re-scored with exact distances is `sdb_rerank_factor * k`. Higher = better recall, slower queries; `0` disables reranking. Ignored for unquantized indexes. |
+| `sdb_hnsw_ef_search` | `64` | Search beam width of an [HNSW](./vector-search.md#hnsw) vector index. Higher = better recall, slower queries. It is also the result ceiling: a value below the query's `LIMIT` returns fewer rows. |
+| `sdb_scan_split` | `auto` | How an index scan shares a segment between worker threads. Each worker scans the row groups of a segment in order. `tail` gives every worker a segment of its own; only when no segment is left unclaimed does an idle worker join the segment with the most row groups left, so a segment is split across workers only at the end of the scan, when there are fewer segments than workers, or when one segment holds most of the data. `always` puts every worker on the same segment until all of its row groups are claimed; `never` scans each segment whole on one worker. `auto` is `always` when the query has an `ORDER BY <column> LIMIT` scan order and `tail` otherwise. Meant for benchmarking and tests. |
+| `sdb_scan_order` | `auto` | The order an index scan claims its segments in. `largest_first` and `smallest_first` order them by live document count; `order` is best-first by the `ORDER BY` column's row-group statistics when the query has a scan order, so the `TOP_N` bound tightens early. `auto` is `order` under a scan order and `largest_first` otherwise. |
+| `sdb_scan_no_split_row_groups` | `1` | A segment with at most this many row groups is always one unit of an index scan and is never split across workers. |
+| `sdb_compact_target_segments` | `1` | How many segments `VACUUM (COMPACT_*)` leaves in a search table. `0` or `1` merges every segment into one; a larger `N` splits the segments into `N` disjoint groups and merges each into one segment, so no single merge holds the whole table. A table with `N` segments or fewer is left as it is. |
+
+```sql
+SET sdb_ivf_search_nprobe = 32;  -- scan more clusters for this session
+SET sdb_rerank_factor = 8;       -- widen the exact-rerank pool for a quantized index
+SET sdb_levenshtein_max_terms = 256; -- widen fuzzy expansion
+-- … run queries …
+RESET sdb_ivf_search_nprobe;     -- back to the default
+```
+
+## Introspection
+
+List the inverted indexes with the `sdb_indexes()` table function:
+
+```sql
+SELECT index_name, table_name
+FROM sdb_indexes()
+WHERE table_name = 'my_logs';
+-- result:
+index_name	table_name
+logs_idx	my_logs
+```
+
+The standard `pg_indexes` view also lists them (alongside the primary-key index), with the `CREATE INDEX` statement in its `indexdef` column:
+
+```sql
+SELECT indexname
+FROM pg_indexes
+WHERE tablename = 'my_logs'
+ORDER BY indexname;
+-- result:
+indexname
+logs_idx
+my_logs_pkey
+```
+
+<DocCallout type="attention">
+
+`pg_indexes_size()` is not yet meaningful for inverted indexes — it returns `0`. Use `sdb_indexes()` / `pg_indexes` for index metadata.
+
+</DocCallout>
+
+### Per-index statistics in `sdb_metrics` {#sdb-metrics}
+
+The `sdb_metrics` system table exposes live runtime metrics. Most rows are process-wide gauges (connection counts, active/pending maintenance tasks) and carry a `NULL` `relation_id`. In addition, **each inverted index contributes a row per statistic**, tagged with the index's oid in the `relation_id` column — describing its physical state and the health of its background maintenance.
+
+| Column | Description |
+| :--- | :--- |
+| `metric` | Metric name |
+| `value` | Current value (`UBIGINT`) |
+| `description` | Human-readable description |
+| `relation_id` | Oid of the inverted index the row describes (an index is a relation in `pg_class`), or `NULL` for a process-wide gauge |
+
+The per-index metrics, modelled on the statistics an ArangoSearch / IResearch data store reports:
+
+| Metric | Meaning |
+| :--- | :--- |
+| `num_docs` | Documents in committed segments, **including** deleted-but-not-yet-compacted |
+| `num_live_docs` | Live (non-deleted) documents; `num_docs − num_live_docs` is the deleted backlog awaiting compaction |
+| `num_buffered_docs` | Documents written but not yet committed — still in memory, not searchable (see the [refresh model](#visibility-and-the-refresh-model)) |
+| `num_segments` | On-disk segments |
+| `num_files` | Files backing the index |
+| `index_size` | On-disk index size, in bytes |
+| `num_failed_commits` | Commit (refresh) operations that failed |
+| `num_failed_cleanups` | Cleanup operations that failed |
+| `num_failed_consolidations` | Consolidation (compaction) operations that failed |
+| `avg_commit_time_ms` | Average duration of the last few commits, in ms |
+| `avg_cleanup_time_ms` | Average duration of the last few cleanups, in ms |
+| `avg_consolidation_time_ms` | Average duration of the last few consolidations, in ms |
+
+The `avg_*` values are a rolling average over a small window of the most recent successful operations. Rows cover the inverted indexes in the **current database**. Join `pg_class` to resolve the index name, or `pg_index` to reach the base table:
+
+```sql
+-- Per-index statistics, with index names
+SELECT c.relname AS index, m.metric, m.value
+FROM sdb_metrics m
+JOIN pg_class c ON c.oid = m.relation_id
+WHERE m.relation_id IS NOT NULL
+ORDER BY c.relname, m.metric;
+
+-- Statistics for the indexes on one table
+SELECT m.metric, m.value
+FROM sdb_metrics m
+JOIN pg_index i ON i.indexrelid = m.relation_id
+JOIN pg_class t ON t.oid = i.indrelid
+WHERE t.relname = 'my_table'
+ORDER BY m.metric;
+```
+
+A persistently high `num_buffered_docs`, a growing `num_failed_*`, or a climbing `avg_commit_time_ms` are signs that maintenance is falling behind the write rate — see [Background intervals](#background-intervals) and [Performance](#performance) for the knobs.
+
+## See also
+
+- [Inverted Index](./index.md) · [Ranking](./ranking.md)
+- [`VACUUM`](../../statements/vacuum/index.md) — full statement reference
+- [`CREATE INDEX … USING inverted`](../../statements/create_index/inverted.md) — index `WITH` options
+

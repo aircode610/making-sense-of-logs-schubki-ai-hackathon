@@ -1,0 +1,65 @@
+<div>
+
+<picture align=left>
+    <source media="(prefers-color-scheme: dark)" srcset="../resources/images/examples-dark.svg">
+    <source media="(prefers-color-scheme: light)" srcset="../resources/images/examples-light.svg">
+    <img alt="The SereneDB Examples logo." src="../resources/images/examples-light.svg">
+</picture>
+
+[![Star Us](https://img.shields.io/badge/⭐-Star%20Us-9865e8?style=for-the-badge)](https://github.com/serenedb/serenedb)
+[![Apache License 2.0](https://img.shields.io/badge/License-Apache%202.0-a2b9f4?style=for-the-badge)](https://www.apache.org/licenses/LICENSE-2.0)
+[![Website](https://img.shields.io/website?up_message=VISIT&down_message=FIXING&color=fbe5f5&url=https%3A%2F%2Fwww.serenedb.com&style=for-the-badge)](https://www.serenedb.com)
+
+</div>
+
+End-to-end demos that show what SereneDB does, against real data, in scripts you can run in under a minute.
+
+## Demos
+
+| | What it shows | Dataset |
+|---|---|---|
+| [demo0](demo0/) | Zero ETL search over **remote** Parquet files | IMDb reviews on Hugging Face (100k rows, 3 shards) |
+| [demo1](demo1/) | Same demo over **local** Parquet -- same SQL, two orders of magnitude faster | IMDb reviews staged in `/tmp` |
+| [demo2](demo2/) | Same demo over a **native table** -- production shape, durable, sub-millisecond queries | IMDb reviews ingested into a SereneDB table |
+| [demo3](demo3/) | **Elastic-grade FTS tour** -- phrase + slop, boolean, prefix / wildcard / regex / fuzzy, ngram, four scoring models, byte-range highlights, plus a complex composite query and a `##`-chained mixed-part phrase | IMDb reviews on Hugging Face (~100k reviews, two analyzers in one index) |
+| [demo4](demo4/) | **Hybrid vector + FTS** -- one index with BM25 and HNSW cosine ANN; vector top-K, range search, text+vector hybrid | Qdrant dbpedia-entities (~100k abstracts, 1536-dim OpenAI embeddings) |
+| [demo5](demo5/) | **Self-embedding semantic search** -- `ai_embed(...)` at ingest and query time against any OpenAI-compatible endpoint | neuralwork/arxiver (arXiv ML abstracts, Gemini 3072-dim embeddings) |
+| [demo6](demo6/) | **Code search + statistics with sparse ngrams** -- GitHub-style substring + fuzzy code search via the `sparse_ngram` tokenizer, BM25 over statements, per-problem runtime/memory statistics aggregated from index INCLUDE columns | UNION ALL views over open-r1/codeforces + deepmind/code_contests (~15k problems) and ~45k accepted submissions (open-r1 `selected_accepted`), all CC-BY-4.0 |
+| [demo7](demo7/) | **Support tickets triaged as they arrive with `ai_system_one`** -- a stored generated column asks yes/no, choice and score questions on every `INSERT`, an `UPDATE` re-triages only rewritten tickets, a new column is filled in place for one plan, and queries read the stored answers without requests; Jev on OpenRouter answers | 16 support tickets inserted by `demo.sql` |
+
+## Running a demo
+
+```bash
+psql -h <host> -p <port> -U serenedb -d postgres -f <demo>/demo.sql
+```
+
+>
+> **One-time bootstrap.** Some demos ship a `bootstrap.sql` that stages the data locally (downloads parquet shards, or ingests them into a native table). Run it once before `demo.sql`:
+>
+> ```bash
+> psql -h <host> -p <port> -U postgres -d postgres -f <demo>/bootstrap.sql
+> ```
+>
+
+If you don't have a SereneDB server running yet, check the [downloads page](https://serenedb.com/download).
+
+## IResearch C++ examples
+
+[IResearch](../iresearch) is the search engine behind every demo above. These
+programs drive it directly through its C++ API -- they build an in-memory index
+and query it in-process, so no server and no dataset are needed.
+
+| | What it shows |
+|---|---|
+| [basic.cpp](iresearch/basic.cpp) | The core workflow end to end: open a directory and index writer, define fields, index documents into both the inverted index and columnstore, then parse Lucene-syntax queries and run them as a count and as a BM25 top-K |
+| [text_filters.cpp](iresearch/text_filters.cpp) | The advanced text filters built by hand rather than through the parser -- `ByPhrase`, `ByNGramSimilarity`, `ByRegexp`, `ByWildcard`, `ByEditDistance` -- each against the same corpus so you can compare what they match |
+| [geo.cpp](iresearch/geo.cpp) | S2-based geospatial search: index GeoJSON points with the geojson analyzer, then run a shape `Intersects` filter against a polygon and a distance filter against a center and radius |
+
+They are built into one binary; pick an example by name and run from the build directory:
+
+```bash
+cd build && ninja iresearch-examples
+./bin/iresearch-examples basic
+./bin/iresearch-examples text_filters
+./bin/iresearch-examples geo
+```

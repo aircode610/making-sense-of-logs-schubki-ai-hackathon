@@ -1,0 +1,22 @@
+# secrets
+.env
+.env.*
+!.env.example
+
+# data (download with scripts/download_data.sh); the ownership table is committed
+data/*
+!data/ownership.csv
+!data/README.md
+
+# third-party doc dumps (re-fetch with scripts/refresh_docs.sh; use the typesafe-docs MCP instead)
+docs/jev/llms-full.txt
+docs/jev/pages/
+
+# python / tooling
+.venv/
+__pycache__/
+*.pyc
+.DS_Store
+runs/**/cache/
+*.log
+!data/raw/*.log

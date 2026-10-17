@@ -1,0 +1,96 @@
+# DOCS_TEST: example_001
+
+# DOCS_TEST_BODY
+
+statement ok
+CREATE TEXT SEARCH DICTIONARY ta_text AS
+    split_text(case := 'lower') | normalize_tokens('en_US.UTF-8', accent := false);
+
+query
+SELECT ts_lexize('ta_text', 'Quick BROWN Fox');
+----
+ts_lexize
+{quick,brown,fox}
+
+# DOCS_TEST: example_002
+
+# DOCS_TEST_BODY
+
+statement ok
+CREATE TEXT SEARCH DICTIONARY ta_keyword AS keyword() WITH (frequency);
+
+query
+SELECT ts_lexize('ta_keyword', 'Hello World');
+----
+ts_lexize
+{"Hello World"}
+
+# DOCS_TEST: example_003
+
+# DOCS_TEST_BODY
+
+statement ok
+CREATE TEXT SEARCH DICTIONARY ta_ngram AS
+    generate_ngrams(2, 3);
+
+query
+SELECT ts_lexize('ta_ngram', 'cat');
+----
+ts_lexize
+{ca,cat,at}
+
+# DOCS_TEST: example_004
+
+# DOCS_TEST_BODY
+
+statement ok
+CREATE TEXT SEARCH DICTIONARY ta_stem AS
+    split_text(case := 'lower') | normalize_tokens('en_US.UTF-8', accent := false) | stem_words('en_US.UTF-8');
+
+query
+SELECT ts_lexize('ta_stem', 'running runners ran');
+----
+ts_lexize
+{run,runner,ran}
+
+# DOCS_TEST: example_005
+
+# DOCS_TEST_BODY
+
+statement ok
+CREATE TEXT SEARCH DICTIONARY ta_stopwords AS
+    split_text(case := 'lower') | normalize_tokens('en_US.UTF-8', accent := false) | remove_stopwords(['the', 'of']);
+
+query
+SELECT ts_lexize('ta_stopwords', 'the speed of light');
+----
+ts_lexize
+{speed,light}
+
+# DOCS_TEST: example_006
+
+# DOCS_TEST_BODY
+
+statement ok
+CREATE TEXT SEARCH DICTIONARY ta_accent AS
+    split_text(case := 'lower') | normalize_tokens('en_US.UTF-8', accent := false);
+
+query
+SELECT ts_lexize('ta_accent', 'Café');
+----
+ts_lexize
+{cafe}
+
+# DOCS_TEST: example_007
+
+# DOCS_TEST_BODY
+
+statement ok
+CREATE TEXT SEARCH DICTIONARY ta_pipeline AS
+    split_text_csv(',') | normalize_tokens('en_US.UTF-8', case := 'lower');
+
+query
+SELECT ts_lexize('ta_pipeline', 'RED,Green,BLUE');
+----
+ts_lexize
+{red,green,blue}

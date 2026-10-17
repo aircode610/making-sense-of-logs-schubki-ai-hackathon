@@ -1,0 +1,476 @@
+<title>Jev GAIA Experiment 002</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=Instrument+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: one reading column (lab notebook), wide tables/charts scroll in their own boxes; story order = real chronology. */
+:root {
+  --bg: #F3F5F3; --surface: #FFFFFF; --ink: #15201D; --muted: #5A6763; --line: #D6DDDA;
+  --accent: #0B7A68; --accent-soft: #D7EEE8; --bar: #A9B5B1;
+  --good: #2C7A33; --good-soft: #E0F1E1; --bad: #B23A2E; --bad-soft: #F8E1DE; --warn: #8F6200; --warn-soft: #F7EDD2;
+  --code-bg: #EBEFED;
+  --f-display: "Bricolage Grotesque", "Avenir Next", "Segoe UI", sans-serif;
+  --f-body: "Instrument Sans", "Helvetica Neue", Arial, sans-serif;
+  --f-mono: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #0E1412; --surface: #151D1B; --ink: #E4EBE8; --muted: #9AA7A3; --line: #2A3532;
+  --accent: #3FC6AD; --accent-soft: #123A33; --bar: #4E5C58;
+  --good: #72C778; --good-soft: #17301A; --bad: #F08074; --bad-soft: #3A1B17; --warn: #E2B651; --warn-soft: #332910;
+  --code-bg: #1C2624; color-scheme: dark; } }
+:root[data-theme="dark"] {
+  --bg: #0E1412; --surface: #151D1B; --ink: #E4EBE8; --muted: #9AA7A3; --line: #2A3532;
+  --accent: #3FC6AD; --accent-soft: #123A33; --bar: #4E5C58;
+  --good: #72C778; --good-soft: #17301A; --bad: #F08074; --bad-soft: #3A1B17; --warn: #E2B651; --warn-soft: #332910;
+  --code-bg: #1C2624; color-scheme: dark; }
+
+* { box-sizing: border-box; }
+body { background: var(--bg); color: var(--ink); font: 400 16px/1.6 var(--f-body); }
+.wrap { max-width: 920px; margin: 0 auto; padding-inline: 20px; padding-block: 40px 80px; display: grid; gap: 56px; }
+h1, h2, h3 { font-family: var(--f-display); text-wrap: balance; margin: 0; line-height: 1.15; }
+h1 { font-size: clamp(2rem, 5vw, 3.1rem); font-weight: 700; letter-spacing: -0.02em; }
+h2 { font-size: 1.65rem; font-weight: 700; letter-spacing: -0.01em; }
+h3 { font-size: 1.15rem; font-weight: 500; }
+p { margin: 0; max-width: 68ch; }
+a { color: var(--accent); }
+section { display: grid; gap: 18px; min-width: 0; }
+.eyebrow { font: 500 0.75rem/1 var(--f-mono); letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
+.lede { font-size: 1.12rem; color: var(--muted); }
+code, .mono { font-family: var(--f-mono); font-size: 0.86em; }
+code { background: var(--code-bg); padding: 1px 5px; border-radius: 4px; }
+pre { background: var(--code-bg); padding: 14px 16px; border-radius: 8px; overflow-x: auto; margin: 0; font: 0.82rem/1.55 var(--f-mono); }
+nav.toc { display: flex; flex-wrap: wrap; gap: 8px 18px; font-size: 0.9rem; border-block: 1px solid var(--line); padding-block: 12px; }
+nav.toc a { color: var(--muted); text-decoration: none; }
+nav.toc a:hover, nav.toc a:focus-visible { color: var(--accent); text-decoration: underline; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+/* headline figures: these four numbers are the point of the summary */
+.figures { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 12px; }
+.fig { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 16px; display: grid; gap: 4px; align-content: start; }
+.fig .k { font-size: 0.8rem; color: var(--muted); }
+.fig .v { font: 700 1.9rem/1.1 var(--f-display); font-variant-numeric: tabular-nums; }
+.fig .vs { font-size: 0.85rem; color: var(--muted); font-variant-numeric: tabular-nums; }
+
+/* timeline: a real chronology, so numbered */
+ol.timeline { list-style: none; margin: 0; padding: 0; display: grid; gap: 0; counter-reset: step; }
+ol.timeline > li { counter-increment: step; display: grid; grid-template-columns: 44px 1fr; gap: 14px; padding-block: 16px; border-top: 1px solid var(--line); }
+ol.timeline > li::before { content: counter(step, decimal-leading-zero); font: 500 0.95rem/1.6 var(--f-mono); color: var(--accent); }
+ol.timeline > li > div { display: grid; gap: 8px; min-width: 0; }
+.when { font: 500 0.72rem/1 var(--f-mono); color: var(--muted); letter-spacing: 0.06em; text-transform: uppercase; }
+ul.tight { margin: 0; padding-left: 1.1em; display: grid; gap: 4px; }
+
+.pill { display: inline-block; font: 600 0.72rem/1 var(--f-mono); letter-spacing: 0.04em; text-transform: uppercase; padding: 4px 7px; border-radius: 999px; white-space: nowrap; }
+.pill.good { background: var(--good-soft); color: var(--good); }
+.pill.bad { background: var(--bad-soft); color: var(--bad); }
+.pill.warn { background: var(--warn-soft); color: var(--warn); }
+.pill.neutral { background: var(--code-bg); color: var(--muted); }
+
+.tablebox { overflow-x: auto; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); }
+table { border-collapse: collapse; width: 100%; font-size: 0.88rem; }
+th, td { text-align: left; padding: 9px 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
+th { font-weight: 600; color: var(--muted); font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.04em; white-space: nowrap; }
+tr:last-child td { border-bottom: 0; }
+td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; font-family: var(--f-mono); font-size: 0.84rem; white-space: nowrap; }
+tr.hl td { background: var(--accent-soft); }
+tr.hl td:first-child { font-weight: 600; }
+
+/* charts: one measure each, Jev highlighted, others neutral, value labels direct */
+.charts { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; }
+.chart { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 16px; display: grid; gap: 10px; min-width: 0; }
+.chart h3 { font-size: 0.98rem; }
+.chart .note { font-size: 0.78rem; color: var(--muted); }
+.row { display: grid; grid-template-columns: 112px 1fr 58px; gap: 8px; align-items: center; font-size: 0.8rem; }
+.row .lab { color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.row.jev .lab { color: var(--ink); font-weight: 600; }
+.track { height: 14px; position: relative; }
+.track::before { content: ""; position: absolute; inset: 6px 0 auto 0; height: 1px; background: var(--line); }
+.bar { position: relative; height: 14px; border-radius: 0 4px 4px 0; background: var(--bar); min-width: 2px; }
+.row.jev .bar { background: var(--accent); }
+.row .val { text-align: right; font: 500 0.78rem var(--f-mono); font-variant-numeric: tabular-nums; }
+.row:hover .bar, .row:focus-within .bar { filter: brightness(1.12); }
+
+.ledger { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 12px; }
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 16px; display: grid; gap: 8px; align-content: start; min-width: 0; }
+.card h3 { font-size: 1rem; }
+.card p { font-size: 0.92rem; color: var(--muted); }
+.card .delta { font: 500 0.8rem var(--f-mono); color: var(--ink); }
+
+.example { display: grid; gap: 14px; }
+.logline { font: 0.8rem/1.5 var(--f-mono); background: var(--code-bg); border-left: 3px solid var(--bad); padding: 10px 12px; border-radius: 0 6px 6px 0; overflow-x: auto; white-space: pre; }
+.probs { display: grid; gap: 6px; max-width: 520px; }
+.probs .row { grid-template-columns: 160px 1fr 48px; }
+.callout { border: 1px solid var(--line); background: var(--surface); border-radius: 10px; padding: 16px; display: grid; gap: 6px; }
+.callout.warn { border-color: var(--warn); }
+.small { font-size: 0.85rem; color: var(--muted); }
+pre.mermaid { background: var(--surface); border: 1px solid var(--line); text-align: center; }
+dl.gloss { margin: 0; display: grid; grid-template-columns: minmax(150px, 210px) 1fr; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); overflow: hidden; }
+dl.gloss dt, dl.gloss dd { margin: 0; padding: 10px 14px; border-bottom: 1px solid var(--line); min-width: 0; }
+dl.gloss dt { font-weight: 600; font-size: 0.9rem; }
+dl.gloss dd { font-size: 0.9rem; color: var(--muted); }
+dl.gloss dt:last-of-type, dl.gloss dd:last-of-type { border-bottom: 0; }
+.glossgroup { display: grid; gap: 8px; }
+.glossgroup h3 { font-size: 1rem; }
+.read { border-left: 3px solid var(--accent); padding: 4px 0 4px 14px; display: grid; gap: 4px; max-width: 72ch; }
+.read b { font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--accent); font-family: var(--f-mono); font-weight: 500; }
+.read p { font-size: 0.93rem; }
+ol.lessons { margin: 0; padding-left: 1.3em; display: grid; gap: 14px; }
+ol.lessons li { padding-left: 4px; }
+ol.lessons li p { font-size: 0.93rem; color: var(--muted); }
+ol.lessons li strong { display: block; margin-bottom: 2px; }
+footer { font-size: 0.85rem; color: var(--muted); border-top: 1px solid var(--line); padding-top: 16px; display: grid; gap: 6px; }
+@media (max-width: 520px) { dl.gloss { grid-template-columns: 1fr; } dl.gloss dt { border-bottom: 0; padding-bottom: 0; }  .row { grid-template-columns: 86px 1fr 50px; } .probs .row { grid-template-columns: 120px 1fr 44px; } ol.timeline > li { grid-template-columns: 34px 1fr; } }
+@media (prefers-reduced-motion: no-preference) { .bar { transition: filter .15s; } }
+</style>
+
+<div class="wrap">
+
+<header style="display:grid;gap:16px">
+  <div class="eyebrow">Jev × SereneDB · experiment 002 · GAIA MicroSS · dev + held-out · Oct 11–12, 2026 · closed</div>
+  <h1>One pipeline, three roles: who makes the judgment?</h1>
+  <p class="lede">An engineer asks what broke and where, a team lead asks what keeps coming back, a manager asks what to fix first. SereneDB finds the evidence and computes every number; a judgment model reads it. We gave Jev and a fast LLM the identical evidence and the identical questions for all three roles, on two weeks of logs from a 10-service system with injected faults.</p>
+  <div class="read"><b>How to read this</b><p>Start with the summary and the lessons. Every term and metric is defined in <a href="#terms">Key terms</a>. Each results section ends with a short "What this means" note. "Dev" numbers are from data we were allowed to look at and tune on; "held-out" numbers are from data nobody looked at, run exactly once at the end. Only held-out numbers say whether a result generalizes.</p></div>
+  <nav class="toc" aria-label="Sections">
+    <a href="#summary">Summary</a><a href="#lessons">Lessons</a><a href="#terms">Key terms</a><a href="#history">How we got here</a><a href="#how">How it works</a><a href="#data">The data</a><a href="#fixes">What we changed after 001</a><a href="#engineer">Engineer</a>
+    <a href="#lead">Team lead</a><a href="#manager">Manager</a><a href="#test">Held-out</a><a href="#example">Two examples</a><a href="#criteria">Criteria</a><a href="#next">Next</a>
+  </nav>
+</header>
+
+<section id="summary">
+  <div class="eyebrow">Summary · held-out run once, dev by 5-fold cross-validation</div>
+  <h2>This time the dev conclusions held. On new data Jev reaches 0.85, the LLM 0.90, at a fraction of the time and cost.</h2>
+  <div class="figures">
+    <div class="fig"><span class="k">Engineer, held-out: macro-F1</span><span class="v">0.85 · 0.90</span><span class="vs">Jev · LLM, identical input (dev 0.80 · 0.97)</span></div>
+    <div class="fig"><span class="k">Raw-logs LLM · classifier, held-out</span><span class="v">0.38 · 0.67</span><span class="vs">without SereneDB evidence · trained on dev</span></div>
+    <div class="fig"><span class="k">Same answer across wordings</span><span class="v">100% · 98%</span><span class="vs">Jev · LLM, held-out</span></div>
+    <div class="fig"><span class="k">Speed and cost per question</span><span class="v">7.6× · 20×</span><span class="vs">Jev faster (237 vs 1,792 ms p50) · cheaper</span></div>
+  </div>
+  <ul class="tight">
+    <li><strong>Per-service baselines fixed 001's evidence problem.</strong> Comparing each service with its own last 24 hours took Jev from 0.34 to 0.80 on dev, and the choice generalized: 0.85 on held-out.</li>
+    <li><strong>The gap to the LLM shrank from 0.17 (dev) to 0.05 (held-out).</strong> Jev still raises more false alarms on routine errors; the LLM is better calibrated (Brier 0.09 vs 0.13).</li>
+    <li><strong>Both models fail the same July cases.</strong> With only webservice1's logs, a database fault is invisible, so root service drops to 64% for both.</li>
+    <li><strong>The raw-logs LLM (0.38) and the classifier (0.67) collapse on new data.</strong> SereneDB's evidence is what carries both judgment models.</li>
+    <li><strong>Lead and manager judgments are near-saturated on GAIA</strong> for every method: they show the design works, not which model is better.</li>
+  </ul>
+</section>
+
+<section id="lessons">
+  <div class="eyebrow">Lessons for teams building with Jev and SereneDB</div>
+  <h2>Eight things we would tell a team starting tomorrow</h2>
+  <ol class="lessons">
+    <li><strong>The evidence matters more than the model.</strong><p>The same LLM scored 0.38 on raw logs and 0.90 on SereneDB's evidence (held-out). Jev went from 0.34 to 0.80 on dev just by changing how the evidence was built, with the model and questions unchanged. Spend most of your effort on the SQL that selects and summarizes evidence.</p></li>
+    <li><strong>Compare a thing with its own past, not with everything.</strong><p>"This service logs this error 2× more than in its own last 24 hours" is what made the evidence work. Experiment 001 compared each job with all jobs and failed on new data.</p></li>
+    <li><strong>Jev reads literally; tell it only what changed.</strong><p>When the evidence listed routine ERROR lines with a note "seen in 211 of 219 windows", the LLM ignored them and Jev called them a fault. Filtering in code (show only new or ≥ 2× patterns) fixed most of this. Do the "is this unusual?" reasoning in SQL, then ask Jev the judgment.</p></li>
+    <li><strong>Let code decide the easy cases.</strong><p>73% of questions had no unusual pattern at all, so the answer "no fault visible" needs no model. A model call should be spent only where a judgment is actually needed.</p></li>
+    <li><strong>Numbers vs words did not matter.</strong><p>Jev is weak at math, so we tried removing raw counts and keeping only phrases like "about 2× its usual rate". Every Jev answer stayed the same. Precomputing ratios in SQL is still the right habit; it just was not the cause of the errors here.</p></li>
+    <li><strong>Jev is fast, cheap and consistent; the LLM is still more accurate.</strong><p>Held-out: Jev 0.85 vs LLM 0.90 macro-F1, but Jev answers in 237 ms vs 1.8 s, costs about 20× less, and never changed its answer across wordings or option orders. Pick by what your use case needs: high-volume triage favours Jev, one-off investigation favours the LLM.</p></li>
+    <li><strong>Missing telemetry cannot be fixed by a smarter model.</strong><p>In July only webservice1's logs exist. A database fault shows up there only as downstream errors, so both models named the wrong root service in the same cases (64%). Check what your logs can show before asking a model about it.</p></li>
+    <li><strong>Choose settings by cross-validation and freeze them before the final test.</strong><p>In 001 we picked settings from one dev score and the result collapsed on new data. Here we used 5 folds of whole days, kept the simpler option when the gain was within noise, and ran the held-out test once. The dev conclusions held.</p></li>
+  </ol>
+</section>
+
+<section id="terms">
+  <div class="eyebrow">Key terms · read once, refer back</div>
+  <h2>What every label and number means</h2>
+  <div class="glossgroup"><h3>The setup</h3>
+  <dl class="gloss">
+    <dt>Jev</dt><dd>TypeSafe's judgment model. It does not write text; it picks from the options you give it and returns a probability for each option. Fast and cheap, but it does no math and reads input literally.</dd>
+    <dt>LLM (baseline)</dt><dd><code>gemini-3.8-flash</code>, a fast general LLM, given exactly the same evidence and the same answer options as Jev, answering as a JSON form. This keeps the comparison fair.</dd>
+    <dt>SereneDB</dt><dd>The log database. It stores the logs, runs the SQL that finds the evidence, and computes every number the models see. No number comes from a model.</dd>
+    <dt>Window / question</dt><dd>One 15-minute slice of the whole system, e.g. "What went wrong between 11:56 and 12:11?". Each window is asked in 3 wordings, so 219 dev windows give 657 questions.</dd>
+    <dt>Template (pattern)</dt><dd>A log line with its variable parts removed, e.g. <code>No such file or directory: &lt;*&gt;</code>. Drain3 learns these from dev days only. Counting templates instead of raw lines makes "how often does this happen?" a simple SQL query.</dd>
+    <dt>Fault / no-trace / normal</dt><dd>Fault: an injected fault that shows in the logs (missing file, permission denied). No-trace: a memory fault that leaves no mark in the logs, so the right answer is "no fault visible". Normal: no injected fault.</dd>
+    <dt>Dev vs held-out</dt><dd>Dev (Aug 1–24) is what we tune on. Held-out (Aug 25–31 + all of July) is locked away: a guard script blocks anyone, including the AI assistant, from reading it. It is run once with the frozen settings, and only totals are printed.</dd>
+    <dt>Frozen</dt><dd>The setting chosen on dev and fixed before the held-out run. It is never changed after seeing held-out results.</dd>
+  </dl></div>
+  <div class="glossgroup"><h3>Variants we compared</h3>
+  <dl class="gloss">
+    <dt>E0–E3 (evidence)</dt><dd>How the evidence is built. E0: 001-style, top patterns with how common they are overall. <b>E1</b>: each pattern compared with the same service's last 24 hours, only what is new or ≥ 2× usual. E2: E1 plus a per-service error table. E3: E2 plus example raw lines.</dd>
+    <dt>Q0, Q1, Q2, Q7 (question designs)</dt><dd>How we ask. Q0: pick the fault type and the key evidence item. Q1: adds an explicit "cannot tell from these logs" option. Q2: first "is there a fault?", then "which?". <b>Q7</b>: Q0 plus "which service is the root cause?", choosing from candidate services found by SQL.</dd>
+    <dt>L0–L2 (team lead)</dt><dd>L0: are these two incidents the same underlying problem? L1: classify each incident into a broad type, group in code. L2: is this a repeat of a known problem or new?</dd>
+    <dt>M0–M1 (manager)</dt><dd>M0: of two problems, which to fix first? M1: an impact score per problem, ranked in code. Scored against a rule written before the run (extra failed requests, × 2 if customer-facing).</dd>
+    <dt>Raw-logs LLM</dt><dd>The LLM given the window's raw WARN/ERROR lines plus its first and last 50 lines (up to 120k characters) instead of SereneDB's evidence. Shows what the evidence step is worth.</dd>
+    <dt>Classifier</dt><dd>Logistic regression trained on dev labels over per-service template counts (TF-IDF). Needs labelled data, which a real team usually does not have.</dd>
+    <dt>Keyword rules</dt><dd>Hand-written "if this text appears, it is this fault" rules. We wrote them after looking at the data, so they show a ceiling, not a fair baseline.</dd>
+  </dl></div>
+  <div class="glossgroup"><h3>Metrics</h3>
+  <dl class="gloss">
+    <dt>Macro-F1 (higher is better)</dt><dd>The main accuracy score, 0 to 1. F1 per answer class (balance of "found the real cases" and "did not raise false alarms"), then averaged equally over classes. Unlike plain accuracy, a model cannot score high by always giving the most common answer.</dd>
+    <dt>95% CI</dt><dd>The range the true score likely falls in, from resampling the days 1,000 times. Wide ranges mean few examples. If two systems' ranges overlap a lot, the difference may be noise.</dd>
+    <dt>Brier score (lower is better)</dt><dd>How good the probabilities are, not only the answers. 0 = always right and certain; 2 = certain and wrong. A model that says 95% and is wrong is punished more than one that says 55% and is wrong.</dd>
+    <dt>Confidence</dt><dd>Computed from the model's probabilities, never self-reported: <code>(p_max − 1/n)/(1 − 1/n)</code>, where p_max is the top option's probability and n the number of options. 0 = no preference, 1 = certain.</dd>
+    <dt>"Auto" answers, coverage</dt><dd>Answers above a confidence threshold get an "auto" badge; the rest go to a human. Coverage = share that gets the badge. "92% at 99.8% coverage" means almost all answers were auto and 92% of those were right.</dd>
+    <dt>Consistency checks</dt><dd>Same answer over 3 repeats, over shuffled option order, and over different wordings of the same question. A reliable tool should not change its mind for these.</dd>
+    <dt>Root service</dt><dd>Share of fault windows where the top-ranked root-cause service is the right one.</dd>
+    <dt>Fold SD, lean rule</dt><dd>Dev is split into 5 folds of whole days. A richer variant is kept only if it beats a simpler one by more than one standard deviation across folds; otherwise the simpler one wins.</dd>
+    <dt>p50, $ / 1k</dt><dd>Median response time per question, and cost per 1,000 questions.</dd>
+    <dt>R1–R6, C1–C3</dt><dd>Pass/fail criteria written in the plan before running. R = can the person act on the answer; C = Jev compared with the LLM.</dd>
+  </dl></div>
+</section>
+
+<section id="history">
+  <div class="eyebrow">How we got here · every decision, in order</div>
+  <h2>From a failed held-out run to a three-role experiment</h2>
+  <ol class="timeline">
+    <li><div><span class="when">Oct 11 · starting point</span><h3>Experiment 001 did not generalize</h3>
+      <p>On Hadoop, Jev tied the LLM on dev (0.51 vs 0.49 macro-F1) but dropped to 0.32 on held-out (LLM 0.42, raw-logs LLM 0.54, classifier 0.66). We listed ten reasons (<code>plans/002-ideas.md</code>). The biggest: held-out was all PageRank jobs while dev was mostly WordCount, the duration baseline ignored job type, and evidence settings were picked from one dev score.</p></div></li>
+    <li><div><span class="when">Oct 11 · data look</span><h3>What GAIA can and cannot answer</h3>
+      <p>We read only the injection records and the logs of Aug 1–5. Findings that shaped every later choice:</p>
+      <ul class="tight"><li>Only file-missing and permission-denied faults show up in the logs. Memory faults leave no trace (122 windows, volume and error rate unchanged). CPU bursts last 3 seconds. Login timeouts are per-request background.</li>
+      <li>Normal logs are noisy: about 4.5k ERROR lines a day per db/web instance.</li>
+      <li>Fault type is tied to service type, so naming the service in the question would leak the answer.</li></ul>
+      <p><b>Decisions:</b> ask about the whole system in a time window; treat memory windows as a "no-trace" slice where the right answer is "no fault visible"; exclude CPU; keep login failures as background.</p></div></li>
+    <li><div><span class="when">Oct 11 · plan, then recalibration</span><h3>Calibrate to the brief: one pipeline, three roles (D13)</h3>
+      <p>The first draft compared Jev question designs. We recalibrated it to the challenge brief, so the plan was rewritten around the three roles. Engineer is the main, fully measured part; team lead and manager are smaller measured slices built on the engineer's incidents. Success criteria were rewritten to lead with "can the person act on it?" (R1–R6), with Jev vs LLM as comparisons (C1–C4). The manager has no true priority, so we pre-registered a proxy rule: extra failed requests × 2 if customer-facing, ties by affected minutes.</p></div></li>
+    <li><div><span class="when">Oct 11 · approved</span><h3>Branch from main after merging 001</h3><p>Plan approved with July in held-out and the impact rule as written. Branch <code>exp/002-gaia-question-design</code> created from the merged <code>main</code>.</p></div></li>
+    <li><div><span class="when">Oct 11 · amendment 1</span><h3>Held-out = the last week of August + all of July</h3>
+      <p>The plan said "stratified blocks from Aug 11–31". To fit Drain3 on dev days only in one streaming pass, held-out has to come last in time. The split became Aug 1–24 dev and Aug 25–31 plus July held-out: train on past weeks, test on the next week and on a month with only one service's logs. Stratification became a check that aborts if a fault type is missing.</p></div></li>
+    <li><div><span class="when">Oct 11 · amendment 2</span><h3>Cost cut: raw-logs baseline on one wording</h3><p>Estimated total ≈ $55–65 of LLM calls, half of it the raw-logs baseline. We chose to run that baseline on wording 0 only. Actual dev spend: Jev $0.32, LLM $18.32.</p></div></li>
+    <li><div><span class="when">Oct 11 · split run</span><h3>219 dev windows, 233 held-out windows</h3><p>Dev 35 fault, 69 no-trace, 115 normal (657 questions); held-out 58, 81, 94 (932). Pattern novelty turned out low: held-out adds only 4 templates, used by 2 of 1.1M WARN+ rows.</p></div></li>
+    <li><div><span class="when">Oct 11 · build</span><h3>Ingest and smoke test</h3><p>8.86M raw rows over OTLP in 94 s; 1.79M rollup rows via <code>read_csv</code>. A three-question smoke test on both models found one bug (SQL sums arriving as Decimal), fixed before the waves.</p></div></li>
+    <li><div><span class="when">Oct 11 · wave 1</span><h3>Evidence: E0 fails for Jev, E1 frozen</h3>
+      <p>E0 (001-style) gave Jev 0.34 and the LLM 0.99. The traces showed why: Jev read routine ERROR lines literally even when labelled "common: seen in 211 of 219 windows". E1 (per-service 24 h baseline, only what changed) gave 0.80 and 0.97. E2 scored a little higher, within one fold standard deviation, so the lean rule kept E1. Gate G1 passed: LLM on E1 0.98 vs raw logs 0.46. The keyword rules scored 1.00, and we flag that as unfair because the keywords came from the data look.</p></div></li>
+    <li><div><span class="when">Oct 11 · wave 2</span><h3>Question designs: Q7 frozen, Q1 just misses</h3><p>Q1 ("cannot tell") lifted Jev to 0.87 but the two-model average gain stayed below the pre-registered bar. Q2 (two-stage) was worse for both. Q7 (root-cause service from SQL candidates) found the right service 100% of the time for both models. Frozen engineer config: E1/Q7.</p></div></li>
+    <li><div><span class="when">Oct 11 · waves 3–4</span><h3>Lead and manager slices</h3><p>Same-problem F1 1.00 for both; repeat-or-new 0.93 vs 1.00. Manager agreement with the rule 94% vs 83%, order robustness 100% vs 89%.</p></div></li>
+    <li><div><span class="when">Oct 12 · held-out</span><h3>One run with the frozen config</h3><p id="history-test">Run once on Aug 25–31 + July (932 questions) with E1/Q7 frozen from the dev result files. Jev 0.85, LLM 0.90, raw-logs LLM 0.38, classifier 0.67. Experiment closed (D14); held-out is not re-run.</p></div></li>
+    <li><div><span class="when">Oct 12 · post-hoc, dev only</span><h3>Numbers vs words: no difference</h3>
+      <p>We asked whether the raw counts in the evidence ("14 in this window, usually about 6") hurt Jev, which is weak at math. We removed them and kept only the computed phrase ("about 2x its usual rate"). Every Jev answer stayed the same; the LLM moved by one question either way. A follow-up look at the same runs showed where the gap really is: 73% of questions have no unusual pattern and need no model at all, and on the rest Jev calls almost any unusual routine error a fault (15 of 78 quiet windows right) while the LLM rejects most of them. Next design: code decides the easy cases and the citation; Jev gets one narrow per-item question, "real fault or routine behaviour?".</p></div></li>
+    <li><div><span class="when">Oct 12 · demo</span><h3>A field guide for teams new to Jev</h3><p>An interactive deck replays the recorded dev calls step by step, technique by technique, with this benchmark at the end: <a href="https://claude.ai/artifact/LPRakghFXmQFkFWtKdfyw3">Jev Field Guide</a>.</p></div></li>
+  </ol>
+</section>
+
+<section id="how">
+  <div class="eyebrow">How it works · implementation</div>
+  <h2>Where every number and every judgment comes from</h2>
+  <p>The rule: SereneDB computes, Jev (or the LLM) judges, code assembles the answer. A question flows through four steps, called bricks.</p>
+  <pre class="mermaid">flowchart LR
+  Q["Question: what went wrong 11:56-12:11?"] --> P["1 Pattern (SQL): counts per service and template vs last 24 h"]
+  P --> E["2 Evidence (code): keep new or 2x patterns, turn ratios into phrases"]
+  E --> V["3 Verdict (Jev or LLM): pick fault type, key evidence, root service"]
+  V --> F["4 Finding (code): answer + computed confidence + cited evidence"]</pre>
+  <div class="tablebox"><table>
+    <thead><tr><th>Step</th><th>What happens</th><th>Code</th></tr></thead>
+    <tbody>
+      <tr><td>Split</td><td>Windows from injection records only; whole days to dev or held-out; one streaming pass; Drain3 learns on dev days only</td><td><code>scripts/make_split.py --dataset gaia</code>, <code>pipeline/gaia.py</code></td></tr>
+      <tr><td>Ingest</td><td>Raw window rows → OTLP → <code>otel_logs</code>; minute rollup per (service, severity, template) → <code>gaia_rollup</code>; failed requests per minute → <code>gaia_error_traces</code></td><td><code>experiments/002_gaia/core.py</code> <code>ingest</code></td></tr>
+      <tr><td>Pattern + Evidence</td><td>SQL compares each template in the window with the same service's last 24 hours; code keeps what is new or ≥ 2× usual and turns ratios into phrases</td><td><code>pipeline/gaia_queries.py</code>, <code>pipeline/gaia_bricks.py</code></td></tr>
+      <tr><td>Verdict</td><td>One Jev request per question with every question for that role; the LLM gets the same state and questions as one JSON form</td><td><code>pipeline/gaia_prompts.py</code>, <code>gaia_bricks.ask</code></td></tr>
+      <tr><td>Finding</td><td>Label + probabilities + computed confidence <code>(p_max − 1/n)/(1 − 1/n)</code> for both models + cited evidence id</td><td><code>gaia_bricks.engineer_finding</code></td></tr>
+      <tr><td>Evaluation</td><td>5 folds of whole days; freeze by the average of both models with a one-fold-SD lean rule; bootstrap CIs by day; fairness check per pair</td><td><code>experiments/002_gaia/run_dev.py</code>, <code>core.score</code></td></tr>
+      <tr><td>Held-out</td><td>Same code on a separate schema, frozen config read from the dev result files, run once, aggregates only</td><td>the sanctioned evaluation script, GAIA mode</td></tr>
+    </tbody>
+  </table></div>
+  <p class="small">Full walkthrough of the code: <code>experiments/002_gaia/README.md</code>. Trace viewer: <code>apps/trace_viewer_002.py</code>. The demo deck replays recorded calls from these traces.</p>
+</section>
+
+<section id="data">
+  <div class="eyebrow">The data</div>
+  <h2>GAIA: a QR-code login system, 10 services, 3.9M log lines a day</h2>
+  <p>CloudWise injected faults into the running system and recorded each injection. A quick look before planning decided what we can ask.</p>
+  <div class="tablebox"><table>
+    <thead><tr><th>Injected fault</th><th>Where</th><th class="num">Jul / Aug</th><th>Visible in the logs?</th></tr></thead>
+    <tbody>
+      <tr><td>File moved away</td><td>webservice1/2</td><td class="num">43 / 36</td><td><span class="pill good">yes</span> <code>No such file or directory</code>, errors ×20</td></tr>
+      <tr><td>Access permission denied</td><td>dbservice1/2</td><td class="num">15 / 20</td><td><span class="pill good">yes</span> db refuses; webservice reports downstream errors ×30</td></tr>
+      <tr><td>Memory hog, 1 GB for 10 min</td><td>all 10</td><td class="num">652 / 715</td><td><span class="pill bad">no</span> volume and error rate unchanged (122 windows checked)</td></tr>
+      <tr><td>CPU burst</td><td>mostly db, mob</td><td class="num">15 / 66</td><td><span class="pill neutral">excluded</span> lasts about 3 seconds</td></tr>
+      <tr><td>QR-code login timeout</td><td>mobservice</td><td class="num">~33k</td><td><span class="pill neutral">background</span> per request, all day</td></tr>
+    </tbody>
+  </table></div>
+  <p class="small">Every 15 minutes a normal window holds about 220 ERROR lines and 1,400 WARNING lines. That noise is the hard part: a model that reads "there are errors" as "there is a fault" fails here.</p>
+  <div class="tablebox"><table>
+    <thead><tr><th>Side</th><th>Days</th><th class="num">Windows</th><th class="num">Fault</th><th class="num">Memory (no trace)</th><th class="num">Normal</th><th class="num">Engineer questions</th></tr></thead>
+    <tbody>
+      <tr><td>Dev</td><td>Aug 1–24</td><td class="num">219</td><td class="num">35</td><td class="num">69</td><td class="num">115</td><td class="num">657</td></tr>
+      <tr><td>Held-out</td><td>Aug 25–31 + July</td><td class="num">233</td><td class="num">58</td><td class="num">81</td><td class="num">94</td><td class="num">932</td></tr>
+    </tbody>
+  </table></div>
+  <p class="small">Each question is a 15-minute window of the whole system ("What went wrong between 11:56 and 12:11?"), asked in 3 wordings, plus one wording only held-out sees. The service is never named in the question, because each fault type happens on one service type only and naming it would give the answer away.</p>
+</section>
+
+<section id="fixes">
+  <div class="eyebrow">What we changed after 001</div>
+  <h2>Five lessons from Hadoop, each built into the run</h2>
+  <div class="ledger">
+    <div class="card"><h3>Compare a service with itself</h3><p>Every pattern's count in the window against the same service's last 24 hours. 001 compared a job with all jobs.</p></div>
+    <div class="card"><h3>Fixed history window</h3><p>"New" and "more frequent" are relative to the previous 24 hours, never to the evaluation corpus.</p></div>
+    <div class="card"><h3>Cross-service view</h3><p>Per-service error tables and the earliest service to spike, so a downstream symptom is not mistaken for the cause.</p></div>
+    <div class="card"><h3>Check against raw logs early</h3><p>Gate G1: the LLM on our evidence must not lose to the LLM on raw logs. It won, 0.98 vs 0.46.</p></div>
+    <div class="card"><h3>Choose by cross-validation</h3><p>Five folds of whole days; a richer variant must beat a simpler one by more than one fold standard deviation.</p></div>
+  </div>
+</section>
+
+<section id="engineer">
+  <div class="eyebrow">Engineer · "What went wrong, where, how sure?"</div>
+  <h2>Evidence variants: E1 lifts Jev from 0.34 to 0.80</h2>
+  <div class="charts">
+    <div class="chart"><h3>Macro-F1, Jev</h3>
+      <div class="row jev"><span class="lab">E0 001-style</span><div class="track"><div class="bar" style="width:34%"></div></div><span class="val">0.34</span></div>
+      <div class="row jev"><span class="lab">E1 24 h baseline</span><div class="track"><div class="bar" style="width:80%"></div></div><span class="val">0.80</span></div>
+      <div class="row jev"><span class="lab">E2 + services</span><div class="track"><div class="bar" style="width:81%"></div></div><span class="val">0.81</span></div>
+      <div class="row jev"><span class="lab">E3 + raw lines</span><div class="track"><div class="bar" style="width:80%"></div></div><span class="val">0.80</span></div>
+    </div>
+    <div class="chart"><h3>Macro-F1, LLM (identical input)</h3>
+      <div class="row"><span class="lab">E0 001-style</span><div class="track"><div class="bar" style="width:99%"></div></div><span class="val">0.99</span></div>
+      <div class="row"><span class="lab">E1 24 h baseline</span><div class="track"><div class="bar" style="width:97%"></div></div><span class="val">0.97</span></div>
+      <div class="row"><span class="lab">E2 + services</span><div class="track"><div class="bar" style="width:99%"></div></div><span class="val">0.99</span></div>
+      <div class="row"><span class="lab">E3 + raw lines</span><div class="track"><div class="bar" style="width:99%"></div></div><span class="val">0.99</span></div>
+    </div>
+    <div class="chart"><h3>Macro-F1, baselines</h3>
+      <div class="row"><span class="lab">LLM on raw logs</span><div class="track"><div class="bar" style="width:46%"></div></div><span class="val">0.46</span></div>
+      <div class="row"><span class="lab">Classifier</span><div class="track"><div class="bar" style="width:92%"></div></div><span class="val">0.92</span></div>
+      <div class="row"><span class="lab">Keyword rules*</span><div class="track"><div class="bar" style="width:100%"></div></div><span class="val">1.00</span></div>
+      <p class="note">*Keywords were chosen after we had seen GAIA's fault lines, so this is the ceiling of a hand-tuned rule, not a fair generic baseline.</p>
+    </div>
+  </div>
+  <p>Frozen: <strong>E1</strong>. E2 scored a little higher on average but within one fold standard deviation, so the simpler variant stays. The LLM already did well with 001-style evidence: it read "common: seen in 211 of 219 windows" as routine. Jev read the same routine ERROR lines as a fault.</p>
+
+  <div class="read"><b>What this means</b><p>The LLM can filter noise on its own; Jev needs the evidence pre-filtered. Once SQL shows only what changed against the service's own baseline (E1), Jev jumps from 0.34 to 0.80. Adding more context (E2, E3) did not help either model meaningfully.</p></div>
+  <h3>Question designs on E1</h3>
+  <div class="tablebox"><table>
+    <thead><tr><th>Design</th><th class="num">Jev F1</th><th class="num">LLM F1</th><th class="num">Jev "no fault" on memory</th><th class="num">LLM</th><th>Kept?</th></tr></thead>
+    <tbody>
+      <tr><td>Q0 fault type + key evidence</td><td class="num">0.80</td><td class="num">0.97</td><td class="num">87%</td><td class="num">98%</td><td>base</td></tr>
+      <tr><td>Q1 adds "cannot tell from these logs"</td><td class="num">0.87</td><td class="num">0.98</td><td class="num">91%</td><td class="num">99%</td><td><span class="pill neutral">no</span> gain below 1 fold-SD</td></tr>
+      <tr><td>Q2 "is there a fault?" first, then which</td><td class="num">0.79</td><td class="num">0.95</td><td class="num">86%</td><td class="num">96%</td><td><span class="pill bad">no</span></td></tr>
+      <tr class="hl"><td>Q7 adds root-cause service (SQL candidates)</td><td class="num">0.80</td><td class="num">0.99</td><td class="num">87%</td><td class="num">99%</td><td><span class="pill good">frozen</span> service top-1 100% · 100%</td></tr>
+    </tbody>
+  </table></div>
+  <div class="tablebox"><table>
+    <thead><tr><th>Frozen E1/Q7</th><th class="num">Jev</th><th class="num">LLM</th></tr></thead>
+    <tbody>
+      <tr><td>Brier (lower is better)</td><td class="num">0.13</td><td class="num">0.01</td></tr>
+      <tr><td>Same answer over 3 repeats</td><td class="num">100%</td><td class="num">99%</td></tr>
+      <tr><td>Same answer with shuffled options</td><td class="num">100%</td><td class="num">100%</td></tr>
+      <tr><td>Same answer across wordings</td><td class="num">100%</td><td class="num">99%</td></tr>
+      <tr><td>"Auto" answers: accuracy at a cross-validated threshold</td><td class="num">91% @ 100% coverage</td><td class="num">99% @ 100% coverage</td></tr>
+      <tr><td>Latency p50</td><td class="num">228 ms</td><td class="num">1,606 ms</td></tr>
+      <tr><td>Cost per 1,000 questions</td><td class="num">$0.06</td><td class="num">$0.99</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<section id="lead">
+  <div class="eyebrow">Team lead · "What keeps coming back?"</div>
+  <h2>Grouping incidents is easy on GAIA, for every method</h2>
+  <div class="tablebox"><table>
+    <thead><tr><th>Judgment</th><th class="num">n</th><th class="num">Jev</th><th class="num">LLM</th><th class="num">Baseline</th></tr></thead>
+    <tbody>
+      <tr><td>L0 "Same underlying problem?" yes/no over two incident fingerprints, F1</td><td class="num">220 pairs</td><td class="num">1.00</td><td class="num">1.00</td><td class="num">cosine 1.00 · same top pattern 0.94</td></tr>
+      <tr><td>L1 broad fault taxonomy per incident, grouped in code, F1</td><td class="num">220 pairs</td><td class="num">0.99</td><td class="num">1.00</td><td class="num">—</td></tr>
+      <tr><td>L2 "Repeat of a known problem, or new?" accuracy</td><td class="num">30</td><td class="num">0.93</td><td class="num">1.00</td><td class="num">—</td></tr>
+    </tbody>
+  </table></div>
+  <div class="read"><b>What this means</b><p>Both models can group incidents. GAIA is too simple to tell them apart here, so these numbers prove the design, not the model choice.</p></div>
+  <p class="small">GAIA has only four recurring problems (two fault types on two instances each). The numbers show the design works; a harder corpus is needed to separate the methods.</p>
+</section>
+
+<section id="manager">
+  <div class="eyebrow">Manager · "Which problem do we fix first?"</div>
+  <h2>Jev agrees more often with the impact rule and never flips on order</h2>
+  <p>GAIA has no true priority, so the score is agreement with a rule written before the run: extra failed requests × 2 if customers use the service directly, ties broken by minutes with an error spike. Every number the models see comes from SQL.</p>
+  <div class="tablebox"><table>
+    <thead><tr><th>Judgment (18 problem pairs)</th><th class="num">Jev</th><th class="num">LLM</th></tr></thead>
+    <tbody>
+      <tr><td>M0 "Which to fix first?" agrees with the rule</td><td class="num">94%</td><td class="num">83%</td></tr>
+      <tr><td>M0 same answer when the two options swap places</td><td class="num">100%</td><td class="num">89%</td></tr>
+      <tr><td>M1 impact score per problem, ranked in code</td><td class="num">83%</td><td class="num">72%</td></tr>
+    </tbody>
+  </table></div>
+  <div class="read"><b>What this means</b><p>When every number is already computed in SQL and the model only has to weigh them, Jev was steadier: it gave the same answer regardless of which problem was listed first. The LLM sometimes flipped when the order changed.</p></div>
+  <p class="small">Eighteen pairs is small; read this as a direction, not a verdict.</p>
+</section>
+
+<section id="test">
+  <div class="eyebrow">Held-out · run once · Aug 25–31 + July</div>
+  <h2>New days and a new month: Jev improves, the LLM slips, the baselines collapse</h2>
+  <div class="tablebox"><table>
+    <thead><tr><th>System (932 questions)</th><th class="num">Macro-F1 [95% CI]</th><th class="num">Dev</th><th class="num">Root service</th><th class="num">"No fault" on memory</th><th class="num">Brier</th><th class="num">p50</th><th class="num">$ / 1k</th></tr></thead>
+    <tbody>
+      <tr class="hl"><td>Jev E1/Q7</td><td class="num">0.85 [0.74, 0.93]</td><td class="num">0.80</td><td class="num">0.64</td><td class="num">0.93</td><td class="num">0.13</td><td class="num">237 ms</td><td class="num">$0.05</td></tr>
+      <tr><td>LLM E1/Q7, identical input</td><td class="num">0.90 [0.81, 0.96]</td><td class="num">0.97</td><td class="num">0.64</td><td class="num">0.99</td><td class="num">0.09</td><td class="num">1,792 ms</td><td class="num">$0.90</td></tr>
+      <tr><td>LLM on raw logs (wording 0)</td><td class="num">0.38 [0.32, 0.45]</td><td class="num">0.46</td><td class="num">0.60</td><td class="num">0.31</td><td class="num">1.05</td><td class="num">2,485 ms</td><td class="num">$23.55</td></tr>
+      <tr><td>Classifier, trained on all dev</td><td class="num">0.67 [0.58, 0.76]</td><td class="num">0.92</td><td class="num">—</td><td class="num">0.77</td><td class="num">0.36</td><td class="num">~0</td><td class="num">needs labels</td></tr>
+      <tr><td>Keyword rules (dataset-informed)</td><td class="num">0.76 [0.62, 0.87]</td><td class="num">1.00</td><td class="num">0.64</td><td class="num">1.00</td><td class="num">0.15</td><td class="num">0</td><td class="num">0</td></tr>
+    </tbody>
+  </table></div>
+  <div class="charts">
+    <div class="chart"><h3>Macro-F1 by month, held-out</h3>
+      <div class="row jev"><span class="lab">Jev · Aug</span><div class="track"><div class="bar" style="width:83%"></div></div><span class="val">0.83</span></div>
+      <div class="row jev"><span class="lab">Jev · July</span><div class="track"><div class="bar" style="width:86%"></div></div><span class="val">0.86</span></div>
+      <div class="row"><span class="lab">LLM · Aug</span><div class="track"><div class="bar" style="width:98%"></div></div><span class="val">0.98</span></div>
+      <div class="row"><span class="lab">LLM · July</span><div class="track"><div class="bar" style="width:87%"></div></div><span class="val">0.87</span></div>
+      <div class="row"><span class="lab">Classifier · July</span><div class="track"><div class="bar" style="width:60%"></div></div><span class="val">0.60</span></div>
+      <p class="note">July has only webservice1's logs. The classifier and rules score 1.00 on the August week and about 0.60 on July.</p>
+    </div>
+    <div class="chart"><h3>Team lead and manager, held-out</h3>
+      <div class="row jev"><span class="lab">Jev · same problem</span><div class="track"><div class="bar" style="width:85%"></div></div><span class="val">0.85</span></div>
+      <div class="row"><span class="lab">LLM · same problem</span><div class="track"><div class="bar" style="width:87%"></div></div><span class="val">0.87</span></div>
+      <div class="row jev"><span class="lab">Jev · repeat or new</span><div class="track"><div class="bar" style="width:84%"></div></div><span class="val">0.84</span></div>
+      <div class="row"><span class="lab">LLM · repeat or new</span><div class="track"><div class="bar" style="width:81%"></div></div><span class="val">0.81</span></div>
+      <div class="row jev"><span class="lab">Jev · fix first</span><div class="track"><div class="bar" style="width:100%"></div></div><span class="val">1.00</span></div>
+      <div class="row"><span class="lab">LLM · fix first</span><div class="track"><div class="bar" style="width:100%"></div></div><span class="val">1.00</span></div>
+      <p class="note">120 lead pairs, 43 repeat items, 12 manager pairs. Both models 100% order-robust on the manager pairs here.</p>
+    </div>
+  </div>
+  <ul class="tight">
+    <li>Same answer across wordings: Jev 100%, LLM 98%. Accuracy on the wording held-out never saw: Jev 0.92, LLM 0.95.</li>
+    <li>"Auto" answers at the dev-tuned threshold: Jev 92% accurate at 99.8% coverage, LLM 95% at 100%.</li>
+    <li>Fault recall 0.84 for both; the misses are July database faults with no database logs.</li>
+  </ul>
+  <div class="read"><b>What this means</b><p>The approach generalizes: settings chosen on dev held on new days and on a month with partial logs. Methods that learned from the dev data itself (classifier, keyword rules) or skipped the evidence step (raw-logs LLM) dropped sharply. The LLM is still a little more accurate; Jev is far faster and cheaper with nearly the same result.</p></div>
+</section>
+
+<section id="example">
+  <div class="eyebrow">Two examples, exact model input</div>
+  <h2>Where both agree, and where they part</h2>
+  <div class="example">
+    <h3>A real fault: Aug 1, 11:56–12:11</h3>
+    <div class="logline">webservice1 ERROR  get a error [Errno 2] No such file or directory: 'resources/source_file/source_file.csv'
+685 in this window (usually about 0 per 15 min) · new: not seen in the previous 24 hours</div>
+    <p>Service table: webservice1 error lines 704, "more than 10x its usual rate", spike in the middle of the window; every other service at its usual rate. Both models answer <strong>missing file or resource</strong> at webservice1, confidence 1.00. Jev in 405 ms, the LLM in 3.9 s.</p>
+    <h3>A quiet window: Aug 1, 04:55</h3>
+    <div class="logline">dbservice1 ERROR  (pymysql.err.OperationalError) (1054, "Unknown column 'system_data_time' in 'field list'")
+22 in this window (usually about 10 per 15 min) · about 2x its usual rate</div>
+    <p>This SQL error happens all day. The LLM answers <strong>no fault visible</strong>. Jev gives missing file or resource 0.76, no fault 0.23. Routine errors at about twice their usual rate cause most of Jev's false alarms: expired QR-code logins, this SQL error, failed info lookups.</p>
+  </div>
+</section>
+
+<section id="criteria">
+  <div class="eyebrow">Success criteria, fixed before running · held-out decides</div>
+  <h2>Generalization passes for both; root service fails for both on July</h2>
+  <div class="tablebox"><table>
+    <thead><tr><th>Criterion</th><th>Jev dev</th><th>Jev held-out</th><th>LLM dev</th><th>LLM held-out</th></tr></thead>
+    <tbody>
+      <tr><td>R1 engineer: fault F1 ≥ 0.80</td><td>0.80</td><td><span class="pill good">pass</span> 0.85</td><td>0.99</td><td><span class="pill good">pass</span> 0.90</td></tr>
+      <tr><td>R1 engineer: root service ≥ 70%</td><td>100%</td><td><span class="pill bad">fail</span> 64%</td><td>100%</td><td><span class="pill bad">fail</span> 64%</td></tr>
+      <tr><td>R2 "no fault" on ≥ 80% of memory windows</td><td>87%</td><td><span class="pill good">pass</span> 93%</td><td>99%</td><td><span class="pill good">pass</span> 99%</td></tr>
+      <tr><td>R2 false "no fault" on ≤ 10% of faults</td><td>0%</td><td><span class="pill bad">fail</span> 16%</td><td>0%</td><td><span class="pill bad">fail</span> 16%</td></tr>
+      <tr><td>R3 "auto" answers ≥ 90% accurate at ≥ 50% coverage</td><td>91%</td><td><span class="pill good">pass</span> 92%</td><td>99%</td><td><span class="pill good">pass</span> 95%</td></tr>
+      <tr><td>R4 lead: same-problem F1 ≥ 0.85, repeat ≥ 80%</td><td>1.00 · 93%</td><td><span class="pill good">pass</span> 0.85 · 84%</td><td>1.00 · 100%</td><td><span class="pill good">pass</span> 0.87 · 81%</td></tr>
+      <tr><td>R5 manager: ≥ 80% agreement, ≥ 90% order-robust</td><td>94% · 100%</td><td><span class="pill good">pass</span> 100% · 100%</td><td>83% · 89%</td><td><span class="pill good">pass</span> 100% · 100%</td></tr>
+      <tr><td>R6 held-out within 0.10 of dev</td><td colspan="2"><span class="pill good">pass</span> +0.05</td><td colspan="2"><span class="pill good">pass</span> −0.07</td></tr>
+      <tr><td>C1 Jev within 0.05 of the LLM (engineer)</td><td colspan="4"><span class="pill bad">fail</span> dev 0.80 vs 0.97; held-out 0.849 vs 0.901, missed by 0.002 (intervals overlap)</td></tr>
+      <tr><td>C2 Jev Brier ≤ LLM Brier</td><td colspan="4"><span class="pill bad">fail</span> held-out 0.13 vs 0.09</td></tr>
+      <tr><td>C3 Jev ≥ 5× faster and cheaper</td><td colspan="4"><span class="pill good">pass</span> held-out 7.6× faster · 19.6× cheaper</td></tr>
+    </tbody>
+  </table></div>
+  <div class="read"><b>What this means</b><p>Both models passed every criterion about acting on the answer except the two that need logs we do not have. Jev failed the comparison criteria on accuracy (just) and calibration, and passed easily on speed and cost.</p></div>
+  <p class="small">Both R1-root and R2 fail for the same reason: in July only webservice1's logs exist, so a database permission fault shows up as downstream errors at the web tier and its origin cannot be seen.</p>
+</section>
+
+<section id="next">
+  <div class="eyebrow">Next</div>
+  <h2>Experiment 002 is closed. Next: BGL</h2>
+  <ul class="tight">
+    <li>GAIA has only two log-visible fault types and four recurring problems, so the lead and manager judgments saturate. BGL (experiment 003) brings many alert categories and enough cases to measure calibration.</li>
+    <li>Jev's best lever was the explicit "cannot tell" option (+0.06 on dev). It missed the pre-registered bar here and gets tested again on BGL.</li>
+    <li>Jev's main weakness is literal reading of routine errors at about twice their usual rate. Candidates: a "routine noise" option with examples, or per-item judgments that can outvote one noisy line.</li>
+    <li>"Where" needs the root service's own logs. The July result shows what partial telemetry costs.</li>
+  </ul>
+</section>
+
+<footer>
+  <span>Spend on dev: Jev $0.32 for 5,391 calls; LLM $18.32 for 5,846 calls, about $12 of it the raw-logs baseline. Held-out added an estimated $6–7.</span>
+  <span>Source: <code>plans/002-gaia-question-design.md</code> §11, <code>runs/002/</code>, branch <code>exp/002-gaia-question-design</code>. Fairness: identical state and options for Jev and the LLM in 100% of pairs.</span>
+</footer>
+
+</div>

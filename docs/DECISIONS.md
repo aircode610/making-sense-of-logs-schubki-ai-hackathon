@@ -1,0 +1,18 @@
+# Decisions (append-only, newest at the bottom)
+
+Side-quest decisions D1–D14 are in `archive/side-quest/docs/DECISIONS.md`. Hackathon decisions are H1…
+
+| # | Date | Decision | Why |
+|---|---|---|---|
+| H1 | 2026-10-17 | **Hackathon mode:** minimal code, iterate to results. **Every task still needs an approved plan** (`plans/NNN-name.md`, one screen, Claude drafts, Amirali/Konark approve). | Planning keeps two people in parallel and on target; short plans keep it fast. |
+| H2 | 2026-10-17 | **Stack:** SereneDB (local docker) + MCP server (FastMCP) + LangGraph agent via `langchain-mcp-adapters` + LangSmith + Jev + a strong LLM (H8); Streamlit UI. | One toolset for Claude, our agent and the UI; tracing for free. |
+| H3 | 2026-10-17 | **The brief's ReAct + SQL-tools design is our baseline**, measured on the same questions; our product must beat it on `EVAL.md` metrics. | Everyone builds it; novelty must be shown with numbers. |
+| H4 | 2026-10-17 | **Eval replaced:** rubric-driven (query correctness, groundedness, role distinctness, forbidden claims, label agreement, tool selection, cost) instead of side-quest macro-F1. Held-out kept (H10). | Judges score grounded, role-specific answers, not classification F1. |
+| H5 | 2026-10-17 | **D10 lifted:** Anthropic models allowed. | Judges connect Claude to our MCP server. |
+| H6 | 2026-10-17 | Ownership table invented in `data/ownership.csv` (BGL components → node-platform / cluster-control / hpc-workloads; nova services → cloud-api / cloud-compute). | Brief requires it for team-level counts. |
+| H7 | 2026-10-17 | Jev raw doc dumps are not committed (public repo); use the `typesafe-docs` MCP or `scripts/refresh_docs.sh`. SereneDB docs (Apache-2.0) and the TypeSafe skill (MIT) are committed. | Licensing of third-party docs. |
+| H8 | 2026-10-17 | **Agent/explanation LLM = strong model** (default Claude Opus 5.5, configurable); Gemini Flash dropped from the answer path. Jev stays for typed judgments. | Polished final answers matter more than LLM speed. |
+| H9 | 2026-10-17 | **Data loaded by SereneDB itself in docker** (`read_csv`/`COPY` from `/data`, parsing in SQL, `load/*.sql`), as the organisers suggest. | Brief's recommended path; less code. |
+| H10 | 2026-10-17 | **Held-out eval kept** (`docs/HELDOUT.md`): held-out questions + a BGL time slice; only `eval/run_heldout.py` (written together) touches it; guard hook ported. | Show generalization, not demo-tuning. |
+| H11 | 2026-10-17 | **Performance is a first-class goal** (`docs/PERFORMANCE.md`): sort order/zonemaps, inverted + ART indexes, rollups, streaming; every change benchmarked. | Huge-datasets award, execution score. |
+| H12 | 2026-10-17 | **Work split = vertical slices, mixed** (`docs/PLAN.md`): both touch every layer, swap halfway. | Parallelism without silos. |

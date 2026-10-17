@@ -1,0 +1,16 @@
+{
+  "mcpServers": {
+    "serenedb-docs": {
+      "type": "http",
+      "url": "https://api.serenedb.com/mcp"
+    },
+    "typesafe-docs": {
+      "type": "http",
+      "url": "https://docs.typesafe.ai/mcp"
+    },
+    "langchain-docs": {
+      "type": "http",
+      "url": "https://docs.langchain.com/mcp"
+    }
+  }
+}

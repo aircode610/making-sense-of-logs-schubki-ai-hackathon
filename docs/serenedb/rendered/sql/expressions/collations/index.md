@@ -1,0 +1,85 @@
+---
+title: Collations
+split: headings
+---
+
+import RailroadDiagram from '@site/src/components/RailroadDiagram';
+import RailroadSource from './diagram.js';
+
+import SqlLogicTest from "@site/src/components/SqlLogicTest";
+import DocCallout from "@site/src/components/DocCallout";
+
+<RailroadDiagram source={RailroadSource} production="rrdiagram" />
+
+Collations provide rules for how text should be sorted or compared in the execution engine. Collations are useful for localization, as the rules for how text should be ordered are different for different languages or for different countries. These orderings are often incompatible with one another. For example, in English the letter `y` comes between `x` and `z`. However, in Lithuanian the letter `y` comes between the `i` and `j`. For that reason, different collations are supported. The user must choose which collation they want to use when performing sorting and comparison operations.
+
+By default, the `BINARY` collation is used. That means that strings are ordered and compared based only on their binary contents. This makes sense for standard ASCII characters (i.e., the letters A-Z and numbers 0-9), but generally does not make much sense for special unicode characters. It is, however, by far the fastest method of performing ordering and comparisons. Hence it is recommended to stick with the `BINARY` collation unless required otherwise.
+
+<DocCallout type="tip">
+The `BINARY` collation is also available under the aliases `C` and `POSIX`.
+</DocCallout>
+
+## Using Collations
+
+SereneDB ships with three built-in, region-independent collations: `NOCASE`, `NOACCENT` and `NFC`. The `NOCASE` collation compares characters as equal regardless of their casing. The `NOACCENT` collation compares characters as equal regardless of their accents. The `NFC` collation performs NFC-normalized comparisons, see [Unicode normalization](https://en.wikipedia.org/wiki/Unicode_equivalence#Normalization) for more information. In addition to these three built-ins, SereneDB also includes the region- and language-specific collations described in [Locale Collations](#locale-collations) below.
+
+The available collations can be listed with `PRAGMA collations`. The query below filters to a stable subset to show both the built-ins and a few locales:
+
+[example sql/expressions/collations/index/example_015 not found]
+
+[example sql/expressions/collations/index/example_001 not found]
+
+[example sql/expressions/collations/index/example_002 not found]
+
+[example sql/expressions/collations/index/example_003 not found]
+
+[example sql/expressions/collations/index/example_004 not found]
+
+Collations can be combined by chaining them using the dot operator. Note, however, that not all collations can be combined together. In general, the `NOCASE` collation can be combined with any other collator, but most other collations cannot be combined.
+
+[example sql/expressions/collations/index/example_005 not found]
+
+[example sql/expressions/collations/index/example_006 not found]
+
+[example sql/expressions/collations/index/example_007 not found]
+
+## Default Collations
+
+The collations we have seen so far have all been specified _per expression_. It is also possible to specify a default collator, either on the global database level or on a base table column. The `PRAGMA` `default_collation` can be used to specify the global default collator. This is the collator that will be used if no other one is specified.
+
+[example sql/expressions/collations/index/example_008 not found]
+
+Collations can also be specified per-column when creating a table. When that column is then used in a comparison, the per-column collation is used to perform that comparison.
+
+[example sql/expressions/collations/index/example_009 not found]
+
+[example sql/expressions/collations/index/example_010 not found]
+
+Be careful here, however, as different collations cannot be combined. This can be problematic when you want to compare columns that have a different collation specified.
+
+[example sql/expressions/collations/index/example_011 not found]
+
+[example sql/expressions/collations/index/example_012 not found]
+
+[example sql/expressions/collations/index/example_013 not found]
+
+We need to manually overwrite the collation:
+
+[example sql/expressions/collations/index/example_014 not found]
+
+## Locale Collations
+
+The collations we have seen so far are not region-dependent and do not follow any specific regional rules. SereneDB also includes region- and language-specific collations. These follow the ordering and comparison rules of a specific language or region: the Unicode Collation Algorithm with the tailorings of the [CLDR](https://cldr.unicode.org/) locale data, the rules [ICU](https://icu.unicode.org/) implements. SereneDB carries its own implementation and the data it is generated from, not the ICU library.
+
+Locale collations are named by their locale, for example `de` (German), `fr` (French) and `ja` (Japanese). Region-qualified locales are also available, such as `de_at` (German as used in Austria). The full set of available locales can be inspected with `PRAGMA collations` as shown above.
+
+For example, the German collation orders the umlaut `ä` next to `a` rather than after `z`:
+
+[example sql/expressions/collations/index/example_016 not found]
+
+Like the built-in collations, locale collations can be applied per expression with the `COLLATE` operator:
+
+[example sql/expressions/collations/index/example_017 not found]
+
+They can equally be used per column when creating a table (`s VARCHAR COLLATE DE`) and as the global `default_collation`.
+

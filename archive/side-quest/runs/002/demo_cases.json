@@ -1,0 +1,4914 @@
+{
+ "cases": [
+  {
+   "wid": "w0187",
+   "title": "File fault on webservice1",
+   "question": "What went wrong in the system between 2021-08-01 11:56 and 2021-08-01 12:11?",
+   "truth": {
+    "fault": "file_missing",
+    "root_service": "webservice1"
+   },
+   "slice": "fault",
+   "raw": {
+    "lines": 38443.0,
+    "errors": 884.0,
+    "warn_plus": 2027,
+    "sample_errors": [
+     "dbservice1 ERROR (pymysql.err.OperationalError) (1065, 'Query was empty')(Background on this error at: http://sqlalche.me/e/14/e3q8)",
+     "webservice1 ERROR an error occurred in the downstream service",
+     "dbservice2 ERROR {trace_id} | password in database of {user} is null, the user is not registered",
+     "webservice1 ERROR an error occurred in the downstream service",
+     "dbservice1 ERROR {trace_id} | password in database of {user} is null, the user is not registered",
+     "webservice2 ERROR an error occurred in the downstream service",
+     "dbservice2 ERROR (pymysql.err.ProgrammingError) (1146, \"Table 'cloudwise_micross.system_metric_datas' doesn't exist\")[SQL: select service_names, system_data_time, system_cpu_uti",
+     "webservice2 ERROR an error occurred in the downstream service",
+     "dbservice2 ERROR (pymysql.err.ProgrammingError) (1146, \"Table 'cloudwise_micross.system_metric_datas' doesn't exist\")[SQL: select service_names, system_data_time, system_cpu_uti",
+     "webservice1 ERROR an error occurred in the downstream service",
+     "dbservice1 ERROR (pymysql.err.OperationalError) (1065, 'Query was empty')(Background on this error at: http://sqlalche.me/e/14/e3q8)",
+     "webservice1 ERROR an error occurred in the downstream service"
+    ]
+   },
+   "variants": {
+    "E0/Q0": {
+     "state": {
+      "question": "What went wrong in the system between 2021-08-01 11:56 and 2021-08-01 12:11?",
+      "window": {
+       "services_logging": 10,
+       "log_lines": "38443",
+       "error_lines": "884"
+      },
+      "evidence": {
+       "E1": {
+        "service": "webservice1",
+        "log_pattern": "get a error [Errno <NUM>] No such file or directory: 'resources<PATH>'",
+        "severity": "ERROR",
+        "lines": "685 in this window",
+        "rarity": "rare: seen in 24 of 219 windows",
+        "first_seen": "in the middle of the window",
+        "example_line": "get a error [Errno 2] No such file or directory: 'resources/source_file/source_file.csv'"
+       },
+       "E2": {
+        "service": "redisservice2",
+        "log_pattern": "二维码已过期， 请刷新重新扫描, status_code: <NUM>",
+        "severity": "ERROR",
+        "lines": "5 in this window",
+        "rarity": "common: seen in 211 of 219 windows",
+        "first_seen": "from the start of the window",
+        "example_line": "二维码已过期， 请刷新重新扫描, status_code: 400"
+       },
+       "E3": {
+        "service": "redisservice1",
+        "log_pattern": "二维码已过期， 请刷新重新扫描, status_code: <NUM>",
+        "severity": "ERROR",
+        "lines": "5 in this window",
+        "rarity": "common: seen in 211 of 219 windows",
+        "first_seen": "from the start of the window",
+        "example_line": "二维码已过期， 请刷新重新扫描, status_code: 400"
+       },
+       "E4": {
+        "service": "mobservice2",
+        "log_pattern": "uuid:<UUID> information has expired, mobile phone login is invalid",
+        "severity": "ERROR",
+        "lines": "4 in this window",
+        "rarity": "common: seen in 211 of 219 windows",
+        "first_seen": "from the start of the window",
+        "example_line": "uuid:9151b5e2-f27c-11eb-8d37-0242ac110004 information has expired, mobile phone login is invalid"
+       },
+       "E5": {
+        "service": "logservice2",
+        "log_pattern": "{traci_id} | uuid expired, invalid phone request",
+        "severity": "ERROR",
+        "lines": "3 in this window",
+        "rarity": "common: seen in 211 of 219 windows",
+        "first_seen": "in the middle of the window",
+        "example_line": "{traci_id} | uuid expired, invalid phone request"
+       },
+       "E6": {
+        "service": "logservice2",
+        "log_pattern": "get information failed, fail code: <NUM>",
+        "severity": "ERROR",
+        "lines": "3 in this window",
+        "rarity": "common: seen in 211 of 219 windows",
+        "first_seen": "in the middle of the window",
+        "example_line": "get information failed, fail code: 400"
+       },
+       "E7": {
+        "service": "mobservice1",
+        "log_pattern": "uuid:<UUID> information has expired, mobile phone login is invalid",
+        "severity": "ERROR",
+        "lines": "2 in this window",
+        "rarity": "common: seen in 211 of 219 windows",
+        "first_seen": "in the middle of the window",
+        "example_line": "uuid:d28c37da-f27c-11eb-b738-0242ac110004 information has expired, mobile phone login is invalid"
+       },
+       "E8": {
+        "service": "logservice1",
+        "log_pattern": "get information failed, fail code: <NUM>",
+        "severity": "ERROR",
+        "lines": "2 in this window",
+        "rarity": "common: seen in 211 of 219 windows",
+        "first_seen": "from the start of the window",
+        "example_line": "get information failed, fail code: 400"
+       },
+       "E9": {
+        "service": "logservice1",
+        "log_pattern": "{traci_id} | uuid expired, invalid phone request",
+        "severity": "ERROR",
+        "lines": "2 in this window",
+        "rarity": "common: seen in 211 of 219 windows",
+        "first_seen": "from the start of the window",
+        "example_line": "{traci_id} | uuid expired, invalid phone request"
+       },
+       "E10": {
+        "service": "webservice2",
+        "log_pattern": "an error occurred in the downstream service",
+        "severity": "ERROR",
+        "lines": "70 in this window",
+        "rarity": "common: seen in 212 of 219 windows",
+        "first_seen": "from the start of the window",
+        "example_line": "an error occurred in the downstream service"
+       },
+       "E11": {
+        "service": "webservice1",
+        "log_pattern": "an error occurred in the downstream service",
+        "severity": "ERROR",
+        "lines": "19 in this window",
+        "rarity": "common: seen in 212 of 219 windows",
+        "first_seen": "from the start of the window",
+        "example_line": "an error occurred in the downstream service"
+       },
+       "E12": {
+        "service": "dbservice2",
+        "log_pattern": "(pymysql.err.ProgrammingError) (<NUM>, \"Table 'cloudwise_micross.<ID>' doesn't exist\")[SQL: select service_names, <ID>, <ID>, <ID>,<ID>, <ID>, <ID>,system_network, <ID>, <ID> from <ID>](Background on this error at: http:/<PATH>)",
+        "severity": "ERROR",
+        "lines": "13 in this window",
+        "rarity": "common: seen in 212 of 219 windows",
+        "first_seen": "from the start of the window",
+        "example_line": "(pymysql.err.ProgrammingError) (1146, \"Table 'cloudwise_micross.system_metric_datas' doesn't exist\")[SQL: select service_names, system_data_time, system_cpu_utilization, system_memory_usage,system_disk_usage, disk_io_read_count, disk_io_wri"
+       }
+      }
+     },
+     "questions": {
+      "fault": {
+       "type": "choice",
+       "instructions": "`question` asks about a time window of a multi-service system. `evidence` lists the log patterns of that window that are new or more frequent than in the previous 24 hours; `window` summarises log volume. Which option best describes what happened in this window?",
+       "criteria": {
+        "missing file or resource": {
+         "definition": "A component cannot find a file, resource or configuration it needs.",
+         "covers": "Errors saying a file, path, resource or config does not exist or cannot be found or loaded, appearing new or far more often than usual.",
+         "does_not_cover": "The resource exists but access to it is refused; slow or unavailable dependencies."
+        },
+        "permission denied": {
+         "definition": "A component is refused access to a resource or to a service it depends on.",
+         "covers": "Access denied, permission or authorization errors, a service refusing requests from its callers, and callers then reporting errors from that dependency.",
+         "does_not_cover": "Missing files or resources; dependencies that are only slow."
+        },
+        "no fault visible": {
+         "definition": "The logs in this window look like the system's usual behaviour.",
+         "covers": "Routine errors and warnings at about their usual rate, informational messages, small fluctuations.",
+         "does_not_cover": "A burst of errors that are new or much more frequent than in the previous 24 hours."
+        }
+       }
+      },
+      "key_evidence": {
+       "type": "choice",
+       "criteria": {
+        "E1": "Evidence item `evidence.E1`",
+        "E2": "Evidence item `evidence.E2`",
+        "E3": "Evidence item `evidence.E3`",
+        "E4": "Evidence item `evidence.E4`",
+        "E5": "Evidence item `evidence.E5`",
+        "E6": "Evidence item `evidence.E6`",
+        "E7": "Evidence item `evidence.E7`",
+        "E8": "Evidence item `evidence.E8`",
+        "E9": "Evidence item `evidence.E9`",
+        "E10": "Evidence item `evidence.E10`",
+        "E11": "Evidence item `evidence.E11`",
+        "E12": "Evidence item `evidence.E12`",
+        "none": "No evidence item shows a fault."
+       },
+       "instructions": "Which single item in `evidence` most directly shows the cause of a problem in this window?"
+      }
+     },
+     "jev": {
+      "answers": {
+       "fault": {
+        "type": "choice",
+        "choice": "missing file or resource",
+        "confidence": 0.89,
+        "probabilities": {
+         "missing file or resource": 0.93,
+         "permission denied": 0.05,
+         "no fault visible": 0.02
+        }
+       },
+       "key_evidence": {
+        "type": "choice",
+        "choice": "E12",
+        "confidence": 0.46,
+        "probabilities": {
+         "E1": 0.49,
+         "E2": 0.0,
+         "E3": 0.0,
+         "E4": 0.0,
+         "E5": 0.0,
+         "E6": 0.0,
+         "E7": 0.0,
+         "E8": 0.0,
+         "E9": 0.0,
+         "E10": 0.01,
+         "E11": 0.0,
+         "E12": 0.5,
+         "none": 0.0
+        }
+       }
+      },
+      "finding": {
+       "pred": "file_missing",
+       "probs": {
+        "file_missing": 0.93,
+        "permission_denied": 0.05,
+        "none": 0.02
+       },
+       "confidence": 0.895,
+       "abstain": false,
+       "key_evidence": "E12"
+      },
+      "latency_ms": 242.0
+     },
+     "llm": {
+      "answers": {
+       "fault": {
+        "choice": "missing file or resource",
+        "probabilities": {
+         "missing file or resource": 0.99,
+         "permission denied": 0.0050000000000000044,
+         "no fault visible": 0.0050000000000000044
+        }
+       },
+       "key_evidence": {
+        "choice": "E1",
+        "probabilities": {
+         "E1": 0.99,
+         "E2": 0.000833333333333334,
+         "E3": 0.000833333333333334,
+         "E4": 0.000833333333333334,
+         "E5": 0.000833333333333334,
+         "E6": 0.000833333333333334,
+         "E7": 0.000833333333333334,
+         "E8": 0.000833333333333334,
+         "E9": 0.000833333333333334,
+         "E10": 0.000833333333333334,
+         "E11": 0.000833333333333334,
+         "E12": 0.000833333333333334,
+         "none": 0.000833333333333334
+        }
+       }
+      },
+      "finding": {
+       "pred": "file_missing",
+       "probs": {
+        "file_missing": 0.99,
+        "permission_denied": 0.0050000000000000044,
+        "none": 0.0050000000000000044
+       },
+       "confidence": 0.985,
+       "abstain": false,
+       "key_evidence": "E1"
+      },
+      "latency_ms": 1751.0,
+      "prompt_chars": 7601
+     }
+    },
+    "E1/Q0": {
+     "state": {
+      "question": "What went wrong in the system between 2021-08-01 11:56 and 2021-08-01 12:11?",
+      "window": {
+       "services_logging": 10,
+       "log_lines": "38443 (usually about 40642 per 15 min)",
+       "error_lines": "884 (usually about 221 per 15 min)"
+      },
+      "evidence": {
+       "E1": {
+        "service": "webservice1",
+        "log_pattern": "get a error [Errno <NUM>] No such file or directory: 'resources<PATH>'",
+        "severity": "ERROR",
+        "lines": "685 in this window (usually about 0 per 15 min)",
+        "change": "new: not seen in the previous 24 hours",
+        "first_seen": "in the middle of the window",
+        "example_line": "get a error [Errno 2] No such file or directory: 'resources/source_file/source_file.csv'"
+       }
+      }
+     },
+     "questions": {
+      "fault": {
+       "type": "choice",
+       "instructions": "`question` asks about a time window of a multi-service system. `evidence` lists the log patterns of that window that are new or more frequent than in the previous 24 hours; `window` summarises log volume. Which option best describes what happened in this window?",
+       "criteria": {
+        "missing file or resource": {
+         "definition": "A component cannot find a file, resource or configuration it needs.",
+         "covers": "Errors saying a file, path, resource or config does not exist or cannot be found or loaded, appearing new or far more often than usual.",
+         "does_not_cover": "The resource exists but access to it is refused; slow or unavailable dependencies."
+        },
+        "permission denied": {
+         "definition": "A component is refused access to a resource or to a service it depends on.",
+         "covers": "Access denied, permission or authorization errors, a service refusing requests from its callers, and callers then reporting errors from that dependency.",
+         "does_not_cover": "Missing files or resources; dependencies that are only slow."
+        },
+        "no fault visible": {
+         "definition": "The logs in this window look like the system's usual behaviour.",
+         "covers": "Routine errors and warnings at about their usual rate, informational messages, small fluctuations.",
+         "does_not_cover": "A burst of errors that are new or much more frequent than in the previous 24 hours."
+        }
+       }
+      },
+      "key_evidence": {
+       "type": "choice",
+       "criteria": {
+        "E1": "Evidence item `evidence.E1`",
+        "none": "No evidence item shows a fault."
+       },
+       "instructions": "Which single item in `evidence` most directly shows the cause of a problem in this window?"
+      }
+     },
+     "jev": {
+      "answers": {
+       "fault": {
+        "type": "choice",
+        "choice": "missing file or resource",
+        "confidence": 1.0,
+        "probabilities": {
+         "missing file or resource": 1.0,
+         "permission denied": 0.0,
+         "no fault visible": 0.0
+        }
+       },
+       "key_evidence": {
+        "type": "choice",
+        "choice": "E1",
+        "confidence": 1.0,
+        "probabilities": {
+         "E1": 1.0,
+         "none": 0.0
+        }
+       }
+      },
+      "finding": {
+       "pred": "file_missing",
+       "probs": {
+        "file_missing": 1.0,
+        "permission_denied": 0.0,
+        "none": 0.0
+       },
+       "confidence": 1.0,
+       "abstain": false,
+       "key_evidence": "E1"
+      },
+      "latency_ms": 230.0
+     },
+     "llm": {
+      "answers": {
+       "fault": {
+        "choice": "missing file or resource",
+        "probabilities": {
+         "missing file or resource": 1.0,
+         "permission denied": 0.0,
+         "no fault visible": 0.0
+        }
+       },
+       "key_evidence": {
+        "choice": "E1",
+        "probabilities": {
+         "E1": 1.0,
+         "none": 0.0
+        }
+       }
+      },
+      "finding": {
+       "pred": "file_missing",
+       "probs": {
+        "file_missing": 1.0,
+        "permission_denied": 0.0,
+        "none": 0.0
+       },
+       "confidence": 1.0,
+       "abstain": false,
+       "key_evidence": "E1"
+      },
+      "latency_ms": 2009.0,
+      "prompt_chars": 2833
+     }
+    },
+    "E1/Q1": {
+     "state": {
+      "question": "What went wrong in the system between 2021-08-01 11:56 and 2021-08-01 12:11?",
+      "window": {
+       "services_logging": 10,
+       "log_lines": "38443 (usually about 40642 per 15 min)",
+       "error_lines": "884 (usually about 221 per 15 min)"
+      },
+      "evidence": {
+       "E1": {
+        "service": "webservice1",
+        "log_pattern": "get a error [Errno <NUM>] No such file or directory: 'resources<PATH>'",
+        "severity": "ERROR",
+        "lines": "685 in this window (usually about 0 per 15 min)",
+        "change": "new: not seen in the previous 24 hours",
+        "first_seen": "in the middle of the window",
+        "example_line": "get a error [Errno 2] No such file or directory: 'resources/source_file/source_file.csv'"
+       }
+      }
+     },
+     "questions": {
+      "fault": {
+       "type": "choice",
+       "instructions": "`question` asks about a time window of a multi-service system. `evidence` lists the log patterns of that window that are new or more frequent than in the previous 24 hours; `window` summarises log volume. Which option best describes what happened in this window?",
+       "criteria": {
+        "missing file or resource": {
+         "definition": "A component cannot find a file, resource or configuration it needs.",
+         "covers": "Errors saying a file, path, resource or config does not exist or cannot be found or loaded, appearing new or far more often than usual.",
+         "does_not_cover": "The resource exists but access to it is refused; slow or unavailable dependencies."
+        },
+        "permission denied": {
+         "definition": "A component is refused access to a resource or to a service it depends on.",
+         "covers": "Access denied, permission or authorization errors, a service refusing requests from its callers, and callers then reporting errors from that dependency.",
+         "does_not_cover": "Missing files or resources; dependencies that are only slow."
+        },
+        "no fault visible": {
+         "definition": "The logs in this window look like the system's usual behaviour.",
+         "covers": "Routine errors and warnings at about their usual rate, informational messages, small fluctuations.",
+         "does_not_cover": "A burst of errors that are new or much more frequent than in the previous 24 hours."
+        },
+        "cannot tell from these logs": {
+         "definition": "The evidence is too weak or ambiguous to say whether there was a fault.",
+         "covers": "Small or mixed changes that could be noise or an early sign of a problem.",
+         "does_not_cover": "A clear new error burst, or clearly usual behaviour."
+        }
+       }
+      },
+      "key_evidence": {
+       "type": "choice",
+       "criteria": {
+        "E1": "Evidence item `evidence.E1`",
+        "none": "No evidence item shows a fault."
+       },
+       "instructions": "Which single item in `evidence` most directly shows the cause of a problem in this window?"
+      }
+     },
+     "jev": {
+      "answers": {
+       "fault": {
+        "type": "choice",
+        "choice": "missing file or resource",
+        "confidence": 1.0,
+        "probabilities": {
+         "missing file or resource": 1.0,
+         "permission denied": 0.0,
+         "no fault visible": 0.0,
+         "cannot tell from these logs": 0.0
+        }
+       },
+       "key_evidence": {
+        "type": "choice",
+        "choice": "E1",
+        "confidence": 1.0,
+        "probabilities": {
+         "E1": 1.0,
+         "none": 0.0
+        }
+       }
+      },
+      "finding": {
+       "pred": "file_missing",
+       "probs": {
+        "file_missing": 1.0,
+        "permission_denied": 0.0,
+        "none": 0.0
+       },
+       "confidence": 1.0,
+       "abstain": false,
+       "key_evidence": "E1"
+      },
+      "latency_ms": 212.0
+     },
+     "llm": {
+      "answers": {
+       "fault": {
+        "choice": "missing file or resource",
+        "probabilities": {
+         "missing file or resource": 1.0,
+         "permission denied": 0.0,
+         "no fault visible": 0.0,
+         "cannot tell from these logs": 0.0
+        }
+       },
+       "key_evidence": {
+        "choice": "E1",
+        "probabilities": {
+         "E1": 1.0,
+         "none": 0.0
+        }
+       }
+      },
+      "finding": {
+       "pred": "file_missing",
+       "probs": {
+        "file_missing": 1.0,
+        "permission_denied": 0.0,
+        "none": 0.0
+       },
+       "confidence": 1.0,
+       "abstain": false,
+       "key_evidence": "E1"
+      },
+      "latency_ms": 1154.0,
+      "prompt_chars": 3136
+     }
+    },
+    "E1/Q2": {
+     "state": {
+      "question": "What went wrong in the system between 2021-08-01 11:56 and 2021-08-01 12:11?",
+      "window": {
+       "services_logging": 10,
+       "log_lines": "38443 (usually about 40642 per 15 min)",
+       "error_lines": "884 (usually about 221 per 15 min)"
+      },
+      "evidence": {
+       "E1": {
+        "service": "webservice1",
+        "log_pattern": "get a error [Errno <NUM>] No such file or directory: 'resources<PATH>'",
+        "severity": "ERROR",
+        "lines": "685 in this window (usually about 0 per 15 min)",
+        "change": "new: not seen in the previous 24 hours",
+        "first_seen": "in the middle of the window",
+        "example_line": "get a error [Errno 2] No such file or directory: 'resources/source_file/source_file.csv'"
+       }
+      }
+     },
+     "questions": {
+      "is_fault": {
+       "type": "noul",
+       "instructions": "Do the logs described in `evidence` and `window` show a fault in this window: errors that are new or much more frequent than in the previous 24 hours?",
+       "criteria": {
+        "true": "A clear fault is visible in this window.",
+        "false": "The window looks like usual behaviour."
+       }
+      },
+      "fault_type": {
+       "type": "choice",
+       "instructions": "If there is a fault in this window (see `evidence`), which kind of fault is it?",
+       "criteria": {
+        "missing file or resource": {
+         "definition": "A component cannot find a file, resource or configuration it needs.",
+         "covers": "Errors saying a file, path, resource or config does not exist or cannot be found or loaded, appearing new or far more often than usual.",
+         "does_not_cover": "The resource exists but access to it is refused; slow or unavailable dependencies."
+        },
+        "permission denied": {
+         "definition": "A component is refused access to a resource or to a service it depends on.",
+         "covers": "Access denied, permission or authorization errors, a service refusing requests from its callers, and callers then reporting errors from that dependency.",
+         "does_not_cover": "Missing files or resources; dependencies that are only slow."
+        }
+       }
+      },
+      "key_evidence": {
+       "type": "choice",
+       "criteria": {
+        "E1": "Evidence item `evidence.E1`",
+        "none": "No evidence item shows a fault."
+       },
+       "instructions": "Which single item in `evidence` most directly shows the cause of a problem in this window?"
+      }
+     },
+     "jev": {
+      "answers": {
+       "is_fault": {
+        "type": "noul",
+        "noul": 0.98
+       },
+       "fault_type": {
+        "type": "choice",
+        "choice": "missing file or resource",
+        "confidence": 1.0,
+        "probabilities": {
+         "missing file or resource": 1.0,
+         "permission denied": 0.0
+        }
+       },
+       "key_evidence": {
+        "type": "choice",
+        "choice": "E1",
+        "confidence": 1.0,
+        "probabilities": {
+         "E1": 1.0,
+         "none": 0.0
+        }
+       }
+      },
+      "finding": {
+       "pred": "file_missing",
+       "probs": {
+        "none": 0.020000000000000018,
+        "file_missing": 0.98,
+        "permission_denied": 0.0
+       },
+       "confidence": 0.97,
+       "abstain": false,
+       "key_evidence": "E1"
+      },
+      "latency_ms": 240.0
+     },
+     "llm": {
+      "answers": {
+       "is_fault": {
+        "noul": 1.0
+       },
+       "fault_type": {
+        "choice": "missing file or resource",
+        "probabilities": {
+         "missing file or resource": 1.0,
+         "permission denied": 0.0
+        }
+       },
+       "key_evidence": {
+        "choice": "E1",
+        "probabilities": {
+         "E1": 1.0,
+         "none": 0.0
+        }
+       }
+      },
+      "finding": {
+       "pred": "file_missing",
+       "probs": {
+        "none": 0.0,
+        "file_missing": 1.0,
+        "permission_denied": 0.0
+       },
+       "confidence": 1.0,
+       "abstain": false,
+       "key_evidence": "E1"
+      },
+      "latency_ms": 2040.0,
+      "prompt_chars": 2653
+     }
+    },
+    "E1/Q7": {
+     "state": {
+      "question": "What went wrong in the system between 2021-08-01 11:56 and 2021-08-01 12:11?",
+      "window": {
+       "services_logging": 10,
+       "log_lines": "38443 (usually about 40642 per 15 min)",
+       "error_lines": "884 (usually about 221 per 15 min)"
+      },
+      "evidence": {
+       "E1": {
+        "service": "webservice1",
+        "log_pattern": "get a error [Errno <NUM>] No such file or directory: 'resources<PATH>'",
+        "severity": "ERROR",
+        "lines": "685 in this window (usually about 0 per 15 min)",
+        "change": "new: not seen in the previous 24 hours",
+        "first_seen": "in the middle of the window",
+        "example_line": "get a error [Errno 2] No such file or directory: 'resources/source_file/source_file.csv'"
+       }
+      }
+     },
+     "questions": {
+      "fault": {
+       "type": "choice",
+       "instructions": "`question` asks about a time window of a multi-service system. `evidence` lists the log patterns of that window that are new or more frequent than in the previous 24 hours; `window` summarises log volume. Which option best describes what happened in this window?",
+       "criteria": {
+        "permission denied": {
+         "definition": "A component is refused access to a resource or to a service it depends on.",
+         "covers": "Access denied, permission or authorization errors, a service refusing requests from its callers, and callers then reporting errors from that dependency.",
+         "does_not_cover": "Missing files or resources; dependencies that are only slow."
+        },
+        "missing file or resource": {
+         "definition": "A component cannot find a file, resource or configuration it needs.",
+         "covers": "Errors saying a file, path, resource or config does not exist or cannot be found or loaded, appearing new or far more often than usual.",
+         "does_not_cover": "The resource exists but access to it is refused; slow or unavailable dependencies."
+        },
+        "no fault visible": {
+         "definition": "The logs in this window look like the system's usual behaviour.",
+         "covers": "Routine errors and warnings at about their usual rate, informational messages, small fluctuations.",
+         "does_not_cover": "A burst of errors that are new or much more frequent than in the previous 24 hours."
+        }
+       }
+      },
+      "key_evidence": {
+       "type": "choice",
+       "criteria": {
+        "E1": "Evidence item `evidence.E1`",
+        "none": "No evidence item shows a fault."
+       },
+       "instructions": "Which single item in `evidence` most directly shows the cause of a problem in this window?"
+      },
+      "root_service": {
+       "type": "choice",
+       "criteria": {
+        "dbservice2": "dbservice2: log lines 2100 (usually about 2654); error lines 38, about its usual rate; error spike: none",
+        "mobservice1": "mobservice1: log lines 2893 (usually about 3391); error lines 2, less than usual; error spike: none",
+        "logservice2": "logservice2: log lines 5115 (usually about 6060); error lines 6, about its usual rate; error spike: none",
+        "redisservice1": "redisservice1: log lines 3317 (usually about 3443); error lines 5, about its usual rate; error spike: none",
+        "webservice1": "webservice1: log lines 5043 (usually about 4776); error lines 704, more than 10x its usual rate; error spike: in the middle of the window",
+        "dbservice1": "dbservice1: log lines 2412 (usually about 2701); error lines 46, about its usual rate; error spike: none",
+        "redisservice2": "redisservice2: log lines 3128 (usually about 3389); error lines 5, about its usual rate; error spike: none",
+        "webservice2": "webservice2: log lines 6468 (usually about 4779); error lines 70, about its usual rate; error spike: none",
+        "mobservice2": "mobservice2: log lines 2831 (usually about 3379); error lines 4, about its usual rate; error spike: none",
+        "logservice1": "logservice1: log lines 5136 (usually about 6071); error lines 4, less than usual; error spike: none",
+        "none": "No service has a fault in this window."
+       },
+       "instructions": "Which service is the root cause of the problem in this window (where the fault started, not a service that only reports errors from a dependency)?"
+      }
+     },
+     "jev": {
+      "answers": {
+       "fault": {
+        "type": "choice",
+        "choice": "missing file or resource",
+        "confidence": 1.0,
+        "probabilities": {
+         "missing file or resource": 1.0,
+         "permission denied": 0.0,
+         "no fault visible": 0.0
+        }
+       },
+       "key_evidence": {
+        "type": "choice",
+        "choice": "E1",
+        "confidence": 1.0,
+        "probabilities": {
+         "E1": 1.0,
+         "none": 0.0
+        }
+       },
+       "root_service": {
+        "type": "choice",
+        "choice": "webservice1",
+        "confidence": 1.0,
+        "probabilities": {
+         "dbservice1": 0.0,
+         "dbservice2": 0.0,
+         "logservice1": 0.0,
+         "logservice2": 0.0,
+         "mobservice1": 0.0,
+         "mobservice2": 0.0,
+         "redisservice1": 0.0,
+         "redisservice2": 0.0,
+         "webservice1": 1.0,
+         "webservice2": 0.0,
+         "none": 0.0
+        }
+       }
+      },
+      "finding": {
+       "pred": "file_missing",
+       "probs": {
+        "file_missing": 1.0,
+        "permission_denied": 0.0,
+        "none": 0.0
+       },
+       "confidence": 1.0,
+       "abstain": false,
+       "key_evidence": "E1",
+       "root_service": "webservice1",
+       "root_service_probs": {
+        "dbservice1": 0.0,
+        "dbservice2": 0.0,
+        "logservice1": 0.0,
+        "logservice2": 0.0,
+        "mobservice1": 0.0,
+        "mobservice2": 0.0,
+        "redisservice1": 0.0,
+        "redisservice2": 0.0,
+        "webservice1": 1.0,
+        "webservice2": 0.0,
+        "none": 0.0
+       }
+      },
+      "latency_ms": 298.0
+     },
+     "llm": {
+      "answers": {
+       "fault": {
+        "choice": "missing file or resource",
+        "probabilities": {
+         "permission denied": 0.0,
+         "missing file or resource": 1.0,
+         "no fault visible": 0.0
+        }
+       },
+       "key_evidence": {
+        "choice": "E1",
+        "probabilities": {
+         "E1": 1.0,
+         "none": 0.0
+        }
+       },
+       "root_service": {
+        "choice": "webservice1",
+        "probabilities": {
+         "dbservice2": 0.0,
+         "mobservice1": 0.0,
+         "logservice2": 0.0,
+         "redisservice1": 0.0,
+         "webservice1": 1.0,
+         "dbservice1": 0.0,
+         "redisservice2": 0.0,
+         "webservice2": 0.0,
+         "mobservice2": 0.0,
+         "logservice1": 0.0,
+         "none": 0.0
+        }
+       }
+      },
+      "finding": {
+       "pred": "file_missing",
+       "probs": {
+        "file_missing": 1.0,
+        "permission_denied": 0.0,
+        "none": 0.0
+       },
+       "confidence": 1.0,
+       "abstain": false,
+       "key_evidence": "E1",
+       "root_service": "webservice1",
+       "root_service_probs": {
+        "dbservice2": 0.0,
+        "mobservice1": 0.0,
+        "logservice2": 0.0,
+        "redisservice1": 0.0,
+        "webservice1": 1.0,
+        "dbservice1": 0.0,
+        "redisservice2": 0.0,
+        "webservice2": 0.0,
+        "mobservice2": 0.0,
+        "logservice1": 0.0,
+        "none": 0.0
+       }
+      },
+      "latency_ms": 1681.0,
+      "prompt_chars": 4405,
+      "prompt": "State (computed by the database):\n{\n \"question\": \"What went wrong in the system between 2021-08-01 11:56 and 2021-08-01 12:11?\",\n \"window\": {\n  \"services_logging\": 10,\n  \"log_lines\": \"38443 (usually about 40642 per 15 min)\",\n  \"error_lines\": \"884 (usually about 221 per 15 min)\"\n },\n \"evidence\": {\n  \"E1\": {\n   \"service\": \"webservice1\",\n   \"log_pattern\": \"get a error [Errno <NUM>] No such file or directory: 'resources<PATH>'\",\n   \"severity\": \"ERROR\",\n   \"lines\": \"685 in this window (usually about 0 per 15 min)\",\n   \"change\": \"new: not seen in the previous 24 hours\",\n   \"first_seen\": \"in the middle of the window\",\n   \"example_line\": \"get a error [Errno 2] No such file or directory: 'resources/source_file/source_file.csv'\"\n  }\n }\n}\n\nAnswer every question below. Each question has an \"instructions\" text and either \"options\" (choose exactly one option\nkey) or is a yes/no question (answer true or false). Option descriptions explain what each option means.\nQuestions:\n{\n \"fault\": {\n  \"instructions\": \"`question` asks about a time window of a multi-service system. `evidence` lists the log patterns of that window that are new or more frequent than in the previous 24 hours; `window` summarises log volume. Which option best describes what happened in this window?\",\n  \"type\": \"choice\",\n  \"options\": {\n   \"permission denied\": {\n    \"definition\": \"A component is refused access to a resource or to a service it depends on.\",\n    \"covers\": \"Access denied, permission or authorization errors, a service refusing requests from its callers, and callers then reporting errors from that dependency.\",\n    \"does_not_cover\": \"Missing files or resources; dependencies that are only slow.\"\n   },\n   \"missing file or resource\": {\n    \"definition\": \"A component cannot find a file, resource or configuration it needs.\",\n    \"covers\": \"Errors saying a file, path, resource or config does not exist or cannot be found or loaded, appearing new or far more often than usual.\",\n    \"does_not_cover\": \"The resource exists but access to it is refused; slow or unavailable dependencies.\"\n   },\n   \"no fault visible\": {\n    \"definition\": \"The logs in this window look like the system's usual behaviour.\",\n    \"covers\": \"Routine errors and warnings at about their usual rate, informational messages, small fluctuations.\",\n    \"does_not_cover\": \"A burst of errors that are new or much more frequent than in the previous 24 hours.\"\n   }\n  }\n },\n \"key_evidence\": {\n  \"instructions\": \"Which single item in `evidence` most directly shows the cause of a problem in this window?\",\n  \"type\": \"choice\",\n  \"options\": {\n   \"E1\": \"Evidence item `evidence.E1`\",\n   \"none\": \"No evidence item shows a fault.\"\n  }\n },\n \"root_service\": {\n  \"instructions\": \"Which service is the root cause of the problem in this window (where the fault started, not a service that only reports errors from a dependency)?\",\n  \"type\": \"choice\",\n  \"options\": {\n   \"dbservice2\": \"dbservice2: log lines 2100 (usually about 2654); error lines 38, about its usual rate; error spike: none\",\n   \"mobservice1\": \"mobservice1: log lines 2893 (usually about 3391); error lines 2, less than usual; error spike: none\",\n   \"logservice2\": \"logservice2: log lines 5115 (usually about 6060); error lines 6, about its usual rate; error spike: none\",\n   \"redisservice1\": \"redisservice1: log lines 3317 (usually about 3443); error lines 5, about its usual rate; error spike: none\",\n   \"webservice1\": \"webservice1: log lines 5043 (usually about 4776); error lines 704, more than 10x its usual rate; error spike: in the middle of the window\",\n   \"dbservice1\": \"dbservice1: log lines 2412 (usually about 2701); error lines 46, about its usual rate; error spike: none\",\n   \"redisservice2\": \"redisservice2: log lines 3128 (usually about 3389); error lines 5, about its usual rate; error spike: none\",\n   \"webservice2\": \"webservice2: log lines 6468 (usually about 4779); error lines 70, about its usual rate; error spike: none\",\n   \"mobservice2\": \"mobservice2: log lines 2831 (usually about 3379); error lines 4, about its usual rate; error spike: none\",\n   \"logservice1\": \"logservice1: log lines 5136 (usually about 6071); error lines 4, less than usual; error spike: none\",\n   \"none\": \"No service has a fault in this window.\"\n  }\n }\n}\n\nReturn JSON with one entry per question id: {\"<question id>\": {\"answer\": <option key, or true/false>, \"confidence\": <number 0-1, how sure you are>}}"
+     }
+    }
+   }
+  },
+  {
+   "wid": "w0378",
+   "title": "Permission fault on dbservice",
+   "question": "What went wrong in the system between 2021-08-06 19:58 and 2021-08-06 20:13?",
+   "truth": {
+    "fault": "permission_denied",
+    "root_service": "dbservice2"
+   },
+   "slice": "fault",
+   "raw": {
+    "lines": 39965.0,
+    "errors": 1864.0,
+    "warn_plus": 3187,
+    "sample_errors": [
+     "dbservice1 ERROR (pymysql.err.ProgrammingError) (1146, \"Table 'cloudwise_micross.system_metric_datas' doesn't exist\")[SQL: select service_names, system_data_time, system_cpu_uti",
+     "webservice1 ERROR an error occurred in the downstream service",
+     "redisservice1 ERROR 二维码已过期， 请刷新重新扫描, status_code: 400",
+     "mobservice1 ERROR uuid:88843374-f6ad-11eb-abce-0242ac110003 information has expired, mobile phone login is invalid",
+     "redisservice1 ERROR 二维码已过期， 请刷新重新扫描, status_code: 400",
+     "webservice1 ERROR an error occurred in the downstream service",
+     "logservice2 ERROR {traci_id} | uuid expired, invalid phone request",
+     "logservice2 ERROR get information failed, fail code: 400",
+     "dbservice2 ERROR (pymysql.err.OperationalError) (1054, \"Unknown column 'system_data_time' in 'field list'\")[SQL: select service_name, system_data_time, system_cpu_utilization, s",
+     "webservice2 ERROR an error occurred in the downstream service",
+     "dbservice1 ERROR (pymysql.err.OperationalError) (1065, 'Query was empty')(Background on this error at: http://sqlalche.me/e/14/e3q8)",
+     "webservice1 ERROR an error occurred in the downstream service"
+    ]
+   },
+   "variants": {
+    "E0/Q0": {
+     "state": {
+      "question": "What went wrong in the system between 2021-08-06 19:58 and 2021-08-06 20:13?",
+      "window": {
+       "services_logging": 10,
+       "log_lines": "39965",
+       "error_lines": "1864"
+      },
+      "evidence": {
+       "E1": {
+        "service": "dbservice2",
+        "log_pattern": "<*> access redis service denied",
+        "severity": "ERROR",
+        "lines": "572 in this window",
+        "rarity": "rare: seen in 15 of 219 windows",
+        "first_seen": "from the start of the window",
+        "example_line": "dbservice2 access redis service denied"
+       },
+       "E2": {
+        "service": "dbservice2",
+        "log_pattern": "service refuse",
+        "severity": "ERROR",
+        "lines": "572 in this window",
+        "rarity": "rare: seen in 15 of 219 windows",
+        "first_seen": "from the start of the window",
+        "example_line": "service refuse"
+       },
+       "E3": {
+        "service": "redisservice1",
+        "log_pattern": "二维码已过期， 请刷新重新扫描, status_code: <NUM>",
+        "severity": "ERROR",
+        "lines": "7 in this window",
+        "rarity": "common: seen in 211 of 219 windows",
+        "first_seen": "from the start of the window",
+        "example_line": "二维码已过期， 请刷新重新扫描, status_code: 400"
+       },
+       "E4": {
+        "service": "redisservice2",
+        "log_pattern": "二维码已过期， 请刷新重新扫描, status_code: <NUM>",
+        "severity": "ERROR",
+        "lines": "7 in this window",
+        "rarity": "common: seen in 211 of 219 windows",
+        "first_seen": "from the start of the window",
+        "example_line": "二维码已过期， 请刷新重新扫描, status_code: 400"
+       },
+       "E5": {
+        "service": "logservice1",
+        "log_pattern": "get information failed, fail code: <NUM>",
+        "severity": "ERROR",
+        "lines": "4 in this window",
+        "rarity": "common: seen in 211 of 219 windows",
+        "first_seen": "from the start of the window",
+        "example_line": "get information failed, fail code: 400"
+       },
+       "E6": {
+        "service": "mobservice2",
+        "log_pattern": "uuid:<UUID> information has expired, mobile phone login is invalid",
+        "severity": "ERROR",
+        "lines": "4 in this window",
+        "rarity": "common: seen in 211 of 219 windows",
+        "first_seen": "in the middle of the window",
+        "example_line": "uuid:ff4ba3ac-f6ad-11eb-b26e-0242ac110003 information has expired, mobile phone login is invalid"
+       },
+       "E7": {
+        "service": "logservice1",
+        "log_pattern": "{traci_id} | uuid expired, invalid phone request",
+        "severity": "ERROR",
+        "lines": "4 in this window",
+        "rarity": "common: seen in 211 of 219 windows",
+        "first_seen": "from the start of the window",
+        "example_line": "{traci_id} | uuid expired, invalid phone request"
+       },
+       "E8": {
+        "service": "logservice2",
+        "log_pattern": "get information failed, fail code: <NUM>",
+        "severity": "ERROR",
+        "lines": "3 in this window",
+        "rarity": "common: seen in 211 of 219 windows",
+        "first_seen": "from the start of the window",
+        "example_line": "get information failed, fail code: 400"
+       },
+       "E9": {
+        "service": "mobservice1",
+        "log_pattern": "uuid:<UUID> information has expired, mobile phone login is invalid",
+        "severity": "ERROR",
+        "lines": "3 in this window",
+        "rarity": "common: seen in 211 of 219 windows",
+        "first_seen": "from the start of the window",
+        "example_line": "uuid:88843374-f6ad-11eb-abce-0242ac110003 information has expired, mobile phone login is invalid"
+       },
+       "E10": {
+        "service": "logservice2",
+        "log_pattern": "{traci_id} | uuid expired, invalid phone request",
+        "severity": "ERROR",
+        "lines": "3 in this window",
+        "rarity": "common: seen in 211 of 219 windows",
+        "first_seen": "from the start of the window",
+        "example_line": "{traci_id} | uuid expired, invalid phone request"
+       },
+       "E11": {
+        "service": "webservice1",
+        "log_pattern": "an error occurred in the downstream service",
+        "severity": "ERROR",
+        "lines": "318 in this window",
+        "rarity": "common: seen in 212 of 219 windows",
+        "first_seen": "from the start of the window",
+        "example_line": "an error occurred in the downstream service"
+       },
+       "E12": {
+        "service": "webservice2",
+        "log_pattern": "an error occurred in the downstream service",
+        "severity": "ERROR",
+        "lines": "314 in this window",
+        "rarity": "common: seen in 212 of 219 windows",
+        "first_seen": "from the start of the window",
+        "example_line": "an error occurred in the downstream service"
+       }
+      }
+     },
+     "questions": {
+      "fault": {
+       "type": "choice",
+       "instructions": "`question` asks about a time window of a multi-service system. `evidence` lists the log patterns of that window that are new or more frequent than in the previous 24 hours; `window` summarises log volume. Which option best describes what happened in this window?",
+       "criteria": {
+        "missing file or resource": {
+         "definition": "A component cannot find a file, resource or configuration it needs.",
+         "covers": "Errors saying a file, path, resource or config does not exist or cannot be found or loaded, appearing new or far more often than usual.",
+         "does_not_cover": "The resource exists but access to it is refused; slow or unavailable dependencies."
+        },
+        "permission denied": {
+         "definition": "A component is refused access to a resource or to a service it depends on.",
+         "covers": "Access denied, permission or authorization errors, a service refusing requests from its callers, and callers then reporting errors from that dependency.",
+         "does_not_cover": "Missing files or resources; dependencies that are only slow."
+        },
+        "no fault visible": {
+         "definition": "The logs in this window look like the system's usual behaviour.",
+         "covers": "Routine errors and warnings at about their usual rate, informational messages, small fluctuations.",
+         "does_not_cover": "A burst of errors that are new or much more frequent than in the previous 24 hours."
+        }
+       }
+      },
+      "key_evidence": {
+       "type": "choice",
+       "criteria": {
+        "E1": "Evidence item `evidence.E1`",
+        "E2": "Evidence item `evidence.E2`",
+        "E3": "Evidence item `evidence.E3`",
+        "E4": "Evidence item `evidence.E4`",
+        "E5": "Evidence item `evidence.E5`",
+        "E6": "Evidence item `evidence.E6`",
+        "E7": "Evidence item `evidence.E7`",
+        "E8": "Evidence item `evidence.E8`",
+        "E9": "Evidence item `evidence.E9`",
+        "E10": "Evidence item `evidence.E10`",
+        "E11": "Evidence item `evidence.E11`",
+        "E12": "Evidence item `evidence.E12`",
+        "none": "No evidence item shows a fault."
+       },
+       "instructions": "Which single item in `evidence` most directly shows the cause of a problem in this window?"
+      }
+     },
+     "jev": {
+      "answers": {
+       "fault": {
+        "type": "choice",
+        "choice": "permission denied",
+        "confidence": 1.0,
+        "probabilities": {
+         "missing file or resource": 0.0,
+         "permission denied": 1.0,
+         "no fault visible": 0.0
+        }
+       },
+       "key_evidence": {
+        "type": "choice",
+        "choice": "E1",
+        "confidence": 0.85,
+        "probabilities": {
+         "E1": 0.86,
+         "E2": 0.05,
+         "E3": 0.03,
+         "E4": 0.0,
+         "E5": 0.0,
+         "E6": 0.01,
+         "E7": 0.01,
+         "E8": 0.0,
+         "E9": 0.01,
+         "E10": 0.0,
+         "E11": 0.03,
+         "E12": 0.0,
+         "none": 0.0
+        }
+       }
+      },
+      "finding": {
+       "pred": "permission_denied",
+       "probs": {
+        "file_missing": 0.0,
+        "permission_denied": 1.0,
+        "none": 0.0
+       },
+       "confidence": 1.0,
+       "abstain": false,
+       "key_evidence": "E1"
+      },
+      "latency_ms": 230.0
+     },
+     "llm": {
+      "answers": {
+       "fault": {
+        "choice": "permission denied",
+        "probabilities": {
+         "missing file or resource": 0.025000000000000022,
+         "permission denied": 0.95,
+         "no fault visible": 0.025000000000000022
+        }
+       },
+       "key_evidence": {
+        "choice": "E1",
+        "probabilities": {
+         "E1": 0.95,
+         "E2": 0.00416666666666667,
+         "E3": 0.00416666666666667,
+         "E4": 0.00416666666666667,
+         "E5": 0.00416666666666667,
+         "E6": 0.00416666666666667,
+         "E7": 0.00416666666666667,
+         "E8": 0.00416666666666667,
+         "E9": 0.00416666666666667,
+         "E10": 0.00416666666666667,
+         "E11": 0.00416666666666667,
+         "E12": 0.00416666666666667,
+         "none": 0.00416666666666667
+        }
+       }
+      },
+      "finding": {
+       "pred": "permission_denied",
+       "probs": {
+        "file_missing": 0.025000000000000022,
+        "permission_denied": 0.95,
+        "none": 0.025000000000000022
+       },
+       "confidence": 0.925,
+       "abstain": false,
+       "key_evidence": "E1"
+      },
+      "latency_ms": 4041.0,
+      "prompt_chars": 7071
+     }
+    },
+    "E1/Q0": {
+     "state": {
+      "question": "What went wrong in the system between 2021-08-06 19:58 and 2021-08-06 20:13?",
+      "window": {
+       "services_logging": 10,
+       "log_lines": "39965 (usually about 36905 per 15 min)",
+       "error_lines": "1864 (usually about 209 per 15 min)"
+      },
+      "evidence": {
+       "E1": {
+        "service": "dbservice2",
+        "log_pattern": "<*> access redis service denied",
+        "severity": "ERROR",
+        "lines": "572 in this window (usually about 0 per 15 min)",
+        "change": "new: not seen in the previous 24 hours",
+        "first_seen": "from the start of the window",
+        "example_line": "dbservice2 access redis service denied"
+       },
+       "E2": {
+        "service": "dbservice2",
+        "log_pattern": "service refuse",
+        "severity": "ERROR",
+        "lines": "572 in this window (usually about 0 per 15 min)",
+        "change": "new: not seen in the previous 24 hours",
+        "first_seen": "from the start of the window",
+        "example_line": "service refuse"
+       },
+       "E3": {
+        "service": "webservice1",
+        "log_pattern": "an error occurred in the downstream service",
+        "severity": "ERROR",
+        "lines": "318 in this window (usually about 45 per 15 min)",
+        "change": "about 7x its usual rate",
+        "first_seen": "from the start of the window",
+        "example_line": "an error occurred in the downstream service"
+       },
+       "E4": {
+        "service": "webservice2",
+        "log_pattern": "an error occurred in the downstream service",
+        "severity": "ERROR",
+        "lines": "314 in this window (usually about 46 per 15 min)",
+        "change": "about 7x its usual rate",
+        "first_seen": "from the start of the window",
+        "example_line": "an error occurred in the downstream service"
+       }
+      }
+     },
+     "questions": {
+      "fault": {
+       "type": "choice",
+       "instructions": "`question` asks about a time window of a multi-service system. `evidence` lists the log patterns of that window that are new or more frequent than in the previous 24 hours; `window` summarises log volume. Which option best describes what happened in this window?",
+       "criteria": {
+        "missing file or resource": {
+         "definition": "A component cannot find a file, resource or configuration it needs.",
+         "covers": "Errors saying a file, path, resource or config does not exist or cannot be found or loaded, appearing new or far more often than usual.",
+         "does_not_cover": "The resource exists but access to it is refused; slow or unavailable dependencies."
+        },
+        "permission denied": {
+         "definition": "A component is refused access to a resource or to a service it depends on.",
+         "covers": "Access denied, permission or authorization errors, a service refusing requests from its callers, and callers then reporting errors from that dependency.",
+         "does_not_cover": "Missing files or resources; dependencies that are only slow."
+        },
+        "no fault visible": {
+         "definition": "The logs in this window look like the system's usual behaviour.",
+         "covers": "Routine errors and warnings at about their usual rate, informational messages, small fluctuations.",
+         "does_not_cover": "A burst of errors that are new or much more frequent than in the previous 24 hours."
+        }
+       }
+      },
+      "key_evidence": {
+       "type": "choice",
+       "criteria": {
+        "E1": "Evidence item `evidence.E1`",
+        "E2": "Evidence item `evidence.E2`",
+        "E3": "Evidence item `evidence.E3`",
+        "E4": "Evidence item `evidence.E4`",
+        "none": "No evidence item shows a fault."
+       },
+       "instructions": "Which single item in `evidence` most directly shows the cause of a problem in this window?"
+      }
+     },
+     "jev": {
+      "answers": {
+       "fault": {
+        "type": "choice",
+        "choice": "permission denied",
+        "confidence": 1.0,
+        "probabilities": {
+         "missing file or resource": 0.0,
+         "permission denied": 1.0,
+         "no fault visible": 0.0
+        }
+       },
+       "key_evidence": {
+        "type": "choice",
+        "choice": "E1",
+        "confidence": 0.86,
+        "probabilities": {
+         "E1": 0.89,
+         "E2": 0.11,
+         "E3": 0.0,
+         "E4": 0.0,
+         "none": 0.0
+        }
+       }
+      },
+      "finding": {
+       "pred": "permission_denied",
+       "probs": {
+        "file_missing": 0.0,
+        "permission_denied": 1.0,
+        "none": 0.0
+       },
+       "confidence": 1.0,
+       "abstain": false,
+       "key_evidence": "E1"
+      },
+      "latency_ms": 389.0
+     },
+     "llm": {
+      "answers": {
+       "fault": {
+        "choice": "permission denied",
+        "probabilities": {
+         "missing file or resource": 0.025000000000000022,
+         "permission denied": 0.95,
+         "no fault visible": 0.025000000000000022
+        }
+       },
+       "key_evidence": {
+        "choice": "E1",
+        "probabilities": {
+         "E1": 0.95,
+         "E2": 0.012500000000000011,
+         "E3": 0.012500000000000011,
+         "E4": 0.012500000000000011,
+         "none": 0.012500000000000011
+        }
+       }
+      },
+      "finding": {
+       "pred": "permission_denied",
+       "probs": {
+        "file_missing": 0.025000000000000022,
+        "permission_denied": 0.95,
+        "none": 0.025000000000000022
+       },
+       "confidence": 0.925,
+       "abstain": false,
+       "key_evidence": "E1"
+      },
+      "latency_ms": 1743.0,
+      "prompt_chars": 3873
+     }
+    },
+    "E1/Q1": {
+     "state": {
+      "question": "What went wrong in the system between 2021-08-06 19:58 and 2021-08-06 20:13?",
+      "window": {
+       "services_logging": 10,
+       "log_lines": "39965 (usually about 36905 per 15 min)",
+       "error_lines": "1864 (usually about 209 per 15 min)"
+      },
+      "evidence": {
+       "E1": {
+        "service": "dbservice2",
+        "log_pattern": "<*> access redis service denied",
+        "severity": "ERROR",
+        "lines": "572 in this window (usually about 0 per 15 min)",
+        "change": "new: not seen in the previous 24 hours",
+        "first_seen": "from the start of the window",
+        "example_line": "dbservice2 access redis service denied"
+       },
+       "E2": {
+        "service": "dbservice2",
+        "log_pattern": "service refuse",
+        "severity": "ERROR",
+        "lines": "572 in this window (usually about 0 per 15 min)",
+        "change": "new: not seen in the previous 24 hours",
+        "first_seen": "from the start of the window",
+        "example_line": "service refuse"
+       },
+       "E3": {
+        "service": "webservice1",
+        "log_pattern": "an error occurred in the downstream service",
+        "severity": "ERROR",
+        "lines": "318 in this window (usually about 45 per 15 min)",
+        "change": "about 7x its usual rate",
+        "first_seen": "from the start of the window",
+        "example_line": "an error occurred in the downstream service"
+       },
+       "E4": {
+        "service": "webservice2",
+        "log_pattern": "an error occurred in the downstream service",
+        "severity": "ERROR",
+        "lines": "314 in this window (usually about 46 per 15 min)",
+        "change": "about 7x its usual rate",
+        "first_seen": "from the start of the window",
+        "example_line": "an error occurred in the downstream service"
+       }
+      }
+     },
+     "questions": {
+      "fault": {
+       "type": "choice",
+       "instructions": "`question` asks about a time window of a multi-service system. `evidence` lists the log patterns of that window that are new or more frequent than in the previous 24 hours; `window` summarises log volume. Which option best describes what happened in this window?",
+       "criteria": {
+        "missing file or resource": {
+         "definition": "A component cannot find a file, resource or configuration it needs.",
+         "covers": "Errors saying a file, path, resource or config does not exist or cannot be found or loaded, appearing new or far more often than usual.",
+         "does_not_cover": "The resource exists but access to it is refused; slow or unavailable dependencies."
+        },
+        "permission denied": {
+         "definition": "A component is refused access to a resource or to a service it depends on.",
+         "covers": "Access denied, permission or authorization errors, a service refusing requests from its callers, and callers then reporting errors from that dependency.",
+         "does_not_cover": "Missing files or resources; dependencies that are only slow."
+        },
+        "no fault visible": {
+         "definition": "The logs in this window look like the system's usual behaviour.",
+         "covers": "Routine errors and warnings at about their usual rate, informational messages, small fluctuations.",
+         "does_not_cover": "A burst of errors that are new or much more frequent than in the previous 24 hours."
+        },
+        "cannot tell from these logs": {
+         "definition": "The evidence is too weak or ambiguous to say whether there was a fault.",
+         "covers": "Small or mixed changes that could be noise or an early sign of a problem.",
+         "does_not_cover": "A clear new error burst, or clearly usual behaviour."
+        }
+       }
+      },
+      "key_evidence": {
+       "type": "choice",
+       "criteria": {
+        "E1": "Evidence item `evidence.E1`",
+        "E2": "Evidence item `evidence.E2`",
+        "E3": "Evidence item `evidence.E3`",
+        "E4": "Evidence item `evidence.E4`",
+        "none": "No evidence item shows a fault."
+       },
+       "instructions": "Which single item in `evidence` most directly shows the cause of a problem in this window?"
+      }
+     },
+     "jev": {
+      "answers": {
+       "fault": {
+        "type": "choice",
+        "choice": "permission denied",
+        "confidence": 1.0,
+        "probabilities": {
+         "missing file or resource": 0.0,
+         "permission denied": 1.0,
+         "no fault visible": 0.0,
+         "cannot tell from these logs": 0.0
+        }
+       },
+       "key_evidence": {
+        "type": "choice",
+        "choice": "E1",
+        "confidence": 0.89,
+        "probabilities": {
+         "E1": 0.91,
+         "E2": 0.09,
+         "E3": 0.0,
+         "E4": 0.0,
+         "none": 0.0
+        }
+       }
+      },
+      "finding": {
+       "pred": "permission_denied",
+       "probs": {
+        "file_missing": 0.0,
+        "permission_denied": 1.0,
+        "none": 0.0
+       },
+       "confidence": 1.0,
+       "abstain": false,
+       "key_evidence": "E1"
+      },
+      "latency_ms": 225.0
+     },
+     "llm": {
+      "answers": {
+       "fault": {
+        "choice": "permission denied",
+        "probabilities": {
+         "missing file or resource": 0.01666666666666668,
+         "permission denied": 0.95,
+         "no fault visible": 0.01666666666666668,
+         "cannot tell from these logs": 0.01666666666666668
+        }
+       },
+       "key_evidence": {
+        "choice": "E1",
+        "probabilities": {
+         "E1": 0.95,
+         "E2": 0.012500000000000011,
+         "E3": 0.012500000000000011,
+         "E4": 0.012500000000000011,
+         "none": 0.012500000000000011
+        }
+       }
+      },
+      "finding": {
+       "pred": "permission_denied",
+       "probs": {
+        "file_missing": 0.01666666666666668,
+        "permission_denied": 0.95,
+        "none": 0.03333333333333336
+       },
+       "confidence": 0.925,
+       "abstain": false,
+       "key_evidence": "E1"
+      },
+      "latency_ms": 1277.0,
+      "prompt_chars": 4176
+     }
+    },
+    "E1/Q2": {
+     "state": {
+      "question": "What went wrong in the system between 2021-08-06 19:58 and 2021-08-06 20:13?",
+      "window": {
+       "services_logging": 10,
+       "log_lines": "39965 (usually about 36905 per 15 min)",
+       "error_lines": "1864 (usually about 209 per 15 min)"
+      },
+      "evidence": {
+       "E1": {
+        "service": "dbservice2",
+        "log_pattern": "<*> access redis service denied",
+        "severity": "ERROR",
+        "lines": "572 in this window (usually about 0 per 15 min)",
+        "change": "new: not seen in the previous 24 hours",
+        "first_seen": "from the start of the window",
+        "example_line": "dbservice2 access redis service denied"
+       },
+       "E2": {
+        "service": "dbservice2",
+        "log_pattern": "service refuse",
+        "severity": "ERROR",
+        "lines": "572 in this window (usually about 0 per 15 min)",
+        "change": "new: not seen in the previous 24 hours",
+        "first_seen": "from the start of the window",
+        "example_line": "service refuse"
+       },
+       "E3": {
+        "service": "webservice1",
+        "log_pattern": "an error occurred in the downstream service",
+        "severity": "ERROR",
+        "lines": "318 in this window (usually about 45 per 15 min)",
+        "change": "about 7x its usual rate",
+        "first_seen": "from the start of the window",
+        "example_line": "an error occurred in the downstream service"
+       },
+       "E4": {
+        "service": "webservice2",
+        "log_pattern": "an error occurred in the downstream service",
+        "severity": "ERROR",
+        "lines": "314 in this window (usually about 46 per 15 min)",
+        "change": "about 7x its usual rate",
+        "first_seen": "from the start of the window",
+        "example_line": "an error occurred in the downstream service"
+       }
+      }
+     },
+     "questions": {
+      "is_fault": {
+       "type": "noul",
+       "instructions": "Do the logs described in `evidence` and `window` show a fault in this window: errors that are new or much more frequent than in the previous 24 hours?",
+       "criteria": {
+        "true": "A clear fault is visible in this window.",
+        "false": "The window looks like usual behaviour."
+       }
+      },
+      "fault_type": {
+       "type": "choice",
+       "instructions": "If there is a fault in this window (see `evidence`), which kind of fault is it?",
+       "criteria": {
+        "missing file or resource": {
+         "definition": "A component cannot find a file, resource or configuration it needs.",
+         "covers": "Errors saying a file, path, resource or config does not exist or cannot be found or loaded, appearing new or far more often than usual.",
+         "does_not_cover": "The resource exists but access to it is refused; slow or unavailable dependencies."
+        },
+        "permission denied": {
+         "definition": "A component is refused access to a resource or to a service it depends on.",
+         "covers": "Access denied, permission or authorization errors, a service refusing requests from its callers, and callers then reporting errors from that dependency.",
+         "does_not_cover": "Missing files or resources; dependencies that are only slow."
+        }
+       }
+      },
+      "key_evidence": {
+       "type": "choice",
+       "criteria": {
+        "E1": "Evidence item `evidence.E1`",
+        "E2": "Evidence item `evidence.E2`",
+        "E3": "Evidence item `evidence.E3`",
+        "E4": "Evidence item `evidence.E4`",
+        "none": "No evidence item shows a fault."
+       },
+       "instructions": "Which single item in `evidence` most directly shows the cause of a problem in this window?"
+      }
+     },
+     "jev": {
+      "answers": {
+       "is_fault": {
+        "type": "noul",
+        "noul": 0.98
+       },
+       "fault_type": {
+        "type": "choice",
+        "choice": "permission denied",
+        "confidence": 1.0,
+        "probabilities": {
+         "missing file or resource": 0.0,
+         "permission denied": 1.0
+        }
+       },
+       "key_evidence": {
+        "type": "choice",
+        "choice": "E1",
+        "confidence": 0.87,
+        "probabilities": {
+         "E1": 0.9,
+         "E2": 0.1,
+         "E3": 0.0,
+         "E4": 0.0,
+         "none": 0.0
+        }
+       }
+      },
+      "finding": {
+       "pred": "permission_denied",
+       "probs": {
+        "none": 0.020000000000000018,
+        "file_missing": 0.0,
+        "permission_denied": 0.98
+       },
+       "confidence": 0.97,
+       "abstain": false,
+       "key_evidence": "E1"
+      },
+      "latency_ms": 263.0
+     },
+     "llm": {
+      "answers": {
+       "is_fault": {
+        "noul": 1.0
+       },
+       "fault_type": {
+        "choice": "permission denied",
+        "probabilities": {
+         "missing file or resource": 0.050000000000000044,
+         "permission denied": 0.95
+        }
+       },
+       "key_evidence": {
+        "choice": "E1",
+        "probabilities": {
+         "E1": 0.9,
+         "E2": 0.024999999999999994,
+         "E3": 0.024999999999999994,
+         "E4": 0.024999999999999994,
+         "none": 0.024999999999999994
+        }
+       }
+      },
+      "finding": {
+       "pred": "permission_denied",
+       "probs": {
+        "none": 0.0,
+        "file_missing": 0.050000000000000044,
+        "permission_denied": 0.95
+       },
+       "confidence": 0.925,
+       "abstain": false,
+       "key_evidence": "E1"
+      },
+      "latency_ms": 1368.0,
+      "prompt_chars": 3693
+     }
+    },
+    "E1/Q7": {
+     "state": {
+      "question": "What went wrong in the system between 2021-08-06 19:58 and 2021-08-06 20:13?",
+      "window": {
+       "services_logging": 10,
+       "log_lines": "39965 (usually about 36905 per 15 min)",
+       "error_lines": "1864 (usually about 209 per 15 min)"
+      },
+      "evidence": {
+       "E1": {
+        "service": "dbservice2",
+        "log_pattern": "<*> access redis service denied",
+        "severity": "ERROR",
+        "lines": "572 in this window (usually about 0 per 15 min)",
+        "change": "new: not seen in the previous 24 hours",
+        "first_seen": "from the start of the window",
+        "example_line": "dbservice2 access redis service denied"
+       },
+       "E2": {
+        "service": "dbservice2",
+        "log_pattern": "service refuse",
+        "severity": "ERROR",
+        "lines": "572 in this window (usually about 0 per 15 min)",
+        "change": "new: not seen in the previous 24 hours",
+        "first_seen": "from the start of the window",
+        "example_line": "service refuse"
+       },
+       "E3": {
+        "service": "webservice1",
+        "log_pattern": "an error occurred in the downstream service",
+        "severity": "ERROR",
+        "lines": "318 in this window (usually about 45 per 15 min)",
+        "change": "about 7x its usual rate",
+        "first_seen": "from the start of the window",
+        "example_line": "an error occurred in the downstream service"
+       },
+       "E4": {
+        "service": "webservice2",
+        "log_pattern": "an error occurred in the downstream service",
+        "severity": "ERROR",
+        "lines": "314 in this window (usually about 46 per 15 min)",
+        "change": "about 7x its usual rate",
+        "first_seen": "from the start of the window",
+        "example_line": "an error occurred in the downstream service"
+       }
+      }
+     },
+     "questions": {
+      "fault": {
+       "type": "choice",
+       "instructions": "`question` asks about a time window of a multi-service system. `evidence` lists the log patterns of that window that are new or more frequent than in the previous 24 hours; `window` summarises log volume. Which option best describes what happened in this window?",
+       "criteria": {
+        "no fault visible": {
+         "definition": "The logs in this window look like the system's usual behaviour.",
+         "covers": "Routine errors and warnings at about their usual rate, informational messages, small fluctuations.",
+         "does_not_cover": "A burst of errors that are new or much more frequent than in the previous 24 hours."
+        },
+        "missing file or resource": {
+         "definition": "A component cannot find a file, resource or configuration it needs.",
+         "covers": "Errors saying a file, path, resource or config does not exist or cannot be found or loaded, appearing new or far more often than usual.",
+         "does_not_cover": "The resource exists but access to it is refused; slow or unavailable dependencies."
+        },
+        "permission denied": {
+         "definition": "A component is refused access to a resource or to a service it depends on.",
+         "covers": "Access denied, permission or authorization errors, a service refusing requests from its callers, and callers then reporting errors from that dependency.",
+         "does_not_cover": "Missing files or resources; dependencies that are only slow."
+        }
+       }
+      },
+      "key_evidence": {
+       "type": "choice",
+       "criteria": {
+        "E3": "Evidence item `evidence.E3`",
+        "E1": "Evidence item `evidence.E1`",
+        "E4": "Evidence item `evidence.E4`",
+        "none": "No evidence item shows a fault.",
+        "E2": "Evidence item `evidence.E2`"
+       },
+       "instructions": "Which single item in `evidence` most directly shows the cause of a problem in this window?"
+      },
+      "root_service": {
+       "type": "choice",
+       "criteria": {
+        "mobservice2": "mobservice2: log lines 3478 (usually about 3073); error lines 4, about its usual rate; error spike: none",
+        "webservice1": "webservice1: log lines 4863 (usually about 4337); error lines 318, about 7x its usual rate; error spike: from the start of the window",
+        "redisservice2": "redisservice2: log lines 3347 (usually about 3142); error lines 7, about its usual rate; error spike: none",
+        "dbservice2": "dbservice2: log lines 2638 (usually about 2415); error lines 1158, more than 10x its usual rate; error spike: from the start of the window",
+        "none": "No service has a fault in this window.",
+        "logservice1": "logservice1: log lines 6001 (usually about 5510); error lines 8, about its usual rate; error spike: none",
+        "redisservice1": "redisservice1: log lines 3279 (usually about 3064); error lines 7, about its usual rate; error spike: none",
+        "mobservice1": "mobservice1: log lines 3083 (usually about 3063); error lines 3, about its usual rate; error spike: none",
+        "logservice2": "logservice2: log lines 5773 (usually about 5519); error lines 6, about its usual rate; error spike: none",
+        "dbservice1": "dbservice1: log lines 2574 (usually about 2442); error lines 39, about its usual rate; error spike: none",
+        "webservice2": "webservice2: log lines 4929 (usually about 4340); error lines 314, about 7x its usual rate; error spike: from the start of the window"
+       },
+       "instructions": "Which service is the root cause of the problem in this window (where the fault started, not a service that only reports errors from a dependency)?"
+      }
+     },
+     "jev": {
+      "answers": {
+       "fault": {
+        "type": "choice",
+        "choice": "permission denied",
+        "confidence": 1.0,
+        "probabilities": {
+         "missing file or resource": 0.0,
+         "permission denied": 1.0,
+         "no fault visible": 0.0
+        }
+       },
+       "key_evidence": {
+        "type": "choice",
+        "choice": "E1",
+        "confidence": 0.86,
+        "probabilities": {
+         "E1": 0.89,
+         "E2": 0.11,
+         "E3": 0.0,
+         "E4": 0.0,
+         "none": 0.0
+        }
+       },
+       "root_service": {
+        "type": "choice",
+        "choice": "dbservice2",
+        "confidence": 1.0,
+        "probabilities": {
+         "dbservice1": 0.0,
+         "dbservice2": 1.0,
+         "logservice1": 0.0,
+         "logservice2": 0.0,
+         "mobservice1": 0.0,
+         "mobservice2": 0.0,
+         "redisservice1": 0.0,
+         "redisservice2": 0.0,
+         "webservice1": 0.0,
+         "webservice2": 0.0,
+         "none": 0.0
+        }
+       }
+      },
+      "finding": {
+       "pred": "permission_denied",
+       "probs": {
+        "file_missing": 0.0,
+        "permission_denied": 1.0,
+        "none": 0.0
+       },
+       "confidence": 1.0,
+       "abstain": false,
+       "key_evidence": "E1",
+       "root_service": "dbservice2",
+       "root_service_probs": {
+        "dbservice1": 0.0,
+        "dbservice2": 1.0,
+        "logservice1": 0.0,
+        "logservice2": 0.0,
+        "mobservice1": 0.0,
+        "mobservice2": 0.0,
+        "redisservice1": 0.0,
+        "redisservice2": 0.0,
+        "webservice1": 0.0,
+        "webservice2": 0.0,
+        "none": 0.0
+       }
+      },
+      "latency_ms": 232.0
+     },
+     "llm": {
+      "answers": {
+       "fault": {
+        "choice": "permission denied",
+        "probabilities": {
+         "no fault visible": 0.025000000000000022,
+         "missing file or resource": 0.025000000000000022,
+         "permission denied": 0.95
+        }
+       },
+       "key_evidence": {
+        "choice": "E1",
+        "probabilities": {
+         "E3": 0.012500000000000011,
+         "E1": 0.95,
+         "E4": 0.012500000000000011,
+         "none": 0.012500000000000011,
+         "E2": 0.012500000000000011
+        }
+       },
+       "root_service": {
+        "choice": "dbservice2",
+        "probabilities": {
+         "mobservice2": 0.009999999999999998,
+         "webservice1": 0.009999999999999998,
+         "redisservice2": 0.009999999999999998,
+         "dbservice2": 0.9,
+         "none": 0.009999999999999998,
+         "logservice1": 0.009999999999999998,
+         "redisservice1": 0.009999999999999998,
+         "mobservice1": 0.009999999999999998,
+         "logservice2": 0.009999999999999998,
+         "dbservice1": 0.009999999999999998,
+         "webservice2": 0.009999999999999998
+        }
+       }
+      },
+      "finding": {
+       "pred": "permission_denied",
+       "probs": {
+        "file_missing": 0.025000000000000022,
+        "permission_denied": 0.95,
+        "none": 0.025000000000000022
+       },
+       "confidence": 0.925,
+       "abstain": false,
+       "key_evidence": "E1",
+       "root_service": "dbservice2",
+       "root_service_probs": {
+        "mobservice2": 0.009999999999999998,
+        "webservice1": 0.009999999999999998,
+        "redisservice2": 0.009999999999999998,
+        "dbservice2": 0.9,
+        "none": 0.009999999999999998,
+        "logservice1": 0.009999999999999998,
+        "redisservice1": 0.009999999999999998,
+        "mobservice1": 0.009999999999999998,
+        "logservice2": 0.009999999999999998,
+        "dbservice1": 0.009999999999999998,
+        "webservice2": 0.009999999999999998
+       }
+      },
+      "latency_ms": 1954.0,
+      "prompt_chars": 5513
+     }
+    }
+   }
+  },
+  {
+   "wid": "w0381",
+   "title": "Memory fault (invisible in logs)",
+   "question": "What went wrong in the system between 2021-08-01 03:42 and 2021-08-01 03:57?",
+   "truth": {
+    "fault": "none",
+    "root_service": null
+   },
+   "slice": "notrace",
+   "raw": {
+    "lines": 36819.0,
+    "errors": 224.0,
+    "warn_plus": 1450,
+    "sample_errors": [
+     "dbservice2 ERROR (pymysql.err.OperationalError) (1054, \"Unknown column 'system_data_time' in 'field list'\")[SQL: select service_name, system_data_time, system_cpu_utilization, s",
+     "webservice1 ERROR an error occurred in the downstream service",
+     "dbservice1 ERROR (pymysql.err.OperationalError) (1054, \"Unknown column 'system_data_time' in 'field list'\")[SQL: select service_name, system_data_time, system_cpu_utilization, s",
+     "webservice2 ERROR an error occurred in the downstream service",
+     "dbservice2 ERROR (pymysql.err.ProgrammingError) (1146, \"Table 'cloudwise_micross.system_metric_datas' doesn't exist\")[SQL: select service_names, system_data_time, system_cpu_uti",
+     "webservice2 ERROR an error occurred in the downstream service",
+     "dbservice1 ERROR (pymysql.err.ProgrammingError) (1146, \"Table 'cloudwise_micross.system_metric_datas' doesn't exist\")[SQL: select service_names, system_data_time, system_cpu_uti",
+     "webservice2 ERROR an error occurred in the downstream service",
+     "dbservice2 ERROR (pymysql.err.OperationalError) (1065, 'Query was empty')(Background on this error at: http://sqlalche.me/e/14/e3q8)",
+     "webservice1 ERROR an error occurred in the downstream service",
+     "dbservice2 ERROR (pymysql.err.OperationalError) (1054, \"Unknown column 'system_data_time' in 'field list'\")[SQL: select service_name, system_data_time, system_cpu_utilization, s",
+     "webservice2 ERROR an error occurred in the downstream service"
+    ]
+   },
+   "variants": {
+    "E0/Q0": {
+     "state": {
+      "question": "What went wrong in the system between 2021-08-01 03:42 and 2021-08-01 03:57?",
+      "window": {
+       "services_logging": 10,
+       "log_lines": "36819",
+       "error_lines": "224"
+      },
+      "evidence": {
+       "E1": {
+        "service": "redisservice1",
+        "log_pattern": "二维码已过期， 请刷新重新扫描, status_code: <NUM>",
+        "severity": "ERROR",
+        "lines": "8 in this window",
+        "rarity": "common: seen in 211 of 219 windows",
+        "first_seen": "in the middle of the window",
+        "example_line": "二维码已过期， 请刷新重新扫描, status_code: 400"
+       },
+       "E2": {
+        "service": "redisservice2",
+        "log_pattern": "二维码已过期， 请刷新重新扫描, status_code: <NUM>",
+        "severity": "ERROR",
+        "lines": "6 in this window",
+        "rarity": "common: seen in 211 of 219 windows",
+        "first_seen": "in the middle of the window",
+        "example_line": "二维码已过期， 请刷新重新扫描, status_code: 400"
+       },
+       "E3": {
+        "service": "mobservice2",
+        "log_pattern": "uuid:<UUID> information has expired, mobile phone login is invalid",
+        "severity": "ERROR",
+        "lines": "5 in this window",
+        "rarity": "common: seen in 211 of 219 windows",
+        "first_seen": "in the middle of the window",
+        "example_line": "uuid:8b695c82-f238-11eb-b2bc-0242ac110004 information has expired, mobile phone login is invalid"
+       },
+       "E4": {
+        "service": "logservice1",
+        "log_pattern": "get information failed, fail code: <NUM>",
+        "severity": "ERROR",
+        "lines": "4 in this window",
+        "rarity": "common: seen in 211 of 219 windows",
+        "first_seen": "in the middle of the window",
+        "example_line": "get information failed, fail code: 400"
+       },
+       "E5": {
+        "service": "logservice1",
+        "log_pattern": "{traci_id} | uuid expired, invalid phone request",
+        "severity": "ERROR",
+        "lines": "4 in this window",
+        "rarity": "common: seen in 211 of 219 windows",
+        "first_seen": "in the middle of the window",
+        "example_line": "{traci_id} | uuid expired, invalid phone request"
+       },
+       "E6": {
+        "service": "logservice2",
+        "log_pattern": "get information failed, fail code: <NUM>",
+        "severity": "ERROR",
+        "lines": "3 in this window",
+        "rarity": "common: seen in 211 of 219 windows",
+        "first_seen": "near the end of the window",
+        "example_line": "get information failed, fail code: 400"
+       },
+       "E7": {
+        "service": "logservice2",
+        "log_pattern": "{traci_id} | uuid expired, invalid phone request",
+        "severity": "ERROR",
+        "lines": "3 in this window",
+        "rarity": "common: seen in 211 of 219 windows",
+        "first_seen": "near the end of the window",
+        "example_line": "{traci_id} | uuid expired, invalid phone request"
+       },
+       "E8": {
+        "service": "mobservice1",
+        "log_pattern": "uuid:<UUID> information has expired, mobile phone login is invalid",
+        "severity": "ERROR",
+        "lines": "2 in this window",
+        "rarity": "common: seen in 211 of 219 windows",
+        "first_seen": "in the middle of the window",
+        "example_line": "uuid:10497f96-f238-11eb-9aad-0242ac110003 information has expired, mobile phone login is invalid"
+       },
+       "E9": {
+        "service": "webservice1",
+        "log_pattern": "an error occurred in the downstream service",
+        "severity": "ERROR",
+        "lines": "54 in this window",
+        "rarity": "common: seen in 212 of 219 windows",
+        "first_seen": "from the start of the window",
+        "example_line": "an error occurred in the downstream service"
+       },
+       "E10": {
+        "service": "webservice2",
+        "log_pattern": "an error occurred in the downstream service",
+        "severity": "ERROR",
+        "lines": "44 in this window",
+        "rarity": "common: seen in 212 of 219 windows",
+        "first_seen": "from the start of the window",
+        "example_line": "an error occurred in the downstream service"
+       },
+       "E11": {
+        "service": "dbservice2",
+        "log_pattern": "(pymysql.err.OperationalError) (<NUM>, \"Unknown column '<ID>' in 'field list'\")[SQL: select service_name, <ID>, <ID>, <ID>,<ID>, <ID>, <ID>,system_network, <ID>, <ID> from `<ID><NUM>`](Background on this error at: http:/<PATH>)",
+        "severity": "ERROR",
+        "lines": "18 in this window",
+        "rarity": "common: seen in 212 of 219 windows",
+        "first_seen": "from the start of the window",
+        "example_line": "(pymysql.err.OperationalError) (1054, \"Unknown column 'system_data_time' in 'field list'\")[SQL: select service_name, system_data_time, system_cpu_utilization, system_memory_usage,system_disk_usage, disk_io_read_count, disk_io_write_count,sy"
+       },
+       "E12": {
+        "service": "dbservice1",
+        "log_pattern": "(pymysql.err.ProgrammingError) (<NUM>, \"Table 'cloudwise_micross.<ID>' doesn't exist\")[SQL: select service_names, <ID>, <ID>, <ID>,<ID>, <ID>, <ID>,system_network, <ID>, <ID> from <ID>](Background on this error at: http:/<PATH>)",
+        "severity": "ERROR",
+        "lines": "15 in this window",
+        "rarity": "common: seen in 212 of 219 windows",
+        "first_seen": "from the start of the window",
+        "example_line": "(pymysql.err.ProgrammingError) (1146, \"Table 'cloudwise_micross.system_metric_datas' doesn't exist\")[SQL: select service_names, system_data_time, system_cpu_utilization, system_memory_usage,system_disk_usage, disk_io_read_count, disk_io_wri"
+       }
+      }
+     },
+     "questions": {
+      "fault": {
+       "type": "choice",
+       "instructions": "`question` asks about a time window of a multi-service system. `evidence` lists the log patterns of that window that are new or more frequent than in the previous 24 hours; `window` summarises log volume. Which option best describes what happened in this window?",
+       "criteria": {
+        "missing file or resource": {
+         "definition": "A component cannot find a file, resource or configuration it needs.",
+         "covers": "Errors saying a file, path, resource or config does not exist or cannot be found or loaded, appearing new or far more often than usual.",
+         "does_not_cover": "The resource exists but access to it is refused; slow or unavailable dependencies."
+        },
+        "permission denied": {
+         "definition": "A component is refused access to a resource or to a service it depends on.",
+         "covers": "Access denied, permission or authorization errors, a service refusing requests from its callers, and callers then reporting errors from that dependency.",
+         "does_not_cover": "Missing files or resources; dependencies that are only slow."
+        },
+        "no fault visible": {
+         "definition": "The logs in this window look like the system's usual behaviour.",
+         "covers": "Routine errors and warnings at about their usual rate, informational messages, small fluctuations.",
+         "does_not_cover": "A burst of errors that are new or much more frequent than in the previous 24 hours."
+        }
+       }
+      },
+      "key_evidence": {
+       "type": "choice",
+       "criteria": {
+        "E1": "Evidence item `evidence.E1`",
+        "E2": "Evidence item `evidence.E2`",
+        "E3": "Evidence item `evidence.E3`",
+        "E4": "Evidence item `evidence.E4`",
+        "E5": "Evidence item `evidence.E5`",
+        "E6": "Evidence item `evidence.E6`",
+        "E7": "Evidence item `evidence.E7`",
+        "E8": "Evidence item `evidence.E8`",
+        "E9": "Evidence item `evidence.E9`",
+        "E10": "Evidence item `evidence.E10`",
+        "E11": "Evidence item `evidence.E11`",
+        "E12": "Evidence item `evidence.E12`",
+        "none": "No evidence item shows a fault."
+       },
+       "instructions": "Which single item in `evidence` most directly shows the cause of a problem in this window?"
+      }
+     },
+     "jev": {
+      "answers": {
+       "fault": {
+        "type": "choice",
+        "choice": "missing file or resource",
+        "confidence": 0.61,
+        "probabilities": {
+         "missing file or resource": 0.74,
+         "permission denied": 0.09,
+         "no fault visible": 0.17
+        }
+       },
+       "key_evidence": {
+        "type": "choice",
+        "choice": "E11",
+        "confidence": 0.46,
+        "probabilities": {
+         "E1": 0.0,
+         "E2": 0.0,
+         "E3": 0.01,
+         "E4": 0.0,
+         "E5": 0.0,
+         "E6": 0.0,
+         "E7": 0.0,
+         "E8": 0.0,
+         "E9": 0.03,
+         "E10": 0.0,
+         "E11": 0.5,
+         "E12": 0.46,
+         "none": 0.0
+        }
+       }
+      },
+      "finding": {
+       "pred": "file_missing",
+       "probs": {
+        "file_missing": 0.74,
+        "permission_denied": 0.09,
+        "none": 0.17
+       },
+       "confidence": 0.61,
+       "abstain": false,
+       "key_evidence": "E11"
+      },
+      "latency_ms": 366.0
+     },
+     "llm": {
+      "answers": {
+       "fault": {
+        "choice": "no fault visible",
+        "probabilities": {
+         "missing file or resource": 0.025000000000000022,
+         "permission denied": 0.025000000000000022,
+         "no fault visible": 0.95
+        }
+       },
+       "key_evidence": {
+        "choice": "none",
+        "probabilities": {
+         "E1": 0.00416666666666667,
+         "E2": 0.00416666666666667,
+         "E3": 0.00416666666666667,
+         "E4": 0.00416666666666667,
+         "E5": 0.00416666666666667,
+         "E6": 0.00416666666666667,
+         "E7": 0.00416666666666667,
+         "E8": 0.00416666666666667,
+         "E9": 0.00416666666666667,
+         "E10": 0.00416666666666667,
+         "E11": 0.00416666666666667,
+         "E12": 0.00416666666666667,
+         "none": 0.95
+        }
+       }
+      },
+      "finding": {
+       "pred": "none",
+       "probs": {
+        "file_missing": 0.025000000000000022,
+        "permission_denied": 0.025000000000000022,
+        "none": 0.95
+       },
+       "confidence": 0.925,
+       "abstain": false,
+       "key_evidence": "none"
+      },
+      "latency_ms": 2668.0,
+      "prompt_chars": 7909
+     }
+    },
+    "E1/Q0": {
+     "state": {
+      "question": "What went wrong in the system between 2021-08-01 03:42 and 2021-08-01 03:57?",
+      "window": {
+       "services_logging": 10,
+       "log_lines": "36819 (usually about 40052 per 15 min)",
+       "error_lines": "224 (usually about 221 per 15 min)"
+      },
+      "evidence": "no log pattern is new or clearly more frequent than in the previous 24 hours"
+     },
+     "questions": {
+      "fault": {
+       "type": "choice",
+       "instructions": "`question` asks about a time window of a multi-service system. `evidence` lists the log patterns of that window that are new or more frequent than in the previous 24 hours; `window` summarises log volume. Which option best describes what happened in this window?",
+       "criteria": {
+        "missing file or resource": {
+         "definition": "A component cannot find a file, resource or configuration it needs.",
+         "covers": "Errors saying a file, path, resource or config does not exist or cannot be found or loaded, appearing new or far more often than usual.",
+         "does_not_cover": "The resource exists but access to it is refused; slow or unavailable dependencies."
+        },
+        "permission denied": {
+         "definition": "A component is refused access to a resource or to a service it depends on.",
+         "covers": "Access denied, permission or authorization errors, a service refusing requests from its callers, and callers then reporting errors from that dependency.",
+         "does_not_cover": "Missing files or resources; dependencies that are only slow."
+        },
+        "no fault visible": {
+         "definition": "The logs in this window look like the system's usual behaviour.",
+         "covers": "Routine errors and warnings at about their usual rate, informational messages, small fluctuations.",
+         "does_not_cover": "A burst of errors that are new or much more frequent than in the previous 24 hours."
+        }
+       }
+      },
+      "key_evidence": {
+       "type": "choice",
+       "criteria": {
+        "none": "No evidence item shows a fault."
+       },
+       "instructions": "Which single item in `evidence` most directly shows the cause of a problem in this window?"
+      }
+     },
+     "jev": {
+      "answers": {
+       "fault": {
+        "type": "choice",
+        "choice": "no fault visible",
+        "confidence": 1.0,
+        "probabilities": {
+         "missing file or resource": 0.0,
+         "permission denied": 0.0,
+         "no fault visible": 1.0
+        }
+       },
+       "key_evidence": {
+        "type": "choice",
+        "choice": "none",
+        "confidence": 1.0,
+        "probabilities": {
+         "none": 1.0
+        }
+       }
+      },
+      "finding": {
+       "pred": "none",
+       "probs": {
+        "file_missing": 0.0,
+        "permission_denied": 0.0,
+        "none": 1.0
+       },
+       "confidence": 1.0,
+       "abstain": false,
+       "key_evidence": "none"
+      },
+      "latency_ms": 269.0
+     },
+     "llm": {
+      "answers": {
+       "fault": {
+        "choice": "no fault visible",
+        "probabilities": {
+         "missing file or resource": 0.0,
+         "permission denied": 0.0,
+         "no fault visible": 1.0
+        }
+       },
+       "key_evidence": {
+        "choice": "none",
+        "probabilities": {
+         "none": 1.0
+        }
+       }
+      },
+      "finding": {
+       "pred": "none",
+       "probs": {
+        "file_missing": 0.0,
+        "permission_denied": 0.0,
+        "none": 1.0
+       },
+       "confidence": 1.0,
+       "abstain": false,
+       "key_evidence": "none"
+      },
+      "latency_ms": 1975.0,
+      "prompt_chars": 2432
+     }
+    },
+    "E1/Q1": {
+     "state": {
+      "question": "What went wrong in the system between 2021-08-01 03:42 and 2021-08-01 03:57?",
+      "window": {
+       "services_logging": 10,
+       "log_lines": "36819 (usually about 40052 per 15 min)",
+       "error_lines": "224 (usually about 221 per 15 min)"
+      },
+      "evidence": "no log pattern is new or clearly more frequent than in the previous 24 hours"
+     },
+     "questions": {
+      "fault": {
+       "type": "choice",
+       "instructions": "`question` asks about a time window of a multi-service system. `evidence` lists the log patterns of that window that are new or more frequent than in the previous 24 hours; `window` summarises log volume. Which option best describes what happened in this window?",
+       "criteria": {
+        "missing file or resource": {
+         "definition": "A component cannot find a file, resource or configuration it needs.",
+         "covers": "Errors saying a file, path, resource or config does not exist or cannot be found or loaded, appearing new or far more often than usual.",
+         "does_not_cover": "The resource exists but access to it is refused; slow or unavailable dependencies."
+        },
+        "permission denied": {
+         "definition": "A component is refused access to a resource or to a service it depends on.",
+         "covers": "Access denied, permission or authorization errors, a service refusing requests from its callers, and callers then reporting errors from that dependency.",
+         "does_not_cover": "Missing files or resources; dependencies that are only slow."
+        },
+        "no fault visible": {
+         "definition": "The logs in this window look like the system's usual behaviour.",
+         "covers": "Routine errors and warnings at about their usual rate, informational messages, small fluctuations.",
+         "does_not_cover": "A burst of errors that are new or much more frequent than in the previous 24 hours."
+        },
+        "cannot tell from these logs": {
+         "definition": "The evidence is too weak or ambiguous to say whether there was a fault.",
+         "covers": "Small or mixed changes that could be noise or an early sign of a problem.",
+         "does_not_cover": "A clear new error burst, or clearly usual behaviour."
+        }
+       }
+      },
+      "key_evidence": {
+       "type": "choice",
+       "criteria": {
+        "none": "No evidence item shows a fault."
+       },
+       "instructions": "Which single item in `evidence` most directly shows the cause of a problem in this window?"
+      }
+     },
+     "jev": {
+      "answers": {
+       "fault": {
+        "type": "choice",
+        "choice": "no fault visible",
+        "confidence": 0.87,
+        "probabilities": {
+         "missing file or resource": 0.0,
+         "permission denied": 0.0,
+         "no fault visible": 0.9,
+         "cannot tell from these logs": 0.1
+        }
+       },
+       "key_evidence": {
+        "type": "choice",
+        "choice": "none",
+        "confidence": 1.0,
+        "probabilities": {
+         "none": 1.0
+        }
+       }
+      },
+      "finding": {
+       "pred": "none",
+       "probs": {
+        "file_missing": 0.0,
+        "permission_denied": 0.0,
+        "none": 1.0
+       },
+       "confidence": 1.0,
+       "abstain": false,
+       "key_evidence": "none"
+      },
+      "latency_ms": 236.0
+     },
+     "llm": {
+      "answers": {
+       "fault": {
+        "choice": "no fault visible",
+        "probabilities": {
+         "missing file or resource": 0.0,
+         "permission denied": 0.0,
+         "no fault visible": 1.0,
+         "cannot tell from these logs": 0.0
+        }
+       },
+       "key_evidence": {
+        "choice": "none",
+        "probabilities": {
+         "none": 1.0
+        }
+       }
+      },
+      "finding": {
+       "pred": "none",
+       "probs": {
+        "file_missing": 0.0,
+        "permission_denied": 0.0,
+        "none": 1.0
+       },
+       "confidence": 1.0,
+       "abstain": false,
+       "key_evidence": "none"
+      },
+      "latency_ms": 1713.0,
+      "prompt_chars": 2735
+     }
+    },
+    "E1/Q2": {
+     "state": {
+      "question": "What went wrong in the system between 2021-08-01 03:42 and 2021-08-01 03:57?",
+      "window": {
+       "services_logging": 10,
+       "log_lines": "36819 (usually about 40052 per 15 min)",
+       "error_lines": "224 (usually about 221 per 15 min)"
+      },
+      "evidence": "no log pattern is new or clearly more frequent than in the previous 24 hours"
+     },
+     "questions": {
+      "is_fault": {
+       "type": "noul",
+       "instructions": "Do the logs described in `evidence` and `window` show a fault in this window: errors that are new or much more frequent than in the previous 24 hours?",
+       "criteria": {
+        "true": "A clear fault is visible in this window.",
+        "false": "The window looks like usual behaviour."
+       }
+      },
+      "fault_type": {
+       "type": "choice",
+       "instructions": "If there is a fault in this window (see `evidence`), which kind of fault is it?",
+       "criteria": {
+        "missing file or resource": {
+         "definition": "A component cannot find a file, resource or configuration it needs.",
+         "covers": "Errors saying a file, path, resource or config does not exist or cannot be found or loaded, appearing new or far more often than usual.",
+         "does_not_cover": "The resource exists but access to it is refused; slow or unavailable dependencies."
+        },
+        "permission denied": {
+         "definition": "A component is refused access to a resource or to a service it depends on.",
+         "covers": "Access denied, permission or authorization errors, a service refusing requests from its callers, and callers then reporting errors from that dependency.",
+         "does_not_cover": "Missing files or resources; dependencies that are only slow."
+        }
+       }
+      },
+      "key_evidence": {
+       "type": "choice",
+       "criteria": {
+        "none": "No evidence item shows a fault."
+       },
+       "instructions": "Which single item in `evidence` most directly shows the cause of a problem in this window?"
+      }
+     },
+     "jev": {
+      "answers": {
+       "is_fault": {
+        "type": "noul",
+        "noul": 0.09
+       },
+       "fault_type": {
+        "type": "choice",
+        "choice": "missing file or resource",
+        "confidence": 0.54,
+        "probabilities": {
+         "missing file or resource": 0.77,
+         "permission denied": 0.23
+        }
+       },
+       "key_evidence": {
+        "type": "choice",
+        "choice": "none",
+        "confidence": 1.0,
+        "probabilities": {
+         "none": 1.0
+        }
+       }
+      },
+      "finding": {
+       "pred": "none",
+       "probs": {
+        "none": 0.91,
+        "file_missing": 0.0693,
+        "permission_denied": 0.0207
+       },
+       "confidence": 0.865,
+       "abstain": false,
+       "key_evidence": "none"
+      },
+      "latency_ms": 278.0
+     },
+     "llm": {
+      "answers": {
+       "is_fault": {
+        "noul": 0.0
+       },
+       "fault_type": {
+        "choice": "missing file or resource",
+        "probabilities": {
+         "missing file or resource": 0.0,
+         "permission denied": 1.0
+        }
+       },
+       "key_evidence": {
+        "choice": "none",
+        "probabilities": {
+         "none": 1.0
+        }
+       }
+      },
+      "finding": {
+       "pred": "none",
+       "probs": {
+        "none": 1.0,
+        "file_missing": 0.0,
+        "permission_denied": 0.0
+       },
+       "confidence": 1.0,
+       "abstain": false,
+       "key_evidence": "none"
+      },
+      "latency_ms": 4196.0,
+      "prompt_chars": 2252
+     }
+    },
+    "E1/Q7": {
+     "state": {
+      "question": "What went wrong in the system between 2021-08-01 03:42 and 2021-08-01 03:57?",
+      "window": {
+       "services_logging": 10,
+       "log_lines": "36819 (usually about 40052 per 15 min)",
+       "error_lines": "224 (usually about 221 per 15 min)"
+      },
+      "evidence": "no log pattern is new or clearly more frequent than in the previous 24 hours"
+     },
+     "questions": {
+      "fault": {
+       "type": "choice",
+       "instructions": "`question` asks about a time window of a multi-service system. `evidence` lists the log patterns of that window that are new or more frequent than in the previous 24 hours; `window` summarises log volume. Which option best describes what happened in this window?",
+       "criteria": {
+        "missing file or resource": {
+         "definition": "A component cannot find a file, resource or configuration it needs.",
+         "covers": "Errors saying a file, path, resource or config does not exist or cannot be found or loaded, appearing new or far more often than usual.",
+         "does_not_cover": "The resource exists but access to it is refused; slow or unavailable dependencies."
+        },
+        "no fault visible": {
+         "definition": "The logs in this window look like the system's usual behaviour.",
+         "covers": "Routine errors and warnings at about their usual rate, informational messages, small fluctuations.",
+         "does_not_cover": "A burst of errors that are new or much more frequent than in the previous 24 hours."
+        },
+        "permission denied": {
+         "definition": "A component is refused access to a resource or to a service it depends on.",
+         "covers": "Access denied, permission or authorization errors, a service refusing requests from its callers, and callers then reporting errors from that dependency.",
+         "does_not_cover": "Missing files or resources; dependencies that are only slow."
+        }
+       }
+      },
+      "key_evidence": {
+       "type": "choice",
+       "criteria": {
+        "none": "No evidence item shows a fault."
+       },
+       "instructions": "Which single item in `evidence` most directly shows the cause of a problem in this window?"
+      },
+      "root_service": {
+       "type": "choice",
+       "criteria": {
+        "webservice1": "webservice1: log lines 4331 (usually about 4707); error lines 54, about its usual rate; error spike: none",
+        "dbservice2": "dbservice2: log lines 2260 (usually about 2606); error lines 47, about its usual rate; error spike: none",
+        "mobservice2": "mobservice2: log lines 2892 (usually about 3369); error lines 5, about its usual rate; error spike: none",
+        "dbservice1": "dbservice1: log lines 2590 (usually about 2672); error lines 44, about its usual rate; error spike: none",
+        "webservice2": "webservice2: log lines 4347 (usually about 4711); error lines 44, about its usual rate; error spike: none",
+        "none": "No service has a fault in this window.",
+        "logservice2": "logservice2: log lines 5448 (usually about 5970); error lines 6, about its usual rate; error spike: none",
+        "logservice1": "logservice1: log lines 5539 (usually about 5983); error lines 8, about its usual rate; error spike: none",
+        "mobservice1": "mobservice1: log lines 3240 (usually about 3302); error lines 2, less than usual; error spike: none",
+        "redisservice1": "redisservice1: log lines 3021 (usually about 3400); error lines 8, about its usual rate; error spike: none",
+        "redisservice2": "redisservice2: log lines 3151 (usually about 3332); error lines 6, about its usual rate; error spike: none"
+       },
+       "instructions": "Which service is the root cause of the problem in this window (where the fault started, not a service that only reports errors from a dependency)?"
+      }
+     },
+     "jev": {
+      "answers": {
+       "fault": {
+        "type": "choice",
+        "choice": "no fault visible",
+        "confidence": 1.0,
+        "probabilities": {
+         "missing file or resource": 0.0,
+         "permission denied": 0.0,
+         "no fault visible": 1.0
+        }
+       },
+       "key_evidence": {
+        "type": "choice",
+        "choice": "none",
+        "confidence": 1.0,
+        "probabilities": {
+         "none": 1.0
+        }
+       },
+       "root_service": {
+        "type": "choice",
+        "choice": "none",
+        "confidence": 0.91,
+        "probabilities": {
+         "dbservice1": 0.0,
+         "dbservice2": 0.02,
+         "logservice1": 0.0,
+         "logservice2": 0.0,
+         "mobservice1": 0.0,
+         "mobservice2": 0.04,
+         "redisservice1": 0.01,
+         "redisservice2": 0.0,
+         "webservice1": 0.01,
+         "webservice2": 0.0,
+         "none": 0.92
+        }
+       }
+      },
+      "finding": {
+       "pred": "none",
+       "probs": {
+        "file_missing": 0.0,
+        "permission_denied": 0.0,
+        "none": 1.0
+       },
+       "confidence": 1.0,
+       "abstain": false,
+       "key_evidence": "none",
+       "root_service": "none",
+       "root_service_probs": {
+        "dbservice1": 0.0,
+        "dbservice2": 0.02,
+        "logservice1": 0.0,
+        "logservice2": 0.0,
+        "mobservice1": 0.0,
+        "mobservice2": 0.04,
+        "redisservice1": 0.01,
+        "redisservice2": 0.0,
+        "webservice1": 0.01,
+        "webservice2": 0.0,
+        "none": 0.92
+       }
+      },
+      "latency_ms": 372.0
+     },
+     "llm": {
+      "answers": {
+       "fault": {
+        "choice": "no fault visible",
+        "probabilities": {
+         "missing file or resource": 0.0,
+         "no fault visible": 1.0,
+         "permission denied": 0.0
+        }
+       },
+       "key_evidence": {
+        "choice": "none",
+        "probabilities": {
+         "none": 1.0
+        }
+       },
+       "root_service": {
+        "choice": "none",
+        "probabilities": {
+         "webservice1": 0.0,
+         "dbservice2": 0.0,
+         "mobservice2": 0.0,
+         "dbservice1": 0.0,
+         "webservice2": 0.0,
+         "none": 1.0,
+         "logservice2": 0.0,
+         "logservice1": 0.0,
+         "mobservice1": 0.0,
+         "redisservice1": 0.0,
+         "redisservice2": 0.0
+        }
+       }
+      },
+      "finding": {
+       "pred": "none",
+       "probs": {
+        "file_missing": 0.0,
+        "permission_denied": 0.0,
+        "none": 1.0
+       },
+       "confidence": 1.0,
+       "abstain": false,
+       "key_evidence": "none",
+       "root_service": "none",
+       "root_service_probs": {
+        "webservice1": 0.0,
+        "dbservice2": 0.0,
+        "mobservice2": 0.0,
+        "dbservice1": 0.0,
+        "webservice2": 0.0,
+        "none": 1.0,
+        "logservice2": 0.0,
+        "logservice1": 0.0,
+        "mobservice1": 0.0,
+        "redisservice1": 0.0,
+        "redisservice2": 0.0
+       }
+      },
+      "latency_ms": 1499.0,
+      "prompt_chars": 3977
+     }
+    }
+   }
+  },
+  {
+   "wid": "w0063",
+   "title": "Quiet window: Jev false alarm fixed by 'cannot tell'",
+   "question": "What went wrong in the system between 2021-08-18 07:08 and 2021-08-18 07:23?",
+   "truth": {
+    "fault": "none",
+    "root_service": null
+   },
+   "slice": "normal",
+   "raw": {
+    "lines": 36389.0,
+    "errors": 240.0,
+    "warn_plus": 1443,
+    "sample_errors": [
+     "dbservice1 ERROR (pymysql.err.OperationalError) (1065, 'Query was empty')(Background on this error at: http://sqlalche.me/e/14/e3q8)",
+     "webservice1 ERROR an error occurred in the downstream service",
+     "dbservice2 ERROR (pymysql.err.ProgrammingError) (1146, \"Table 'cloudwise_micross.system_metric_datas' doesn't exist\")[SQL: select service_names, system_data_time, system_cpu_uti",
+     "webservice2 ERROR an error occurred in the downstream service",
+     "dbservice2 ERROR (pymysql.err.OperationalError) (1065, 'Query was empty')(Background on this error at: http://sqlalche.me/e/14/e3q8)",
+     "webservice1 ERROR an error occurred in the downstream service",
+     "dbservice1 ERROR (pymysql.err.OperationalError) (1054, \"Unknown column 'system_data_time' in 'field list'\")[SQL: select service_name, system_data_time, system_cpu_utilization, s",
+     "webservice1 ERROR an error occurred in the downstream service",
+     "dbservice1 ERROR (pymysql.err.OperationalError) (1065, 'Query was empty')(Background on this error at: http://sqlalche.me/e/14/e3q8)",
+     "webservice1 ERROR an error occurred in the downstream service",
+     "dbservice1 ERROR (pymysql.err.OperationalError) (1054, \"Unknown column 'system_data_time' in 'field list'\")[SQL: select service_name, system_data_time, system_cpu_utilization, s",
+     "webservice1 ERROR an error occurred in the downstream service"
+    ]
+   },
+   "variants": {
+    "E0/Q0": {
+     "state": {
+      "question": "What went wrong in the system between 2021-08-18 07:08 and 2021-08-18 07:23?",
+      "window": {
+       "services_logging": 10,
+       "log_lines": "36389",
+       "error_lines": "240"
+      },
+      "evidence": {
+       "E1": {
+        "service": "redisservice1",
+        "log_pattern": "二维码已过期， 请刷新重新扫描, status_code: <NUM>",
+        "severity": "ERROR",
+        "lines": "14 in this window",
+        "rarity": "common: seen in 211 of 219 windows",
+        "first_seen": "from the start of the window",
+        "example_line": "二维码已过期， 请刷新重新扫描, status_code: 400"
+       },
+       "E2": {
+        "service": "mobservice2",
+        "log_pattern": "uuid:<UUID> information has expired, mobile phone login is invalid",
+        "severity": "ERROR",
+        "lines": "7 in this window",
+        "rarity": "common: seen in 211 of 219 windows",
+        "first_seen": "from the start of the window",
+        "example_line": "uuid:3ec8e08e-ffb0-11eb-8059-0242ac110004 information has expired, mobile phone login is invalid"
+       },
+       "E3": {
+        "service": "redisservice2",
+        "log_pattern": "二维码已过期， 请刷新重新扫描, status_code: <NUM>",
+        "severity": "ERROR",
+        "lines": "6 in this window",
+        "rarity": "common: seen in 211 of 219 windows",
+        "first_seen": "from the start of the window",
+        "example_line": "二维码已过期， 请刷新重新扫描, status_code: 400"
+       },
+       "E4": {
+        "service": "logservice2",
+        "log_pattern": "get information failed, fail code: <NUM>",
+        "severity": "ERROR",
+        "lines": "5 in this window",
+        "rarity": "common: seen in 211 of 219 windows",
+        "first_seen": "from the start of the window",
+        "example_line": "get information failed, fail code: 400"
+       },
+       "E5": {
+        "service": "logservice2",
+        "log_pattern": "{traci_id} | uuid expired, invalid phone request",
+        "severity": "ERROR",
+        "lines": "5 in this window",
+        "rarity": "common: seen in 211 of 219 windows",
+        "first_seen": "from the start of the window",
+        "example_line": "{traci_id} | uuid expired, invalid phone request"
+       },
+       "E6": {
+        "service": "logservice1",
+        "log_pattern": "{traci_id} | uuid expired, invalid phone request",
+        "severity": "ERROR",
+        "lines": "5 in this window",
+        "rarity": "common: seen in 211 of 219 windows",
+        "first_seen": "from the start of the window",
+        "example_line": "{traci_id} | uuid expired, invalid phone request"
+       },
+       "E7": {
+        "service": "logservice1",
+        "log_pattern": "get information failed, fail code: <NUM>",
+        "severity": "ERROR",
+        "lines": "5 in this window",
+        "rarity": "common: seen in 211 of 219 windows",
+        "first_seen": "from the start of the window",
+        "example_line": "get information failed, fail code: 400"
+       },
+       "E8": {
+        "service": "mobservice1",
+        "log_pattern": "uuid:<UUID> information has expired, mobile phone login is invalid",
+        "severity": "ERROR",
+        "lines": "3 in this window",
+        "rarity": "common: seen in 211 of 219 windows",
+        "first_seen": "in the middle of the window",
+        "example_line": "uuid:03d9ed46-ffb1-11eb-b67b-0242ac110004 information has expired, mobile phone login is invalid"
+       },
+       "E9": {
+        "service": "webservice2",
+        "log_pattern": "an error occurred in the downstream service",
+        "severity": "ERROR",
+        "lines": "55 in this window",
+        "rarity": "common: seen in 212 of 219 windows",
+        "first_seen": "from the start of the window",
+        "example_line": "an error occurred in the downstream service"
+       },
+       "E10": {
+        "service": "webservice1",
+        "log_pattern": "an error occurred in the downstream service",
+        "severity": "ERROR",
+        "lines": "45 in this window",
+        "rarity": "common: seen in 212 of 219 windows",
+        "first_seen": "from the start of the window",
+        "example_line": "an error occurred in the downstream service"
+       },
+       "E11": {
+        "service": "dbservice2",
+        "log_pattern": "(pymysql.err.ProgrammingError) (<NUM>, \"Table 'cloudwise_micross.<ID>' doesn't exist\")[SQL: select service_names, <ID>, <ID>, <ID>,<ID>, <ID>, <ID>,system_network, <ID>, <ID> from <ID>](Background on this error at: http:/<PATH>)",
+        "severity": "ERROR",
+        "lines": "16 in this window",
+        "rarity": "common: seen in 212 of 219 windows",
+        "first_seen": "from the start of the window",
+        "example_line": "(pymysql.err.ProgrammingError) (1146, \"Table 'cloudwise_micross.system_metric_datas' doesn't exist\")[SQL: select service_names, system_data_time, system_cpu_utilization, system_memory_usage,system_disk_usage, disk_io_read_count, disk_io_wri"
+       },
+       "E12": {
+        "service": "dbservice1",
+        "log_pattern": "(pymysql.err.OperationalError) (<NUM>, 'Query was empty')(Background on this error at: http:/<PATH>)",
+        "severity": "ERROR",
+        "lines": "15 in this window",
+        "rarity": "common: seen in 212 of 219 windows",
+        "first_seen": "from the start of the window",
+        "example_line": "(pymysql.err.OperationalError) (1065, 'Query was empty')(Background on this error at: http://sqlalche.me/e/14/e3q8)"
+       }
+      }
+     },
+     "questions": {
+      "fault": {
+       "type": "choice",
+       "instructions": "`question` asks about a time window of a multi-service system. `evidence` lists the log patterns of that window that are new or more frequent than in the previous 24 hours; `window` summarises log volume. Which option best describes what happened in this window?",
+       "criteria": {
+        "missing file or resource": {
+         "definition": "A component cannot find a file, resource or configuration it needs.",
+         "covers": "Errors saying a file, path, resource or config does not exist or cannot be found or loaded, appearing new or far more often than usual.",
+         "does_not_cover": "The resource exists but access to it is refused; slow or unavailable dependencies."
+        },
+        "permission denied": {
+         "definition": "A component is refused access to a resource or to a service it depends on.",
+         "covers": "Access denied, permission or authorization errors, a service refusing requests from its callers, and callers then reporting errors from that dependency.",
+         "does_not_cover": "Missing files or resources; dependencies that are only slow."
+        },
+        "no fault visible": {
+         "definition": "The logs in this window look like the system's usual behaviour.",
+         "covers": "Routine errors and warnings at about their usual rate, informational messages, small fluctuations.",
+         "does_not_cover": "A burst of errors that are new or much more frequent than in the previous 24 hours."
+        }
+       }
+      },
+      "key_evidence": {
+       "type": "choice",
+       "criteria": {
+        "E1": "Evidence item `evidence.E1`",
+        "E2": "Evidence item `evidence.E2`",
+        "E3": "Evidence item `evidence.E3`",
+        "E4": "Evidence item `evidence.E4`",
+        "E5": "Evidence item `evidence.E5`",
+        "E6": "Evidence item `evidence.E6`",
+        "E7": "Evidence item `evidence.E7`",
+        "E8": "Evidence item `evidence.E8`",
+        "E9": "Evidence item `evidence.E9`",
+        "E10": "Evidence item `evidence.E10`",
+        "E11": "Evidence item `evidence.E11`",
+        "E12": "Evidence item `evidence.E12`",
+        "none": "No evidence item shows a fault."
+       },
+       "instructions": "Which single item in `evidence` most directly shows the cause of a problem in this window?"
+      }
+     },
+     "jev": {
+      "answers": {
+       "fault": {
+        "type": "choice",
+        "choice": "missing file or resource",
+        "confidence": 0.34,
+        "probabilities": {
+         "missing file or resource": 0.56,
+         "permission denied": 0.18,
+         "no fault visible": 0.26
+        }
+       },
+       "key_evidence": {
+        "type": "choice",
+        "choice": "E11",
+        "confidence": 0.84,
+        "probabilities": {
+         "E1": 0.03,
+         "E2": 0.07,
+         "E3": 0.0,
+         "E4": 0.0,
+         "E5": 0.0,
+         "E6": 0.0,
+         "E7": 0.0,
+         "E8": 0.0,
+         "E9": 0.02,
+         "E10": 0.0,
+         "E11": 0.85,
+         "E12": 0.03,
+         "none": 0.0
+        }
+       }
+      },
+      "finding": {
+       "pred": "file_missing",
+       "probs": {
+        "file_missing": 0.56,
+        "permission_denied": 0.18,
+        "none": 0.26
+       },
+       "confidence": 0.34,
+       "abstain": false,
+       "key_evidence": "E11"
+      },
+      "latency_ms": 229.0
+     },
+     "llm": {
+      "answers": {
+       "fault": {
+        "choice": "no fault visible",
+        "probabilities": {
+         "missing file or resource": 0.025000000000000022,
+         "permission denied": 0.025000000000000022,
+         "no fault visible": 0.95
+        }
+       },
+       "key_evidence": {
+        "choice": "none",
+        "probabilities": {
+         "E1": 0.00416666666666667,
+         "E2": 0.00416666666666667,
+         "E3": 0.00416666666666667,
+         "E4": 0.00416666666666667,
+         "E5": 0.00416666666666667,
+         "E6": 0.00416666666666667,
+         "E7": 0.00416666666666667,
+         "E8": 0.00416666666666667,
+         "E9": 0.00416666666666667,
+         "E10": 0.00416666666666667,
+         "E11": 0.00416666666666667,
+         "E12": 0.00416666666666667,
+         "none": 0.95
+        }
+       }
+      },
+      "finding": {
+       "pred": "none",
+       "probs": {
+        "file_missing": 0.025000000000000022,
+        "permission_denied": 0.025000000000000022,
+        "none": 0.95
+       },
+       "confidence": 0.925,
+       "abstain": false,
+       "key_evidence": "none"
+      },
+      "latency_ms": 1701.0,
+      "prompt_chars": 7663
+     }
+    },
+    "E1/Q0": {
+     "state": {
+      "question": "What went wrong in the system between 2021-08-18 07:08 and 2021-08-18 07:23?",
+      "window": {
+       "services_logging": 10,
+       "log_lines": "36389 (usually about 37260 per 15 min)",
+       "error_lines": "240 (usually about 208 per 15 min)"
+      },
+      "evidence": {
+       "E1": {
+        "service": "redisservice1",
+        "log_pattern": "二维码已过期， 请刷新重新扫描, status_code: <NUM>",
+        "severity": "ERROR",
+        "lines": "14 in this window (usually about 6 per 15 min)",
+        "change": "about 2x its usual rate",
+        "first_seen": "from the start of the window",
+        "example_line": "二维码已过期， 请刷新重新扫描, status_code: 400"
+       }
+      }
+     },
+     "questions": {
+      "fault": {
+       "type": "choice",
+       "instructions": "`question` asks about a time window of a multi-service system. `evidence` lists the log patterns of that window that are new or more frequent than in the previous 24 hours; `window` summarises log volume. Which option best describes what happened in this window?",
+       "criteria": {
+        "missing file or resource": {
+         "definition": "A component cannot find a file, resource or configuration it needs.",
+         "covers": "Errors saying a file, path, resource or config does not exist or cannot be found or loaded, appearing new or far more often than usual.",
+         "does_not_cover": "The resource exists but access to it is refused; slow or unavailable dependencies."
+        },
+        "permission denied": {
+         "definition": "A component is refused access to a resource or to a service it depends on.",
+         "covers": "Access denied, permission or authorization errors, a service refusing requests from its callers, and callers then reporting errors from that dependency.",
+         "does_not_cover": "Missing files or resources; dependencies that are only slow."
+        },
+        "no fault visible": {
+         "definition": "The logs in this window look like the system's usual behaviour.",
+         "covers": "Routine errors and warnings at about their usual rate, informational messages, small fluctuations.",
+         "does_not_cover": "A burst of errors that are new or much more frequent than in the previous 24 hours."
+        }
+       }
+      },
+      "key_evidence": {
+       "type": "choice",
+       "criteria": {
+        "E1": "Evidence item `evidence.E1`",
+        "none": "No evidence item shows a fault."
+       },
+       "instructions": "Which single item in `evidence` most directly shows the cause of a problem in this window?"
+      }
+     },
+     "jev": {
+      "answers": {
+       "fault": {
+        "type": "choice",
+        "choice": "permission denied",
+        "confidence": 0.51,
+        "probabilities": {
+         "missing file or resource": 0.04,
+         "permission denied": 0.67,
+         "no fault visible": 0.29
+        }
+       },
+       "key_evidence": {
+        "type": "choice",
+        "choice": "E1",
+        "confidence": 0.96,
+        "probabilities": {
+         "E1": 0.98,
+         "none": 0.02
+        }
+       }
+      },
+      "finding": {
+       "pred": "permission_denied",
+       "probs": {
+        "file_missing": 0.04,
+        "permission_denied": 0.67,
+        "none": 0.29
+       },
+       "confidence": 0.505,
+       "abstain": false,
+       "key_evidence": "E1"
+      },
+      "latency_ms": 291.0
+     },
+     "llm": {
+      "answers": {
+       "fault": {
+        "choice": "no fault visible",
+        "probabilities": {
+         "missing file or resource": 0.025000000000000022,
+         "permission denied": 0.025000000000000022,
+         "no fault visible": 0.95
+        }
+       },
+       "key_evidence": {
+        "choice": "none",
+        "probabilities": {
+         "E1": 0.050000000000000044,
+         "none": 0.95
+        }
+       }
+      },
+      "finding": {
+       "pred": "none",
+       "probs": {
+        "file_missing": 0.025000000000000022,
+        "permission_denied": 0.025000000000000022,
+        "none": 0.95
+       },
+       "confidence": 0.925,
+       "abstain": false,
+       "key_evidence": "none"
+      },
+      "latency_ms": 3530.0,
+      "prompt_chars": 2870
+     }
+    },
+    "E1/Q1": {
+     "state": {
+      "question": "What went wrong in the system between 2021-08-18 07:08 and 2021-08-18 07:23?",
+      "window": {
+       "services_logging": 10,
+       "log_lines": "36389 (usually about 37260 per 15 min)",
+       "error_lines": "240 (usually about 208 per 15 min)"
+      },
+      "evidence": {
+       "E1": {
+        "service": "redisservice1",
+        "log_pattern": "二维码已过期， 请刷新重新扫描, status_code: <NUM>",
+        "severity": "ERROR",
+        "lines": "14 in this window (usually about 6 per 15 min)",
+        "change": "about 2x its usual rate",
+        "first_seen": "from the start of the window",
+        "example_line": "二维码已过期， 请刷新重新扫描, status_code: 400"
+       }
+      }
+     },
+     "questions": {
+      "fault": {
+       "type": "choice",
+       "instructions": "`question` asks about a time window of a multi-service system. `evidence` lists the log patterns of that window that are new or more frequent than in the previous 24 hours; `window` summarises log volume. Which option best describes what happened in this window?",
+       "criteria": {
+        "missing file or resource": {
+         "definition": "A component cannot find a file, resource or configuration it needs.",
+         "covers": "Errors saying a file, path, resource or config does not exist or cannot be found or loaded, appearing new or far more often than usual.",
+         "does_not_cover": "The resource exists but access to it is refused; slow or unavailable dependencies."
+        },
+        "permission denied": {
+         "definition": "A component is refused access to a resource or to a service it depends on.",
+         "covers": "Access denied, permission or authorization errors, a service refusing requests from its callers, and callers then reporting errors from that dependency.",
+         "does_not_cover": "Missing files or resources; dependencies that are only slow."
+        },
+        "no fault visible": {
+         "definition": "The logs in this window look like the system's usual behaviour.",
+         "covers": "Routine errors and warnings at about their usual rate, informational messages, small fluctuations.",
+         "does_not_cover": "A burst of errors that are new or much more frequent than in the previous 24 hours."
+        },
+        "cannot tell from these logs": {
+         "definition": "The evidence is too weak or ambiguous to say whether there was a fault.",
+         "covers": "Small or mixed changes that could be noise or an early sign of a problem.",
+         "does_not_cover": "A clear new error burst, or clearly usual behaviour."
+        }
+       }
+      },
+      "key_evidence": {
+       "type": "choice",
+       "criteria": {
+        "E1": "Evidence item `evidence.E1`",
+        "none": "No evidence item shows a fault."
+       },
+       "instructions": "Which single item in `evidence` most directly shows the cause of a problem in this window?"
+      }
+     },
+     "jev": {
+      "answers": {
+       "fault": {
+        "type": "choice",
+        "choice": "cannot tell from these logs",
+        "confidence": 0.41,
+        "probabilities": {
+         "missing file or resource": 0.01,
+         "permission denied": 0.29,
+         "no fault visible": 0.14,
+         "cannot tell from these logs": 0.56
+        }
+       },
+       "key_evidence": {
+        "type": "choice",
+        "choice": "E1",
+        "confidence": 0.94,
+        "probabilities": {
+         "E1": 0.97,
+         "none": 0.03
+        }
+       }
+      },
+      "finding": {
+       "pred": "none",
+       "probs": {
+        "file_missing": 0.01,
+        "permission_denied": 0.29,
+        "none": 0.7000000000000001
+       },
+       "confidence": 0.0,
+       "abstain": true,
+       "key_evidence": "E1"
+      },
+      "latency_ms": 247.0
+     },
+     "llm": {
+      "answers": {
+       "fault": {
+        "choice": "cannot tell from these logs",
+        "probabilities": {
+         "missing file or resource": 0.05000000000000001,
+         "permission denied": 0.05000000000000001,
+         "no fault visible": 0.05000000000000001,
+         "cannot tell from these logs": 0.85
+        }
+       },
+       "key_evidence": {
+        "choice": "none",
+        "probabilities": {
+         "E1": 0.15000000000000002,
+         "none": 0.85
+        }
+       }
+      },
+      "finding": {
+       "pred": "none",
+       "probs": {
+        "file_missing": 0.05000000000000001,
+        "permission_denied": 0.05000000000000001,
+        "none": 0.9
+       },
+       "confidence": 0.0,
+       "abstain": true,
+       "key_evidence": "none"
+      },
+      "latency_ms": 2061.0,
+      "prompt_chars": 3173
+     }
+    },
+    "E1/Q2": {
+     "state": {
+      "question": "What went wrong in the system between 2021-08-18 07:08 and 2021-08-18 07:23?",
+      "window": {
+       "services_logging": 10,
+       "log_lines": "36389 (usually about 37260 per 15 min)",
+       "error_lines": "240 (usually about 208 per 15 min)"
+      },
+      "evidence": {
+       "E1": {
+        "service": "redisservice1",
+        "log_pattern": "二维码已过期， 请刷新重新扫描, status_code: <NUM>",
+        "severity": "ERROR",
+        "lines": "14 in this window (usually about 6 per 15 min)",
+        "change": "about 2x its usual rate",
+        "first_seen": "from the start of the window",
+        "example_line": "二维码已过期， 请刷新重新扫描, status_code: 400"
+       }
+      }
+     },
+     "questions": {
+      "is_fault": {
+       "type": "noul",
+       "instructions": "Do the logs described in `evidence` and `window` show a fault in this window: errors that are new or much more frequent than in the previous 24 hours?",
+       "criteria": {
+        "true": "A clear fault is visible in this window.",
+        "false": "The window looks like usual behaviour."
+       }
+      },
+      "fault_type": {
+       "type": "choice",
+       "instructions": "If there is a fault in this window (see `evidence`), which kind of fault is it?",
+       "criteria": {
+        "missing file or resource": {
+         "definition": "A component cannot find a file, resource or configuration it needs.",
+         "covers": "Errors saying a file, path, resource or config does not exist or cannot be found or loaded, appearing new or far more often than usual.",
+         "does_not_cover": "The resource exists but access to it is refused; slow or unavailable dependencies."
+        },
+        "permission denied": {
+         "definition": "A component is refused access to a resource or to a service it depends on.",
+         "covers": "Access denied, permission or authorization errors, a service refusing requests from its callers, and callers then reporting errors from that dependency.",
+         "does_not_cover": "Missing files or resources; dependencies that are only slow."
+        }
+       }
+      },
+      "key_evidence": {
+       "type": "choice",
+       "criteria": {
+        "E1": "Evidence item `evidence.E1`",
+        "none": "No evidence item shows a fault."
+       },
+       "instructions": "Which single item in `evidence` most directly shows the cause of a problem in this window?"
+      }
+     },
+     "jev": {
+      "answers": {
+       "is_fault": {
+        "type": "noul",
+        "noul": 0.81
+       },
+       "fault_type": {
+        "type": "choice",
+        "choice": "permission denied",
+        "confidence": 0.66,
+        "probabilities": {
+         "missing file or resource": 0.17,
+         "permission denied": 0.83
+        }
+       },
+       "key_evidence": {
+        "type": "choice",
+        "choice": "E1",
+        "confidence": 0.96,
+        "probabilities": {
+         "E1": 0.98,
+         "none": 0.02
+        }
+       }
+      },
+      "finding": {
+       "pred": "permission_denied",
+       "probs": {
+        "none": 0.18999999999999995,
+        "file_missing": 0.13770000000000002,
+        "permission_denied": 0.6723
+       },
+       "confidence": 0.5084,
+       "abstain": false,
+       "key_evidence": "E1"
+      },
+      "latency_ms": 215.0
+     },
+     "llm": {
+      "answers": {
+       "is_fault": {
+        "noul": 0.050000000000000044
+       },
+       "fault_type": {
+        "choice": "missing file or resource",
+        "probabilities": {
+         "missing file or resource": 0.1,
+         "permission denied": 0.9
+        }
+       },
+       "key_evidence": {
+        "choice": "none",
+        "probabilities": {
+         "E1": 0.050000000000000044,
+         "none": 0.95
+        }
+       }
+      },
+      "finding": {
+       "pred": "none",
+       "probs": {
+        "none": 0.95,
+        "file_missing": 0.0050000000000000044,
+        "permission_denied": 0.04500000000000004
+       },
+       "confidence": 0.925,
+       "abstain": false,
+       "key_evidence": "none"
+      },
+      "latency_ms": 4676.0,
+      "prompt_chars": 2690
+     }
+    },
+    "E1/Q7": {
+     "state": {
+      "question": "What went wrong in the system between 2021-08-18 07:08 and 2021-08-18 07:23?",
+      "window": {
+       "services_logging": 10,
+       "log_lines": "36389 (usually about 37260 per 15 min)",
+       "error_lines": "240 (usually about 208 per 15 min)"
+      },
+      "evidence": {
+       "E1": {
+        "service": "redisservice1",
+        "log_pattern": "二维码已过期， 请刷新重新扫描, status_code: <NUM>",
+        "severity": "ERROR",
+        "lines": "14 in this window (usually about 6 per 15 min)",
+        "change": "about 2x its usual rate",
+        "first_seen": "from the start of the window",
+        "example_line": "二维码已过期， 请刷新重新扫描, status_code: 400"
+       }
+      }
+     },
+     "questions": {
+      "fault": {
+       "type": "choice",
+       "instructions": "`question` asks about a time window of a multi-service system. `evidence` lists the log patterns of that window that are new or more frequent than in the previous 24 hours; `window` summarises log volume. Which option best describes what happened in this window?",
+       "criteria": {
+        "missing file or resource": {
+         "definition": "A component cannot find a file, resource or configuration it needs.",
+         "covers": "Errors saying a file, path, resource or config does not exist or cannot be found or loaded, appearing new or far more often than usual.",
+         "does_not_cover": "The resource exists but access to it is refused; slow or unavailable dependencies."
+        },
+        "no fault visible": {
+         "definition": "The logs in this window look like the system's usual behaviour.",
+         "covers": "Routine errors and warnings at about their usual rate, informational messages, small fluctuations.",
+         "does_not_cover": "A burst of errors that are new or much more frequent than in the previous 24 hours."
+        },
+        "permission denied": {
+         "definition": "A component is refused access to a resource or to a service it depends on.",
+         "covers": "Access denied, permission or authorization errors, a service refusing requests from its callers, and callers then reporting errors from that dependency.",
+         "does_not_cover": "Missing files or resources; dependencies that are only slow."
+        }
+       }
+      },
+      "key_evidence": {
+       "type": "choice",
+       "criteria": {
+        "E1": "Evidence item `evidence.E1`",
+        "none": "No evidence item shows a fault."
+       },
+       "instructions": "Which single item in `evidence` most directly shows the cause of a problem in this window?"
+      },
+      "root_service": {
+       "type": "choice",
+       "criteria": {
+        "webservice1": "webservice1: log lines 4308 (usually about 4392); error lines 45, about its usual rate; error spike: none",
+        "none": "No service has a fault in this window.",
+        "logservice2": "logservice2: log lines 5479 (usually about 5559); error lines 10, somewhat more than usual; error spike: none",
+        "dbservice1": "dbservice1: log lines 2520 (usually about 2470); error lines 48, about its usual rate; error spike: none",
+        "logservice1": "logservice1: log lines 5390 (usually about 5597); error lines 10, somewhat more than usual; error spike: none",
+        "webservice2": "webservice2: log lines 4318 (usually about 4395); error lines 55, about its usual rate; error spike: none",
+        "mobservice1": "mobservice1: log lines 3034 (usually about 3065); error lines 3, about its usual rate; error spike: none",
+        "redisservice1": "redisservice1: log lines 3042 (usually about 3106); error lines 14, about 2x its usual rate; error spike: none",
+        "mobservice2": "mobservice2: log lines 3034 (usually about 3128); error lines 7, somewhat more than usual; error spike: none",
+        "redisservice2": "redisservice2: log lines 3006 (usually about 3097); error lines 6, about its usual rate; error spike: none",
+        "dbservice2": "dbservice2: log lines 2258 (usually about 2451); error lines 42, about its usual rate; error spike: none"
+       },
+       "instructions": "Which service is the root cause of the problem in this window (where the fault started, not a service that only reports errors from a dependency)?"
+      }
+     },
+     "jev": {
+      "answers": {
+       "fault": {
+        "type": "choice",
+        "choice": "permission denied",
+        "confidence": 0.37,
+        "probabilities": {
+         "missing file or resource": 0.03,
+         "permission denied": 0.58,
+         "no fault visible": 0.39
+        }
+       },
+       "key_evidence": {
+        "type": "choice",
+        "choice": "E1",
+        "confidence": 0.96,
+        "probabilities": {
+         "E1": 0.98,
+         "none": 0.02
+        }
+       },
+       "root_service": {
+        "type": "choice",
+        "choice": "redisservice1",
+        "confidence": 0.99,
+        "probabilities": {
+         "dbservice1": 0.0,
+         "dbservice2": 0.0,
+         "logservice1": 0.0,
+         "logservice2": 0.0,
+         "mobservice1": 0.0,
+         "mobservice2": 0.0,
+         "redisservice1": 0.99,
+         "redisservice2": 0.0,
+         "webservice1": 0.0,
+         "webservice2": 0.0,
+         "none": 0.01
+        }
+       }
+      },
+      "finding": {
+       "pred": "permission_denied",
+       "probs": {
+        "file_missing": 0.03,
+        "permission_denied": 0.58,
+        "none": 0.39
+       },
+       "confidence": 0.37,
+       "abstain": false,
+       "key_evidence": "E1",
+       "root_service": "redisservice1",
+       "root_service_probs": {
+        "dbservice1": 0.0,
+        "dbservice2": 0.0,
+        "logservice1": 0.0,
+        "logservice2": 0.0,
+        "mobservice1": 0.0,
+        "mobservice2": 0.0,
+        "redisservice1": 0.99,
+        "redisservice2": 0.0,
+        "webservice1": 0.0,
+        "webservice2": 0.0,
+        "none": 0.01
+       }
+      },
+      "latency_ms": 217.0
+     },
+     "llm": {
+      "answers": {
+       "fault": {
+        "choice": "no fault visible",
+        "probabilities": {
+         "missing file or resource": 0.025000000000000022,
+         "no fault visible": 0.95,
+         "permission denied": 0.025000000000000022
+        }
+       },
+       "key_evidence": {
+        "choice": "none",
+        "probabilities": {
+         "E1": 0.050000000000000044,
+         "none": 0.95
+        }
+       },
+       "root_service": {
+        "choice": "none",
+        "probabilities": {
+         "webservice1": 0.0050000000000000044,
+         "none": 0.95,
+         "logservice2": 0.0050000000000000044,
+         "dbservice1": 0.0050000000000000044,
+         "logservice1": 0.0050000000000000044,
+         "webservice2": 0.0050000000000000044,
+         "mobservice1": 0.0050000000000000044,
+         "redisservice1": 0.0050000000000000044,
+         "mobservice2": 0.0050000000000000044,
+         "redisservice2": 0.0050000000000000044,
+         "dbservice2": 0.0050000000000000044
+        }
+       }
+      },
+      "finding": {
+       "pred": "none",
+       "probs": {
+        "file_missing": 0.025000000000000022,
+        "permission_denied": 0.025000000000000022,
+        "none": 0.95
+       },
+       "confidence": 0.925,
+       "abstain": false,
+       "key_evidence": "none",
+       "root_service": "none",
+       "root_service_probs": {
+        "webservice1": 0.0050000000000000044,
+        "none": 0.95,
+        "logservice2": 0.0050000000000000044,
+        "dbservice1": 0.0050000000000000044,
+        "logservice1": 0.0050000000000000044,
+        "webservice2": 0.0050000000000000044,
+        "mobservice1": 0.0050000000000000044,
+        "redisservice1": 0.0050000000000000044,
+        "mobservice2": 0.0050000000000000044,
+        "redisservice2": 0.0050000000000000044,
+        "dbservice2": 0.0050000000000000044
+       }
+      },
+      "latency_ms": 1205.0,
+      "prompt_chars": 4438
+     }
+    }
+   }
+  },
+  {
+   "wid": "w0009",
+   "title": "Quiet window: Jev still raises a false alarm",
+   "question": "What went wrong in the system between 2021-08-03 13:25 and 2021-08-03 13:40?",
+   "truth": {
+    "fault": "none",
+    "root_service": null
+   },
+   "slice": "normal",
+   "raw": {
+    "lines": 39167.0,
+    "errors": 243.0,
+    "warn_plus": 1565,
+    "sample_errors": [
+     "dbservice2 ERROR {trace_id} | password in database of {user} is null, the user is not registered",
+     "webservice1 ERROR an error occurred in the downstream service",
+     "dbservice2 ERROR (pymysql.err.ProgrammingError) (1146, \"Table 'cloudwise_micross.system_metric_datas' doesn't exist\")[SQL: select service_names, system_data_time, system_cpu_uti",
+     "webservice1 ERROR an error occurred in the downstream service",
+     "dbservice1 ERROR {trace_id} | password in database of {user} is null, the user is not registered",
+     "webservice1 ERROR an error occurred in the downstream service",
+     "dbservice2 ERROR {trace_id} | password in database of {user} is null, the user is not registered",
+     "webservice2 ERROR an error occurred in the downstream service",
+     "dbservice2 ERROR (pymysql.err.OperationalError) (1054, \"Unknown column 'system_data_time' in 'field list'\")[SQL: select service_name, system_data_time, system_cpu_utilization, s",
+     "webservice2 ERROR an error occurred in the downstream service",
+     "dbservice1 ERROR {trace_id} | password in database of {user} is null, the user is not registered",
+     "webservice1 ERROR an error occurred in the downstream service"
+    ]
+   },
+   "variants": {
+    "E0/Q0": {
+     "state": {
+      "question": "What went wrong in the system between 2021-08-03 13:25 and 2021-08-03 13:40?",
+      "window": {
+       "services_logging": 10,
+       "log_lines": "39167",
+       "error_lines": "243"
+      },
+      "evidence": {
+       "E1": {
+        "service": "mobservice1",
+        "log_pattern": "wait for <NUM> seconds for follow-up operations to simulate the login failure of the QR code expired",
+        "severity": "WARNING",
+        "lines": "1 in this window",
+        "rarity": "rare: seen in 19 of 219 windows",
+        "first_seen": "in the middle of the window",
+        "example_line": "wait for 11 seconds for follow-up operations to simulate the login failure of the QR code expired"
+       },
+       "E2": {
+        "service": "redisservice1",
+        "log_pattern": "二维码已过期， 请刷新重新扫描, status_code: <NUM>",
+        "severity": "ERROR",
+        "lines": "11 in this window",
+        "rarity": "common: seen in 211 of 219 windows",
+        "first_seen": "from the start of the window",
+        "example_line": "二维码已过期， 请刷新重新扫描, status_code: 400"
+       },
+       "E3": {
+        "service": "redisservice2",
+        "log_pattern": "二维码已过期， 请刷新重新扫描, status_code: <NUM>",
+        "severity": "ERROR",
+        "lines": "8 in this window",
+        "rarity": "common: seen in 211 of 219 windows",
+        "first_seen": "from the start of the window",
+        "example_line": "二维码已过期， 请刷新重新扫描, status_code: 400"
+       },
+       "E4": {
+        "service": "mobservice1",
+        "log_pattern": "uuid:<UUID> information has expired, mobile phone login is invalid",
+        "severity": "ERROR",
+        "lines": "8 in this window",
+        "rarity": "common: seen in 211 of 219 windows",
+        "first_seen": "from the start of the window",
+        "example_line": "uuid:3719a3c8-f41b-11eb-be1a-0242ac110004 information has expired, mobile phone login is invalid"
+       },
+       "E5": {
+        "service": "logservice2",
+        "log_pattern": "get information failed, fail code: <NUM>",
+        "severity": "ERROR",
+        "lines": "5 in this window",
+        "rarity": "common: seen in 211 of 219 windows",
+        "first_seen": "from the start of the window",
+        "example_line": "get information failed, fail code: 400"
+       },
+       "E6": {
+        "service": "logservice2",
+        "log_pattern": "{traci_id} | uuid expired, invalid phone request",
+        "severity": "ERROR",
+        "lines": "5 in this window",
+        "rarity": "common: seen in 211 of 219 windows",
+        "first_seen": "from the start of the window",
+        "example_line": "{traci_id} | uuid expired, invalid phone request"
+       },
+       "E7": {
+        "service": "logservice1",
+        "log_pattern": "{traci_id} | uuid expired, invalid phone request",
+        "severity": "ERROR",
+        "lines": "4 in this window",
+        "rarity": "common: seen in 211 of 219 windows",
+        "first_seen": "from the start of the window",
+        "example_line": "{traci_id} | uuid expired, invalid phone request"
+       },
+       "E8": {
+        "service": "logservice1",
+        "log_pattern": "get information failed, fail code: <NUM>",
+        "severity": "ERROR",
+        "lines": "4 in this window",
+        "rarity": "common: seen in 211 of 219 windows",
+        "first_seen": "from the start of the window",
+        "example_line": "get information failed, fail code: 400"
+       },
+       "E9": {
+        "service": "mobservice2",
+        "log_pattern": "uuid:<UUID> information has expired, mobile phone login is invalid",
+        "severity": "ERROR",
+        "lines": "1 in this window",
+        "rarity": "common: seen in 211 of 219 windows",
+        "first_seen": "in the middle of the window",
+        "example_line": "uuid:0e01288e-f41c-11eb-b48a-0242ac110003 information has expired, mobile phone login is invalid"
+       },
+       "E10": {
+        "service": "webservice2",
+        "log_pattern": "an error occurred in the downstream service",
+        "severity": "ERROR",
+        "lines": "52 in this window",
+        "rarity": "common: seen in 212 of 219 windows",
+        "first_seen": "from the start of the window",
+        "example_line": "an error occurred in the downstream service"
+       },
+       "E11": {
+        "service": "webservice1",
+        "log_pattern": "an error occurred in the downstream service",
+        "severity": "ERROR",
+        "lines": "51 in this window",
+        "rarity": "common: seen in 212 of 219 windows",
+        "first_seen": "from the start of the window",
+        "example_line": "an error occurred in the downstream service"
+       },
+       "E12": {
+        "service": "dbservice2",
+        "log_pattern": "(pymysql.err.OperationalError) (<NUM>, 'Query was empty')(Background on this error at: http:/<PATH>)",
+        "severity": "ERROR",
+        "lines": "16 in this window",
+        "rarity": "common: seen in 212 of 219 windows",
+        "first_seen": "from the start of the window",
+        "example_line": "(pymysql.err.OperationalError) (1065, 'Query was empty')(Background on this error at: http://sqlalche.me/e/14/e3q8)"
+       }
+      }
+     },
+     "questions": {
+      "fault": {
+       "type": "choice",
+       "instructions": "`question` asks about a time window of a multi-service system. `evidence` lists the log patterns of that window that are new or more frequent than in the previous 24 hours; `window` summarises log volume. Which option best describes what happened in this window?",
+       "criteria": {
+        "missing file or resource": {
+         "definition": "A component cannot find a file, resource or configuration it needs.",
+         "covers": "Errors saying a file, path, resource or config does not exist or cannot be found or loaded, appearing new or far more often than usual.",
+         "does_not_cover": "The resource exists but access to it is refused; slow or unavailable dependencies."
+        },
+        "permission denied": {
+         "definition": "A component is refused access to a resource or to a service it depends on.",
+         "covers": "Access denied, permission or authorization errors, a service refusing requests from its callers, and callers then reporting errors from that dependency.",
+         "does_not_cover": "Missing files or resources; dependencies that are only slow."
+        },
+        "no fault visible": {
+         "definition": "The logs in this window look like the system's usual behaviour.",
+         "covers": "Routine errors and warnings at about their usual rate, informational messages, small fluctuations.",
+         "does_not_cover": "A burst of errors that are new or much more frequent than in the previous 24 hours."
+        }
+       }
+      },
+      "key_evidence": {
+       "type": "choice",
+       "criteria": {
+        "E1": "Evidence item `evidence.E1`",
+        "E2": "Evidence item `evidence.E2`",
+        "E3": "Evidence item `evidence.E3`",
+        "E4": "Evidence item `evidence.E4`",
+        "E5": "Evidence item `evidence.E5`",
+        "E6": "Evidence item `evidence.E6`",
+        "E7": "Evidence item `evidence.E7`",
+        "E8": "Evidence item `evidence.E8`",
+        "E9": "Evidence item `evidence.E9`",
+        "E10": "Evidence item `evidence.E10`",
+        "E11": "Evidence item `evidence.E11`",
+        "E12": "Evidence item `evidence.E12`",
+        "none": "No evidence item shows a fault."
+       },
+       "instructions": "Which single item in `evidence` most directly shows the cause of a problem in this window?"
+      }
+     },
+     "jev": {
+      "answers": {
+       "fault": {
+        "type": "choice",
+        "choice": "permission denied",
+        "confidence": 0.52,
+        "probabilities": {
+         "missing file or resource": 0.03,
+         "permission denied": 0.68,
+         "no fault visible": 0.29
+        }
+       },
+       "key_evidence": {
+        "type": "choice",
+        "choice": "E4",
+        "confidence": 0.23,
+        "probabilities": {
+         "E1": 0.2,
+         "E2": 0.22,
+         "E3": 0.0,
+         "E4": 0.29000000000000004,
+         "E5": 0.0,
+         "E6": 0.01,
+         "E7": 0.0,
+         "E8": 0.0,
+         "E9": 0.0,
+         "E10": 0.01,
+         "E11": 0.0,
+         "E12": 0.26,
+         "none": 0.0
+        }
+       }
+      },
+      "finding": {
+       "pred": "permission_denied",
+       "probs": {
+        "file_missing": 0.03,
+        "permission_denied": 0.68,
+        "none": 0.29
+       },
+       "confidence": 0.52,
+       "abstain": false,
+       "key_evidence": "E4"
+      },
+      "latency_ms": 224.0
+     },
+     "llm": {
+      "answers": {
+       "fault": {
+        "choice": "no fault visible",
+        "probabilities": {
+         "missing file or resource": 0.025000000000000022,
+         "permission denied": 0.025000000000000022,
+         "no fault visible": 0.95
+        }
+       },
+       "key_evidence": {
+        "choice": "none",
+        "probabilities": {
+         "E1": 0.00416666666666667,
+         "E2": 0.00416666666666667,
+         "E3": 0.00416666666666667,
+         "E4": 0.00416666666666667,
+         "E5": 0.00416666666666667,
+         "E6": 0.00416666666666667,
+         "E7": 0.00416666666666667,
+         "E8": 0.00416666666666667,
+         "E9": 0.00416666666666667,
+         "E10": 0.00416666666666667,
+         "E11": 0.00416666666666667,
+         "E12": 0.00416666666666667,
+         "none": 0.95
+        }
+       }
+      },
+      "finding": {
+       "pred": "none",
+       "probs": {
+        "file_missing": 0.025000000000000022,
+        "permission_denied": 0.025000000000000022,
+        "none": 0.95
+       },
+       "confidence": 0.925,
+       "abstain": false,
+       "key_evidence": "none"
+      },
+      "latency_ms": 1917.0,
+      "prompt_chars": 7386
+     }
+    },
+    "E1/Q0": {
+     "state": {
+      "question": "What went wrong in the system between 2021-08-03 13:25 and 2021-08-03 13:40?",
+      "window": {
+       "services_logging": 10,
+       "log_lines": "39167 (usually about 38696 per 15 min)",
+       "error_lines": "243 (usually about 212 per 15 min)"
+      },
+      "evidence": {
+       "E1": {
+        "service": "mobservice1",
+        "log_pattern": "uuid:<UUID> information has expired, mobile phone login is invalid",
+        "severity": "ERROR",
+        "lines": "8 in this window (usually about 3 per 15 min)",
+        "change": "about 2x its usual rate",
+        "first_seen": "from the start of the window",
+        "example_line": "uuid:3719a3c8-f41b-11eb-be1a-0242ac110004 information has expired, mobile phone login is invalid"
+       }
+      }
+     },
+     "questions": {
+      "fault": {
+       "type": "choice",
+       "instructions": "`question` asks about a time window of a multi-service system. `evidence` lists the log patterns of that window that are new or more frequent than in the previous 24 hours; `window` summarises log volume. Which option best describes what happened in this window?",
+       "criteria": {
+        "missing file or resource": {
+         "definition": "A component cannot find a file, resource or configuration it needs.",
+         "covers": "Errors saying a file, path, resource or config does not exist or cannot be found or loaded, appearing new or far more often than usual.",
+         "does_not_cover": "The resource exists but access to it is refused; slow or unavailable dependencies."
+        },
+        "permission denied": {
+         "definition": "A component is refused access to a resource or to a service it depends on.",
+         "covers": "Access denied, permission or authorization errors, a service refusing requests from its callers, and callers then reporting errors from that dependency.",
+         "does_not_cover": "Missing files or resources; dependencies that are only slow."
+        },
+        "no fault visible": {
+         "definition": "The logs in this window look like the system's usual behaviour.",
+         "covers": "Routine errors and warnings at about their usual rate, informational messages, small fluctuations.",
+         "does_not_cover": "A burst of errors that are new or much more frequent than in the previous 24 hours."
+        }
+       }
+      },
+      "key_evidence": {
+       "type": "choice",
+       "criteria": {
+        "E1": "Evidence item `evidence.E1`",
+        "none": "No evidence item shows a fault."
+       },
+       "instructions": "Which single item in `evidence` most directly shows the cause of a problem in this window?"
+      }
+     },
+     "jev": {
+      "answers": {
+       "fault": {
+        "type": "choice",
+        "choice": "permission denied",
+        "confidence": 0.83,
+        "probabilities": {
+         "missing file or resource": 0.01,
+         "permission denied": 0.89,
+         "no fault visible": 0.1
+        }
+       },
+       "key_evidence": {
+        "type": "choice",
+        "choice": "E1",
+        "confidence": 0.98,
+        "probabilities": {
+         "E1": 0.99,
+         "none": 0.01
+        }
+       }
+      },
+      "finding": {
+       "pred": "permission_denied",
+       "probs": {
+        "file_missing": 0.01,
+        "permission_denied": 0.89,
+        "none": 0.1
+       },
+       "confidence": 0.835,
+       "abstain": false,
+       "key_evidence": "E1"
+      },
+      "latency_ms": 224.0
+     },
+     "llm": {
+      "answers": {
+       "fault": {
+        "choice": "no fault visible",
+        "probabilities": {
+         "missing file or resource": 0.025000000000000022,
+         "permission denied": 0.025000000000000022,
+         "no fault visible": 0.95
+        }
+       },
+       "key_evidence": {
+        "choice": "none",
+        "probabilities": {
+         "E1": 0.050000000000000044,
+         "none": 0.95
+        }
+       }
+      },
+      "finding": {
+       "pred": "none",
+       "probs": {
+        "file_missing": 0.025000000000000022,
+        "permission_denied": 0.025000000000000022,
+        "none": 0.95
+       },
+       "confidence": 0.925,
+       "abstain": false,
+       "key_evidence": "none"
+      },
+      "latency_ms": 4037.0,
+      "prompt_chars": 2821
+     }
+    },
+    "E1/Q1": {
+     "state": {
+      "question": "What went wrong in the system between 2021-08-03 13:25 and 2021-08-03 13:40?",
+      "window": {
+       "services_logging": 10,
+       "log_lines": "39167 (usually about 38696 per 15 min)",
+       "error_lines": "243 (usually about 212 per 15 min)"
+      },
+      "evidence": {
+       "E1": {
+        "service": "mobservice1",
+        "log_pattern": "uuid:<UUID> information has expired, mobile phone login is invalid",
+        "severity": "ERROR",
+        "lines": "8 in this window (usually about 3 per 15 min)",
+        "change": "about 2x its usual rate",
+        "first_seen": "from the start of the window",
+        "example_line": "uuid:3719a3c8-f41b-11eb-be1a-0242ac110004 information has expired, mobile phone login is invalid"
+       }
+      }
+     },
+     "questions": {
+      "fault": {
+       "type": "choice",
+       "instructions": "`question` asks about a time window of a multi-service system. `evidence` lists the log patterns of that window that are new or more frequent than in the previous 24 hours; `window` summarises log volume. Which option best describes what happened in this window?",
+       "criteria": {
+        "missing file or resource": {
+         "definition": "A component cannot find a file, resource or configuration it needs.",
+         "covers": "Errors saying a file, path, resource or config does not exist or cannot be found or loaded, appearing new or far more often than usual.",
+         "does_not_cover": "The resource exists but access to it is refused; slow or unavailable dependencies."
+        },
+        "permission denied": {
+         "definition": "A component is refused access to a resource or to a service it depends on.",
+         "covers": "Access denied, permission or authorization errors, a service refusing requests from its callers, and callers then reporting errors from that dependency.",
+         "does_not_cover": "Missing files or resources; dependencies that are only slow."
+        },
+        "no fault visible": {
+         "definition": "The logs in this window look like the system's usual behaviour.",
+         "covers": "Routine errors and warnings at about their usual rate, informational messages, small fluctuations.",
+         "does_not_cover": "A burst of errors that are new or much more frequent than in the previous 24 hours."
+        },
+        "cannot tell from these logs": {
+         "definition": "The evidence is too weak or ambiguous to say whether there was a fault.",
+         "covers": "Small or mixed changes that could be noise or an early sign of a problem.",
+         "does_not_cover": "A clear new error burst, or clearly usual behaviour."
+        }
+       }
+      },
+      "key_evidence": {
+       "type": "choice",
+       "criteria": {
+        "E1": "Evidence item `evidence.E1`",
+        "none": "No evidence item shows a fault."
+       },
+       "instructions": "Which single item in `evidence` most directly shows the cause of a problem in this window?"
+      }
+     },
+     "jev": {
+      "answers": {
+       "fault": {
+        "type": "choice",
+        "choice": "permission denied",
+        "confidence": 0.49,
+        "probabilities": {
+         "missing file or resource": 0.01,
+         "permission denied": 0.62,
+         "no fault visible": 0.04,
+         "cannot tell from these logs": 0.33
+        }
+       },
+       "key_evidence": {
+        "type": "choice",
+        "choice": "E1",
+        "confidence": 0.98,
+        "probabilities": {
+         "E1": 0.99,
+         "none": 0.01
+        }
+       }
+      },
+      "finding": {
+       "pred": "permission_denied",
+       "probs": {
+        "file_missing": 0.01,
+        "permission_denied": 0.62,
+        "none": 0.37
+       },
+       "confidence": 0.43,
+       "abstain": false,
+       "key_evidence": "E1"
+      },
+      "latency_ms": 251.0
+     },
+     "llm": {
+      "answers": {
+       "fault": {
+        "choice": "no fault visible",
+        "probabilities": {
+         "missing file or resource": 0.05000000000000001,
+         "permission denied": 0.05000000000000001,
+         "no fault visible": 0.85,
+         "cannot tell from these logs": 0.05000000000000001
+        }
+       },
+       "key_evidence": {
+        "choice": "none",
+        "probabilities": {
+         "E1": 0.15000000000000002,
+         "none": 0.85
+        }
+       }
+      },
+      "finding": {
+       "pred": "none",
+       "probs": {
+        "file_missing": 0.05000000000000001,
+        "permission_denied": 0.05000000000000001,
+        "none": 0.9
+       },
+       "confidence": 0.85,
+       "abstain": false,
+       "key_evidence": "none"
+      },
+      "latency_ms": 4763.0,
+      "prompt_chars": 3124
+     }
+    },
+    "E1/Q2": {
+     "state": {
+      "question": "What went wrong in the system between 2021-08-03 13:25 and 2021-08-03 13:40?",
+      "window": {
+       "services_logging": 10,
+       "log_lines": "39167 (usually about 38696 per 15 min)",
+       "error_lines": "243 (usually about 212 per 15 min)"
+      },
+      "evidence": {
+       "E1": {
+        "service": "mobservice1",
+        "log_pattern": "uuid:<UUID> information has expired, mobile phone login is invalid",
+        "severity": "ERROR",
+        "lines": "8 in this window (usually about 3 per 15 min)",
+        "change": "about 2x its usual rate",
+        "first_seen": "from the start of the window",
+        "example_line": "uuid:3719a3c8-f41b-11eb-be1a-0242ac110004 information has expired, mobile phone login is invalid"
+       }
+      }
+     },
+     "questions": {
+      "is_fault": {
+       "type": "noul",
+       "instructions": "Do the logs described in `evidence` and `window` show a fault in this window: errors that are new or much more frequent than in the previous 24 hours?",
+       "criteria": {
+        "true": "A clear fault is visible in this window.",
+        "false": "The window looks like usual behaviour."
+       }
+      },
+      "fault_type": {
+       "type": "choice",
+       "instructions": "If there is a fault in this window (see `evidence`), which kind of fault is it?",
+       "criteria": {
+        "missing file or resource": {
+         "definition": "A component cannot find a file, resource or configuration it needs.",
+         "covers": "Errors saying a file, path, resource or config does not exist or cannot be found or loaded, appearing new or far more often than usual.",
+         "does_not_cover": "The resource exists but access to it is refused; slow or unavailable dependencies."
+        },
+        "permission denied": {
+         "definition": "A component is refused access to a resource or to a service it depends on.",
+         "covers": "Access denied, permission or authorization errors, a service refusing requests from its callers, and callers then reporting errors from that dependency.",
+         "does_not_cover": "Missing files or resources; dependencies that are only slow."
+        }
+       }
+      },
+      "key_evidence": {
+       "type": "choice",
+       "criteria": {
+        "E1": "Evidence item `evidence.E1`",
+        "none": "No evidence item shows a fault."
+       },
+       "instructions": "Which single item in `evidence` most directly shows the cause of a problem in this window?"
+      }
+     },
+     "jev": {
+      "answers": {
+       "is_fault": {
+        "type": "noul",
+        "noul": 0.81
+       },
+       "fault_type": {
+        "type": "choice",
+        "choice": "permission denied",
+        "confidence": 0.94,
+        "probabilities": {
+         "missing file or resource": 0.03,
+         "permission denied": 0.97
+        }
+       },
+       "key_evidence": {
+        "type": "choice",
+        "choice": "E1",
+        "confidence": 0.98,
+        "probabilities": {
+         "E1": 0.99,
+         "none": 0.01
+        }
+       }
+      },
+      "finding": {
+       "pred": "permission_denied",
+       "probs": {
+        "none": 0.18999999999999995,
+        "file_missing": 0.024300000000000002,
+        "permission_denied": 0.7857000000000001
+       },
+       "confidence": 0.6786,
+       "abstain": false,
+       "key_evidence": "E1"
+      },
+      "latency_ms": 233.0
+     },
+     "llm": {
+      "answers": {
+       "is_fault": {
+        "noul": 0.050000000000000044
+       },
+       "fault_type": {
+        "choice": "permission denied",
+        "probabilities": {
+         "missing file or resource": 0.5,
+         "permission denied": 0.5
+        }
+       },
+       "key_evidence": {
+        "choice": "none",
+        "probabilities": {
+         "E1": 0.050000000000000044,
+         "none": 0.95
+        }
+       }
+      },
+      "finding": {
+       "pred": "none",
+       "probs": {
+        "none": 0.95,
+        "file_missing": 0.025000000000000022,
+        "permission_denied": 0.025000000000000022
+       },
+       "confidence": 0.925,
+       "abstain": false,
+       "key_evidence": "none"
+      },
+      "latency_ms": 4207.0,
+      "prompt_chars": 2641
+     }
+    },
+    "E1/Q7": {
+     "state": {
+      "question": "What went wrong in the system between 2021-08-03 13:25 and 2021-08-03 13:40?",
+      "window": {
+       "services_logging": 10,
+       "log_lines": "39167 (usually about 38696 per 15 min)",
+       "error_lines": "243 (usually about 212 per 15 min)"
+      },
+      "evidence": {
+       "E1": {
+        "service": "mobservice1",
+        "log_pattern": "uuid:<UUID> information has expired, mobile phone login is invalid",
+        "severity": "ERROR",
+        "lines": "8 in this window (usually about 3 per 15 min)",
+        "change": "about 2x its usual rate",
+        "first_seen": "from the start of the window",
+        "example_line": "uuid:3719a3c8-f41b-11eb-be1a-0242ac110004 information has expired, mobile phone login is invalid"
+       }
+      }
+     },
+     "questions": {
+      "fault": {
+       "type": "choice",
+       "instructions": "`question` asks about a time window of a multi-service system. `evidence` lists the log patterns of that window that are new or more frequent than in the previous 24 hours; `window` summarises log volume. Which option best describes what happened in this window?",
+       "criteria": {
+        "missing file or resource": {
+         "definition": "A component cannot find a file, resource or configuration it needs.",
+         "covers": "Errors saying a file, path, resource or config does not exist or cannot be found or loaded, appearing new or far more often than usual.",
+         "does_not_cover": "The resource exists but access to it is refused; slow or unavailable dependencies."
+        },
+        "no fault visible": {
+         "definition": "The logs in this window look like the system's usual behaviour.",
+         "covers": "Routine errors and warnings at about their usual rate, informational messages, small fluctuations.",
+         "does_not_cover": "A burst of errors that are new or much more frequent than in the previous 24 hours."
+        },
+        "permission denied": {
+         "definition": "A component is refused access to a resource or to a service it depends on.",
+         "covers": "Access denied, permission or authorization errors, a service refusing requests from its callers, and callers then reporting errors from that dependency.",
+         "does_not_cover": "Missing files or resources; dependencies that are only slow."
+        }
+       }
+      },
+      "key_evidence": {
+       "type": "choice",
+       "criteria": {
+        "E1": "Evidence item `evidence.E1`",
+        "none": "No evidence item shows a fault."
+       },
+       "instructions": "Which single item in `evidence` most directly shows the cause of a problem in this window?"
+      },
+      "root_service": {
+       "type": "choice",
+       "criteria": {
+        "redisservice2": "redisservice2: log lines 3313 (usually about 3278); error lines 8, about its usual rate; error spike: none",
+        "webservice2": "webservice2: log lines 4628 (usually about 4543); error lines 52, about its usual rate; error spike: none",
+        "mobservice1": "mobservice1: log lines 3231 (usually about 3210); error lines 8, about 2x its usual rate; error spike: none",
+        "dbservice1": "dbservice1: log lines 2527 (usually about 2563); error lines 46, about its usual rate; error spike: none",
+        "logservice1": "logservice1: log lines 5843 (usually about 5772); error lines 8, about its usual rate; error spike: none",
+        "logservice2": "logservice2: log lines 5829 (usually about 5771); error lines 10, somewhat more than usual; error spike: none",
+        "dbservice2": "dbservice2: log lines 2619 (usually about 2528); error lines 48, about its usual rate; error spike: none",
+        "webservice1": "webservice1: log lines 4582 (usually about 4539); error lines 51, about its usual rate; error spike: none",
+        "none": "No service has a fault in this window.",
+        "mobservice2": "mobservice2: log lines 3283 (usually about 3223); error lines 1, less than usual; error spike: none",
+        "redisservice1": "redisservice1: log lines 3312 (usually about 3270); error lines 11, somewhat more than usual; error spike: none"
+       },
+       "instructions": "Which service is the root cause of the problem in this window (where the fault started, not a service that only reports errors from a dependency)?"
+      }
+     },
+     "jev": {
+      "answers": {
+       "fault": {
+        "type": "choice",
+        "choice": "permission denied",
+        "confidence": 0.77,
+        "probabilities": {
+         "missing file or resource": 0.01,
+         "permission denied": 0.85,
+         "no fault visible": 0.14
+        }
+       },
+       "key_evidence": {
+        "type": "choice",
+        "choice": "E1",
+        "confidence": 0.98,
+        "probabilities": {
+         "E1": 0.99,
+         "none": 0.01
+        }
+       },
+       "root_service": {
+        "type": "choice",
+        "choice": "mobservice1",
+        "confidence": 0.99,
+        "probabilities": {
+         "dbservice1": 0.0,
+         "dbservice2": 0.0,
+         "logservice1": 0.0,
+         "logservice2": 0.0,
+         "mobservice1": 0.99,
+         "mobservice2": 0.0,
+         "redisservice1": 0.0,
+         "redisservice2": 0.0,
+         "webservice1": 0.0,
+         "webservice2": 0.0,
+         "none": 0.01
+        }
+       }
+      },
+      "finding": {
+       "pred": "permission_denied",
+       "probs": {
+        "file_missing": 0.01,
+        "permission_denied": 0.85,
+        "none": 0.14
+       },
+       "confidence": 0.775,
+       "abstain": false,
+       "key_evidence": "E1",
+       "root_service": "mobservice1",
+       "root_service_probs": {
+        "dbservice1": 0.0,
+        "dbservice2": 0.0,
+        "logservice1": 0.0,
+        "logservice2": 0.0,
+        "mobservice1": 0.99,
+        "mobservice2": 0.0,
+        "redisservice1": 0.0,
+        "redisservice2": 0.0,
+        "webservice1": 0.0,
+        "webservice2": 0.0,
+        "none": 0.01
+       }
+      },
+      "latency_ms": 215.0
+     },
+     "llm": {
+      "answers": {
+       "fault": {
+        "choice": "no fault visible",
+        "probabilities": {
+         "missing file or resource": 0.025000000000000022,
+         "no fault visible": 0.95,
+         "permission denied": 0.025000000000000022
+        }
+       },
+       "key_evidence": {
+        "choice": "none",
+        "probabilities": {
+         "E1": 0.050000000000000044,
+         "none": 0.95
+        }
+       },
+       "root_service": {
+        "choice": "none",
+        "probabilities": {
+         "redisservice2": 0.0050000000000000044,
+         "webservice2": 0.0050000000000000044,
+         "mobservice1": 0.0050000000000000044,
+         "dbservice1": 0.0050000000000000044,
+         "logservice1": 0.0050000000000000044,
+         "logservice2": 0.0050000000000000044,
+         "dbservice2": 0.0050000000000000044,
+         "webservice1": 0.0050000000000000044,
+         "none": 0.95,
+         "mobservice2": 0.0050000000000000044,
+         "redisservice1": 0.0050000000000000044
+        }
+       }
+      },
+      "finding": {
+       "pred": "none",
+       "probs": {
+        "file_missing": 0.025000000000000022,
+        "permission_denied": 0.025000000000000022,
+        "none": 0.95
+       },
+       "confidence": 0.925,
+       "abstain": false,
+       "key_evidence": "none",
+       "root_service": "none",
+       "root_service_probs": {
+        "redisservice2": 0.0050000000000000044,
+        "webservice2": 0.0050000000000000044,
+        "mobservice1": 0.0050000000000000044,
+        "dbservice1": 0.0050000000000000044,
+        "logservice1": 0.0050000000000000044,
+        "logservice2": 0.0050000000000000044,
+        "dbservice2": 0.0050000000000000044,
+        "webservice1": 0.0050000000000000044,
+        "none": 0.95,
+        "mobservice2": 0.0050000000000000044,
+        "redisservice1": 0.0050000000000000044
+       }
+      },
+      "latency_ms": 2878.0,
+      "prompt_chars": 4379
+     }
+    }
+   }
+  }
+ ],
+ "lead": [
+  {
+   "label": true,
+   "state": {
+    "question": "Is the incident at 2021-08-22 01:04 the same problem as the one at 2021-08-02 08:07?",
+    "incident_a": {
+     "pattern_1": {
+      "service": "webservice2",
+      "log_pattern": "get a error [Errno <NUM>] No such file or directory: 'resources<PATH>'",
+      "severity": "ERROR",
+      "change": "new: not seen in the previous 24 hours",
+      "example_line": "get a error [Errno 2] No such file or directory: 'resources/source_file/source_file.csv'"
+     }
+    },
+    "incident_b": {
+     "pattern_1": {
+      "service": "webservice2",
+      "log_pattern": "get a error [Errno <NUM>] No such file or directory: 'resources<PATH>'",
+      "severity": "ERROR",
+      "change": "more than 10x its usual rate",
+      "example_line": "get a error [Errno 2] No such file or directory: 'resources/source_file/source_file.csv'"
+     }
+    }
+   },
+   "questions": {
+    "same_problem": {
+     "type": "noul",
+     "instructions": "Do `incident_a` and `incident_b` show the same underlying problem (the same kind of fault starting in the same service), even if they happened at different times?",
+     "criteria": {
+      "true": "Same kind of fault in the same service.",
+      "false": "Different kinds of fault, or the same kind in a different service, or one of them shows no fault."
+     }
+    }
+   },
+   "jev": {
+    "answers": {
+     "same_problem": {
+      "type": "noul",
+      "noul": 0.93
+     }
+    },
+    "latency_ms": 427.0
+   },
+   "llm": {
+    "answers": {
+     "same_problem": {
+      "noul": 1.0
+     }
+    },
+    "latency_ms": 1775.0
+   }
+  },
+  {
+   "label": false,
+   "state": {
+    "question": "Is the incident at 2021-08-14 21:32 the same problem as the one at 2021-08-02 01:02?",
+    "incident_a": {
+     "pattern_1": {
+      "service": "dbservice1",
+      "log_pattern": "<UUID>-pkiwOTAa-MCwpc)<<NUM>IznE token generate success <*>",
+      "severity": "INFO",
+      "change": "about 3x its usual rate",
+      "example_line": "222b016e-fd03-11eb-b5b0-0242ac110004-pkiwOTAa-MCwpc)<4IznE token generate success token=MTYyODk0NzU0Ny4yNzAxNjg1OjIyMmIwMTZlLWZkMDMtMTFlYi1iNWIwLTAyNDJhYzExMDAwNHBraXdPVEFhTUN3cGMpPDRJem5FOjE2Mjg5NDc2MDcuMjcwMTc5NzplYjBhOGFmOWNlNTYyN2YxOTg5"
+     }
+    },
+    "incident_b": {
+     "pattern_1": {
+      "service": "webservice2",
+      "log_pattern": "get a error [Errno <NUM>] No such file or directory: 'resources<PATH>'",
+      "severity": "ERROR",
+      "change": "new: not seen in the previous 24 hours",
+      "example_line": "get a error [Errno 2] No such file or directory: 'resources/source_file/source_file.csv'"
+     }
+    }
+   },
+   "questions": {
+    "same_problem": {
+     "type": "noul",
+     "instructions": "Do `incident_a` and `incident_b` show the same underlying problem (the same kind of fault starting in the same service), even if they happened at different times?",
+     "criteria": {
+      "true": "Same kind of fault in the same service.",
+      "false": "Different kinds of fault, or the same kind in a different service, or one of them shows no fault."
+     }
+    }
+   },
+   "jev": {
+    "answers": {
+     "same_problem": {
+      "type": "noul",
+      "noul": 0.01
+     }
+    },
+    "latency_ms": 412.0
+   },
+   "llm": {
+    "answers": {
+     "same_problem": {
+      "noul": 0.0
+     }
+    },
+    "latency_ms": 3262.0
+   }
+  }
+ ],
+ "manager": [
+  {
+   "pair": "('2021-08-22', 'file_missing', 'webservice2')|('2021-08-22', 'permission_denied', 'dbservice1')",
+   "label": "B",
+   "orders": {
+    "AB": {
+     "questions": {
+      "first": {
+       "type": "choice",
+       "criteria": {
+        "A": "Fix `problems.A` first",
+        "B": "Fix `problems.B` first"
+       },
+       "instructions": "A team lead must choose which problem in `problems` to fix first this week. Consider how many users were affected (`extra_failed_requests`), whether customers see it, how often it happened and for how long. Which should be fixed first?"
+      }
+     },
+     "jev": {
+      "answers": {
+       "first": {
+        "type": "choice",
+        "choice": "B",
+        "confidence": 0.26,
+        "probabilities": {
+         "A": 0.37,
+         "B": 0.63
+        }
+       }
+      },
+      "latency_ms": 233.0
+     },
+     "llm": {
+      "answers": {
+       "first": {
+        "choice": "A",
+        "probabilities": {
+         "A": 0.85,
+         "B": 0.15000000000000002
+        }
+       }
+      },
+      "latency_ms": 16823.0
+     }
+    },
+    "BA": {
+     "questions": {
+      "first": {
+       "type": "choice",
+       "criteria": {
+        "B": "Fix `problems.B` first",
+        "A": "Fix `problems.A` first"
+       },
+       "instructions": "A team lead must choose which problem in `problems` to fix first this week. Consider how many users were affected (`extra_failed_requests`), whether customers see it, how often it happened and for how long. Which should be fixed first?"
+      }
+     },
+     "jev": {
+      "answers": {
+       "first": {
+        "type": "choice",
+        "choice": "B",
+        "confidence": 0.26,
+        "probabilities": {
+         "A": 0.37,
+         "B": 0.63
+        }
+       }
+      },
+      "latency_ms": 233.0
+     },
+     "llm": {
+      "answers": {
+       "first": {
+        "choice": "B",
+        "probabilities": {
+         "B": 0.8,
+         "A": 0.19999999999999996
+        }
+       }
+      },
+      "latency_ms": 1264.0
+     }
+    }
+   },
+   "state": {
+    "question": "Which of these problems should we fix first: problem A or problem B?",
+    "problems": {
+     "A": {
+      "what": {
+       "pattern_1": {
+        "service": "webservice2",
+        "log_pattern": "get a error [Errno <NUM>] No such file or directory: 'resources<PATH>'",
+        "severity": "ERROR",
+        "change": "new: not seen in the previous 24 hours",
+        "example_line": "get a error [Errno 2] No such file or directory: 'resources/source_file/source_file.csv'"
+       }
+      },
+      "incidents_this_week": "1 incidents",
+      "affected_minutes": "about 12 minutes with an error spike",
+      "extra_failed_requests": "about 606 more failed requests than usual",
+      "customer_facing": "yes: customers use this service directly"
+     },
+     "B": {
+      "what": {
+       "pattern_1": {
+        "service": "dbservice1",
+        "log_pattern": "service refuse",
+        "severity": "ERROR",
+        "change": "more than 10x its usual rate",
+        "example_line": "service refuse"
+       },
+       "pattern_2": {
+        "service": "dbservice1",
+        "log_pattern": "<*> access redis service denied",
+        "severity": "ERROR",
+        "change": "more than 10x its usual rate",
+        "example_line": "dbservice1 access redis service denied"
+       },
+       "pattern_3": {
+        "service": "webservice1",
+        "log_pattern": "an error occurred in the downstream service",
+        "severity": "ERROR",
+        "change": "about 4x its usual rate",
+        "example_line": "an error occurred in the downstream service"
+       }
+      },
+      "incidents_this_week": "2 incidents",
+      "affected_minutes": "about 23 minutes with an error spike",
+      "extra_failed_requests": "about 1793 more failed requests than usual",
+      "customer_facing": "no: internal service"
+     }
+    }
+   }
+  },
+  {
+   "pair": "('2021-08-08', 'file_missing', 'webservice1')|('2021-08-08', 'permission_denied', 'dbservice2')",
+   "label": "B",
+   "orders": {
+    "AB": {
+     "questions": {
+      "first": {
+       "type": "choice",
+       "criteria": {
+        "A": "Fix `problems.A` first",
+        "B": "Fix `problems.B` first"
+       },
+       "instructions": "A team lead must choose which problem in `problems` to fix first this week. Consider how many users were affected (`extra_failed_requests`), whether customers see it, how often it happened and for how long. Which should be fixed first?"
+      }
+     },
+     "jev": {
+      "answers": {
+       "first": {
+        "type": "choice",
+        "choice": "B",
+        "confidence": 0.12,
+        "probabilities": {
+         "A": 0.44,
+         "B": 0.56
+        }
+       }
+      },
+      "latency_ms": 278.0
+     },
+     "llm": {
+      "answers": {
+       "first": {
+        "choice": "A",
+        "probabilities": {
+         "A": 0.85,
+         "B": 0.15000000000000002
+        }
+       }
+      },
+      "latency_ms": 20521.0
+     }
+    },
+    "BA": {
+     "questions": {
+      "first": {
+       "type": "choice",
+       "criteria": {
+        "B": "Fix `problems.B` first",
+        "A": "Fix `problems.A` first"
+       },
+       "instructions": "A team lead must choose which problem in `problems` to fix first this week. Consider how many users were affected (`extra_failed_requests`), whether customers see it, how often it happened and for how long. Which should be fixed first?"
+      }
+     },
+     "jev": {
+      "answers": {
+       "first": {
+        "type": "choice",
+        "choice": "B",
+        "confidence": 0.12,
+        "probabilities": {
+         "A": 0.44,
+         "B": 0.56
+        }
+       }
+      },
+      "latency_ms": 278.0
+     },
+     "llm": {
+      "answers": {
+       "first": {
+        "choice": "A",
+        "probabilities": {
+         "B": 0.15000000000000002,
+         "A": 0.85
+        }
+       }
+      },
+      "latency_ms": 8438.0
+     }
+    }
+   },
+   "state": {
+    "question": "Which of these problems should we fix first: problem A or problem B?",
+    "problems": {
+     "A": {
+      "what": {
+       "pattern_1": {
+        "service": "webservice1",
+        "log_pattern": "get a error [Errno <NUM>] No such file or directory: 'resources<PATH>'",
+        "severity": "ERROR",
+        "change": "new: not seen in the previous 24 hours",
+        "example_line": "get a error [Errno 2] No such file or directory: 'resources/source_file/source_file.csv'"
+       }
+      },
+      "incidents_this_week": "2 incidents",
+      "affected_minutes": "about 23 minutes with an error spike",
+      "extra_failed_requests": "about 1057 more failed requests than usual",
+      "customer_facing": "yes: customers use this service directly"
+     },
+     "B": {
+      "what": {
+       "pattern_1": {
+        "service": "dbservice2",
+        "log_pattern": "service refuse",
+        "severity": "ERROR",
+        "change": "new: not seen in the previous 24 hours",
+        "example_line": "service refuse"
+       },
+       "pattern_2": {
+        "service": "dbservice2",
+        "log_pattern": "<*> access redis service denied",
+        "severity": "ERROR",
+        "change": "new: not seen in the previous 24 hours",
+        "example_line": "dbservice2 access redis service denied"
+       },
+       "pattern_3": {
+        "service": "webservice2",
+        "log_pattern": "an error occurred in the downstream service",
+        "severity": "ERROR",
+        "change": "about 7x its usual rate",
+        "example_line": "an error occurred in the downstream service"
+       }
+      },
+      "incidents_this_week": "3 incidents",
+      "affected_minutes": "about 34 minutes with an error spike",
+      "extra_failed_requests": "about 2585 more failed requests than usual",
+      "customer_facing": "no: internal service"
+     }
+    }
+   }
+  },
+  {
+   "pair": "('2021-08-01', 'file_missing', 'webservice1')|('2021-08-01', 'file_missing', 'webservice2')",
+   "label": "B",
+   "orders": {
+    "AB": {
+     "questions": {
+      "first": {
+       "type": "choice",
+       "criteria": {
+        "A": "Fix `problems.A` first",
+        "B": "Fix `problems.B` first"
+       },
+       "instructions": "A team lead must choose which problem in `problems` to fix first this week. Consider how many users were affected (`extra_failed_requests`), whether customers see it, how often it happened and for how long. Which should be fixed first?"
+      }
+     },
+     "jev": {
+      "answers": {
+       "first": {
+        "type": "choice",
+        "choice": "B",
+        "confidence": 1.0,
+        "probabilities": {
+         "A": 0.0,
+         "B": 1.0
+        }
+       }
+      },
+      "latency_ms": 301.0
+     },
+     "llm": {
+      "answers": {
+       "first": {
+        "choice": "B",
+        "probabilities": {
+         "A": 0.0,
+         "B": 1.0
+        }
+       }
+      },
+      "latency_ms": 1830.0
+     }
+    },
+    "BA": {
+     "questions": {
+      "first": {
+       "type": "choice",
+       "criteria": {
+        "B": "Fix `problems.B` first",
+        "A": "Fix `problems.A` first"
+       },
+       "instructions": "A team lead must choose which problem in `problems` to fix first this week. Consider how many users were affected (`extra_failed_requests`), whether customers see it, how often it happened and for how long. Which should be fixed first?"
+      }
+     },
+     "jev": {
+      "answers": {
+       "first": {
+        "type": "choice",
+        "choice": "B",
+        "confidence": 1.0,
+        "probabilities": {
+         "A": 0.0,
+         "B": 1.0
+        }
+       }
+      },
+      "latency_ms": 301.0
+     },
+     "llm": {
+      "answers": {
+       "first": {
+        "choice": "B",
+        "probabilities": {
+         "B": 1.0,
+         "A": 0.0
+        }
+       }
+      },
+      "latency_ms": 1489.0
+     }
+    }
+   },
+   "state": {
+    "question": "Which of these problems should we fix first: problem A or problem B?",
+    "problems": {
+     "A": {
+      "what": {
+       "pattern_1": {
+        "service": "webservice1",
+        "log_pattern": "get a error [Errno <NUM>] No such file or directory: 'resources<PATH>'",
+        "severity": "ERROR",
+        "change": "new: not seen in the previous 24 hours",
+        "example_line": "get a error [Errno 2] No such file or directory: 'resources/source_file/source_file.csv'"
+       }
+      },
+      "incidents_this_week": "2 incidents",
+      "affected_minutes": "about 26 minutes with an error spike",
+      "extra_failed_requests": "about 1194 more failed requests than usual",
+      "customer_facing": "yes: customers use this service directly"
+     },
+     "B": {
+      "what": {
+       "pattern_1": {
+        "service": "webservice2",
+        "log_pattern": "get a error [Errno <NUM>] No such file or directory: 'resources<PATH>'",
+        "severity": "ERROR",
+        "change": "more than 10x its usual rate",
+        "example_line": "get a error [Errno 2] No such file or directory: 'resources/source_file/source_file.csv'"
+       }
+      },
+      "incidents_this_week": "4 incidents",
+      "affected_minutes": "about 48 minutes with an error spike",
+      "extra_failed_requests": "about 2265 more failed requests than usual",
+      "customer_facing": "yes: customers use this service directly"
+     }
+    }
+   }
+  }
+ ],
+ "sql": {
+  "WINDOW_PATTERNS": "\nWITH w AS (\n    SELECT service, severity_text, pattern_id, sum(n) AS n_window, min(minute) AS first_minute\n    FROM {s}.gaia_rollup\n    WHERE minute >= CAST(%(t1)s AS TIMESTAMP) AND minute < CAST(%(t2)s AS TIMESTAMP)\n    GROUP BY ALL),\nh AS (\n    SELECT service, severity_text, pattern_id, sum(n) AS n_hist\n    FROM {s}.gaia_rollup\n    WHERE minute >= CAST(%(t1)s AS TIMESTAMP) - INTERVAL 24 HOUR AND minute < CAST(%(t1)s AS TIMESTAMP)\n    GROUP BY ALL)\nSELECT w.service, w.severity_text, w.pattern_id, w.n_window,\n       coalesce(h.n_hist, 0) / %(blocks)s                                AS usual_per_15min,\n       (w.n_window + 1.0) / (coalesce(h.n_hist, 0) / %(blocks)s + 1.0)   AS ratio,\n       coalesce(h.n_hist, 0) = 0                                         AS new_in_24h,\n       floor(epoch(w.first_minute) - epoch(CAST(%(t1)s AS TIMESTAMP))) / 60 AS first_minute_offset\nFROM w LEFT JOIN h USING (service, severity_text, pattern_id)\n",
+  "WINDOW_SERVICES": "\nWITH wm AS (\n    SELECT service, minute, sum(n) AS n, coalesce(sum(n) FILTER (WHERE severity_text = 'ERROR'), 0) AS e\n    FROM {s}.gaia_rollup\n    WHERE minute >= CAST(%(t1)s AS TIMESTAMP) AND minute < CAST(%(t2)s AS TIMESTAMP)\n    GROUP BY ALL),\nh AS (\n    SELECT service, sum(n) AS n_hist, coalesce(sum(n) FILTER (WHERE severity_text = 'ERROR'), 0) AS e_hist\n    FROM {s}.gaia_rollup\n    WHERE minute >= CAST(%(t1)s AS TIMESTAMP) - INTERVAL 24 HOUR AND minute < CAST(%(t1)s AS TIMESTAMP)\n    GROUP BY ALL)\nSELECT wm.service,\n       sum(wm.n)                                          AS n_window,\n       sum(wm.e)                                          AS err_window,\n       coalesce(any_value(h.n_hist), 0) / %(blocks)s      AS usual_n,\n       coalesce(any_value(h.e_hist), 0) / %(blocks)s      AS usual_err,\n       min(floor((epoch(wm.minute) - epoch(CAST(%(t1)s AS TIMESTAMP))) / 60))\n           FILTER (WHERE wm.e > 3 * coalesce(h.e_hist, 0) / (%(blocks)s * 15.0) + 3) AS first_spike_offset\nFROM wm LEFT JOIN h USING (service)\nGROUP BY wm.service\n"
+ },
+ "score_example": {
+  "state": {
+   "question": "How large is this problem's user impact this week?",
+   "problem": {
+    "what": {
+     "pattern_1": {
+      "service": "webservice2",
+      "log_pattern": "get a error [Errno <NUM>] No such file or directory: 'resources<PATH>'",
+      "severity": "ERROR",
+      "change": "new: not seen in the previous 24 hours",
+      "example_line": "get a error [Errno 2] No such file or directory: 'resources/source_file/source_file.csv'"
+     }
+    },
+    "incidents_this_week": "1 incidents",
+    "affected_minutes": "about 12 minutes with an error spike",
+    "extra_failed_requests": "about 606 more failed requests than usual",
+    "customer_facing": "yes: customers use this service directly"
+   }
+  },
+  "questions": {
+   "impact": {
+    "type": "score",
+    "criteria": [
+     "No user impact",
+     "A few users see errors",
+     "Many users see errors on a key action",
+     "A core user flow is broken for most users"
+    ],
+    "instructions": "How large is the user impact of `problem` this week, given its numbers and whether customers see it?"
+   }
+  },
+  "jev": {
+   "answers": {
+    "impact": {
+     "type": "score",
+     "score": 1.43,
+     "confidence": 0.58,
+     "legend": {
+      "0": "No user impact",
+      "1": "A few users see errors",
+      "2": "Many users see errors on a key action",
+      "3": "A core user flow is broken for most users"
+     },
+     "probabilities": {
+      "0": 0.0,
+      "1": 0.58,
+      "2": 0.42,
+      "3": 0.0
+     }
+    }
+   },
+   "latency_ms": 227.0
+  },
+  "llm": {
+   "answers": {
+    "impact": {
+     "score": 1.0666666666666667,
+     "probabilities": {
+      "0": 0.033333333333333326,
+      "1": 0.9,
+      "2": 0.033333333333333326,
+      "3": 0.033333333333333326
+     }
+    }
+   },
+   "latency_ms": 2779.0
+  }
+ }
+}

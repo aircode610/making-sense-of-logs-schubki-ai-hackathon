@@ -1,0 +1,7 @@
+typesafe-sdk==0.7.3
+drain3==0.9.11
+langchain==1.4.4
+langchain-google-genai==4.4.0
+psycopg[binary]==3.3.6
+scikit-learn==1.9.1
+streamlit==1.65.0

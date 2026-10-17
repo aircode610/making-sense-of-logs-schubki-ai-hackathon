@@ -1,0 +1,25 @@
+# Local SereneDB.
+#   docker compose up -d        start
+#   docker compose logs -f      server logs
+#   docker compose down         stop (data kept in the serenedb-data volume)
+#   docker compose down -v      stop and wipe data
+# First start only: psql -h localhost -p 7890 -U postgres -d postgres -f docker/init.sql
+# After EVERY start: ./docker/secrets.sh   (AI secrets are not persisted)
+services:
+  serenedb:
+    image: serenedb/serenedb:latest
+    platform: linux/amd64          # no arm64 image published; emulated on Apple Silicon
+    container_name: serenedb
+    environment:
+      SERENEDB_HOST_AUTH_METHOD: trust   # local only: no password
+    ports:
+      - "127.0.0.1:7890:7890"            # Postgres wire protocol
+      - "127.0.0.1:4318:4318"            # OTLP/HTTP (logs, traces, metrics)
+    volumes:
+      - serenedb-data:/var/lib/serenedb
+      - ./docker/serened.conf:/etc/serenedb/serened.conf:ro
+      - ./data:/data:ro                  # COPY ... FROM '/data/raw/...' / read_csv('/data/...')
+    restart: unless-stopped
+
+volumes:
+  serenedb-data:
