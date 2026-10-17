@@ -6,7 +6,8 @@ _Last updated: 2026-10-17, plan 008 done (agent split: prebuilt ReAct gatherers 
 - **Plan 054 done (Konark):** Jev judged the 106 OpenStack patterns (3.2 s) → `top_patterns(openstack)` 0 → 8 real
   faults (+ the 503). New MCP tool **`value_outliers`** (slow operations vs their own pattern's median/MAD, p95 99 ms): catches
   **4/4 labelled anomalous VMs** (top 4 by ratio; 2 extra mild flags); engineer agent uses it (checker 55/55).
-  Amirali: `value_outliers` added to `ROLE_TOOLS["engineer"]` + one recipe line; **H18 amended: HTTP ≥ 500 counts
+  Amirali: `value_outliers` added to `ROLE_TOOLS["engineer"]` + one recipe line; composer now reads **full** tool
+  results (`ledger_json` no longer cuts to 12 rows; 4 dev questions re-run, all pass); **H18 amended: HTTP ≥ 500 counts
   as a problem line** (2 lines, BGL unchanged; `top_patterns(openstack)` → 9). Details `plans/054-…` §7.
 - **Plan 053 done (Konark):** OpenStack `pattern_id` (106 patterns, ids 100001+, HTTP status kept) → `patterns`/`bursts`/
   `episodes` cover both datasets; 32/32 checks. ⚠️ Labelled OpenStack VMs show **no special template**: the anomaly is

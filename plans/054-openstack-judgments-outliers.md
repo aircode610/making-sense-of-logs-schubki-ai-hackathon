@@ -74,6 +74,23 @@ Done 2026-10-17.
   `value_outliers` was added there as well as to the engineer recipe in `agent/prompts.py`.
 - **Fix found by the agent run:** the composer shows only 12 rows per result (`ledger_json`), and the 4 HTTP rows came
   first, so the first run reported "only 4 of 6 VMs visible". Added an `instances` field (one row per flagged VM); the
-  re-run names all 6.
+  re-run names all 6. **Then (asked by Konark):** `ledger_json` (`agent/checker.py`) now passes every tool result in
+  full (tools already cap rows at 50). Re-run on 4 questions, all checker-passed: slow VMs 57/57 (says "not truncated"),
+  R43-M0 kernel panics 27/27 (43 s), lead Nov 2005 92/92 (28 s), manager Nov 2005 37/37 (36 s).
+- **Experiment, reverted (asked by Konark): drop the severity gate, Jev only** (`_problem_where` in
+  `mcp_server/patterns.py`: `jev` → only `p_fault × (1 − p_dump) ≥ 0.5`). Measured with Amirali's scripts (BGL tune
+  period, labels as a check only):
+
+  | | with severity gate (kept) | Jev only (reverted) |
+  |---|---|---|
+  | `top_patterns(openstack)` | 9 | 10 (+ vCPU-count WARNING, Jev 0.73) |
+  | BGL top 10 by bursts with alerts (`eval_top10.py`) | **5/10** | 3/10 |
+  | BGL priority / by nodes / by lines top 10 | 5 / 4 / 6 | 5 / 4 / 6 |
+  | BGL tune patterns flagged · precision · burst-precision (`eval_problem_filter.py`) | 506 · 0.14 · **0.39** | 621 · 0.12 · 0.32 |
+  | Nov 2005 candidates / `check_patterns.py` | 125 / passes | 178 / fails (reference = H18) |
+
+  Why: BGL severities are honest, so the gate removes harmless patterns Jev over-scores; OpenStack logs failed
+  requests at INFO. To revisit: drop the gate **for OpenStack only** (BGL untouched) to also get the vCPU warning;
+  re-run `bench/eval_top10.py`, `bench/eval_problem_filter.py`, `bench/check_patterns.py`.
 - Follow-ups: traceback grouping in `top_patterns` (25 → 1 fault), per-instance episodes, severity gate for
   INFO-level HTTP 5xx.

@@ -173,15 +173,6 @@ def feedback(report: dict) -> str:
     return "\n".join(lines)
 
 
-def ledger_json(ledger: dict, max_rows: int = 12) -> str:
-    """Compact ledger for the compose prompt: every result with its sql, scope, totals and the first rows."""
-    out = {}
-    for eid, ev in ledger.items():
-        e = {k: v for k, v in ev.items() if k not in ("rows", "items", "before", "after", "params")}
-        for k in ("rows", "items", "before", "after"):
-            if k in ev:
-                e[k] = ev[k][:max_rows]
-                if len(ev[k]) > max_rows:
-                    e[f"{k}_shown"] = f"{max_rows} of {len(ev[k])} returned"
-        out[eid] = e
-    return json.dumps(out, default=str, ensure_ascii=False)
+def ledger_json(ledger: dict) -> str:
+    """Ledger for the compose prompt: every tool result in full (tools already cap rows at 50, plan 054)."""
+    return json.dumps(ledger, default=str, ensure_ascii=False)
