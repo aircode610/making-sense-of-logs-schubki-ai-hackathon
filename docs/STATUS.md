@@ -1,8 +1,11 @@
 # Status (read first; keep short and current)
 
-_Last updated: 2026-10-17, plan 000 done._
+_Last updated: 2026-10-17, plan 002 done (BGL loaded)._
 
-## Stage: S0 — setup done, nothing built yet
+## Stage: B1 — BGL loaded and verified; OpenStack load + tools next
+- **Plan 002 done:** `load/00_schema.sql` (shared `logs` + `labels`, one inverted index) + `load/10_bgl.sql`: 4,747,963
+  rows in 18 s, every count equals awk (table in `plans/002-bgl-load.md` §7). Konark: insert OpenStack into the same
+  `logs` table (`dataset='openstack'`; columns `request_id, instance_id, tenant_id, status, latency_ms` ready).
 - Repo set up: docs, skills, MCPs (serenedb-docs, typesafe-docs, langchain-docs), docker, data scripts, ownership table.
 - Data downloaded locally: BGL 4,747,963 lines · OpenStack 207,820 lines (`data/README.md`).
 - Side-quest results and code archived in `archive/side-quest/` (read `docs/LESSONS.md` instead of the archive).
