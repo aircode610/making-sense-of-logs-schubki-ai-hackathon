@@ -36,7 +36,7 @@ def query(sql: str, params: dict) -> list[dict]:
 def filters_sql(f: dict) -> tuple[str, dict]:
     """Equality / time-range filters → (`AND ...` clause, bound params). Only non-None values are applied."""
     clauses, params = [], {}
-    for col in ("dataset", "component", "severity", "node", "midplane", "rack", "request_id", "instance_id"):
+    for col in ("dataset", "component", "severity", "node", "midplane", "rack", "request_id", "instance_id", "pattern_id"):
         if f.get(col) is not None:
             clauses.append(f"{col} = %({col})s")
             params[col] = f[col]

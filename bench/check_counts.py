@@ -68,6 +68,18 @@ check("trend by team sums (top 3)", by, {"node-platform": 4331285, "hpc-workload
 t = trend(dataset="bgl", bucket="day", start="2005-11-01", end="2005-11-04", severity="FATAL")
 check("trend zero-fill day buckets", [x["lines"] for x in t["rows"]], [92, 0, 5655])
 
+# plan 004: every BGL row has a pattern; patterns / bursts / episodes account for every line
+from core import query
+
+check("bgl rows without pattern_id",
+      query("SELECT count(*) AS n FROM logs WHERE dataset = 'bgl' AND pattern_id IS NULL", {})[0]["n"], 0)
+check("bgl patterns", query("SELECT count(*) AS n FROM patterns WHERE dataset = 'bgl'", {})[0]["n"], 1126)
+for tbl in ("patterns", "bursts", "episodes"):
+    check(f"bgl lines in {tbl}", query(f"SELECT sum(lines) AS n FROM {tbl} WHERE dataset = 'bgl'", {})[0]["n"], 4747963)
+check("kernel panic pattern (lines, nodes, bursts)",
+      tuple(query("SELECT lines, nodes, bursts FROM patterns WHERE dataset = 'bgl' AND template = 'kernel panic'", {})[0].values()),
+      (18, 18, 13))
+
 times.sort()
 print(f"\n{len(times)} calls: median {statistics.median(times):.0f} ms, p95 {times[int(len(times) * .95) - 1]:.0f} ms, max {times[-1]:.0f} ms")
 sys.exit(1 if fails else 0)

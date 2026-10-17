@@ -9,8 +9,9 @@ in answer length (brief).
 |---|---|
 | **Corpus "now"** | The last timestamp per dataset (BGL 2006-01-04, OpenStack end of its log). "Last 4 weeks" is measured back from there. Every answer names its absolute period. |
 | **Line** | One log entry. Counts are exact SQL counts. |
-| **Pattern** | A log template with variable parts masked (numbers, hex, ids, IPs, paths). Computed once at load; `pattern_id` on every row. |
-| **Episode** | A burst of the same pattern on the same node/component: lines split when the gap is > 30 min. "152k lines in 40 episodes on 3 nodes" never "152k incidents". |
+| **Pattern** | A log template with variable parts masked (MACs, locations, dates, hex, numbers; SQL in `load/10_bgl.sql`). Computed once at load; `pattern_id` on every row; table `patterns` (lines, problem_lines, nodes, bursts, node_episodes, weeks_active, first/last ts). |
+| **Burst** (headline unit) | The same pattern anywhere in the dataset, lines split when the gap is > 30 min (frozen, H16). One storm on 1,000 nodes = 1 burst. "152k lines in 40 bursts on 3 nodes" never "152k incidents". Table `bursts`. |
+| **Episode** (node detail) | The same pattern on the same node (no node → component), split when the gap is > 30 min. Table `episodes`. Use for "is it one bad node", not as the headline count. |
 | **Problem pattern** | Deterministic first: severity ∈ {FATAL, FAILURE, SEVERE, ERROR} (BGL) / {ERROR, CRITICAL} or HTTP 5xx / outlier latency (OpenStack). Then a Jev judgment per pattern ("real fault or routine?", calibrated probability) refines it. Labels are never used here, only in eval. |
 | **Spread** | Distinct nodes / midplanes / racks (BGL location `R02-M1-N0-C:J12-U11` = rack-midplane-nodecard-card-unit) or hosts / instances (OpenStack) affected. |
 | **Trend** | Week-over-week change of episodes (and lines) over the stated period, plus direction (rising / flat / falling, rule-based thresholds in code). |
