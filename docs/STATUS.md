@@ -1,8 +1,12 @@
 # Status (read first; keep short and current)
 
-_Last updated: 2026-10-17, plans 002, 003, 004, 050, 051, 052 done (both datasets, patterns/bursts, 4 MCP tools)._
+_Last updated: 2026-10-17, plans 002, 003, 004, 050, 051, 052, 053 done (both datasets with patterns/bursts, 4 MCP tools)._
 
-## Stage: B2 — patterns + bursts for BGL; next: lead/manager tools (Amirali), OpenStack masks + count/trend (Konark)
+## Stage: B2 — patterns + bursts for both datasets; next: lead/manager tools (Amirali), engineer slice (Konark)
+- **Plan 053 done (Konark):** OpenStack `pattern_id` (106 patterns, ids 100001+, HTTP status kept) → `patterns`/`bursts`/
+  `episodes` cover both datasets; 32/32 checks. ⚠️ Labelled OpenStack VMs show **no special template**: the anomaly is
+  slow spawn/build (37–51 s vs ≤ 28 s) → needs a numeric-outlier signal. One traceback = 25 ERROR patterns (group by
+  shared bursts in `top_patterns`). Details: `plans/053-openstack-patterns.md` §7.
 - **Plan 004 done:** `pattern_id` on every BGL row (1,126 templates, SQL masks), tables `patterns`, `bursts`,
   `episodes` (`load/95_patterns_episodes.sql`, runs after `90_publish`). Gap frozen 30 min; bursts = headline unit (H16).
   **Reload: `./load/reload.sh`** (00 → 10 → 20 → 90 → 95 + checks). Konark: OpenStack masks → `pattern_id` in `20_openstack.sql`.

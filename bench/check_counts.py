@@ -80,6 +80,18 @@ check("kernel panic pattern (lines, nodes, bursts)",
       tuple(query("SELECT lines, nodes, bursts FROM patterns WHERE dataset = 'bgl' AND template = 'kernel panic'", {})[0].values()),
       (18, 18, 13))
 
+# plan 053: same for OpenStack (ids from 100001; HTTP status kept in the template)
+check("openstack rows without pattern_id",
+      query("SELECT count(*) AS n FROM logs WHERE dataset = 'openstack' AND pattern_id IS NULL", {})[0]["n"], 0)
+check("openstack patterns", query("SELECT count(*) AS n FROM patterns WHERE dataset = 'openstack'", {})[0]["n"], 106)
+for tbl in ("patterns", "bursts", "episodes"):
+    check(f"openstack lines in {tbl}",
+          query(f"SELECT sum(lines) AS n FROM {tbl} WHERE dataset = 'openstack'", {})[0]["n"], 207820)
+check("openstack problem lines (ERROR + CRITICAL)",
+      query("SELECT sum(problem_lines) AS n FROM patterns WHERE dataset = 'openstack'", {})[0]["n"], 196)
+check("openstack 503 on servers/detail is its own pattern",
+      query("SELECT lines AS n FROM patterns WHERE dataset = 'openstack' AND strpos(template, 'servers/detail HTTP/<N>\" status: 503') > 0", {})[0]["n"], 2)
+
 times.sort()
 print(f"\n{len(times)} calls: median {statistics.median(times):.0f} ms, p95 {times[int(len(times) * .95) - 1]:.0f} ms, max {times[-1]:.0f} ms")
 sys.exit(1 if fails else 0)

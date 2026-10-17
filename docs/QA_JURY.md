@@ -17,12 +17,14 @@ Goal: make an impression **and** get advice. Plan for 10 min: 1 min pitch · 1 m
 | S3 agent + 3 roles | one question, three answer cards | role recipes, checker |
 | S4 eval | baseline vs ours table | measured wins |
 
-## Numbers we can show now (S2, 2026-10-17, plans 002–004 + 050)
+## Numbers we can show now (S2, 2026-10-17, plans 002–004 + 050–053)
 - Load by SereneDB itself: BGL 4.7M + OpenStack 208k lines + templates + bursts in **≈ 31 s** (emulated amd64); counts
   equal awk. Group-bys 3–85 ms straight from the inverted index.
 - MCP tools live in Claude Code: `search_logs`, `get_context` (p95 < 45 ms); kernel-panic investigation done via MCP.
 - 1,126 BGL patterns; **727 have problem severities but only 76 carry real alerts** → severity alone is a poor problem
   signal (why we judge patterns with Jev). 4.7M lines = **36,714 bursts** (lines ≠ incidents, measured).
+- OpenStack: 208k lines → **106 patterns**. The labelled anomalous VMs use only normal templates; what gives them away is
+  spawn time (37–51 s vs normal ≤ 28 s) → we flag numeric outliers per pattern, not just rare templates.
 
 ## Pitch (60 s, current version — S0)
 "Logs answer different questions for different people, but an LLM reading 50 retrieved lines can't tell you how often
