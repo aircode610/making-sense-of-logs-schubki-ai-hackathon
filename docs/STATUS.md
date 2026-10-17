@@ -1,8 +1,14 @@
 # Status (read first; keep short and current)
 
-_Last updated: 2026-10-17, plan 008 done (agent split: prebuilt ReAct gatherers + coverage middleware, composer subgraph)._patterns + priority_table; 6 MCP tools)._
+_Last updated: 2026-10-17, plan 008 done (agent split: prebuilt ReAct gatherers + coverage middleware, composer subgraph), plan 053 done (OpenStack patterns)._
 
 ## Stage: S3 — agent answers all 3 roles with checked answer cards; next: eval harness (ours vs baseline), UI
+- **Plan 053 done (Konark):** OpenStack `pattern_id` (106 patterns, ids 100001+, HTTP status kept) → `patterns`/`bursts`/
+  `episodes` cover both datasets; 32/32 checks. ⚠️ Labelled OpenStack VMs show **no special template**: the anomaly is
+  slow spawn/build (37–51 s vs ≤ 28 s) → needs a numeric-outlier signal. One traceback = 25 ERROR patterns (group by
+  shared bursts in `top_patterns`). Details: `plans/053-openstack-patterns.md` §7.
+  Gap: no Jev judgments for OpenStack yet → `top_patterns`/`priority_table(dataset='openstack')` return 0 rows with the
+  default `problem_filter='jev'` (use `'severity'` or judge the 106 patterns: `scripts/judge_patterns.sh`).
 - **Plan 008 done:** gatherer per role = prebuilt ReAct agent (`create_agent`) + CoverageMiddleware + tool limit;
   composer subgraph (compose ⇄ check); MCP server role-neutral; all dev questions pass again (stacked on 007).
 - **Plan 007 done:** `python -m agent.run [--role …] [--baseline] "question"`; LangGraph route → gather ⇄ tools →

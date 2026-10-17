@@ -17,7 +17,7 @@ Goal: make an impression **and** get advice. Plan for 10 min: 1 min pitch · 1 m
 | S3 agent + 3 roles | one question, three answer cards | role recipes, checker |
 | S4 eval | baseline vs ours table | measured wins |
 
-## Numbers we can show now (S2, 2026-10-17, plans 002–004 + 050)
+## Numbers we can show now (S2, 2026-10-17, plans 002–004 + 050–053)
 - Load by SereneDB itself: BGL 4.7M + OpenStack 208k lines + templates + bursts in **≈ 31 s** (emulated amd64); counts
   equal awk. Group-bys 3–85 ms straight from the inverted index.
 - MCP tools live in Claude Code: `search_logs`, `get_context` (p95 < 45 ms); kernel-panic investigation done via MCP.
@@ -30,6 +30,8 @@ Goal: make an impression **and** get advice. Plan for 10 min: 1 min pitch · 1 m
 - **Agent (S3):** one LangGraph agent, three role recipes; every number in the answer card is verified against the SQL
   result it cites (engineer 25/25, lead 86/86, manager 47/47); the plain ReAct baseline with the same tools: 30/34
   (rounded / derived numbers). Jev picks the role when none is given. Each answer = one LangSmith trace.
+- OpenStack: 208k lines → **106 patterns**. The labelled anomalous VMs use only normal templates; what gives them away is
+  spawn time (37–51 s vs normal ≤ 28 s) → we flag numeric outliers per pattern, not just rare templates.
 
 ## Pitch (60 s, current version — S0)
 "Logs answer different questions for different people, but an LLM reading 50 retrieved lines can't tell you how often
