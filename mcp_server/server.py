@@ -7,6 +7,7 @@ sys.path.insert(0, str(Path(__file__).parent))
 from mcp.server.fastmcp import FastMCP
 
 import counts
+import patterns
 import search
 
 mcp = FastMCP("logs", instructions=(
@@ -20,6 +21,8 @@ mcp.tool(annotations={"title": "Search logs", **READ_ONLY})(search.search_logs)
 mcp.tool(annotations={"title": "Events around a line", **READ_ONLY})(search.get_context)
 mcp.tool(annotations={"title": "Counts by group", **READ_ONLY})(counts.count_by)
 mcp.tool(annotations={"title": "Counts over time", **READ_ONLY})(counts.trend)
+mcp.tool(annotations={"title": "Recurring problems", **READ_ONLY})(patterns.top_patterns)
+mcp.tool(annotations={"title": "Priority ranking", **READ_ONLY})(patterns.priority_table)
 
 if __name__ == "__main__":
     mcp.run()

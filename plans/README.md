@@ -23,6 +23,7 @@ Every plan respects: `CLAUDE.md` non-negotiables, `docs/ROLES.md` (role spec), `
 | 002 | [BGL load (SQL-native)](002-bgl-load.md) | Amirali | done | `feat/002-bgl-load` |
 | 003 | [Engineer tools: search_logs + get_context (MCP)](003-engineer-tools.md) | Amirali | done | `feat/003-engineer-tools` |
 | 004 | [BGL patterns + episodes (SQL)](004-bgl-patterns-episodes.md) | Amirali | done | `feat/004-bgl-patterns-episodes` |
+| 005 | [Lead + manager tools: top_patterns + priority_table](005-lead-manager-tools.md) | Amirali | approved | `feat/005-lead-manager-tools` |
 | 050 | [OpenStack load + ownership](050-openstack-load.md) | Konark | done | `feat/050-openstack-load` |
 | 051 | [count_by + trend MCP tools](051-count-trend-tools.md) | Konark | done | `feat/051-count-trend-tools` |
 | 052 | [One-command reload](052-reload-publish.md) | Konark | done | `feat/051-count-trend-tools` |
