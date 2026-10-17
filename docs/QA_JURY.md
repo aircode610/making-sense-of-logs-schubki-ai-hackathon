@@ -25,6 +25,8 @@ Goal: make an impression **and** get advice. Plan for 10 min: 1 min pitch · 1 m
   signal (why we judge patterns with Jev). 4.7M lines = **36,714 bursts** (lines ≠ incidents, measured).
 - Manager priority is computed in SQL (weights shown, independently reproduced). Honest finding: on severity alone the
   top 10 holds 1/10 real alert patterns (FATAL register dumps win) → the Jev step is measured, not decorative.
+- **Jev in SQL, measured:** 1,126 patterns judged once in 20 s (≈ $0.02); priority top 10 with real alerts **1/10 → 5/10**,
+  recurrence top 10 **0/10 → 5/10** (tune period). Jev alone ≈ severity; the decomposed `dump` question is what wins.
 
 ## Pitch (60 s, current version — S0)
 "Logs answer different questions for different people, but an LLM reading 50 retrieved lines can't tell you how often

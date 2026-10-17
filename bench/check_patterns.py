@@ -4,6 +4,7 @@ Uses a tune-part period only (< 2005-12-05, held-out slice untouched). Run: .ven
 import statistics
 import sys
 from datetime import datetime
+from decimal import ROUND_HALF_UP, Decimal
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent.parent / "mcp_server"))
@@ -34,11 +35,18 @@ weeks = per_pattern("SELECT pattern_id, count(DISTINCT date_trunc('week', ts)) A
                     "AND ts >= %(s)s AND ts < %(e)s GROUP BY 1")
 b_now = per_pattern("SELECT pattern_id, count(*) AS v FROM bursts WHERE dataset='bgl' AND start_ts >= %(s)s AND start_ts < %(e)s GROUP BY 1")
 b_prev = per_pattern("SELECT pattern_id, count(*) AS v FROM bursts WHERE dataset='bgl' AND start_ts >= %(ps)s AND start_ts < %(s)s GROUP BY 1")
-cands = sorted(p for p in lines if problem.get(p, 0) > 0)
+def round_sql(x, nd):  # SQL round(): half away from zero (Python's round() is half-to-even)
+    return float(Decimal(repr(x)).quantize(Decimal(1).scaleb(-nd), rounding=ROUND_HALF_UP))
+
+
+judg = {r["pattern_id"]: r for r in query("SELECT pattern_id, p_fault, p_dump FROM pattern_judgments WHERE dataset='bgl'", {})}
+p_problem = {p: judg[p]["p_fault"] * (1 - judg[p]["p_dump"]) for p in judg}
+# default problem filter 'jev' (H18): problem-severity lines AND p_fault × (1 − p_dump) >= 0.5
+cands = sorted(p for p in lines if problem.get(p, 0) > 0 and p_problem[p] >= 0.5)
 n_weeks = 5  # 2005-11-01 (Tue) → 2005-11-28 (Mon) touches the calendar weeks of Oct 31, Nov 7, 14, 21, 28
 
 inp = {p: {"frequency": b_now.get(p, 0), "trend": b_now.get(p, 0) - b_prev.get(p, 0), "spread": nodes[p],
-           "persistence": round(weeks[p] / n_weeks, 3), "severity": round(problem[p] / lines[p], 3)} for p in cands}
+           "persistence": round(weeks[p] / n_weeks, 3), "severity": round_sql(p_problem[p], 3)} for p in cands}
 
 
 def cume_dist(key):
@@ -51,12 +59,12 @@ score = {p: round(100 * sum(WEIGHTS[k] * pct[k][p] for k in WEIGHTS), 1) for p i
 # priority_table
 t = priority_table("bgl", start=S, end=E, limit=50)
 times.append(t["elapsed_ms"])
-check("candidates = patterns with problem lines", t["total_matches"], len(cands))
+check("candidates = problem-severity AND p_problem >= 0.5", t["total_matches"], len(cands))
 check("previous period", t["previous_period"]["start"], "2005-10-04 00:00:00")
 for it in t["items"]:
     p = it["pattern_id"]
     got = (it["inputs"]["bursts"], it["inputs"]["change"], it["inputs"]["nodes"], it["inputs"]["persistence"],
-           it["inputs"]["problem_share"], it["inputs"]["lines"])
+           it["inputs"]["severity_input"], it["inputs"]["lines"])
     want = (inp[p]["frequency"], inp[p]["trend"], inp[p]["spread"], inp[p]["persistence"], inp[p]["severity"], lines[p])
     if got != want or abs(it["score"] - score[p]) > 0.11:
         check(f"item {p} inputs / score", (got, it["score"]), (want, score[p]))
