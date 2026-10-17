@@ -1,8 +1,14 @@
 # Status (read first; keep short and current)
 
-_Last updated: 2026-10-17, plan 009 done (eval: ours vs baseline), plan 053 done (OpenStack patterns, Konark)._
+_Last updated: 2026-10-17, plan 009 done (eval: ours vs baseline), plans 053–054 done (OpenStack patterns, Jev judgments, `value_outliers`; 7 MCP tools)._
 
 ## Stage: S4 — eval done (dev set): ours beats the baseline on grounding and quality, at ~2.6× latency; next: checker covers all card sections, UI, worked investigation
+- **Plan 054 done (Konark):** Jev judged the 106 OpenStack patterns (3.2 s) → `top_patterns(openstack)` 0 → 8 real
+  faults (+ the 503). New MCP tool **`value_outliers`** (slow operations vs their own pattern's median/MAD, p95 99 ms): catches
+  **4/4 labelled anomalous VMs** (top 4 by ratio; 2 extra mild flags); engineer agent uses it (checker 55/55).
+  Amirali: `value_outliers` added to `ROLE_TOOLS["engineer"]` + one recipe line; composer now reads **full** tool
+  results (`ledger_json` no longer cuts to 12 rows; 4 dev questions re-run, all pass); **H18 amended: HTTP ≥ 500 counts
+  as a problem line** (2 lines, BGL unchanged; `top_patterns(openstack)` → 9). Details `plans/054-…` §7.
 - **Plan 009 done:** `python -m eval.run_eval` (LangSmith experiments). Ours vs baseline: claim support 0.89 vs 0.59,
   numbers grounded 0.99 vs 0.85, golden facts 0.79 vs 0.59, rubric 4.53 vs 3.91, pairwise 10-4; 34 s vs 13 s per answer.
   Humans: rate `eval/results/human_check.md` (judge sanity); write the private question set, then run its runner.
@@ -10,8 +16,6 @@ _Last updated: 2026-10-17, plan 009 done (eval: ours vs baseline), plan 053 done
   `episodes` cover both datasets; 32/32 checks. ⚠️ Labelled OpenStack VMs show **no special template**: the anomaly is
   slow spawn/build (37–51 s vs ≤ 28 s) → needs a numeric-outlier signal. One traceback = 25 ERROR patterns (group by
   shared bursts in `top_patterns`). Details: `plans/053-openstack-patterns.md` §7.
-  Gap: no Jev judgments for OpenStack yet → `top_patterns`/`priority_table(dataset='openstack')` return 0 rows with the
-  default `problem_filter='jev'` (use `'severity'` or judge the 106 patterns: `scripts/judge_patterns.sh`).
 - **Plan 008 done:** gatherer per role = prebuilt ReAct agent (`create_agent`) + CoverageMiddleware + tool limit;
   composer subgraph (compose ⇄ check); MCP server role-neutral; all dev questions pass again (stacked on 007).
 - **Plan 007 done:** `python -m agent.run [--role …] [--baseline] "question"`; LangGraph route → gather ⇄ tools →

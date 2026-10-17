@@ -177,8 +177,11 @@ def feedback(report: dict) -> str:
     return "\n".join(lines)
 
 
-def ledger_json(ledger: dict, max_rows: int = 12) -> str:
-    """Compact ledger for the compose prompt: every result with its sql, scope, totals and the first rows."""
+def ledger_json(ledger: dict, max_rows: int | None = None) -> str:
+    """Ledger as JSON. Compose prompt: every tool result in full (tools already cap rows at 50, plan 054);
+    max_rows keeps only the first rows (eval judge)."""
+    if max_rows is None:
+        return json.dumps(ledger, default=str, ensure_ascii=False)
     out = {}
     for eid, ev in ledger.items():
         e = {k: v for k, v in ev.items() if k not in ("rows", "items", "before", "after", "params")}

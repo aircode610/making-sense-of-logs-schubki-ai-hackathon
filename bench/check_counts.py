@@ -87,10 +87,34 @@ check("openstack patterns", query("SELECT count(*) AS n FROM patterns WHERE data
 for tbl in ("patterns", "bursts", "episodes"):
     check(f"openstack lines in {tbl}",
           query(f"SELECT sum(lines) AS n FROM {tbl} WHERE dataset = 'openstack'", {})[0]["n"], 207820)
-check("openstack problem lines (ERROR + CRITICAL)",
-      query("SELECT sum(problem_lines) AS n FROM patterns WHERE dataset = 'openstack'", {})[0]["n"], 196)
+check("openstack problem lines (ERROR + CRITICAL + 2 HTTP 503)",
+      query("SELECT sum(problem_lines) AS n FROM patterns WHERE dataset = 'openstack'", {})[0]["n"], 198)
 check("openstack 503 on servers/detail is its own pattern",
       query("SELECT lines AS n FROM patterns WHERE dataset = 'openstack' AND strpos(template, 'servers/detail HTTP/<N>\" status: 503') > 0", {})[0]["n"], 2)
+
+# plan 054: value_outliers = an independent recomputation in Python (raw lines, Python regex + statistics)
+import re
+from outliers import value_outliers
+
+o = value_outliers(dataset="openstack", limit=50)
+times.append(o["elapsed_ms"])
+vals = {}
+for r in query("SELECT l.pattern_id, l.instance_id, l.latency_ms, l.body FROM logs l JOIN patterns p USING (dataset, pattern_id) "
+               "WHERE l.dataset = 'openstack' AND (strpos(p.template, 'Took <N> seconds') > 0 "
+               "OR strpos(p.template, ' time: <N>') > 0)", {}):
+    m = re.search(r"Took ([\d.]+) seconds", r["body"] or "")
+    v = r["latency_ms"] / 1000 if r["latency_ms"] is not None else float(m.group(1)) if m else None
+    if v is not None:
+        vals.setdefault(r["pattern_id"], []).append((v, r["instance_id"]))
+ref_lines, ref_inst = 0, set()
+for pid, xs in vals.items():
+    med = statistics.median(v for v, _ in xs)
+    thr = max(med + 6 * statistics.median(abs(v - med) for v, _ in xs), med + 2)
+    hits = [i for v, i in xs if v > thr]
+    ref_lines += len(hits)
+    ref_inst |= {i for i in hits if i}
+check("value_outliers (flagged lines, VMs) vs Python", (o["total_matches"], o["flagged_instances"]), (ref_lines, len(ref_inst)))
+check("value_outliers flagged VMs (instances field)", {x["instance_id"] for x in o["instances"]}, ref_inst)
 
 times.sort()
 print(f"\n{len(times)} calls: median {statistics.median(times):.0f} ms, p95 {times[int(len(times) * .95) - 1]:.0f} ms, max {times[-1]:.0f} ms")

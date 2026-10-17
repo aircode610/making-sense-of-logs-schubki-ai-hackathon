@@ -17,7 +17,7 @@ Goal: make an impression **and** get advice. Plan for 10 min: 1 min pitch · 1 m
 | S3 agent + 3 roles | one question, three answer cards | role recipes, checker |
 | S4 eval | baseline vs ours table | measured wins |
 
-## Numbers we can show now (S2, 2026-10-17, plans 002–004 + 050–053)
+## Numbers we can show now (S2, 2026-10-17, plans 002–008 + 050–054)
 - Load by SereneDB itself: BGL 4.7M + OpenStack 208k lines + templates + bursts in **≈ 31 s** (emulated amd64); counts
   equal awk. Group-bys 3–85 ms straight from the inverted index.
 - MCP tools live in Claude Code: `search_logs`, `get_context` (p95 < 45 ms); kernel-panic investigation done via MCP.
@@ -32,6 +32,9 @@ Goal: make an impression **and** get advice. Plan for 10 min: 1 min pitch · 1 m
   (rounded / derived numbers). Jev picks the role when none is given. Each answer = one LangSmith trace.
 - OpenStack: 208k lines → **106 patterns**. The labelled anomalous VMs use only normal templates; what gives them away is
   spawn time (37–51 s vs normal ≤ 28 s) → we flag numeric outliers per pattern, not just rare templates.
+- **`value_outliers` (SQL median + MAD per pattern, rule fixed before looking at labels):** finds **4/4** labelled
+  anomalous VMs, ranked as the 4 most extreme (2.6×, 2.1×, 1.6×, 1.5× normal), 2 mild extra flags; ~100 ms. The engineer
+  agent answers "were any VMs abnormally slow?" with all of them, checker 55/55. All 100 lines of those VMs are INFO: no error or warning to search for.
 - **Eval (S4, 18 dev questions, LangSmith experiments, Opus judge):** ours vs baseline with the same tools: claims
   supported 0.89 vs 0.59, numbers grounded 0.99 vs 0.85, golden facts 0.79 vs 0.59, next-step specificity 4.3 vs 2.6,
   pairwise 10-4; cost: 34 s vs 13 s per answer. Honest gaps: tool overlap across roles higher for ours; checker misses
