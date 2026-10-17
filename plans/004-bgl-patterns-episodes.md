@@ -88,3 +88,6 @@ Gap sweep (BGL):
   00 → 10 → 20 → 30. OpenStack `pattern_id` stays NULL until OpenStack masks (Konark, B2); `30_…sql` already handles
   every dataset that has pattern ids.
 - Next (B3, Amirali): `top_patterns` + `priority_table` tools for lead/manager on `patterns` / `bursts`.
+- Merge with plan 052 (Konark): `30_patterns_episodes.sql` renamed **`95_patterns_episodes.sql`** and added to
+  `load/reload.sh` after `90_publish.sql` (it reads `logs`, so the index must be published first); loaders keep his
+  no-DELETE style; pattern checks added to `bench/check_counts.py`.

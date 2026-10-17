@@ -23,13 +23,11 @@ uv venv --python 3.12 && uv pip install -r requirements.txt
 ```
 Load the data (SereneDB reads and parses the raw files itself; schema and loaders in [`load/`](load/)):
 ```bash
-psql -h localhost -p 7890 -U postgres -d postgres -f load/00_schema.sql           # (re)creates empty tables + full-text index
-psql -h localhost -p 7890 -U postgres -d postgres -f load/10_bgl.sql              # BGL: 4,747,963 rows + log templates, ~25 s
-psql -h localhost -p 7890 -U postgres -d postgres -f load/20_openstack.sql        # OpenStack: 207,820 rows + ownership, ~2 s
-psql -h localhost -p 7890 -U postgres -d postgres -f load/30_patterns_episodes.sql # patterns, bursts, episodes, ~3 s
+./load/reload.sh   # drops + recreates tables, loads BGL (4,747,963 rows) + OpenStack (207,820) + ownership, publishes the index, builds patterns/bursts/episodes, then checks counts (~30 s)
 ```
-`00_schema.sql` resets all data; the dataset loaders are re-runnable on their own (each replaces its dataset's rows),
-then re-run `30_patterns_episodes.sql`.
+`reload.sh` runs `load/00_schema.sql` → `10_bgl.sql` → `20_openstack.sql` → `90_publish.sql` (`VACUUM` refresh + compact:
+the inverted index is eventually consistent, so counts are only exact once it is published) → `95_patterns_episodes.sql`
+(log templates → `patterns`, `bursts`, `episodes`; built from published rows) → `bench/check_counts.py`.
 
 Connect Claude Code to the tools: the `logs` MCP server is registered in [`.mcp.json`](.mcp.json), so running
 `claude` in this folder offers it (approve it once). Any other MCP client: stdio command `.venv/bin/python mcp_server/server.py`

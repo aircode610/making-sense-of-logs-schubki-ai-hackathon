@@ -52,5 +52,7 @@ emulation; end-to-end role answer dominated by the LLM, not the database.
 | 2026-10-17 | MCP tool | `search_logs` relevance (BM25), July filter | — | p50 16 / p95 19 ms | WAND top-k via `optimize_top_k` |
 | 2026-10-17 | MCP tool | `get_context` node ±300 s (busy node: 499 before / 1,610 after) | — | p50 34 / p95 41 ms | 4 queries (2 lists + 2 counts) |
 | 2026-10-17 | MCP tool | `get_context` midplane ±60 s | — | p50 22 / p95 28 ms | |
+| 2026-10-17 | MCP `count_by` / `trend` (plan 051), team join + zero-filled buckets | 16 calls over both datasets (`bench/check_counts.py`) | — | median 7 ms, p95 45 ms, max 76 ms | count_by team ≈ 110 ms cold; trend by team (96 weekly rows) ≈ 150 ms. index is eventually consistent: query only after `VACUUM (REFRESH_TABLE)` (plan 052) |
+| 2026-10-17 | Full reload `load/reload.sh` (plan 052): DROP + BGL + OpenStack + `VACUUM` refresh/compact + checks | end to end | — | **~21 s** | BGL parse 10.5 s + insert 1.8 s · OpenStack 1.4 s · `COMPACT_TABLE` 6.1 s · checks 1 s; 2 runs, 29/29 checks |
 | 2026-10-17 | Template masking in the BGL loader (7 regexes, plan 004) | BGL parse step | 16.2 s | 23.2 s | +7 s for 1,126 templates over 4.7M lines; pattern id assignment 75 ms; full reload (schema + BGL + OpenStack) 27 s |
-| 2026-10-17 | Episodes / bursts / patterns at load (`load/30_patterns_episodes.sql`, window `LAG` gap split) | build 3 tables | — | 1.2 s / 0.9 s / 0.15 s | 2,417,597 node-episodes · 36,714 bursts · 1,126 patterns; whole pipeline ≈ 31 s |
+| 2026-10-17 | Episodes / bursts / patterns at load (`load/95_patterns_episodes.sql`, window `LAG` gap split) | build 3 tables | — | 1.2 s / 0.9 s / 0.15 s | 2,417,597 node-episodes · 36,714 bursts · 1,126 patterns; whole pipeline ≈ 31 s |

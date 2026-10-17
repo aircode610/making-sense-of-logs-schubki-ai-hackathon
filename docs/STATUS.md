@@ -1,11 +1,11 @@
 # Status (read first; keep short and current)
 
-_Last updated: 2026-10-17, plan 004 done (BGL patterns, bursts, episodes)._
+_Last updated: 2026-10-17, plans 002, 003, 004, 050, 051, 052 done (both datasets, patterns/bursts, 4 MCP tools)._
 
 ## Stage: B2 — patterns + bursts for BGL; next: lead/manager tools (Amirali), OpenStack masks + count/trend (Konark)
 - **Plan 004 done:** `pattern_id` on every BGL row (1,126 templates, SQL masks), tables `patterns`, `bursts`,
-  `episodes` (`load/30_patterns_episodes.sql`). Gap frozen 30 min; bursts = headline unit (H16). **Schema changed:
-  re-run `00 → 10 → 20 → 30`** (00 now resets). Konark: OpenStack masks → `pattern_id` in `20_openstack.sql`.
+  `episodes` (`load/95_patterns_episodes.sql`, runs after `90_publish`). Gap frozen 30 min; bursts = headline unit (H16).
+  **Reload: `./load/reload.sh`** (00 → 10 → 20 → 90 → 95 + checks). Konark: OpenStack masks → `pattern_id` in `20_openstack.sql`.
 - **Plan 003 done:** MCP server `mcp_server/` (`search_logs`, `get_context`; registered in `.mcp.json`), counts equal
   reference, p95 < 45 ms. Konark: add `count_by`/`trend` in `mcp_server/counts.py` (plan 051), register in `server.py`; reuse `core.envelope`.
   Live Claude Code check passed (kernel-panic investigation, plan 003 §7).
@@ -18,6 +18,10 @@ _Last updated: 2026-10-17, plan 004 done (BGL patterns, bursts, episodes)._
 
 - **Plan 050 done (Konark):** `load/20_openstack.sql`: 207,820 OpenStack rows + `ownership` table in ~1.2 s, all counts equal awk/grep
   (`plans/050-openstack-load.md` §7). Next: plan 051 `count_by` + `trend` tools.
+
+- **Plan 051 done (Konark):** MCP tools `count_by` + `trend` (`mcp_server/counts.py`), 29 checks vs awk/grep pass
+  (`bench/check_counts.py`), median 7 ms / p95 45 ms. ⚠️ **Reload = `./load/reload.sh`** (DROP + load +
+  `VACUUM` refresh/compact + count check, ~21 s): the index is eventually consistent, counts right after a bulk insert can be off (plan 052).
 
 ## First things in a fresh session (setup gaps, not yet done)
 - [x] Approve the 3 docs MCP servers on first `claude` start in this repo (`.mcp.json`).

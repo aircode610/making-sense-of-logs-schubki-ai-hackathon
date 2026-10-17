@@ -1,5 +1,5 @@
 -- Patterns, node episodes and bursts for every dataset whose rows have pattern_id (plan 004). Re-runnable.
--- Run after the loaders: psql -h localhost -p 7890 -U postgres -d postgres -f load/30_patterns_episodes.sql
+-- Run after the loaders AND 90_publish.sql (reads logs; the index must be published): part of ./load/reload.sh
 -- Episode gap = 30 min (DECISIONS H16):
 --   node episode = same pattern on the same node (no node → same component), split when the gap > 30 min;
 --   burst        = same pattern anywhere in the dataset, split when the gap > 30 min (one storm on 1,000 nodes = 1 burst).

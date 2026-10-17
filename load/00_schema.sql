@@ -1,5 +1,5 @@
--- Shared schema for both datasets (contract: plans/002-bgl-load.md, pattern_id: plan 004).
--- RESETS the data: drops and recreates the tables (SereneDB can't ALTER a search table), so run the loaders after it.
+-- Shared schema for both datasets (contract: plans/002-bgl-load.md, pattern_id: plan 004). DROPS and recreates the
+-- tables (SereneDB can't ALTER a search table): a full reload is 00 → 10 → 20 → 90 → 95 (`./load/reload.sh`).
 -- Run: psql -h localhost -p 7890 -U postgres -d postgres -f load/00_schema.sql
 DROP TABLE IF EXISTS logs;
 DROP TABLE IF EXISTS labels;
@@ -42,7 +42,7 @@ CREATE TABLE labels (
     label   VARCHAR NOT NULL
 );
 
--- Template text per pattern_id, written by each loader (plan 004); aggregates live in load/30_patterns_episodes.sql.
+-- Template text per pattern_id, written by each loader (plan 004); aggregates live in load/95_patterns_episodes.sql.
 CREATE TABLE pattern_templates (
     dataset    VARCHAR NOT NULL,
     pattern_id INTEGER NOT NULL,

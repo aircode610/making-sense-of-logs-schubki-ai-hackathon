@@ -1,12 +1,8 @@
--- Load BGL into logs + labels, parsed by SereneDB from the raw file. Re-runnable (replaces BGL rows).
+-- Load BGL into logs + labels, parsed by SereneDB from the raw file. Expects empty tables: reload = ./load/reload.sh.
 -- Run after 00_schema.sql: psql -h localhost -p 7890 -U postgres -d postgres -f load/10_bgl.sql
 -- Line format: label epoch date location ts location-repeat (RAS|NULL) component severity message
 -- The repeated location is sometimes junk with spaces, so the parse anchors on ts and "(RAS|NULL) COMP SEV".
 \timing on
-
-DELETE FROM logs   WHERE dataset = 'bgl';
-DELETE FROM labels WHERE dataset = 'bgl';
-DELETE FROM pattern_templates WHERE dataset = 'bgl';
 
 CREATE TEMP TABLE bgl_stage AS
 WITH raw AS (
