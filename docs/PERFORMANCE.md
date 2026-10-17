@@ -47,3 +47,4 @@ emulation; end-to-end role answer dominated by the LLM, not the database.
 | 2026-10-17 | (baseline) | whole-corpus `GROUP BY component` / `severity` | — | 3–39 ms | no plain-table A/B needed (plan 002 threshold was 1 s) |
 | 2026-10-17 | (baseline) | full-text `body @@ 'parity'` count / `ts_phrase('cache parity error')` | — | 7 ms / 32 ms | 121,498 / 106,220 lines, equal to the Python token count |
 | 2026-10-17 | (baseline) | count by team (join `read_csv('/data/ownership.csv')`) | — | 51 ms | |
+| 2026-10-17 | OpenStack load, SQL-native (`load/20_openstack.sql`), same `logs` table, insert sorted by ts | full load 207,820 lines (3 files) | — | **~1.2 s** | parse 0.9 s · sorted insert 0.4 s; typed request_id/instance_id/tenant_id/status/latency_ms via regex. Plan 050 |
