@@ -137,3 +137,67 @@ def trend(
                     groups=groups if group_by else None, truncated=truncated,
                     **({"note": f"only the {top_groups} largest groups are shown; their lines are a subset of total_lines"}
                        if group_by else {}))
+
+
+def rate_vs_baseline(
+    start: Annotated[datetime, Field(description="Window start (inclusive), e.g. the hour around the incident.")],
+    end: Annotated[datetime, Field(description="Window end (exclusive).")],
+    dataset: Dataset = None,
+    days: Annotated[int, Field(ge=1, le=60, description="Baseline = up to `days` days just before `start`.")] = 7,
+    query_text: Annotated[Optional[str], Field(description='Full-text filter on the message (web-search syntax).')] = None,
+    pattern_id: Annotated[Optional[int], Field(description="Log pattern (from search_logs / top_patterns).")] = None,
+    component: Annotated[Optional[str], Field(description="Exact component, e.g. KERNEL, nova-compute.")] = None,
+    severity: Annotated[Optional[str], Field(description="Exact severity, e.g. FATAL, ERROR.")] = None,
+    node: Annotated[Optional[str], Field(description="Exact node / host.")] = None,
+    midplane: Annotated[Optional[str], Field(description="BGL midplane, e.g. R43-M0.")] = None,
+    status: Annotated[Optional[int], Field(description="OpenStack HTTP status, e.g. 503.")] = None,
+) -> dict:
+    """Is this rate unusual? Lines matching the filters in the window vs the same-length windows just before it.
+
+    Use it for the engineer's baseline step: "245 lines in this hour vs 47.9/h usual (5.1×); 5 of 168 previous hours
+    reached 245" or "0 lines in the previous 7 days → new here". The baseline is cut into windows of the SAME length as
+    the window (1 h window → hourly, 1 day → daily) and never reaches before the dataset's first log line:
+    `baseline_clipped` says it is shorter than asked, `no_baseline_data` that there is no earlier data to compare with
+    (then nothing can be called new or unusual). Units are log lines, not incidents.
+    """
+    t0 = time.perf_counter()
+    if end <= start:
+        raise ValueError("end must be after start.")
+    w = (end - start).total_seconds()
+    f = dict(dataset=dataset, component=component, severity=severity, node=node, midplane=midplane, pattern_id=pattern_id)
+    where, params, _ = _where(f, query_text, status, None)
+    # Baseline never starts before the data does; only whole windows count (aligned back from `start`).
+    data_sql = "SELECT min(ts) AS t FROM logs" + (" WHERE dataset = %(dataset)s" if dataset else "")
+    data_start = query(data_sql, {"dataset": dataset})[0]["t"]
+    asked = start - timedelta(days=days)
+    n_win = max(0, int((start - max(asked, data_start)).total_seconds() // w))
+    bstart = start - timedelta(seconds=n_win * w)
+    params.update(ws=start, we=end, bs=bstart, w=w, h=w / 3600, nw=n_win)
+    now_sql = (f"SELECT count(*) AS window_lines, round(count(*) / %(h)s, 3) AS window_rate_per_h "
+               f"FROM logs {where} AND logs.ts >= %(ws)s AND logs.ts < %(we)s")
+    now = query(now_sql, params)[0]
+    params["n"] = now["window_lines"]
+    sqls = [render(data_sql, {"dataset": dataset}), render(now_sql, params)]
+    row = {**now, "window_hours": round(w / 3600, 3), "baseline_start": bstart, "baseline_windows": n_win,
+           "baseline_hours": round(n_win * w / 3600, 3), "baseline_clipped": bstart > asked}
+    if n_win:
+        # k = which earlier window (0 = just before `start`); windows without lines count as 0 lines.
+        base_sql = (f"WITH b AS (SELECT floor((epoch(%(ws)s::TIMESTAMP) - epoch(logs.ts)) / %(w)s) AS k, count(*) AS n "
+                    f"FROM logs {where} AND logs.ts >= %(bs)s AND logs.ts < %(ws)s GROUP BY 1) "
+                    f"SELECT coalesce(sum(n), 0)::BIGINT AS baseline_lines, "
+                    f"round(coalesce(sum(n), 0)::DOUBLE / (%(nw)s * %(h)s), 3) AS baseline_rate_per_h, "
+                    f"round(%(n)s / nullif(sum(n)::DOUBLE / %(nw)s, 0), 1) AS ratio, "
+                    f"coalesce(max(n), 0) AS baseline_max_per_window, "
+                    f"count(*) FILTER (WHERE n >= %(n)s AND %(n)s > 0) AS baseline_windows_at_or_above, "
+                    f"round(count(*) FILTER (WHERE n >= %(n)s AND %(n)s > 0)::DOUBLE / %(nw)s, 4) AS share_windows_at_or_above "
+                    f"FROM b")
+        row.update(query(base_sql, params)[0])
+        sqls.append(render(base_sql, params))
+    filters = {**f, "query_text": query_text, "status": status}
+    scope = (f"{dataset or 'all datasets'}; window {start} → {end} ({w / 3600:g} h) vs {n_win} earlier windows of the same "
+             f"length, {bstart} → {start}" + (f" (clipped: data starts {data_start}, {days} days asked)" if bstart > asked else "")
+             + "; unit = log lines")
+    return envelope("rate_vs_baseline", dict(start=start, end=end, days=days, **filters), sqls, filters, scope,
+                    rows=[row], t0=t0, total_matches=now["window_lines"], truncated=False,
+                    no_baseline_data=n_win == 0,
+                    new_in_baseline=bool(n_win) and row.get("baseline_lines") == 0 and now["window_lines"] > 0)

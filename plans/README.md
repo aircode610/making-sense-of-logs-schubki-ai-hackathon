@@ -33,3 +33,5 @@ Every plan respects: `CLAUDE.md` non-negotiables, `docs/ROLES.md` (role spec), `
 | 052 | [One-command reload](052-reload-publish.md) | Konark | done | `feat/051-count-trend-tools` |
 | 053 | [OpenStack patterns (SQL masks)](053-openstack-patterns.md) | Konark | done | `feat/053-openstack-patterns` |
 | 054 | [OpenStack Jev judgments + value_outliers](054-openstack-judgments-outliers.md) | Konark | done | `feat/054-openstack-judgments-outliers` |
+| 055 | [B3 leftovers: engineer rate baseline, dev questions, review](055-engineer-baseline.md) | Konark | done | `feat/055-engineer-baseline` |
+| 056 | [Clean-checkout test](056-clean-checkout.md) | Konark | draft | `feat/056-clean-checkout` |

@@ -1,8 +1,13 @@
 # Status (read first; keep short and current)
 
-_Last updated: 2026-10-17, plan 009 done (eval: ours vs baseline), plans 053–054 done (OpenStack patterns, Jev judgments, `value_outliers`; 7 MCP tools)._
+_Last updated: 2026-10-17, plan 009 done (eval: ours vs baseline), plans 053–055 done (OpenStack patterns, Jev judgments, `value_outliers`, `rate_vs_baseline`; 8 MCP tools)._
 
 ## Stage: S4 — eval done (dev set): ours beats the baseline on grounding and quality, at ~2.6× latency; next: checker covers all card sections, UI, worked investigation
+- **Plan 055 done (Konark, B3 leftovers):** MCP tool **`rate_vs_baseline`** (rate now vs same-length windows of the
+  previous days, clipped at the data start; 4–6 ms) = engineer recipe step 4. Engineer eval (8 q, +2 new): ours vs
+  baseline golden 0.875 vs 0.542, claims 0.878 vs 0.469, pairwise **8-0**; cost 47 s / 98k tokens per answer. "Unusual"
+  beats raw volume only for alert onsets (precision 0.17 vs 0.14) → not an anomaly detector. **Swap review:**
+  `docs/REVIEW.md` (Konark → lead/manager, Amirali → engineer). Details `plans/055-…` §7.
 - **Plan 054 done (Konark):** Jev judged the 106 OpenStack patterns (3.2 s) → `top_patterns(openstack)` 0 → 8 real
   faults (+ the 503). New MCP tool **`value_outliers`** (slow operations vs their own pattern's median/MAD, p95 99 ms): catches
   **4/4 labelled anomalous VMs** (top 4 by ratio; 2 extra mild flags); engineer agent uses it (checker 55/55).

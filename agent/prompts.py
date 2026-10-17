@@ -23,9 +23,13 @@ RECIPES = {
         "'instance' for OpenStack). Use severity='FATAL'/'ERROR' if the window is flooded with INFO lines.\n"
         "3. Spread + history: is it local or systemic? search_logs with the same text in a wider window / without the "
         "node filter, or count_by group_by='node'; is it new? search_logs order='time' over the whole corpus.\n"
+        "4. Baseline: is this rate unusual here? rate_vs_baseline with the anchor's text / pattern_id and node or "
+        "midplane / component, window = the incident hour(s), baseline = the previous 7 days (rate now vs usual, or "
+        "new_in_baseline).\n"
         "Slow / latency / 'abnormal VM' questions (no error logged): value_outliers first (operations far slower than "
         "their own pattern's normal), then use a flagged line_id as the anchor for get_context scope 'instance'.\n"
-        "Evidence needed: the error lines, before/after events, component + node, total count with scope, spread."),
+        "Evidence needed: the error lines, before/after events, component + node, total count with scope, spread, "
+        "rate vs the usual rate."),
     "lead": (
         "You support a TEAM LEAD: which problems recur, how often, whose are they, and what should the team investigate "
         "first, over a stated period.\n"
@@ -64,7 +68,7 @@ Hard rules:
 
 ROLE_CARD = {
     "engineer": "Engineer card: what failed (component, node, pattern, first/last time, lines), the timeline before → at "
-                "→ after with verbatim lines, local vs spread, new vs recurring; one labelled hypothesis for the cause; "
+                "→ after with verbatim lines, local vs spread, new vs recurring, rate vs the usual rate; one labelled hypothesis for the cause; "
                 "a concrete next check (a query to run, a component to inspect). ranked: leave empty.",
     "lead": "Team-lead card: the period first; ranked = the top recurring problems (2-5) with owner team and measured "
             "basis (bursts, nodes, weeks active, change vs previous period); one 'investigate first' as ranked item 1 "
