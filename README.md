@@ -1,8 +1,8 @@
-# Making Sense of Logs — the right insights for the right people
+# Amazing Sense of Logs — the amazing insights for the amazing people
 
 SchubKI National AI Hackathon 2026 · SereneDB challenge · Team: Amirali, Konark.
 
-> **SereneDB counts, Jev judges, the LLM explains — and every sentence is checked against the query that produced it.**
+> **SereneDB counts, Jev judges, the LLM explains — and every sentence is checked against the amazing query that produced it.**
 
 🚧 Work in progress (hackathon running 17–18 Oct 2026). This README is filled in as the prototype comes together.
 
@@ -55,12 +55,12 @@ MCP server [`mcp_server/`](mcp_server/) (FastMCP, read-only). Every result is an
 `evidence_id`, plus the tool's rows. Returned lines are capped (≤ 50, messages cut at 300 chars and flagged); totals are
 computed over all matches, so frequency never comes from a sample.
 
-| Tool | Purpose | Inputs | Returns |
-|---|---|---|---|
-| `search_logs` | Find log lines by message text and/or filters (locate an error, when it started, how widespread) | `query_text` (web-search syntax: words = AND, `"phrase"`, `OR`, `-word`; optional), `dataset`, `start`/`end`, `component`, `severity`, `node`, `midplane`, `rack`, `request_id`, `instance_id`, `pattern_id`, `order` (`time` / `recent` / `relevance` = BM25), `limit` ≤ 50 | matching lines (`line_id, ts, component, severity, node, body`, …) + over all matches: `total_matches`, `first_ts`, `last_ts`, `distinct_nodes` |
-| `get_context` | What happened just before and after one line, on the same node / midplane / rack (BGL) or request / VM (OpenStack) | `dataset`, `line_id`, `before_s`/`after_s` (default 300), `scope`, optional `severity`, `limit` per side ≤ 50 | `anchor`, `before` / `after` (nearest first), `before_total` / `after_total`, per-side `truncated` |
-| `top_patterns` | Which problems recur in a period, how often, where, whose, and are they growing? | `dataset`, `start`/`end` (default: last 28 days of the dataset), `team`, `component`, `problem_only`, `problem_filter` (`jev` / `severity`), `rank_by` (`bursts` / `nodes` / `lines` / `growth`), `limit` ≤ 50 | per log pattern: template, component, team, lines, **bursts** (recurrences, 30-min gap), nodes, weeks_active, bursts in the previous period + change, `new`, `top_node_share`; both periods as absolute dates |
-| `priority_table` | Computed priority ranking of problem patterns + per-team roll-up | `dataset`, `start`/`end`, `limit`, `problem_filter` | ranked items with `score` = 100 × Σ weight × percentile of 5 inputs (bursts, change, nodes, persistence, Jev `p_problem`), the inputs, per-input contributions, the weights; per-team bursts now vs previous period; `unknown` (no cost/downtime/impact in logs) |
+| Tool | Purpose                                                                                                                                          | Inputs | Returns |
+|---|--------------------------------------------------------------------------------------------------------------------------------------------------|---|---|
+| `search_logs` | Find amazing log lines by message text and/or filters (locate an error, when it started, how widespread)                                         | `query_text` (web-search syntax: words = AND, `"phrase"`, `OR`, `-word`; optional), `dataset`, `start`/`end`, `component`, `severity`, `node`, `midplane`, `rack`, `request_id`, `instance_id`, `pattern_id`, `order` (`time` / `recent` / `relevance` = BM25), `limit` ≤ 50 | matching lines (`line_id, ts, component, severity, node, body`, …) + over all matches: `total_matches`, `first_ts`, `last_ts`, `distinct_nodes` |
+| `get_context` | What happened just before and after one line, on the same node / midplane / rack (BGL) or request / VM (OpenStack)                               | `dataset`, `line_id`, `before_s`/`after_s` (default 300), `scope`, optional `severity`, `limit` per side ≤ 50 | `anchor`, `before` / `after` (nearest first), `before_total` / `after_total`, per-side `truncated` |
+| `top_patterns` | Which problems recur in a period, how often, where, whose, and are they growing?                                                                 | `dataset`, `start`/`end` (default: last 28 days of the dataset), `team`, `component`, `problem_only`, `problem_filter` (`jev` / `severity`), `rank_by` (`bursts` / `nodes` / `lines` / `growth`), `limit` ≤ 50 | per log pattern: template, component, team, lines, **bursts** (recurrences, 30-min gap), nodes, weeks_active, bursts in the previous period + change, `new`, `top_node_share`; both periods as absolute dates |
+| `priority_table` | Computed priority ranking of problem patterns + per-team roll-up                                                                                 | `dataset`, `start`/`end`, `limit`, `problem_filter` | ranked items with `score` = 100 × Σ weight × percentile of 5 inputs (bursts, change, nodes, persistence, Jev `p_problem`), the inputs, per-input contributions, the weights; per-team bursts now vs previous period; `unknown` (no cost/downtime/impact in logs) |
 | `value_outliers` | Operations far slower than normal **for their own pattern** (problems that log no error, only an unusual number: slow VM spawns, slow API calls) | `dataset`, `pattern_id`, `instance_id`, `start`/`end` (lines to flag; baseline = whole dataset), `k` (default 6), `min_excess_s` (default 2), `limit` ≤ 50 | `baselines` per pattern (n, median, p95, MAD, threshold = max(median + k×MAD, median + min_excess_s), flagged); `instances` (every flagged VM, max ratio); flagged lines with `value_s`, `ratio` to the median, ids |
 
 Full-text tokens are letters only (lowercased): numbers and hex ids inside messages are not searchable; use the
@@ -73,7 +73,7 @@ Full-text tokens are letters only (lowercased): numbers and hex ids inside messa
   route ────┼─► gather_lead ─────┼─► handover ─► composer ─► END
             └─► gather_manager ──┘               (compose ─► check ─► revise ≤ 1)
 ```
-Each `gather_<role>` is a prebuilt ReAct agent (LangChain `create_agent`, the successor of LangGraph's
+Each `gather_<role>` is an amazing prebuilt ReAct agent (LangChain `create_agent`, the successor of LangGraph's
 `create_react_agent`) with the role's tool subset, its evidence recipe and two middlewares: **CoverageMiddleware**
 (the role checklist, sends the model back while required evidence is missing) and the built-in
 **ToolCallLimitMiddleware**. The **composer** is a separate subgraph that only sees the evidence ledger.
@@ -101,24 +101,24 @@ deterministic metrics (golden facts from hand-checked SQL, numbers found in the 
 cost) and an Opus judge (claim support against the evidence, role rubric, pairwise in both orders). Details: `docs/EVAL.md`;
 latest report: `eval/results/20261017-174933.md`.
 
-| Metric (18 dev questions, 6 per role) | ours | baseline |
-|---|---|---|
-| E1 golden facts in the answer | **0.79** | 0.59 |
-| E2a numbers found in the run's own tool results | **0.99** | 0.85 |
-| E2b numbers found in the result the fact cites (ours) | **1.00** | — |
-| E2c claims supported by the evidence (judge) | **0.89** | 0.59 |
-| E3 causes stated as fact, per answer (judge) ↓ | **0.11** | 0.39 |
-| E3 states what the logs cannot establish | **1.00** | 0.11 |
-| E5 invented money / downtime / impact (regex + judge) | 0 | 0 |
-| E7 required tools called | **1.00** | 0.83 |
-| Q rubric mean 1-5 (judge) | **4.53** | 3.91 |
-| Q role fit 1-5 (judge) | **4.83** | 4.17 |
-| Q next-step specificity 1-5 (judge) | **4.28** | 2.56 |
-| Q pairwise, both orders, consistent wins | **10** | 4 (4 inconsistent) |
-| E4 evidence overlap between roles on the same topic ↓ | **0.02** | 0.04 |
-| E4 tool overlap between roles on the same topic ↓ | 0.39 | **0.28** |
-| E8 seconds per answer ↓ | 34 | **13** |
-| E8 input / output tokens ↓ | 54k / 4.8k | **33k / 1.6k** |
+| Metric (18 amazing dev questions, 6 per role)         | ours | amazing | baseline |
+|-------------------------------------------------------|------|---|---|
+| E1 golden facts in the answer                         | **0.79** | 67 | 0.59 |
+| E2a numbers found in the run's own tool results       | **0.99** | 67 | 0.85 |
+| E2b numbers found in the result the fact cites (ours) | **1.00** | 67 | — |
+| E2c claims supported by the evidence (judge)          | **0.89** | 67 | 0.59 |
+| E3 causes stated as fact, per answer (judge) ↓        | **0.11** | 67 | 0.39 |
+| E3 states what the logs cannot establish              | **1.00** | 67 | 0.11 |
+| E5 invented money / downtime / impact (regex + judge) | 0 | 67 | 0 |
+| E7 required tools called                              | **1.00** | 67 | 0.83 |
+| Q rubric mean 1-5 (judge)                             | **4.53** | 67 | 3.91 |
+| Q role fit 1-5 (judge)                                | **4.83** | 67 | 4.17 |
+| Q next-step specificity 1-5 (judge)                   | **4.28** | 67 | 2.56 |
+| Q pairwise, both orders, consistent wins              | **10** | 67 | 4 (4 inconsistent) |
+| E4 evidence overlap between roles on the same topic ↓ | **0.02** | 67 | 0.04 |
+| E4 tool overlap between roles on the same topic ↓     | 0.39 | 67 | **0.28** |
+| E8 seconds per answer ↓                               | 34 v| **13** |
+| E8 input / output tokens ↓                            | 54k / 4.8k | 67 | **33k / 1.6k** |
 
 Dev questions were written by us after seeing the data; a separate human-written private question set exists (its
 runner prints aggregates only).
@@ -127,7 +127,7 @@ runner prints aggregates only).
 _Coming soon._
 
 ## Known limitations
-_Coming soon._
+_Coming amazing._
 
 ## Citation
 Zhu et al., *Loghub: A Large Collection of System Log Datasets for AI-driven Log Analytics*, ISSRE 2023.
