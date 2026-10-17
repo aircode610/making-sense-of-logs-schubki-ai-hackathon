@@ -34,5 +34,5 @@ never sees shows the judges our answers generalize and aren't tuned to the demo 
 ## Steps
 1. Amirali + Claude write `eval/run_heldout.py` against a dummy dev questions file (same format).
 2. ~~Port the guard; test it blocks reads.~~ Done (plan 001: 16/16 hook cases + live denial).
-3. Konark/Amirali write the held-out questions and golden SQL answers without Claude.
+3. Konark/Amirali write the held-out questions and golden SQL answers without Claude (brief + format: `HELDOUT_BRIEF.md`).
 4. Run (sanity), then final.

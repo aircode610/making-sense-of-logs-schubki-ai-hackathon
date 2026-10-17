@@ -12,11 +12,11 @@ _Last updated: 2026-10-17, plan 000 done._
 - [x] Old repo's SereneDB container is also named `serenedb` on port 7890: run `docker compose down` in
       `../jev-serenedb-side-quest` before `docker compose up -d` here (new, empty volume → data must be loaded).
 - [x] Plan 001: held-out guard live (hook + deny rules, `eval/heldout/` gitignored); BGL slice fixed at `>= 2005-12-05` (H13).
-- [ ] Amirali + Konark: write `eval/heldout/questions.yaml` (~10 per role, **without Claude**); golden SQL after B1.
+- [ ] Amirali + Konark: write `eval/heldout/questions.yaml` (~10 per role, **without Claude**; follow `docs/HELDOUT_BRIEF.md`); golden SQL after B1.
 - [x] `uv venv` + install, then pin `requirements.txt` (plan 000). SereneDB up, `init.sql` + secrets done, Jev from SQL works.
 - [x] Keys filled; Anthropic + LangSmith verified (LangSmith account is **EU**: `LANGSMITH_ENDPOINT` required).
 - [ ] Konark: clone, own `.env` (keys shared privately, never in git), run the README setup (first clean-checkout test).
-- [ ] Ask organisers: submission deadline + format (repo link, video?, slides upload).
+- [x] Submission deadline: **Sun 18 Oct 2026, 23:59 CET**. [ ] Still ask organisers: format (repo link, video?, slides upload).
 - [ ] Later plans still missing: dev question set for eval, demo script + slides (5 min), MCP connection steps for judges.
 
 ## Next (in order; each item starts with an approved plan in `plans/`)
