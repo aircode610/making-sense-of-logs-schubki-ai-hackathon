@@ -116,6 +116,49 @@ for pid, xs in vals.items():
 check("value_outliers (flagged lines, VMs) vs Python", (o["total_matches"], o["flagged_instances"]), (ref_lines, len(ref_inst)))
 check("value_outliers flagged VMs (instances field)", {x["instance_id"] for x in o["instances"]}, ref_inst)
 
+# plan 055: rate_vs_baseline = an independent recomputation in Python (raw timestamps, same-length windows back from
+# the window start, clipped to the dataset's first line)
+from datetime import datetime as D, timedelta as TD
+from counts import rate_vs_baseline
+
+
+def ref_baseline(sql, ws, we, days, first_ts):
+    w = we - ws
+    n_win = int((ws - max(ws - TD(days=days), first_ts)) / w)
+    ts = [r["ts"] for r in query(sql, {"s": ws - n_win * w, "e": we})]
+    now_n = sum(t >= ws for t in ts)
+    per = [0] * n_win
+    for t in ts:
+        if t < ws:
+            per[int((ws - t) / w)] += 1
+    return now_n, n_win, sum(per), max(per, default=None), sum(n >= now_n > 0 for n in per)
+
+
+def got_baseline(r):
+    x = r["rows"][0]
+    return (x["window_lines"], x["baseline_windows"], x.get("baseline_lines"), x.get("baseline_max_per_window"),
+            x.get("baseline_windows_at_or_above"))
+
+
+first = {d: query("SELECT min(ts) AS t FROM logs WHERE dataset = %(d)s", {"d": d})[0]["t"] for d in ("bgl", "openstack")}
+KF = "SELECT ts FROM logs WHERE dataset = 'bgl' AND component = 'KERNEL' AND severity = 'FATAL' AND ts >= %(s)s AND ts < %(e)s"
+for name, ws, we in (("1 h", D(2005, 11, 17, 5), D(2005, 11, 17, 6)), ("1 day", D(2005, 11, 17), D(2005, 11, 18)),
+                     ("5 min", D(2005, 11, 17, 5, 30), D(2005, 11, 17, 5, 35))):
+    rb = rate_vs_baseline(dataset="bgl", component="KERNEL", severity="FATAL", start=ws, end=we)
+    times.append(rb["elapsed_ms"])
+    check(f"rate_vs_baseline KERNEL FATAL {name} window vs Python", got_baseline(rb), ref_baseline(KF, ws, we, 7, first["bgl"]))
+ws, we = D(2017, 5, 16, 6), D(2017, 5, 16, 7)
+rb = rate_vs_baseline(dataset="openstack", status=503, start=ws, end=we)
+check("rate_vs_baseline clipped at OpenStack start (vs Python, clipped flag)",
+      (got_baseline(rb), rb["rows"][0]["baseline_clipped"], rb["new_in_baseline"]),
+      (ref_baseline("SELECT ts FROM logs WHERE dataset = 'openstack' AND status = 503 AND ts >= %(s)s AND ts < %(e)s",
+                    ws, we, 7, first["openstack"]), True, True))
+check("rate_vs_baseline no data before the first BGL hour",
+      rate_vs_baseline(dataset="bgl", severity="FATAL", start=D(2005, 6, 3, 15), end=D(2005, 6, 3, 16))["no_baseline_data"], True)
+check("rate_vs_baseline new pattern (R43-M0 kernel panic)",
+      rate_vs_baseline(dataset="bgl", midplane="R43-M0", query_text="kernel panic",
+                       start=D(2005, 8, 19, 13), end=D(2005, 8, 19, 15))["new_in_baseline"], True)
+
 times.sort()
 print(f"\n{len(times)} calls: median {statistics.median(times):.0f} ms, p95 {times[int(len(times) * .95) - 1]:.0f} ms, max {times[-1]:.0f} ms")
 sys.exit(1 if fails else 0)
