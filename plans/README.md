@@ -26,6 +26,7 @@ Every plan respects: `CLAUDE.md` non-negotiables, `docs/ROLES.md` (role spec), `
 | 005 | [Lead + manager tools: top_patterns + priority_table](005-lead-manager-tools.md) | Amirali | done | `feat/005-lead-manager-tools` |
 | 006 | [Jev pattern judgment (fault vs routine)](006-jev-pattern-judgment.md) | Amirali | done | `feat/006-jev-pattern-judgment` |
 | 007 | [Agent: LangGraph recipes + checker, baseline, LangSmith](007-agent.md) | Amirali | done | `feat/007-agent` |
+| 008 | [Agent split: ReAct gatherer + coverage middleware, composer](008-agent-split.md) | Amirali | done | `feat/008-agent-split` |
 | 050 | [OpenStack load + ownership](050-openstack-load.md) | Konark | done | `feat/050-openstack-load` |
 | 051 | [count_by + trend MCP tools](051-count-trend-tools.md) | Konark | done | `feat/051-count-trend-tools` |
 | 052 | [One-command reload](052-reload-publish.md) | Konark | done | `feat/051-count-trend-tools` |

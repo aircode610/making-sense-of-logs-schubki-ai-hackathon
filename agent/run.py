@@ -56,7 +56,7 @@ def _annotate(**meta) -> str | None:
 
 @traceable(name="ask", run_type="chain")
 async def ask(question: str, role: str | None, tools, run_id: str) -> dict:
-    graph = build_graph(tools)
+    graph = build_graph(tools)  # route → gather_<role> (ReAct + coverage) → handover → composer
     t0 = time.perf_counter()
     state = await graph.ainvoke(
         {"question": question, "role": role, "messages": [HumanMessage(question)]},
@@ -64,13 +64,15 @@ async def ask(question: str, role: str | None, tools, run_id: str) -> dict:
                 "tags": ["ours", role or "routed"], "metadata": {"question": question, "run": run_id}},
     )
     check = state["check"]
-    url = _annotate(role=state["role"], route=state["route"], tool_calls=state.get("tool_calls", 0),
+    url = _annotate(role=state["role"], route=state["route"], tool_calls=len(state.get("tools_used", [])),
+              tools_used=state.get("tools_used", []),
               evidence_ids=list(state.get("ledger", {})), numbers_total=check["numbers_total"],
               numbers_verified=check["numbers_verified"], confidence=check["confidence"], passed=check["passed"],
               revisions=state.get("revisions", 0), nudges=state.get("nudges", 0),
               elapsed_s=round(time.perf_counter() - t0, 1))
     return {"role": state["role"], "route": state["route"], "card": state["card"], "check": check, "trace": url,
-            "ledger": state.get("ledger", {}), "tool_calls": state.get("tool_calls", 0),
+            "ledger": state.get("ledger", {}), "tool_calls": len(state.get("tools_used", [])),
+            "tools_used": state.get("tools_used", []), "nudges": state.get("nudges", 0),
             "elapsed_s": round(time.perf_counter() - t0, 1)}
 
 

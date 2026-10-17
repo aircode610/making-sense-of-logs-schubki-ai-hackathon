@@ -1,8 +1,10 @@
 # Status (read first; keep short and current)
 
-_Last updated: 2026-10-17, plan 007 done (LangGraph agent, 3 roles, checker, LangSmith traces)._patterns + priority_table; 6 MCP tools)._
+_Last updated: 2026-10-17, plan 008 done (agent split: prebuilt ReAct gatherers + coverage middleware, composer subgraph)._patterns + priority_table; 6 MCP tools)._
 
 ## Stage: S3 — agent answers all 3 roles with checked answer cards; next: eval harness (ours vs baseline), UI
+- **Plan 008 done:** gatherer per role = prebuilt ReAct agent (`create_agent`) + CoverageMiddleware + tool limit;
+  composer subgraph (compose ⇄ check); MCP server role-neutral; all dev questions pass again (stacked on 007).
 - **Plan 007 done:** `python -m agent.run [--role …] [--baseline] "question"`; LangGraph route → gather ⇄ tools →
   coverage → compose → check; every number verified against cited SQL results (25/25, 86/86, 47/47; baseline 30/34);
   Jev routes the role; one LangSmith trace per question.

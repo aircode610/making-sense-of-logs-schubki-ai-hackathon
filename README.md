@@ -57,10 +57,10 @@ computed over all matches, so frequency never comes from a sample.
 
 | Tool | Purpose | Inputs | Returns |
 |---|---|---|---|
-| `search_logs` | Find log lines by message text and/or filters (engineer: locate an error, when it started, how widespread) | `query_text` (web-search syntax: words = AND, `"phrase"`, `OR`, `-word`; optional), `dataset`, `start`/`end`, `component`, `severity`, `node`, `midplane`, `rack`, `request_id`, `instance_id`, `pattern_id`, `order` (`time` / `recent` / `relevance` = BM25), `limit` ≤ 50 | matching lines (`line_id, ts, component, severity, node, body`, …) + over all matches: `total_matches`, `first_ts`, `last_ts`, `distinct_nodes` |
+| `search_logs` | Find log lines by message text and/or filters (locate an error, when it started, how widespread) | `query_text` (web-search syntax: words = AND, `"phrase"`, `OR`, `-word`; optional), `dataset`, `start`/`end`, `component`, `severity`, `node`, `midplane`, `rack`, `request_id`, `instance_id`, `pattern_id`, `order` (`time` / `recent` / `relevance` = BM25), `limit` ≤ 50 | matching lines (`line_id, ts, component, severity, node, body`, …) + over all matches: `total_matches`, `first_ts`, `last_ts`, `distinct_nodes` |
 | `get_context` | What happened just before and after one line, on the same node / midplane / rack (BGL) or request / VM (OpenStack) | `dataset`, `line_id`, `before_s`/`after_s` (default 300), `scope`, optional `severity`, `limit` per side ≤ 50 | `anchor`, `before` / `after` (nearest first), `before_total` / `after_total`, per-side `truncated` |
-| `top_patterns` | Team lead: which problems recur in a period, how often, where, whose, growing? | `dataset`, `start`/`end` (default: last 28 days of the dataset), `team`, `component`, `problem_only`, `problem_filter` (`jev` / `severity`), `rank_by` (`bursts` / `nodes` / `lines` / `growth`), `limit` ≤ 50 | per log pattern: template, component, team, lines, **bursts** (recurrences, 30-min gap), nodes, weeks_active, bursts in the previous period + change, `new`, `top_node_share`; both periods as absolute dates |
-| `priority_table` | Manager: computed priority of problem patterns + team roll-up | `dataset`, `start`/`end`, `limit`, `problem_filter` | ranked items with `score` = 100 × Σ weight × percentile of 5 inputs (bursts, change, nodes, persistence, Jev `p_problem`), the inputs, per-input contributions, the weights; per-team bursts now vs previous period; `unknown` (no cost/downtime/impact in logs) |
+| `top_patterns` | Which problems recur in a period, how often, where, whose, and are they growing? | `dataset`, `start`/`end` (default: last 28 days of the dataset), `team`, `component`, `problem_only`, `problem_filter` (`jev` / `severity`), `rank_by` (`bursts` / `nodes` / `lines` / `growth`), `limit` ≤ 50 | per log pattern: template, component, team, lines, **bursts** (recurrences, 30-min gap), nodes, weeks_active, bursts in the previous period + change, `new`, `top_node_share`; both periods as absolute dates |
+| `priority_table` | Computed priority ranking of problem patterns + per-team roll-up | `dataset`, `start`/`end`, `limit`, `problem_filter` | ranked items with `score` = 100 × Σ weight × percentile of 5 inputs (bursts, change, nodes, persistence, Jev `p_problem`), the inputs, per-input contributions, the weights; per-team bursts now vs previous period; `unknown` (no cost/downtime/impact in logs) |
 
 Full-text tokens are letters only (lowercased): numbers and hex ids inside messages are not searchable; use the
 `node` / `request_id` / `instance_id` filters for ids. Latency: p95 < 45 ms per call on the full corpus
@@ -68,21 +68,29 @@ Full-text tokens are letters only (lowercased): numbers and hex ids inside messa
 
 ## Agent (`agent/`, LangGraph)
 ```
-route ─► gather ⇄ tools ─► coverage ─► compose ─► check ─► END
-           ▲                  │           ▲          │
-           └── nudge (≤ 2) ───┘           └─ revise ─┘ (≤ 1)
+            ┌─► gather_engineer ─┐
+  route ────┼─► gather_lead ─────┼─► handover ─► composer ─► END
+            └─► gather_manager ──┘               (compose ─► check ─► revise ≤ 1)
 ```
+Each `gather_<role>` is a prebuilt ReAct agent (LangChain `create_agent`, the successor of LangGraph's
+`create_react_agent`) with the role's tool subset, its evidence recipe and two middlewares: **CoverageMiddleware**
+(the role checklist, sends the model back while required evidence is missing) and the built-in
+**ToolCallLimitMiddleware**. The **composer** is a separate subgraph that only sees the evidence ledger.
 - **route:** role given, or picked by **Jev** (calibrated choice, run inside SereneDB); LLM fallback.
-- **gather ⇄ tools:** the LLM follows the role's **evidence recipe** with the role's tool subset (engineer: search →
+- **gather_\<role\>:** the LLM follows the role's **evidence recipe** with the role's tool subset (engineer: search →
   context → spread; lead: top_patterns → trend → counts by team; manager: priority_table → team roll-up); tool calls run
   concurrently; every result envelope enters an **evidence ledger** keyed by `evidence_id`.
-- **coverage:** deterministic role checklist (which tools must have run); missing evidence → nudge back.
-- **compose:** the LLM writes a structured **answer card** (answer, scope, facts with evidence ids, ranked problems,
+- **coverage (middleware):** deterministic role checklist (which tools must have run); missing → nudge, ≤ 2.
+- **handover:** the gatherer's tool results → **evidence ledger** keyed by `evidence_id`.
+- **composer → compose:** the LLM writes a structured **answer card** (answer, scope, facts with evidence ids, ranked problems,
   labelled hypotheses, unknowns, next steps) from the ledger only.
-- **check:** deterministic **claim checker**: every number must be found in a result the item cites, no invented money /
+- **composer → check:** deterministic **claim checker**: every number must be found in a result the item cites, no invented money /
   downtime / customer impact, role checklist; one revision round, then unverified items are marked.
   **Confidence = computed** (verified-number rate, halved if the checklist is incomplete), never self-reported.
-- **Baseline:** the brief's reference design (`create_agent`, same tools, role prompt, free text).
+- **Baseline:** the brief's reference design: `create_agent` with all tools and a plain role prompt (no recipe, no
+  coverage, no composer), free text. Same core as our gatherers, so the eval isolates our layer.
+- **MCP server:** one server (`logs`) with all 6 tools and role-neutral descriptions; per-role subsets exist only
+  inside our agent.
 - **Tracing:** one LangSmith trace per question (`ours:<role>` / `baseline:<role>`), tags (kind, role, model), metadata
   (question, git sha, route + Jev probabilities, evidence ids, numbers verified, confidence, revisions, latency).
 

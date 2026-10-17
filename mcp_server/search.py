@@ -1,4 +1,4 @@
-"""Engineer tools: full-text search with filters, and the events around one log line."""
+"""Search tools: full-text search with filters, and the events around one log line."""
 import time
 from datetime import datetime, timedelta
 from typing import Annotated, Literal, Optional
