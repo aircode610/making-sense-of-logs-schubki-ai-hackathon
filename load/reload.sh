@@ -8,3 +8,4 @@ for f in load/00_schema.sql load/10_bgl.sql load/20_openstack.sql load/90_publis
   echo "== $f"; "${PSQL[@]}" -f "$f" | grep -E '^Time' || true
 done
 .venv/bin/python bench/check_counts.py
+.venv/bin/python bench/check_patterns.py

@@ -1,8 +1,11 @@
 # Status (read first; keep short and current)
 
-_Last updated: 2026-10-17, plans 002, 003, 004, 050, 051, 052 done (both datasets, patterns/bursts, 4 MCP tools)._
+_Last updated: 2026-10-17, plan 005 done (top_patterns + priority_table; 6 MCP tools)._
 
-## Stage: B2 — patterns + bursts for BGL; next: lead/manager tools (Amirali), OpenStack masks + count/trend (Konark)
+## Stage: B3 — 6 MCP tools (search, context, count, trend, top_patterns, priority); next: Jev pattern judgment (Amirali)
+- **Plan 005 done:** `top_patterns` + `priority_table` (score computed in SQL, reproduced independently). Measured: with
+  severity as the problem filter, priority top 10 holds 1/10 alert patterns (register dumps win) → next plan = Jev
+  "real fault or routine?" per pattern, re-measure.
 - **Plan 004 done:** `pattern_id` on every BGL row (1,126 templates, SQL masks), tables `patterns`, `bursts`,
   `episodes` (`load/95_patterns_episodes.sql`, runs after `90_publish`). Gap frozen 30 min; bursts = headline unit (H16).
   **Reload: `./load/reload.sh`** (00 → 10 → 20 → 90 → 95 + checks). Konark: OpenStack masks → `pattern_id` in `20_openstack.sql`.

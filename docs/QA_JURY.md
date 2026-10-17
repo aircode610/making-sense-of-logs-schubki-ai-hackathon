@@ -23,6 +23,8 @@ Goal: make an impression **and** get advice. Plan for 10 min: 1 min pitch · 1 m
 - MCP tools live in Claude Code: `search_logs`, `get_context` (p95 < 45 ms); kernel-panic investigation done via MCP.
 - 1,126 BGL patterns; **727 have problem severities but only 76 carry real alerts** → severity alone is a poor problem
   signal (why we judge patterns with Jev). 4.7M lines = **36,714 bursts** (lines ≠ incidents, measured).
+- Manager priority is computed in SQL (weights shown, independently reproduced). Honest finding: on severity alone the
+  top 10 holds 1/10 real alert patterns (FATAL register dumps win) → the Jev step is measured, not decorative.
 
 ## Pitch (60 s, current version — S0)
 "Logs answer different questions for different people, but an LLM reading 50 retrieved lines can't tell you how often
