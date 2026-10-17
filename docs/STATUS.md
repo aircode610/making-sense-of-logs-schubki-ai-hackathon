@@ -1,8 +1,11 @@
 # Status (read first; keep short and current)
 
-_Last updated: 2026-10-17, plans 002 + 050 done (BGL + OpenStack loaded), plan 003 done (engineer tools on MCP)._
+_Last updated: 2026-10-17, plan 004 done (BGL patterns, bursts, episodes)._
 
-## Stage: B1 — both datasets loaded + engineer tools on MCP; count/trend tools next (plan 051, Konark)
+## Stage: B2 — patterns + bursts for BGL; next: lead/manager tools (Amirali), OpenStack masks + count/trend (Konark)
+- **Plan 004 done:** `pattern_id` on every BGL row (1,126 templates, SQL masks), tables `patterns`, `bursts`,
+  `episodes` (`load/30_patterns_episodes.sql`). Gap frozen 30 min; bursts = headline unit (H16). **Schema changed:
+  re-run `00 → 10 → 20 → 30`** (00 now resets). Konark: OpenStack masks → `pattern_id` in `20_openstack.sql`.
 - **Plan 003 done:** MCP server `mcp_server/` (`search_logs`, `get_context`; registered in `.mcp.json`), counts equal
   reference, p95 < 45 ms. Konark: add `count_by`/`trend` in `mcp_server/counts.py` (plan 051), register in `server.py`; reuse `core.envelope`.
   Live Claude Code check passed (kernel-panic investigation, plan 003 §7).

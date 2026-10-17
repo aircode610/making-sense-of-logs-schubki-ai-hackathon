@@ -23,10 +23,13 @@ uv venv --python 3.12 && uv pip install -r requirements.txt
 ```
 Load the data (SereneDB reads and parses the raw files itself; schema and loaders in [`load/`](load/)):
 ```bash
-psql -h localhost -p 7890 -U postgres -d postgres -f load/00_schema.sql   # tables + full-text index
-psql -h localhost -p 7890 -U postgres -d postgres -f load/10_bgl.sql      # BGL: 4,747,963 rows, ~20 s
+psql -h localhost -p 7890 -U postgres -d postgres -f load/00_schema.sql           # (re)creates empty tables + full-text index
+psql -h localhost -p 7890 -U postgres -d postgres -f load/10_bgl.sql              # BGL: 4,747,963 rows + log templates, ~25 s
+psql -h localhost -p 7890 -U postgres -d postgres -f load/20_openstack.sql        # OpenStack: 207,820 rows + ownership, ~2 s
+psql -h localhost -p 7890 -U postgres -d postgres -f load/30_patterns_episodes.sql # patterns, bursts, episodes, ~3 s
 ```
-Loaders are re-runnable (each replaces its dataset's rows).
+`00_schema.sql` resets all data; the dataset loaders are re-runnable on their own (each replaces its dataset's rows),
+then re-run `30_patterns_episodes.sql`.
 
 Connect Claude Code to the tools: the `logs` MCP server is registered in [`.mcp.json`](.mcp.json), so running
 `claude` in this folder offers it (approve it once). Any other MCP client: stdio command `.venv/bin/python mcp_server/server.py`
@@ -44,7 +47,7 @@ computed over all matches, so frequency never comes from a sample.
 
 | Tool | Purpose | Inputs | Returns |
 |---|---|---|---|
-| `search_logs` | Find log lines by message text and/or filters (engineer: locate an error, when it started, how widespread) | `query_text` (web-search syntax: words = AND, `"phrase"`, `OR`, `-word`; optional), `dataset`, `start`/`end`, `component`, `severity`, `node`, `midplane`, `rack`, `request_id`, `instance_id`, `order` (`time` / `recent` / `relevance` = BM25), `limit` ≤ 50 | matching lines (`line_id, ts, component, severity, node, body`, …) + over all matches: `total_matches`, `first_ts`, `last_ts`, `distinct_nodes` |
+| `search_logs` | Find log lines by message text and/or filters (engineer: locate an error, when it started, how widespread) | `query_text` (web-search syntax: words = AND, `"phrase"`, `OR`, `-word`; optional), `dataset`, `start`/`end`, `component`, `severity`, `node`, `midplane`, `rack`, `request_id`, `instance_id`, `pattern_id`, `order` (`time` / `recent` / `relevance` = BM25), `limit` ≤ 50 | matching lines (`line_id, ts, component, severity, node, body`, …) + over all matches: `total_matches`, `first_ts`, `last_ts`, `distinct_nodes` |
 | `get_context` | What happened just before and after one line, on the same node / midplane / rack (BGL) or request / VM (OpenStack) | `dataset`, `line_id`, `before_s`/`after_s` (default 300), `scope`, optional `severity`, `limit` per side ≤ 50 | `anchor`, `before` / `after` (nearest first), `before_total` / `after_total`, per-side `truncated` |
 
 Full-text tokens are letters only (lowercased): numbers and hex ids inside messages are not searchable; use the

@@ -7,7 +7,7 @@ from pydantic import Field
 
 from core import MAX_ROWS, clean_row, envelope, filters_sql, query, render
 
-COLS = "line_id, dataset, ts, component, severity, node, request_id, instance_id, status, latency_ms, body"
+COLS = "line_id, dataset, ts, component, severity, node, request_id, instance_id, status, latency_ms, pattern_id, body"
 
 Dataset = Annotated[Optional[Literal["bgl", "openstack"]], Field(description="Restrict to one dataset; omit for both.")]
 
@@ -31,6 +31,9 @@ def search_logs(
     rack: Annotated[Optional[str], Field(description="BGL rack, e.g. 'R02'.")] = None,
     request_id: Annotated[Optional[str], Field(description="OpenStack request id (req-…).")] = None,
     instance_id: Annotated[Optional[str], Field(description="OpenStack VM instance uuid.")] = None,
+    pattern_id: Annotated[Optional[int], Field(
+        description="Log template id (every row carries one; same id = same message with numbers/ids masked). "
+                    "Use it to fetch all lines of one recurring message, e.g. from a previous result row.")] = None,
     order: Annotated[Literal["time", "recent", "relevance"], Field(
         description="'time' = earliest first (where/when did it start), 'recent' = latest first, "
                     "'relevance' = best BM25 match first.")] = "time",
@@ -46,7 +49,7 @@ def search_logs(
     """
     t0 = time.perf_counter()
     f = dict(dataset=dataset, start=start, end=end, component=component, severity=severity, node=node,
-             midplane=midplane, rack=rack, request_id=request_id, instance_id=instance_id)
+             midplane=midplane, rack=rack, request_id=request_id, instance_id=instance_id, pattern_id=pattern_id)
     where, params = filters_sql(f)
     if query_text:
         where = " AND body @@ websearch_to_tsquery(%(q)s)" + where

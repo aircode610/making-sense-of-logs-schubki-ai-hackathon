@@ -6,6 +6,7 @@
 
 DELETE FROM logs   WHERE dataset = 'bgl';
 DELETE FROM labels WHERE dataset = 'bgl';
+DELETE FROM pattern_templates WHERE dataset = 'bgl';
 
 CREATE TEMP TABLE bgl_stage AS
 WITH raw AS (
@@ -26,14 +27,34 @@ SELECT line_id,
        CASE WHEN r.loc LIKE 'R__-M_%' THEN r.loc END                  AS node,  -- NULL / UNKNOWN_LOCATION / '-' → NULL
        CASE WHEN r.loc LIKE 'R__-M_%' THEN substr(r.loc, 1, 3) END    AS rack,
        CASE WHEN r.loc LIKE 'R__-M_%' THEN substr(r.loc, 1, 6) END    AS midplane,
-       nullif(r.body, '')                                             AS body
+       nullif(r.body, '')                                             AS body,
+       -- Template (plan 004): mask variable parts, most specific first, then merge runs of masks.
+       regexp_replace(regexp_replace(regexp_replace(regexp_replace(regexp_replace(regexp_replace(regexp_replace(
+           r.body,
+           '([0-9A-Fa-f]{2}:){3,}[0-9A-Fa-f]{1,2}', '<MAC>', 'g'),                    -- FF:F2:9F:16:BF:44
+           'R\d\d-M[01](-N[0-9A-F])?(-[CIL])?(:J\d\d-U\d\d)?', '<LOC>', 'g'),            -- R02-M1-N0-C:J12-U11
+           '(Mon|Tue|Wed|Thu|Fri|Sat|Sun) (Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec) +\d+ [\d:]+ [A-Z]{3} \d{4}',
+           '<DATE>', 'g'),
+           '(0x)?[0-9a-fA-F]{6,}', '<HEX>', 'g'),
+           '\d+(\.\d+)*', '<N>', 'g'),
+           '(<N>|<HEX>)([:./\-x,]*(<N>|<HEX>))+', '<N>', 'g'),
+           '\s+', ' ', 'g')                                                AS template
 FROM p;
 
+-- pattern_id = rank of (first occurrence, component, template): stable across reloads.
+CREATE TEMP TABLE bgl_pat AS
+SELECT component, template, row_number() OVER (ORDER BY first_ts, component, template)::INTEGER AS pattern_id
+FROM (SELECT component, coalesce(template, '') AS template, min(ts) AS first_ts FROM bgl_stage GROUP BY 1, 2);
+
 -- Insert in time order so zonemaps prune time filters.
-INSERT INTO logs (dataset, line_id, ts, component, severity, node, rack, midplane, body)
-SELECT 'bgl', line_id, ts, component, severity, node, rack, midplane, body
-FROM bgl_stage ORDER BY ts, line_id;
+INSERT INTO logs (dataset, line_id, ts, component, severity, node, rack, midplane, body, pattern_id)
+SELECT 'bgl', s.line_id, s.ts, s.component, s.severity, s.node, s.rack, s.midplane, s.body, p.pattern_id
+FROM bgl_stage s JOIN bgl_pat p ON p.component = s.component AND p.template = coalesce(s.template, '')
+ORDER BY s.ts, s.line_id;
 
 INSERT INTO labels SELECT 'bgl', line_id, label FROM bgl_stage WHERE label <> '-';
 
+INSERT INTO pattern_templates SELECT 'bgl', pattern_id, component, template FROM bgl_pat;
+
 DROP TABLE bgl_stage;
+DROP TABLE bgl_pat;

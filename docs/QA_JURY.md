@@ -17,6 +17,13 @@ Goal: make an impression **and** get advice. Plan for 10 min: 1 min pitch · 1 m
 | S3 agent + 3 roles | one question, three answer cards | role recipes, checker |
 | S4 eval | baseline vs ours table | measured wins |
 
+## Numbers we can show now (S2, 2026-10-17, plans 002–004 + 050)
+- Load by SereneDB itself: BGL 4.7M + OpenStack 208k lines + templates + bursts in **≈ 31 s** (emulated amd64); counts
+  equal awk. Group-bys 3–85 ms straight from the inverted index.
+- MCP tools live in Claude Code: `search_logs`, `get_context` (p95 < 45 ms); kernel-panic investigation done via MCP.
+- 1,126 BGL patterns; **727 have problem severities but only 76 carry real alerts** → severity alone is a poor problem
+  signal (why we judge patterns with Jev). 4.7M lines = **36,714 bursts** (lines ≠ incidents, measured).
+
 ## Pitch (60 s, current version — S0)
 "Logs answer different questions for different people, but an LLM reading 50 retrieved lines can't tell you how often
 something happens, and it can't be trusted with numbers. Our design: **SereneDB counts, Jev judges, the LLM explains, and
@@ -27,16 +34,16 @@ patterns by team and trend; manager: a computed, auditable priority table. Every
 citations, hypotheses, unknowns and a next step, and we measure groundedness against a plain ReAct baseline."
 
 ## Questions for the jury (ranked; pick 2–3 for the slot)
-1. **Incidents vs lines:** for BGL, would you accept "episodes" (bursts of the same pattern per node, split by time gap)
-   as the unit for "recurring problems", reported next to raw line counts? Or do you expect line counts only?
+1. **Incidents vs lines:** we report **bursts** (same pattern anywhere, split by a 30-min gap: 4.7M BGL lines → 36,714
+   bursts) next to raw line counts and node spread. Is that a convincing unit for "recurring problems"?
 2. **In-database AI:** is classifying *patterns* inside SereneDB with `ai_system_one` (Jev) — then aggregating those
    judgments in SQL — in the spirit of "the database calculates", or do you want all judgment in the agent?
 3. **Demo surface:** for judging, do you prefer Claude connected to our MCP server, or our own UI that shows the answer
    card and evidence? (We plan both on the same tools — which should the 5-minute demo lead with?)
 4. **Labels:** may we use BGL alert labels / OpenStack anomaly ids to *evaluate* our answers (not as agent input)?
 5. **Worked investigation:** is there a BGL period or issue you'd find most convincing (e.g. a KERNDTLB storm), or is our choice part of the score?
-6. **Clean checkout:** loading 4.7M lines under Docker emulation takes minutes — is a pre-load step acceptable, or should
-   the judges' run load everything from scratch?
+6. **Clean checkout:** the full load from raw files takes ≈ 31 s, so judges load from scratch. Any constraint on the
+   judges' machines we should know (Apple Silicon emulation, RAM)?
 
 ## Log (append after each conversation)
 | When | Who | Asked | Answer / advice | Action |
