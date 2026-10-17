@@ -1,8 +1,11 @@
 # Status (read first; keep short and current)
 
-_Last updated: 2026-10-17, plan 008 done (agent split: prebuilt ReAct gatherers + coverage middleware, composer subgraph)._patterns + priority_table; 6 MCP tools)._
+_Last updated: 2026-10-17, plan 009 done (eval: ours vs baseline, deterministic + Opus judge)._patterns + priority_table; 6 MCP tools)._
 
-## Stage: S3 — agent answers all 3 roles with checked answer cards; next: eval harness (ours vs baseline), UI
+## Stage: S4 — eval done (dev set): ours beats the baseline on grounding and quality, at ~2.6× latency; next: checker covers all card sections, UI, worked investigation
+- **Plan 009 done:** `python -m eval.run_eval` (LangSmith experiments). Ours vs baseline: claim support 0.89 vs 0.59,
+  numbers grounded 0.99 vs 0.85, golden facts 0.79 vs 0.59, rubric 4.53 vs 3.91, pairwise 10-4; 34 s vs 13 s per answer.
+  Humans: rate `eval/results/human_check.md` (judge sanity); write the private question set, then run its runner.
 - **Plan 008 done:** gatherer per role = prebuilt ReAct agent (`create_agent`) + CoverageMiddleware + tool limit;
   composer subgraph (compose ⇄ check); MCP server role-neutral; all dev questions pass again (stacked on 007).
 - **Plan 007 done:** `python -m agent.run [--role …] [--baseline] "question"`; LangGraph route → gather ⇄ tools →
@@ -64,5 +67,7 @@ count/trend tools. **Jury Q&A today 18:50–19:00 CEST** (`docs/QA_JURY.md`).
 - UI: Streamlit (default) vs something nicer if time allows.
 
 ## Results table (fill after each eval run)
-| Run | E1 | E2 | E4 | E6 | E7 | latency | $ |
-|---|---|---|---|---|---|---|---|
+| Run | E1 | E2a / E2c | E4 evid. | E6 | E7 | rubric | pairwise | latency |
+|---|---|---|---|---|---|---|---|---|
+| dev 2026-10-17 ours (`151ec54`) | 0.79 | 0.99 / 0.89 | 0.02 | priority top-10 5/10 (plan 006) | 1.00 | 4.53 | 10 | 34 s |
+| dev 2026-10-17 baseline | 0.59 | 0.85 / 0.59 | 0.04 | — | 0.83 | 3.91 | 4 | 13 s |

@@ -4,6 +4,8 @@
   fewer decimals matches its rounding; "35%" also matches 0.35). Dates and times are matched as text.
 - Numbers in the answer / next steps must appear somewhere in the ledger (they carry no citation).
 - Integers 0-10 are not checked (ranks, "top 3", list counts) and identifiers (R02-M1, J18-U11, ev-…) are skipped.
+- Calendar words in prose are not counts: years 1990-2035 and day numbers next to a month name ("August 19",
+  "19 Aug") are skipped (the evidence stores dates as 2005-08-19, which is matched as a date).
 - Forbidden claims (brief: no invented money, downtime or customer impact) outside the `unknowns` section.
 - Role checklist (ROLES.md acceptance): which tools must have run and which card sections must be filled.
 - confidence = verified-number rate, halved if the role checklist is incomplete. Computed, never self-reported.
@@ -12,6 +14,8 @@ import json
 import re
 from decimal import ROUND_HALF_UP, Decimal
 
+MONTH = r"(?:jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*\.?"
+CALENDAR = re.compile(rf"\b{MONTH}\s+\d{{1,2}}(?:st|nd|rd|th)?\b|\b\d{{1,2}}(?:st|nd|rd|th)?\s+{MONTH}", re.I)
 DATE = re.compile(r"\b\d{4}-\d{2}-\d{2}(?:[ T]\d{2}:\d{2}(?::\d{2})?)?")
 NUM = re.compile(r"(?<![\w.:/#@-])-?\d{1,3}(?:,\d{3})+(?:\.\d+)?%?(?![\w:/-])|(?<![\w.:/#@-])-?\d+(?:\.\d+)?%?(?![\w:/-])")
 FORBIDDEN = re.compile(
@@ -77,11 +81,11 @@ def _check_text(text: str, nums: set, ledger_text: str) -> tuple[int, list[str]]
         checked += 1
         if m.group().replace("T", " ") not in ledger_text:
             bad.append(m.group())
-    rest = DATE.sub(" ", text)
+    rest = CALENDAR.sub(" ", DATE.sub(" ", text))
     for m in NUM.finditer(rest):
         tok = m.group()
         x, d, pct = _to_float(tok)
-        if not pct and d == 0 and 0 <= x <= 10:
+        if not pct and d == 0 and (0 <= x <= 10 or ("," not in tok and 1990 <= x <= 2035)):
             continue
         checked += 1
         if not _matches(tok, nums):

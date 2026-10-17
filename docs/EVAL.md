@@ -24,3 +24,24 @@ Rules
 - Golden SQL answers are written and checked by hand once, stored in `eval/golden.yaml`.
 - Keep it cheap: question set ≤ 30 (10 per role); re-run after each milestone; record the table in `STATUS.md`.
 - Honest reporting: if the baseline wins on something, we say so.
+
+## Harness (plan 009) — how to run and what each number means
+`.venv/bin/python -m eval.run_eval [--ids …] [--no-judge]` runs **ours** and the **baseline** (`create_agent`, same MCP
+tools, plain role prompt) on `eval/dev_questions.yaml` (18 questions, 6 per role, golden facts from hand-written SQL
+stored by `eval/build_golden.py`) as LangSmith experiments `ours-<sha>` / `baseline-<sha>` on dataset `logs-dev-<hash>`;
+report in `eval/results/<time>.md/.json`. The held-out set runs through the same suite via the held-out runner (humans
+only, aggregates only).
+
+| Metric | Deterministic (code) | LLM judge (`claude-opus-5-5`, structured, reasons stored as feedback) |
+|---|---|---|
+| E1 correctness | golden fact values appear in the answer (numbers exact, dates `YYYY-MM-DD HH:MM`) | — |
+| E2 groundedness | **E2a** numbers in the answer found in any tool result of the run (same rule both systems; years / day-of-month in prose and integers ≤ 10 skipped) · **E2b** ours: found in the result the fact *cites* | **E2c** every sentence → supported / unsupported / not factual against the run's evidence (rounded or derived numbers = unsupported) |
+| E3 separation | facts / hypotheses / unknowns sections present | causes stated as fact (count) |
+| E4 role distinctness | topic triples: Jaccard of tools and evidence ids between roles (lower = more distinct) | — |
+| E5 forbidden claims | money / downtime / customer-impact regex outside "unknowns" | invented impact (bool) |
+| E7 tool selection | required tools called; expected first tool | — |
+| E8 cost / latency | seconds, tool calls, input / output tokens | — |
+| Q answer quality | must-mention terms | role rubric 1-5 (role fit, next step, evidence use, separation, clarity) with anchors; **pairwise** ours vs baseline in both orders, only consistent wins count |
+
+Judge caveats: our answers carry `[ev-…]` citations, so the judge can tell the systems apart; pairwise is asked in both
+orders to cancel position bias; a human spot check of 6 answers is part of plan 009.
