@@ -446,3 +446,110 @@
   required_tools:
   - priority_table
   expected_first_tool: priority_table
+- id: D-E09
+  role: engineer
+  pattern: E2
+  dataset: ssh
+  question: On the SSH server, which IP addresses drove the failed root logins in the first week of January 2018 (2018-01-01 to 2018-01-08), and how many attempts were there?
+  golden:
+  - fact: failed root password lines in the week
+    sql: SELECT count(*) FROM logs WHERE dataset='ssh' AND ts >= '2018-01-01' AND ts < '2018-01-08' AND body @@ ts_phrase('failed password for root')
+    value: 102039
+  - fact: top attacking IP
+    match: text
+    sql: SELECT replace(e, 'ip:', '') FROM (SELECT unnest(entities) e FROM logs WHERE dataset='ssh' AND ts >= '2018-01-01' AND ts < '2018-01-08' AND body @@ ts_phrase('failed password for root')) GROUP
+      BY 1 ORDER BY count(*) DESC LIMIT 1
+    value: 59.63.188.30
+  - fact: lines of the top IP
+    sql: SELECT count(*) FROM (SELECT unnest(entities) e FROM logs WHERE dataset='ssh' AND ts >= '2018-01-01' AND ts < '2018-01-08' AND body @@ ts_phrase('failed password for root')) GROUP BY e ORDER BY
+      count(*) DESC LIMIT 1
+    value: 28766
+  must_mention:
+  - root
+  required_tools:
+  - search_logs
+  expected_first_tool: search_logs
+- id: D-E10
+  role: engineer
+  pattern: E3
+  dataset: hdfs
+  question: What happened to HDFS block blk_-1608999687919862906, step by step?
+  golden:
+  - fact: log lines of the block
+    sql: SELECT count(*) FROM logs WHERE dataset='hdfs' AND request_id='blk_-1608999687919862906'
+    value: 269
+  - fact: first line time
+    match: date
+    sql: SELECT strftime(min(ts), '%Y-%m-%d %H:%M') FROM logs WHERE dataset='hdfs' AND request_id='blk_-1608999687919862906'
+    value: 2008-11-09 20:35
+  must_mention:
+  - blk_-1608999687919862906
+  required_tools:
+  - search_logs
+  expected_first_tool: search_logs
+- id: D-L07
+  role: lead
+  pattern: L1
+  dataset: zookeeper
+  question: Which problems recurred most in the Zookeeper ensemble between 2015-07-29 and 2015-08-26, which teams own them, and what should the team investigate first?
+  golden:
+  - fact: bursts of 'caught end of stream exception' in the period
+    sql: SELECT count(*) FROM bursts b JOIN patterns p USING (dataset, pattern_id) WHERE b.dataset='zookeeper' AND p.template='caught end of stream exception' AND b.start_ts >= '2015-07-29' AND b.start_ts
+      < '2015-08-26'
+    value: 18
+  - fact: owner of that pattern
+    match: text
+    sql: SELECT o.team FROM patterns p JOIN ownership o ON o.dataset=p.dataset AND o.component=p.component WHERE p.dataset='zookeeper' AND p.template='caught end of stream exception'
+    value: client-connectivity
+  must_mention:
+  - client-connectivity
+  required_tools:
+  - top_patterns
+  expected_first_tool: top_patterns
+- id: D-L08
+  role: lead
+  pattern: L1
+  dataset: otel
+  question: In the sampled OpenTelemetry demo logs (2025-09-23 00:00 to 00:30), which services and teams have the most error-level problems?
+  golden:
+  - fact: frontend error-or-fatal lines
+    sql: SELECT count(*) FROM logs WHERE dataset='otel' AND component='frontend' AND severity IN ('ERROR','FATAL')
+    value: 176880
+  - fact: payment error-or-fatal lines
+    sql: SELECT count(*) FROM logs WHERE dataset='otel' AND component='payment' AND severity IN ('ERROR','FATAL')
+    value: 24219
+  must_mention:
+  - frontend
+  required_tools:
+  - top_patterns
+  expected_first_tool: top_patterns
+- id: D-M07
+  role: manager
+  pattern: M1
+  dataset: apache
+  question: Based on the Apache web server error log from 2005-12-01 to 2006-03-01, what should we prioritise next?
+  golden:
+  - fact: priority_table top 2 for 2005-12-01..2006-03-01, in computed order
+    match: order
+    tool: priority_table
+    args:
+      dataset: apache
+      start: '2005-12-01'
+      end: '2006-03-01'
+    value:
+    - script not found
+    - scoreboard
+  - fact: bursts of 'script not found or unable to stat' (httpd) in the period
+    sql: SELECT count(*) FROM bursts b JOIN patterns p USING (dataset, pattern_id) WHERE b.dataset='apache' AND p.component='httpd' AND p.template='script not found or unable to stat' AND b.start_ts >=
+      '2005-12-01' AND b.start_ts < '2006-03-01'
+    value: 127
+  must_mention:
+  - web-platform
+  must_not:
+  - $
+  - revenue
+  - downtime of
+  - customers affected
+  required_tools:
+  - priority_table
+  expected_first_tool: priority_table

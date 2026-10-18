@@ -13,7 +13,7 @@ import yaml
 def verify_order(qid: str, g: dict) -> None:
     sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "mcp_server"))
     import patterns
-    args = {k: datetime.fromisoformat(v) if k in ("start", "end") else v for k, v in g["args"].items()}
+    args = {k: datetime.fromisoformat(str(v)) if k in ("start", "end") else v for k, v in g["args"].items()}
     items = getattr(patterns, g["tool"])(**args, limit=len(g["value"]))["items"]
     got = [i["template"] for i in items]
     if len(got) < len(g["value"]) or any(ph.lower() not in t.lower() for ph, t in zip(g["value"], got)):
