@@ -16,6 +16,7 @@ import outliers
 import ownership
 import patterns
 import remote
+import resources
 import search
 import semantic
 import session
@@ -221,6 +222,36 @@ def set_priorities(question: str) -> str:
             "Answer: top 3 in the computed order with owner team, measured basis and an action to decide or fund; "
             "state that cost, downtime and customer impact are not in the logs.")
 
+
+@mcp.prompt(title="Worked investigation: one topic, three roles")
+def worked_investigation(topic: str, period: str = "", dataset: str = "") -> str:
+    """Run the whole workflow on one topic: an engineer answer, a team-lead answer and a manager answer, each from the
+    evidence that role needs (not the same evidence at three lengths), with the queries behind every number."""
+    where = (f" on dataset {dataset}" if dataset else "") + (f", period {period}" if period else "")
+    return (f"Worked investigation of: {topic}{where}.\n\n"
+            "Use the logs tools; switch datasets with use_dataset when needed. Write three short sections, each with "
+            "Facts (every number followed by the step it came from, e.g. [step 3]), Hypothesis (labelled, with what "
+            "would confirm it), Unknown, Next step:\n"
+            "1. ENGINEER: one concrete occurrence: search_logs (full-text, time filter) → get_context / burst_timeline "
+            "(before and after) → spread, pattern_history. Next step = the check to run.\n"
+            "2. TEAM LEAD: the same problem as a recurring pattern over a stated period: top_patterns, trend or heatmap, "
+            "rollup by team → component (ownership table). Next step = what the team investigates first.\n"
+            "3. MANAGER: priority_table for the period (computed order, explain it, do not re-rank), reliability_trend. "
+            "Next step = a decision; state that cost, downtime and customer impact are not in the logs.\n"
+            "End with a two-line 'What the data does and does not establish', then call session_report.")
+
+
+@mcp.prompt(title="Whole-corpus counts (every loaded dataset)")
+def whole_corpus_counts(group_by: str = "team", severity: str = "") -> str:
+    """Counts over the WHOLE base corpus, not a sample: one count_by per loaded dataset, reported together."""
+    sev = f" with severity={severity}" if severity else ""
+    return (f"For every loaded dataset (setup_status lists them): use_dataset(name), then count_by(group_by='{group_by}'"
+            f"{sev}) over the dataset's whole span (no start / end). Report one table: dataset, {group_by}, lines, and "
+            "each dataset's total_lines, with the scope and filters of each count. Lines are log entries, not incidents. "
+            "Switch back to the dataset that was active at the start. Then call session_report.")
+
+
+resources.register(mcp)
 
 if __name__ == "__main__":
     mcp.run()

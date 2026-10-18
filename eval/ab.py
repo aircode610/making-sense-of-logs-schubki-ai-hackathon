@@ -48,13 +48,13 @@ from langchain.agents import create_agent
 from langchain.agents.middleware import ToolCallLimitMiddleware
 from langchain.chat_models import init_chat_model
 from langchain_core.callbacks import AsyncCallbackHandler, get_usage_metadata_callback
-from langchain_core.messages import HumanMessage
+from langchain_core.messages import AIMessage, HumanMessage, ToolMessage
 from langchain_core.tools import tool
 from langchain_mcp_adapters.client import MultiServerMCPClient
 from pydantic import BaseModel, Field
 
 from agent import prompts
-from agent.graph import OLD_ROLE_TOOLS, ROLE_TOOLS, build_graph, gather_system
+from agent.graph import OLD_ROLE_TOOLS, ROLE_TOOLS, build_baseline, build_graph, gather_system, parse_envelope
 from agent.run import mcp_config
 from eval.judge import JUDGE_MODEL, ROLE_NEEDS
 from eval.metrics import answer_text_from_card, golden_hits
@@ -64,6 +64,7 @@ ARM_DEFS = {
     "new": (ROLE_TOOLS, prompts.NEUTRAL_RECIPES, True),           # current tools, tool-neutral prompt (plan 013 arm)
     "old": (OLD_ROLE_TOOLS, prompts.NEUTRAL_RECIPES, True),       # plan-010 tools, same prompt
     "product": (ROLE_TOOLS, prompts.RECIPES, False),              # current tools with the product recipes
+    "baseline": (None, None, False),                              # the brief's reference ReAct agent, every tool (plan 017)
 }
 ARMS = ("new", "old")   # set from --arms in main(); first = A, second = B
 KEYS = ROOT / "eval/answer_keys"
@@ -148,7 +149,29 @@ def timing(t: Timer, wall: float, ledger: dict) -> dict:
             "llm_calls": len(t.spans["llm"]), "per_tool": per_tool}
 
 
+async def run_baseline(agent, q: dict) -> dict:
+    """The reference ReAct agent: free-text answer, ledger = every tool envelope it received."""
+    t0 = time.perf_counter()
+    tm = Timer()
+    try:
+        with get_usage_metadata_callback() as cb:
+            s = await agent.ainvoke({"messages": [HumanMessage(q["question"])]}, config={"recursion_limit": 40, "callbacks": [tm]})
+        tin, tout = _tokens(cb)
+        wall = time.perf_counter() - t0
+        ledger = {env["evidence_id"]: env for m in s["messages"] if isinstance(m, ToolMessage)
+                  for env in [parse_envelope(m)] if env}
+        final = next(m for m in reversed(s["messages"]) if isinstance(m, AIMessage))
+        text = final.content if isinstance(final.content, str) else "".join(
+            b.get("text", "") for b in final.content if isinstance(b, dict))
+        return {"text": text, "ledger": ledger, "tools_used": [m.name for m in s["messages"] if isinstance(m, ToolMessage)],
+                "elapsed_s": round(wall, 1), "tokens_in": tin, "tokens_out": tout, "timing": timing(tm, wall, ledger)}
+    except Exception as e:  # noqa: BLE001
+        return {"text": "", "error": f"{type(e).__name__}: {e}"[:500], "elapsed_s": round(time.perf_counter() - t0, 1)}
+
+
 async def run_arm(graph, q: dict) -> dict:
+    if isinstance(graph, tuple):                                   # ("baseline", agent)
+        return await run_baseline(graph[1], q)
     t0 = time.perf_counter()
     tm = Timer()
     try:
@@ -413,7 +436,7 @@ async def main() -> int:
     titles = {t.description.split("\n")[0].strip().rstrip("?.") for ts in toolsets.values() for t in ts if t.description} - {""}
     titles = {x for x in titles if len(x) > 25}                        # long first lines only (not common words)
     pin = None if a.unpinned else datasets[0]
-    shared = [arm for arm in ARMS if ARM_DEFS[arm][1] is ARM_DEFS[ARMS[0]][1]]
+    shared = [arm for arm in ARMS if ARM_DEFS[arm][1] is ARM_DEFS[ARMS[0]][1] and arm != "baseline"]
     prompts_identical = len(shared) == 2 and all(
         gather_system(r, ARM_DEFS[ARMS[0]][1], ARM_DEFS[ARMS[0]][2], pin) ==
         gather_system(r, ARM_DEFS[ARMS[1]][1], ARM_DEFS[ARMS[1]][2], pin) for r in ROLE_TOOLS)
@@ -425,7 +448,12 @@ async def main() -> int:
                 sys.exit(f"tool names in the {arm} prompt: {leak}")
     graphs = {}
 
-    def graph_for(arm: str, ds: str):
+    def graph_for(arm: str, ds: str, role: str = ""):
+        if arm == "baseline":
+            key = (arm, ds, role)
+            if key not in graphs:
+                graphs[key] = ("baseline", build_baseline(tools_for(ds), role, dataset=None if a.unpinned else ds))
+            return graphs[key]
         key = (arm, None if a.unpinned else ds)
         if key not in graphs:
             rt, rec, neutral = ARM_DEFS[arm]
@@ -453,7 +481,7 @@ async def main() -> int:
                 rnd = random.Random(f"{a.seed}-run-{q['id']}")
                 order = sorted([x for x in ARMS if x not in runs], key=lambda _: rnd.random())  # random first arm
                 for arm in order:                                     # sequential: the two arms never share the DB
-                    runs[arm] = await run_arm(graph_for(arm, q["dataset"]), q)
+                    runs[arm] = await run_arm(graph_for(arm, q["dataset"], q["role"]), q)
             row = {"id": q["id"], "role": q["role"], "dataset": q["dataset"], "runs": runs,
                    "E1": {arm: (golden_hits(q, runs[arm]["text"])[0] / len(q["golden"]) if q.get("golden") and runs[arm]["text"] else None)
                           for arm in ARMS}}
@@ -480,9 +508,10 @@ async def main() -> int:
            "agent_model": os.environ.get("AGENT_MODEL", "anthropic:claude-sonnet-5-5"), "judge_model": JUDGE_MODEL,
            "seed": a.seed, "prompts_identical": prompts_identical, "leaks": all_leaks,
            "tally": tally(rows), "arms": {arm: arm_stats(rows, arm) for arm in ARMS},
-           "pinned": not a.unpinned, "reuse": a.reuse, "arm_defs": {arm: {"tools": "plan-010" if ARM_DEFS[arm][0] is OLD_ROLE_TOOLS
+           "pinned": not a.unpinned, "reuse": a.reuse, "arm_defs": {arm: ({"tools": "all read-only", "recipes": "reference ReAct (brief)"} if arm == "baseline" else
+                                                                  {"tools": "plan-010" if ARM_DEFS[arm][0] is OLD_ROLE_TOOLS
                                                                    else "current", "recipes": "neutral" if ARM_DEFS[arm][2]
-                                                                   else "product"} for arm in ARMS},
+                                                                   else "product"}) for arm in ARMS},
            "per_tool": per_tool_table(rows),
            "rows": [{k: v for k, v in r.items() if k != "runs"} | {"tools": {arm: r["runs"][arm].get("tools_used", [])
                                                                              for arm in ARMS}} for r in rows]}

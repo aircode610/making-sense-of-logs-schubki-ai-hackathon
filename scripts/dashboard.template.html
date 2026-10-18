@@ -1,0 +1,256 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Eval Dashboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Urbanist:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #ffffff; --surface: #ffffff; --mist: #f0f2f5; --line: #e7e7e7; --ink: #11121d; --ink-2: #506182;
+  --muted: #6b7386; --accent: #4a7aad; --brand-a: #a162f0; --brand-b: #3e318c;
+  --s-a: #2a78d6; --s-b: #eb6834; --s-tie: #b9bec9; --s-inc: #dde0e6; --ok: #16a34a; --bad: #c2410c;
+  --sans: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; --display: "Urbanist", var(--sans);
+  --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; color-scheme: light;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #1c1c1c; --surface: #212121; --mist: #171717; --line: rgba(255,255,255,.1); --ink: #f0efec; --ink-2: #c3c2b7;
+  --muted: #9097a8; --accent: #80beff; --s-a: #3987e5; --s-b: #d95926; --s-tie: #5b606b; --s-inc: #3a3e46;
+  --ok: #22c55e; --bad: #f97316; color-scheme: dark; } }
+:root[data-theme="dark"] {
+  --bg: #1c1c1c; --surface: #212121; --mist: #171717; --line: rgba(255,255,255,.1); --ink: #f0efec; --ink-2: #c3c2b7;
+  --muted: #9097a8; --accent: #80beff; --s-a: #3987e5; --s-b: #d95926; --s-tie: #5b606b; --s-inc: #3a3e46;
+  --ok: #22c55e; --bad: #f97316; color-scheme: dark; }
+* { box-sizing: border-box; }
+html, body { margin: 0; background: var(--bg); color: var(--ink); font: 15px/1.6 var(--sans); }
+.wrap { max-width: 1040px; margin: 0 auto; padding: 28px 16px 80px; }
+h1, h2, h3 { font-family: var(--display); letter-spacing: -.01em; line-height: 1.2; }
+h1 { font-size: 30px; margin: 0 0 6px; font-weight: 700; }
+h2 { font-size: 21px; margin: 44px 0 6px; font-weight: 650; }
+h3 { font-size: 15px; margin: 0 0 6px; font-weight: 600; }
+p.lead { color: var(--ink-2); margin: 0 0 18px; max-width: 760px; }
+.sub { color: var(--muted); font-size: 13px; }
+code { word-break: break-word; font-family: var(--mono); font-size: .88em; background: var(--mist); padding: 1px 5px; border-radius: 4px; }
+pre { max-width: 100%; white-space: pre-wrap; word-break: break-word; font-family: var(--mono); font-size: 13px; background: var(--mist); padding: 12px 14px; border-radius: 10px; overflow-x: auto; margin: 8px 0; }
+a { color: var(--accent); }
+.top { display: flex; align-items: center; gap: 10px; margin-bottom: 26px; }
+.mark { width: 24px; height: 24px; border-radius: 7px; background: linear-gradient(135deg, var(--brand-a), var(--brand-b)); }
+.brand { font-family: var(--display); font-weight: 600; }
+.brand span { color: var(--muted); font-weight: 500; }
+#theme { margin-left: auto; border: 1px solid var(--line); background: var(--surface); border-radius: 8px; padding: 4px 10px; cursor: pointer; color: var(--ink); }
+.tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; margin: 18px 0; }
+.tile { border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px; background: var(--surface); }
+.tile .k { font-size: 13px; color: var(--muted); }
+.tile .v { font-family: var(--display); font-size: 26px; font-weight: 700; margin-top: 2px; }
+.tile .v small { font-size: 14px; font-weight: 500; color: var(--muted); }
+.tile .d { font-size: 13px; color: var(--ink-2); }
+.legend { display: flex; gap: 16px; flex-wrap: wrap; font-size: 13px; color: var(--ink-2); margin: 6px 0 10px; }
+.sw { display: inline-block; width: 11px; height: 11px; border-radius: 3px; margin-right: 6px; vertical-align: -1px; }
+.bars .bar-row { display: grid; grid-template-columns: 210px 1fr 110px; gap: 10px; align-items: center; margin: 7px 0; font-size: 14px; }
+.bars .lbl { color: var(--ink-2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.track { display: flex; gap: 2px; height: 22px; }
+.seg { height: 100%; position: relative; cursor: default; }
+.seg:first-child { border-radius: 4px 0 0 4px; } .seg:last-child { border-radius: 0 4px 4px 0; }
+.seg:only-child { border-radius: 4px; }
+.seg span { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 600; color: #fff; }
+.seg.light span { color: var(--ink); }
+.val { font-size: 13px; color: var(--muted); font-variant-numeric: tabular-nums; }
+#tip { position: fixed; pointer-events: none; background: var(--ink); color: var(--bg); font-size: 12.5px; padding: 6px 9px; border-radius: 7px; opacity: 0; transition: opacity .1s; z-index: 10; max-width: 280px; }
+table { width: 100%; border-collapse: collapse; font-size: 14px; }
+th, td { text-align: left; padding: 7px 8px; border-bottom: 1px solid var(--line); vertical-align: top; }
+th { font-weight: 600; color: var(--muted); font-size: 12.5px; }
+td.n { font-variant-numeric: tabular-nums; text-align: right; } th.n { text-align: right; }
+.better { color: var(--ok); font-weight: 600; }
+.timeline { border-left: 2px solid var(--line); margin: 14px 0 0 6px; padding-left: 20px; }
+.step { position: relative; margin-bottom: 18px; }
+.step::before { content: ""; position: absolute; left: -27px; top: 6px; width: 12px; height: 12px; border-radius: 50%; background: var(--surface); border: 2px solid var(--accent); }
+.step .what { font-weight: 600; }
+.step .num { font-family: var(--display); font-weight: 700; font-size: 18px; }
+.step .src { font-size: 12.5px; color: var(--muted); }
+.filters { display: flex; gap: 8px; flex-wrap: wrap; margin: 12px 0; }
+select, input { font: inherit; font-size: 14px; border: 1px solid var(--line); border-radius: 8px; padding: 5px 8px; background: var(--surface); color: var(--ink); }
+.q { border: 1px solid var(--line); border-radius: 10px; margin: 8px 0; background: var(--surface); }
+.q > summary { cursor: pointer; padding: 10px 12px; display: grid; grid-template-columns: 52px minmax(0,1fr) auto; gap: 10px; list-style: none; align-items: start; }
+.q > summary::-webkit-details-marker { display: none; }
+.q .id { font-family: var(--mono); font-size: 12.5px; color: var(--muted); padding-top: 2px; }
+.pill { font-size: 12px; padding: 2px 8px; border-radius: 99px; max-width: 96px; text-align: center; font-weight: 600; }
+.pill.a { background: color-mix(in srgb, var(--s-a) 18%, transparent); color: var(--s-a); }
+.pill.b { background: color-mix(in srgb, var(--s-b) 18%, transparent); color: var(--s-b); }
+.pill.t { background: var(--mist); color: var(--muted); }
+.qbody { padding: 0 12px 12px; }
+.cols { display: grid; grid-template-columns: minmax(0,1fr) minmax(0,1fr); gap: 12px; }
+.ans { background: var(--mist); border-radius: 8px; padding: 10px 12px; font-size: 13px; white-space: pre-wrap; max-height: 340px; overflow: auto; }
+.reason { font-size: 14px; color: var(--ink-2); margin: 6px 0 10px; }
+.meta { font-size: 12.5px; color: var(--muted); margin-top: 4px; }
+.note { border-left: 3px solid var(--accent); padding: 4px 12px; color: var(--ink-2); font-size: 14px; margin: 10px 0; }
+@media (max-width: 720px) { .cols { grid-template-columns: minmax(0,1fr); } .bars .bar-row { grid-template-columns: 90px 1fr 70px; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+<div class="top"><div class="mark"></div><div class="brand">Making Sense of Logs <span>· eval dashboard</span></div>
+<button id="theme" aria-label="Toggle theme">Theme</button></div>
+
+<h1>Does our agent beat the reference design?</h1>
+<p class="lead" id="lead"></p>
+<div class="tiles" id="tiles"></div>
+
+<h2>Wins on the 50 golden questions</h2>
+<p class="sub">A blind Opus judge compares the two answers twice, with their order swapped. A win counts only when both orders agree; disagreements are shown as inconsistent.</p>
+<div class="legend" id="legend"></div>
+<div class="bars" id="bars-all"></div>
+<h3 style="margin-top:22px">Base corpus vs the other datasets</h3>
+<div class="bars" id="bars-scope"></div>
+<div class="note" id="read"></div>
+<h3 style="margin-top:22px">By role</h3>
+<div class="bars" id="bars-role"></div>
+<h3 style="margin-top:22px">By dataset</h3>
+<div class="bars" id="bars-ds"></div>
+
+<h2>Per system</h2>
+<p class="sub">Means over the 50 questions. The claim counts are the judge's, checked against frozen answer keys and its own read-only SQL.</p>
+<table id="arms"></table>
+
+<h2>How we got here</h2>
+<p class="sub">Each step is a measured run that is committed in the repo. The source file is named under each step.</p>
+<div class="timeline" id="timeline"></div>
+
+<h2>Every question, both answers, the judge's reason</h2>
+<div class="filters">
+  <select id="f-role"><option value="">all roles</option></select>
+  <select id="f-ds"><option value="">all datasets</option></select>
+  <select id="f-res"><option value="">all results</option></select>
+  <input id="f-q" placeholder="search questions" size="22">
+</div>
+<div class="sub" id="count"></div>
+<div id="qs"></div>
+
+<h2>Run the evaluation yourself</h2>
+<div class="note">The questions, the answer keys and the judge are all in the repo. Each answer key holds the true answer, the SQL that established it, its result, and the traps to avoid. Keys were written by agents without context, from raw SQL and Loghub's labels.</div>
+<pre># 1. SereneDB with the datasets the questions use (base corpus + the 8 others)
+docker compose up -d
+uv run python -m loader load base            # BGL + OpenStack
+uv run python -m loader load zookeeper       # … apache, ssh, hdfs, linux, healthapp, otel as needed
+
+# 2. Keys: ANTHROPIC_API_KEY in .env (agent = AGENT_MODEL, judge = JUDGE_MODEL, default Opus)
+uv sync --extra agent
+
+# 3. The A/B: our product agent vs the brief's reference ReAct agent, same MCP tools, blind judge
+uv run python -m eval.ab --arms product,baseline                 # all 50 questions (~45 min, concurrency 5)
+uv run python -m eval.ab --arms product,baseline --ids D-E01,D-L04   # a smoke test on 2 questions
+uv run python -m eval.ab --rejudge eval/results/ab-&lt;stamp&gt;.runs.json  # re-judge stored answers only
+
+# 4. Rebuild this page from the new result
+uv run python scripts/build_dashboard.py</pre>
+<p class="sub">Files: <code>eval/dev_questions.yaml</code> (questions + golden facts) · <code>eval/answer_keys/*.yaml</code> (50 keys) ·
+<code>eval/ab.py</code> (runs, blinding, judge, report) · <code>eval/results/ab-*.md|json|runs.json</code> (reports, scores, full answers + evidence).
+How the judge stays blind: tool names and evidence ids are stripped from both answers, a leak scan stops the run if any remain, and the order of the two answers is random and seeded.</p>
+<p class="sub" id="foot"></p>
+</div>
+<div id="tip" role="tooltip"></div>
+
+<script>
+const D = /*DATA*/null;
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({"&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;"}[c]));
+const F = D.final, [A, B] = F.arms, SA = F.stats[A], SB = F.stats[B];
+const NAME = {product: "Our agent", baseline: "Reference ReAct", new: "40 tools", old: "8 tools"};
+const nm = a => NAME[a] || a;
+
+try { const t = localStorage.getItem("dash-theme"); if (t) document.documentElement.dataset.theme = t; } catch (e) {}
+$("#theme").onclick = () => {
+  const cur = document.documentElement.dataset.theme || (matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
+  const next = cur === "dark" ? "light" : "dark";
+  document.documentElement.dataset.theme = next;
+  try { localStorage.setItem("dash-theme", next); } catch (e) {}
+};
+
+const t = F.tally;
+$("#lead").innerHTML = `${F.n} questions with frozen answer keys over 9 log datasets (BGL, OpenStack and 7 more; the 3 OTel questions need the optional OTel slice, which was not loaded for this run, so neither system could answer them), for three roles. ` +
+  `<b>${nm(A)}</b> (LangGraph: role recipes, coverage checks, a claim checker) vs <b>${nm(B)}</b> (the brief's reference design: a ReAct agent with the same MCP tools). ` +
+  `Both use ${esc(F.agent)}; the judge is ${esc(F.judge)}.`;
+
+const fmt = (v, d = 2) => v == null ? "—" : (typeof v === "number" ? (+v.toFixed(d)).toLocaleString() : v);
+const tiles = [
+  ["Order-consistent wins", `${t[A]} <small>vs</small> ${t[B]}`, `${t.tie} ties · ${t.inconsistent} inconsistent`],
+  ["Claim accuracy", `${fmt(SA.claim_accuracy * 100, 1)} <small>vs ${fmt(SB.claim_accuracy * 100, 1)} %</small>`, "claims the judge confirmed"],
+  ["Wrong claims, all answers", `${SA.claims_wrong} <small>vs ${SB.claims_wrong}</small>`, "lower is better"],
+  ["Found the real problem (0–2)", `${fmt(SA.found_problem)} <small>vs ${fmt(SB.found_problem)}</small>`, "matched the key's answer"],
+  ["Role rubric (1–5)", `${fmt(SA.rubric)} <small>vs ${fmt(SB.rubric)}</small>`, "role fit, next step, evidence, separation, clarity"],
+  ["Seconds per answer", `${fmt(SA.wall_s, 0)} <small>vs ${fmt(SB.wall_s, 0)}</small>`, `inside SereneDB: ${fmt(SA["tool_db_s (server)"], 2)} s vs ${fmt(SB["tool_db_s (server)"], 2)} s`],
+];
+$("#tiles").innerHTML = tiles.map(([k, v, d]) => `<div class="tile"><div class="k">${k}</div><div class="v">${v}</div><div class="d">${d}</div></div>`).join("");
+
+const KEYS = [[A, "var(--s-a)", nm(A) + " wins"], [B, "var(--s-b)", nm(B) + " wins"], ["tie", "var(--s-tie)", "tie"], ["inconsistent", "var(--s-inc)", "inconsistent"]];
+$("#legend").innerHTML = KEYS.map(([, c, l]) => `<span><i class="sw" style="background:${c}"></i>${esc(l)}</span>`).join("");
+function bar(label, tl) {
+  const n = KEYS.reduce((s, [k]) => s + (tl[k] || 0), 0) || 1;
+  const segs = KEYS.filter(([k]) => tl[k]).map(([k, c, l]) =>
+    `<div class="seg ${k === "tie" || k === "inconsistent" ? "light" : ""}" style="flex:${tl[k]};background:${c}" data-tip="${esc(label)}: ${tl[k]} ${esc(l)}">${tl[k] / n > .07 ? `<span>${tl[k]}</span>` : ""}</div>`).join("");
+  return `<div class="bar-row"><div class="lbl" title="${esc(label)}">${esc(label)}</div><div class="track">${segs}</div><div class="val">${tl[A] || 0}–${tl[B] || 0} · ${n} q</div></div>`;
+}
+$("#bars-all").innerHTML = bar("all questions", t);
+const sl = F.slices;
+$("#bars-scope").innerHTML = Object.keys(sl).filter(k => k.startsWith("scope:")).map(k => bar(k.slice(6), sl[k])).join("");
+const rk = k => sl[k] || {};
+$("#read").innerHTML = `<b>Reading.</b> On the brief's base corpus our agent wins ${rk("scope:base corpus (BGL + OpenStack)")[A]}–${rk("scope:base corpus (BGL + OpenStack)")[B]}, and on engineer questions ${rk("role:engineer")[A]}–${rk("role:engineer")[B]}. ` +
+  `The reference agent wins more on the 7 extra datasets (${rk("scope:other 7 datasets")[A]}–${rk("scope:other 7 datasets")[B]}), mostly manager questions (${rk("role:manager")[A]}–${rk("role:manager")[B]}): ` +
+  `our manager recipe always starts from the computed priority ranking, while on a small dataset with one problem a free search digs deeper into that problem. ` +
+  `Our agent makes fewer wrong claims (${SA.claims_wrong} vs ${SB.claims_wrong}) and costs about twice the time. Inconsistent = the judge changed its mind when the order was swapped: too close to call.`;
+$("#bars-role").innerHTML = Object.keys(sl).filter(k => k.startsWith("role:")).map(k => bar(k.slice(5), sl[k])).join("");
+$("#bars-ds").innerHTML = Object.keys(sl).filter(k => k.startsWith("dataset:")).map(k => bar(k.slice(8), sl[k])).join("");
+
+const tip = $("#tip");
+document.addEventListener("mousemove", e => {
+  const s = e.target.closest("[data-tip]");
+  if (!s) { tip.style.opacity = 0; return; }
+  tip.textContent = s.dataset.tip; tip.style.opacity = 1;
+  tip.style.left = Math.min(e.clientX + 12, innerWidth - 290) + "px"; tip.style.top = (e.clientY + 14) + "px";
+});
+
+const ROWS = [["claim_accuracy", "claim accuracy", 1, 3], ["claims_wrong", "wrong claims (total)", -1, 0], ["found_problem", "found the real problem (0–2)", 1, 2],
+  ["rubric", "role rubric (1–5)", 1, 2], ["E1", "golden facts mentioned", 1, 2], ["tool_calls", "tool calls", 0, 1], ["wall_s", "seconds per answer", -1, 1],
+  ["llm_s", "  of which LLM", -1, 1], ["tool_db_s (server)", "  of which SereneDB", -1, 2], ["tokens_in", "input tokens", -1, 0], ["tokens_out", "output tokens", -1, 0]];
+$("#arms").innerHTML = `<tr><th>metric</th><th class="n">${esc(nm(A))}</th><th class="n">${esc(nm(B))}</th></tr>` + ROWS.map(([k, l, dir, d]) => {
+  const a = SA[k], b = SB[k], win = dir && a != null && b != null && a !== b ? ((a > b) === (dir > 0) ? "a" : "b") : "";
+  return `<tr><td>${esc(l)}</td><td class="n ${win === "a" ? "better" : ""}">${fmt(a, d)}</td><td class="n ${win === "b" ? "better" : ""}">${fmt(b, d)}</td></tr>`;
+}).join("");
+
+const d25 = D.dev25;
+const steps = [
+  {what: "Severity alone is not a problem signal", num: "1/10 → 5/10",
+   txt: "Of BGL's top 10 by priority, 1 was a real labelled alert when ranked by log level. After Jev judged each of the 1,126 patterns once (20 s), 5 were.", src: "plans/006-jev-pattern-judgment.md"},
+  {what: "Our agent vs the reference ReAct agent, 25 dev questions", num: `${d25["ours/all"].E2c_claim_support.toFixed(2)} vs ${d25["baseline/all"].E2c_claim_support.toFixed(2)}`,
+   txt: `Claims supported by the evidence. Next-step specificity ${d25["ours/all"].Q_next_step.toFixed(1)} vs ${d25["baseline/all"].Q_next_step.toFixed(1)}; states what the logs cannot establish ${d25["ours/all"].E3_unknowns_stated.toFixed(2)} vs ${d25["baseline/all"].E3_unknowns_stated.toFixed(2)}; pairwise 16–1.`, src: "eval/results/20261018-043511.md"},
+  ...D.hist.map(h => ({what: `Blind A/B: ${nm(h.arms[0])} vs ${nm(h.arms[1])} (50 golden questions)`, num: `${h.tally[h.arms[0]]}–${h.tally[h.arms[1]]}`,
+    txt: `Ties ${h.tally.tie}, inconsistent ${h.tally.inconsistent}. Wrong claims ${h.wrong[0]} vs ${h.wrong[1]}; found the problem ${fmt(h.found[0])} vs ${fmt(h.found[1])}.`, src: "eval/results/" + h.file.replace(".json", ".md")})),
+  {what: `Final: ${nm(A)} vs ${nm(B)} (50 golden questions)`, num: `${t[A]}–${t[B]}`,
+   txt: `Wrong claims ${SA.claims_wrong} vs ${SB.claims_wrong}; claim accuracy ${fmt(SA.claim_accuracy * 100, 1)}% vs ${fmt(SB.claim_accuracy * 100, 1)}%. Cost: ${fmt(SA.wall_s, 0)} s vs ${fmt(SB.wall_s, 0)} s per answer, and the time is spent in the LLM, not in SereneDB.`, src: "eval/results/" + F.file.replace(".json", ".md")},
+];
+$("#timeline").innerHTML = steps.map(s => `<div class="step"><div class="what">${esc(s.what)} <span class="num">${esc(s.num)}</span></div><div>${esc(s.txt)}</div><div class="src">${esc(s.src)}</div></div>`).join("");
+
+const fill = (sel, vals) => $(sel).insertAdjacentHTML("beforeend", vals.map(v => `<option value="${esc(v)}">${esc(nm(v))}</option>`).join(""));
+fill("#f-role", [...new Set(D.rows.map(r => r.role))]);
+fill("#f-ds", [...new Set(D.rows.map(r => r.dataset))].sort());
+fill("#f-res", [A, B, "tie", "inconsistent"]);
+const pill = r => r === A ? `<span class="pill a">${esc(nm(A))}</span>` : r === B ? `<span class="pill b">${esc(nm(B))}</span>` : `<span class="pill t">${esc(r)}</span>`;
+function side(x, label) {
+  const w = x.wrong_claims.length ? `<div class="meta">Wrong per judge: ${x.wrong_claims.map(esc).join(" · ")}</div>` : "";
+  return `<div><h3>${esc(label)}</h3><div class="meta">${x.tools.length} tool calls · ${fmt(x.s, 0)} s · found ${fmt(x.found, 1)}/2 · wrong ${fmt(x.wrong, 1)}</div>${w}<div class="ans">${esc(x.answer)}</div></div>`;
+}
+function renderQs() {
+  const r = $("#f-role").value, d = $("#f-ds").value, s = $("#f-res").value, q = $("#f-q").value.toLowerCase();
+  const rows = D.rows.filter(x => (!r || x.role === r) && (!d || x.dataset === d) && (!s || x.result === s) && (!q || (x.question + x.id).toLowerCase().includes(q)));
+  $("#count").textContent = `${rows.length} of ${D.rows.length} questions`;
+  $("#qs").innerHTML = rows.map(x => `<details class="q"><summary><span class="id">${esc(x.id)}</span><span>${esc(x.question)}<div class="meta">${esc(x.role)} · ${esc(x.dataset)}</div></span>${pill(x.result)}</summary>
+    <div class="qbody"><div class="reason"><b>Judge:</b> ${esc(x.reasons)}</div><div class="cols">${side(x.a, nm(A))}${side(x.b, nm(B))}</div></div></details>`).join("");
+}
+["#f-role", "#f-ds", "#f-res"].forEach(s => $(s).onchange = renderQs);
+$("#f-q").oninput = renderQs;
+renderQs();
+$("#foot").textContent = `Source: eval/results/${F.file} · git ${F.git} · built by scripts/build_dashboard.py`;
+</script>
+</body>
+</html>
