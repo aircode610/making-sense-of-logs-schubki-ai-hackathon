@@ -1,0 +1,4 @@
+dataset,component,area,confidence
+openstack,nova-api,compute/virtualisation,0.99
+openstack,nova-compute,compute/virtualisation,1.0
+openstack,nova-scheduler,compute/virtualisation,0.99

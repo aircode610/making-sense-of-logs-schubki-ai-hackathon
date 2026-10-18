@@ -48,9 +48,10 @@ ROLE_TOOLS = {
                  "value_outliers", "burst_timeline", "pattern_history", "spread", "precursors", "distinctive_terms",
                  "top_entities", "request_timeline"],
     "lead": ["describe_corpus", "top_patterns", "trend", "count_by", "rollup", "heatmap", "whats_new", "check_watchlist",
-             "find_patterns", "similar_patterns", "co_occurrence", "periodicity", "search_logs"],
+             "find_patterns", "similar_patterns", "co_occurrence", "periodicity", "search_logs", "owner_of",
+             "ownership_gaps"],
     "manager": ["describe_corpus", "priority_table", "reliability_trend", "team_risk", "rollup", "count_by",
-                "top_patterns", "trend", "whats_new", "check_watchlist"],
+                "top_patterns", "trend", "whats_new", "check_watchlist", "ownership_gaps"],
 }
 # The baseline (brief's reference design) gets every read-only corpus tool; workspace / remote write tools excluded.
 BASELINE_EXCLUDE = {"create_focus_index", "drop_focus_index", "remote_index", "explain_tool"}

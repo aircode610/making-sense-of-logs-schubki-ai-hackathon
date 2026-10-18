@@ -1,0 +1,10 @@
+dataset,component,area,confidence
+apache,Digest,web/API,0.82
+apache,LDAP,auth/security,0.98
+apache,httpd,web/API,1.0
+apache,jk2_init(),web/API,0.99
+apache,mod_jk,web/API,0.99
+apache,mod_jk2,web/API,0.99
+apache,mod_python,web/API,0.99
+apache,mod_security,auth/security,0.78
+apache,suEXEC,web/API,0.87

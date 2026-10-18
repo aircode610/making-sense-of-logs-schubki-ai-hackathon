@@ -61,7 +61,8 @@ WITH now AS (
 ), b_prev AS (
     SELECT pattern_id, count(*) AS bursts_prev FROM bursts WHERE dataset = %(d)s AND start_ts >= %(ps)s AND start_ts < %(s)s GROUP BY 1
 ), base AS (
-    SELECT p.pattern_id, p.template, p.component, coalesce(o.team, 'unowned') AS team, p.severity,
+    SELECT p.pattern_id, p.template, p.component, coalesce(o.team, 'unowned') AS team, o.source AS owner_source,
+           o.confidence AS owner_confidence, o.disputed_by AS owner_disputed_by, p.severity,
            now.lines, now.problem_lines, now.nodes, now.weeks_active,
            coalesce(b_now.bursts, 0) AS bursts, coalesce(b_prev.bursts_prev, 0) AS bursts_prev,
            coalesce(b_now.bursts, 0) - coalesce(b_prev.bursts_prev, 0) AS change,
@@ -107,7 +108,8 @@ def top_patterns(
     struggle with": one row per kind of problem (a log pattern), ranked.
     Not for: a computed priority order with weights (priority_table), one known error's lines (search_logs), patterns
     first seen in the period only (whats_new), finding a pattern by meaning (find_patterns).
-    Returns: per pattern: template, component, owner team, lines, bursts (recurrences split by > 30 min quiet),
+    Returns: per pattern: template, component, owner team (with owner_source / owner_confidence: curated or inferred,
+    see owner_of), lines, bursts (recurrences split by > 30 min quiet),
     nodes, weeks_active, bursts_prev (previous period of equal length), change, new (first seen in the period),
     top_node_share (1.0 = one node only), p_problem / kind (stored Jev judgment). Both periods as absolute dates.
     Caveats: bursts count recurrences, not confirmed incidents; lines count log entries. Default period = the
@@ -188,7 +190,8 @@ FROM ranked ORDER BY score DESC, bursts DESC, pattern_id"""
     for i, r in enumerate(allrows[:limit], 1):
         items.append({
             "rank": i, "pattern_id": r["pattern_id"], "template": r["template"], "component": r["component"],
-            "team": r["team"], "score": r["score"], "new": r["new"],
+            "team": r["team"], "owner_source": r["owner_source"], "owner_confidence": r["owner_confidence"],
+            "owner_disputed_by": r["owner_disputed_by"], "score": r["score"], "new": r["new"],
             "inputs": {"bursts": r["bursts"], "bursts_prev": r["bursts_prev"], "change": r["change"], "nodes": r["nodes"],
                        "weeks_active": r["weeks_active"], "persistence": r["persistence"],
                        "problem_share": r["problem_share"], "p_problem": r["p_problem"], "severity_input": r["severity_input"],
