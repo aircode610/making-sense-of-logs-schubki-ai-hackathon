@@ -99,7 +99,9 @@ def separation(run: dict) -> dict:
 def tool_selection(q: dict, run: dict) -> dict:
     used = run.get("tools_used", [])
     req = set(q.get("required_tools", []))
-    return {"required_called": req <= set(used), "first_tool_ok": bool(used) and used[0] == q.get("expected_first_tool"),
+    exp = q.get("expected_first_tool")
+    exp = set(exp) if isinstance(exp, list) else {exp}  # a list = several valid first tools (plan 011 atomic tools)
+    return {"required_called": req <= set(used), "first_tool_ok": bool(used) and used[0] in exp,
             "tool_calls": len(used)}
 
 

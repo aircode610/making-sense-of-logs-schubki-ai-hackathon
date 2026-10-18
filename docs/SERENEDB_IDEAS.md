@@ -1,5 +1,8 @@
 # SereneDB feature catalog → tool ideas (unfiltered)
 
+**Status (plan 011, 2026-10-18): built** — everything not marked wild except the items listed as dropped in
+`plans/011-serenedb-features.md` §7 (with the measured or practical reason). Tool reference: README "Tools".
+
 _2026-10-18. Source: a full pass over the SereneDB docs (`docs/serenedb/rendered/**`, 341 pages; MCP `serenedb-docs`),
 the brief (`docs/BRIEF.md`) and our role spec (`docs/ROLES.md`). Purpose: list **everything** SereneDB can do that is
 relevant to the challenge, as ideas for new atomic MCP tools and internal pipeline steps. Nothing here is filtered or

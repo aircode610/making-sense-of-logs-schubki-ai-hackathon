@@ -4,6 +4,7 @@
 # match: number (default) | date (YYYY-MM-DD HH:MM prefix) | text | order (E6, plan 010: hand-picked phrases of the
 #   computed top items, in rank order; `tool` + `args` = the call build_golden.py re-runs to verify them).
 # must_mention: strings the answer must contain; must_not: strings it must not contain outside its unknowns.
+# expected_first_tool: one tool or a list of valid first tools.
 # topic: questions sharing a topic are the same subject asked by different roles (E4 role distinctness).
 
 - id: D-E01
@@ -67,7 +68,9 @@
   required_tools:
   - search_logs
   - get_context
-  expected_first_tool: search_logs
+  expected_first_tool:
+  - search_logs
+  - request_timeline
 - id: D-E04
   role: engineer
   pattern: E4
@@ -205,7 +208,9 @@
   required_tools:
   - top_patterns
   - trend
-  expected_first_tool: top_patterns
+  expected_first_tool:
+  - top_patterns
+  - find_patterns
 - id: D-L03
   role: lead
   pattern: L3
@@ -242,7 +247,9 @@
   - node-platform
   required_tools:
   - top_patterns
-  expected_first_tool: top_patterns
+  expected_first_tool:
+  - top_patterns
+  - find_patterns
 - id: D-L05
   role: lead
   pattern: L1
@@ -445,7 +452,9 @@
   - customers affected
   required_tools:
   - priority_table
-  expected_first_tool: priority_table
+  expected_first_tool:
+  - priority_table
+  - reliability_trend
 - id: D-E09
   role: engineer
   pattern: E2
@@ -468,7 +477,9 @@
   - root
   required_tools:
   - search_logs
-  expected_first_tool: search_logs
+  expected_first_tool:
+  - search_logs
+  - top_entities
 - id: D-E10
   role: engineer
   pattern: E3
@@ -486,7 +497,9 @@
   - blk_-1608999687919862906
   required_tools:
   - search_logs
-  expected_first_tool: search_logs
+  expected_first_tool:
+  - search_logs
+  - request_timeline
 - id: D-L07
   role: lead
   pattern: L1
@@ -522,7 +535,9 @@
   - frontend
   required_tools:
   - top_patterns
-  expected_first_tool: top_patterns
+  expected_first_tool:
+  - top_patterns
+  - rollup
 - id: D-M07
   role: manager
   pattern: M1

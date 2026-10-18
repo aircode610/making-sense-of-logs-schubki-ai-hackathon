@@ -1,0 +1,3766 @@
+{
+ "dataset": "logs-dev (25 questions)",
+ "experiments": {
+  "ours": "ours-0165614-820c2ef5",
+  "baseline": "baseline-151ec54-2230bd25 (reused) (reused)"
+ },
+ "git": "9df714e",
+ "judge_model": "anthropic:claude-opus-5-5",
+ "repeat": 1,
+ "aggregates": {
+  "ours/all": {
+   "n": 25,
+   "error_rate": 0.0,
+   "E1_correct": 0.868,
+   "E2a_ledger_grounded": 0.998,
+   "E2b_citation_grounded": 1.0,
+   "E2d_jev_support": 0.683,
+   "E2c_claim_support": 0.947,
+   "E3_causes_as_fact": 0.24,
+   "E3_unknowns_stated": 1.0,
+   "E5_forbidden_runs": 0,
+   "E5_must_not_runs": 0,
+   "E5_judge_invented_impact": 0.0,
+   "E7_required_tools": 1.0,
+   "E7_first_tool": 0.72,
+   "Q_rubric_mean": 4.568,
+   "Q_role_fit": 4.88,
+   "Q_next_step": 4.44,
+   "mentions": 1.0,
+   "E8_tool_calls": 5.16,
+   "E8_elapsed_s": 35.996,
+   "E8_tool_s": 0.328,
+   "E8_other_s": 35.664,
+   "E8_tokens_in": 94235.76,
+   "E8_tokens_out": 4786.8
+  },
+  "ours/engineer": {
+   "n": 10,
+   "error_rate": 0.0,
+   "E1_correct": 0.95,
+   "E2a_ledger_grounded": 0.998,
+   "E2b_citation_grounded": 1.0,
+   "E2d_jev_support": 0.632,
+   "E2c_claim_support": 0.961,
+   "E3_causes_as_fact": 0.0,
+   "E3_unknowns_stated": 1.0,
+   "E5_forbidden_runs": 0,
+   "E5_must_not_runs": 0,
+   "E5_judge_invented_impact": 0.0,
+   "E7_required_tools": 1.0,
+   "E7_first_tool": 0.7,
+   "Q_rubric_mean": 4.78,
+   "Q_role_fit": 5.0,
+   "Q_next_step": 4.9,
+   "mentions": 1.0,
+   "E8_tool_calls": 5.9,
+   "E8_elapsed_s": 44.21,
+   "E8_tool_s": 0.168,
+   "E8_other_s": 44.04,
+   "E8_tokens_in": 130625.6,
+   "E8_tokens_out": 5964.5
+  },
+  "ours/lead": {
+   "n": 8,
+   "error_rate": 0.0,
+   "E1_correct": 0.875,
+   "E2a_ledger_grounded": 0.997,
+   "E2b_citation_grounded": 1.0,
+   "E2d_jev_support": 0.64,
+   "E2c_claim_support": 0.921,
+   "E3_causes_as_fact": 0.5,
+   "E3_unknowns_stated": 1.0,
+   "E5_forbidden_runs": 0,
+   "E5_must_not_runs": 0,
+   "E5_judge_invented_impact": 0.0,
+   "E7_required_tools": 1.0,
+   "E7_first_tool": 0.625,
+   "Q_rubric_mean": 4.425,
+   "Q_role_fit": 4.75,
+   "Q_next_step": 4.125,
+   "mentions": 1.0,
+   "E8_tool_calls": 5.25,
+   "E8_elapsed_s": 35.325,
+   "E8_tool_s": 0.634,
+   "E8_other_s": 34.688,
+   "E8_tokens_in": 86871.875,
+   "E8_tokens_out": 4666.25
+  },
+  "ours/manager": {
+   "n": 7,
+   "error_rate": 0.0,
+   "E1_correct": 0.722,
+   "E2a_ledger_grounded": 0.998,
+   "E2b_citation_grounded": 1.0,
+   "E2d_jev_support": 0.803,
+   "E2c_claim_support": 0.955,
+   "E3_causes_as_fact": 0.286,
+   "E3_unknowns_stated": 1.0,
+   "E5_forbidden_runs": 0,
+   "E5_must_not_runs": 0,
+   "E5_judge_invented_impact": 0.0,
+   "E7_required_tools": 1.0,
+   "E7_first_tool": 0.857,
+   "Q_rubric_mean": 4.429,
+   "Q_role_fit": 4.857,
+   "Q_next_step": 4.143,
+   "mentions": 1.0,
+   "E8_tool_calls": 4.0,
+   "E8_elapsed_s": 25.029,
+   "E8_tool_s": 0.207,
+   "E8_other_s": 24.814,
+   "E8_tokens_in": 50666.143,
+   "E8_tokens_out": 3242.143
+  },
+  "baseline/all": {
+   "n": 18,
+   "error_rate": 0.0,
+   "E1_correct": 0.686,
+   "E2a_ledger_grounded": 0.847,
+   "E2b_citation_grounded": null,
+   "E2d_jev_support": null,
+   "E2c_claim_support": 0.708,
+   "E3_causes_as_fact": 0.389,
+   "E3_unknowns_stated": 0.111,
+   "E5_forbidden_runs": 0,
+   "E5_must_not_runs": 0,
+   "E5_judge_invented_impact": 0.0,
+   "E7_required_tools": 0.833,
+   "E7_first_tool": 0.833,
+   "Q_rubric_mean": 3.956,
+   "Q_role_fit": 4.111,
+   "Q_next_step": 2.611,
+   "mentions": 0.938,
+   "E8_tool_calls": 3.833,
+   "E8_elapsed_s": 12.983,
+   "E8_tool_s": 0.162,
+   "E8_other_s": 12.822,
+   "E8_tokens_in": 33434.444,
+   "E8_tokens_out": 1572.0
+  },
+  "baseline/engineer": {
+   "n": 6,
+   "error_rate": 0.0,
+   "E1_correct": 0.583,
+   "E2a_ledger_grounded": 0.716,
+   "E2b_citation_grounded": null,
+   "E2d_jev_support": null,
+   "E2c_claim_support": 0.639,
+   "E3_causes_as_fact": 0.667,
+   "E3_unknowns_stated": 0.0,
+   "E5_forbidden_runs": 0,
+   "E5_must_not_runs": 0,
+   "E5_judge_invented_impact": 0.0,
+   "E7_required_tools": 0.667,
+   "E7_first_tool": 1.0,
+   "Q_rubric_mean": 4.167,
+   "Q_role_fit": 4.333,
+   "Q_next_step": 2.833,
+   "mentions": 1.0,
+   "E8_tool_calls": 5.667,
+   "E8_elapsed_s": 15.783,
+   "E8_tool_s": 0.223,
+   "E8_other_s": 15.567,
+   "E8_tokens_in": 49043.5,
+   "E8_tokens_out": 1896.5
+  },
+  "baseline/lead": {
+   "n": 6,
+   "error_rate": 0.0,
+   "E1_correct": 0.75,
+   "E2a_ledger_grounded": 0.894,
+   "E2b_citation_grounded": null,
+   "E2d_jev_support": null,
+   "E2c_claim_support": 0.751,
+   "E3_causes_as_fact": 0.333,
+   "E3_unknowns_stated": 0.167,
+   "E5_forbidden_runs": 0,
+   "E5_must_not_runs": 0,
+   "E5_judge_invented_impact": 0.0,
+   "E7_required_tools": 0.833,
+   "E7_first_tool": 0.667,
+   "Q_rubric_mean": 3.7,
+   "Q_role_fit": 3.833,
+   "Q_next_step": 2.333,
+   "mentions": 0.833,
+   "E8_tool_calls": 3.0,
+   "E8_elapsed_s": 10.4,
+   "E8_tool_s": 0.12,
+   "E8_other_s": 10.267,
+   "E8_tokens_in": 27310.5,
+   "E8_tokens_out": 1232.667
+  },
+  "baseline/manager": {
+   "n": 6,
+   "error_rate": 0.0,
+   "E1_correct": 0.733,
+   "E2a_ledger_grounded": 0.93,
+   "E2b_citation_grounded": null,
+   "E2d_jev_support": null,
+   "E2c_claim_support": 0.732,
+   "E3_causes_as_fact": 0.167,
+   "E3_unknowns_stated": 0.167,
+   "E5_forbidden_runs": 0,
+   "E5_must_not_runs": 0,
+   "E5_judge_invented_impact": 0.0,
+   "E7_required_tools": 1.0,
+   "E7_first_tool": 0.833,
+   "Q_rubric_mean": 4.0,
+   "Q_role_fit": 4.167,
+   "Q_next_step": 2.667,
+   "mentions": 1.0,
+   "E8_tool_calls": 2.833,
+   "E8_elapsed_s": 12.767,
+   "E8_tool_s": 0.143,
+   "E8_other_s": 12.633,
+   "E8_tokens_in": 23949.333,
+   "E8_tokens_out": 1586.833
+  },
+  "pairwise": {
+   "ours": 16,
+   "baseline": 1,
+   "tie": 0,
+   "inconsistent": 1
+  },
+  "ours/E4": {
+   "tools_jaccard": 0.021,
+   "evidence_jaccard": 0.015
+  },
+  "baseline/E4": {
+   "tools_jaccard": 0.278,
+   "evidence_jaccard": 0.042
+  }
+ },
+ "e4": [
+  {
+   "kind": "ours",
+   "topic": "ciod-nov",
+   "roles": [
+    "engineer",
+    "lead",
+    "manager"
+   ],
+   "tools_jaccard": 0.042,
+   "evidence_jaccard": 0.03
+  },
+  {
+   "kind": "ours",
+   "topic": "mcheck-oct",
+   "roles": [
+    "engineer",
+    "lead",
+    "manager"
+   ],
+   "tools_jaccard": 0.0,
+   "evidence_jaccard": 0.0
+  },
+  {
+   "kind": "baseline",
+   "topic": "ciod-nov",
+   "roles": [
+    "engineer",
+    "lead",
+    "manager"
+   ],
+   "tools_jaccard": 0.167,
+   "evidence_jaccard": 0.083
+  },
+  {
+   "kind": "baseline",
+   "topic": "mcheck-oct",
+   "roles": [
+    "engineer",
+    "lead",
+    "manager"
+   ],
+   "tools_jaccard": 0.389,
+   "evidence_jaccard": 0.0
+  }
+ ],
+ "pairwise": {
+  "D-L03": {
+   "result": "ours",
+   "order1": "ours",
+   "order2": "ours",
+   "reasons": [
+    "Both answers get the core facts right: 3969 404 lines and 2 503 lines, all on nova-api, owned by cloud-api, with the caveat that these are log lines rather than requests. A goes further for a lead. It gives the period and trend for the 503 pattern (new this period, 0 before), ties it to co-occurring token-validation failures, picks a lead to investigate with a measured reason, and states its unknowns: 404 trend and cause not established, node spread not recorded. B is accurate and honest but gives no trend, no pattern-level recurrence and no prioritization.",
+    "Both give the same correct counts, service and owner, and both note the line-vs-request caveat. B adds what a lead needs: the period, the trend (503 pattern new versus the previous period, 2 bursts), the co-occurring token-validation failures with a measured timing link, and stated unknowns (spread, 404 breakdown). It also names a prioritized next step. A is accurate but gives no trend, recurrence, spread or investigation priority."
+   ]
+  },
+  "D-E02": {
+   "result": "ours",
+   "order1": "ours",
+   "order2": "ours",
+   "reasons": [
+    "Answer A covers what the engineer needs. It gives the exact first line (line id, component, severity, node) and the context just before it, where 'generating core' lines appear on the same midplane milliseconds earlier. It states that the pattern is new in the window but recurs across the dataset (22 bursts). It contrasts the broad 251-node burst with the single-node flood, labels its cause clearly as a hypothesis, and gives concrete next checks: get_context on line 222716, and comparing core-dump node sets. Answer B is accurate and clear about the two episodes, and it adds the full 466-node spread. However, it says outright that it has not examined before/after context, says nothing on whether the pattern is new or recurring, and gives no concrete next query.",
+    "For an engineer, B serves better. It gives the exact first line (line id, timestamp, component, node) and the events just before the first TLB line: a 'generating core' message on the same midplane 66 ms earlier. It also covers what followed, and says whether the pattern is new (no earlier occurrences, though the data only begins on 3 June). It breaks the counts down by rack and gives the weekly history. Its hypotheses are clearly labelled, and its next checks are concrete (get_context on line 222716, and comparing the core-dump node set with the TLB node set). A is accurate and clear, but it explicitly leaves out the surrounding context, any cause hypothesis beyond 'stuck node', and any concrete next query. There is one minor inconsistency: B says 251 nodes for burst 1, while A counts 466 nodes over the whole 5 June episode. Both are plausible given different burst definitions."
+   ]
+  },
+  "D-M06": {
+   "result": "ours",
+   "order1": "ours",
+   "order2": "ours",
+   "reasons": [
+    "A fits the manager brief better. It gives a ranked list of problems, each with an owner team, its measured basis (bursts vs. prior period, node spread, weeks active) and a specific action to decide or fund. It is candid that the tool's 'improving' reading conflicts with the November rise, flags the partial weeks and truncation, and lists unknowns (cost, downtime, root cause). B has useful weekly context and a sensible conclusion of no clear improvement. However, it gives no per-item actions and no clear ranked priority list. Its cluster-control figure (120) does not match A's whole-period total (178). It also slightly overstates impact by saying the failures were 'affecting every node'.",
+    "B fits the manager's needs better. It gives a ranked list of priority problems, each with an owner team, a measured basis (bursts against the prior period, node spread, weeks active) and a concrete decision or funding action. It also states clearly what the logs do not show: cost, downtime, customer impact, root cause, and the fact that only the top 5 of 126 candidates are visible. It flags that the tool's 'improving' reading is fragile because of partial weeks and the November rise. A has a clear and well-grounded trend narrative, but it lacks a ranked list with an action per item. A's figures also conflict in places: cluster-control is 120 in A against 178 in B. B has some jargon, such as p_problem and pattern IDs, but it is more actionable and more honest about what is unknown."
+   ]
+  },
+  "D-L05": {
+   "result": "ours",
+   "order1": "ours",
+   "order2": "ours",
+   "reasons": [
+    "Answer A's component counts are internally consistent: KERNEL 626756 + APP 228536 + LINKCARD 206 + MMCS 3 = 855501, and node-platform's 626962 equals KERNEL plus LINKCARD. Answer B misstates KERNEL as 626,771 and APP as 228,534. It then reports a 'mismatch' that comes from its own transcription errors. For a lead, A goes further on what matters: it gives recurring patterns with burst counts, node spread, weeks active and period-over-period change. It names one problem to investigate first ('rts panic', 236 bursts across 3394 nodes) with a measured reason. It also states the unknowns plainly, including the truncated pattern lists and the zero prior-period bursts. B offers line volume only, with no recurrence, trend or priority.",
+    "Answer B gives the lead what they need. Its component counts sum exactly to the 855,501 total, and the team totals line up with that split. Answer A's KERNEL and APP figures don't add up, which produces a mismatch it cannot explain. B also goes beyond raw line counts to recurrences: bursts, node spread, weeks active and change against the previous period. It names one problem to investigate first ('rts panic', with 236 bursts across 3,394 nodes) and gives a measured reason. It is honest about unknowns: the ownership hypothesis, the zero-burst prior period and truncation to the top 10 patterns. A gives only line volumes, with no trend, no recurrence data and no priority."
+   ]
+  },
+  "D-E06": {
+   "result": "ours",
+   "order1": "ours",
+   "order2": "ours",
+   "reasons": [
+    "Answer A covers more of what an engineer needs. It answers new versus recurring with measured history: pattern 33 had 98 bursts before October and 38 in September. Its hypothesis is clearly labelled, with a stated way to confirm it. It gives concrete next queries (node-scoped follow-up, pattern_history for 93/86, a facet by rack and day) and lists unknowns explicitly. Answer B has useful detail on repeat nodes and the register dump. However, it calls the rate 'steady' without any baseline, never addresses whether the failure is new or recurring, gives no counts for its message variants, and offers only vague next steps.",
+    "Both answers agree on the core facts: 61 lines, all KERNEL/FATAL, 54 nodes, and the first event on R04-M0-N3 followed by the L3 EDRAM correction and a register dump. B serves the engineer better on the specific needs. It establishes new vs recurring, showing pattern 33 had 98 prior bursts and similar September volume, which A never addresses. It gives exact line_ids and timestamps, and its variant breakdown comes from facets covering all 61 lines (37/14/10) rather than a partial read. It labels the hypothesis explicitly and lists the unknowns clearly. It also proposes concrete next checks: a node query to see how the 123-line sequence ended, pattern_history for patterns 93/86, and a rack/day facet for the near-simultaneous R21/R22 events. A is well written and gives a useful per-day and repeat-node picture, but it is weaker on recurrence, gives fewer exact references, and offers only vague follow-ups."
+   ]
+  },
+  "D-E01": {
+   "result": "ours",
+   "order1": "ours",
+   "order2": "ours",
+   "reasons": [
+    "A covers more of what the engineer needs. It gives the exact error lines, node and component, and states the scope it checked, including the time windows and rack-level confirmation. It says the pattern is recurring (13 bursts, rate 112× baseline), labels its cause as a hypothesis, and lists clear unknowns. It ends with concrete next queries. B adds useful wider context: ciod login errors 90 minutes before and 3 hours after, and correctly identifies the nodes as I/O nodes, where A loosely calls them compute nodes. However, B never says whether the panic is new or recurring and gives no concrete next check. It also offers 'routine'/'not serious' judgments without measured support.",
+    "B better meets what an engineer needs. It reports the error lines with line IDs and the exact scope checked. It establishes that the panics are local, confined to R43-M0 within the rack, and that the pattern is recurring: 13 bursts, a rate 112× baseline, prior history. It labels a hypothesis with how to confirm it, lists unknowns honestly and gives concrete next queries. It does mislabel the I/O nodes as compute nodes. A adds useful wider context: ciod errors on the same nodes 90 minutes before and 3 hours after. However, it never says whether the panic is new or recurring and gives no concrete next check. It also somewhat overclaims normal recovery."
+   ]
+  },
+  "D-L06": {
+   "result": "ours",
+   "order1": "ours",
+   "order2": "ours",
+   "reasons": [
+    "A serves the lead better. It names one problem to investigate first, the job-kill timeouts, and backs that with measured evidence: bursts rose from 29 to 44, with a weekly peak of 20 matching lines in the week of 2005-10-17. It also gives weekly trend data and team/component rollups, which show overall bursts fell from 446 to 345, with team-level drops. A is explicit about unknowns: truncation, the mismatched comparison windows, and missing node spread for pattern 261. B adds useful hpc-workloads new patterns that A missed. However, B gives no weekly trend or team totals and hedges across three candidates for where to look first. B's pattern count (84) also differs from A's (86).",
+    "B serves the lead better. It names one problem to investigate first, the \"Kill job\" timeout (44 vs 29 bursts), and backs that with measured weekly trend data: a peak of 20 lines in the week of 2005-10-17. It also gives team and component rollups, showing that total BGL problem bursts actually fell (446 to 345) and how each owning team moved. That context matters for the question of whether things got worse. B is also explicit about unknowns: the truncated list, node count 0 for pattern 261, the mismatched comparison windows and no impact data. A covers similar patterns and usefully flags the new hpc-workloads ciod errors, but its \"where to look first\" hedges across three candidates and it gives no trend over time. Its claim that OpenStack had no recurring patterns is also poorly grounded."
+   ]
+  },
+  "D-M03": {
+   "result": "ours",
+   "order1": "ours",
+   "order2": "ours",
+   "reasons": [
+    "Answer A fits a manager's needs better. It gives a ranked list of problems, and each item has an owner team, its measured basis (bursts against the prior period, node spread, weeks active, score) and a concrete decision or funding action. It sets out team roll-ups with prior-period comparisons and weekly slopes, which gives a clear basis for the trend. It labels speculative explanations as hypotheses and says how to confirm each one. It states plainly that cost, downtime, customer impact and root cause are unknown, and it warns that the two datasets cannot be compared. Answer B has a sharp headline and a useful point about node-platform: the team total is flat while its top issues are worsening. However, it gives no action to decide or fund. It also states the job-submission explanation for the hpc-workloads rise as fact rather than as a hypothesis. Its cluster-control figures (44 bursts vs 64) disagree with Answer A's (72 vs 107), and nothing in B supports or reconciles them. B also leaves out the Apache scope entirely.",
+    "B fits the manager's needs better. It gives a ranked list where each item has an owner, its measured basis (bursts versus the prior period, node spread, weeks active, score) and a concrete decision or funding action. It also states its scope, flags truncation and gives weekly slopes per team. It separates hypotheses from findings and lists unknowns explicitly: cost, downtime, root cause, and that the two datasets can't be compared. A reaches the same core conclusion, that node-platform carries the most risk and hpc-workloads is worsening, but it offers no action items. Its cluster-control figures (44 versus 64) conflict with B's (72 versus 107), and its line-volume claims look inconsistent. A's caveats are good but briefer. Overall B is more specific, more actionable and more transparent about its evidence."
+   ]
+  },
+  "D-E05": {
+   "result": "ours",
+   "order1": "ours",
+   "order2": "ours",
+   "reasons": [
+    "Answer A is better. It is precise and grounded: exact first line_id, timestamp, component and node, and the immediately preceding signal 15 line on the same node. It gives burst and recurrence statistics, measured spread (entropy, node counts) and owning team, and correctly distinguishes new pattern 968 from older pattern 435. It labels its hypothesis, lists unknowns honestly and gives concrete next checks. Answer B overclaims: it says every node logged signal 15 before its error and gives a matching 1,008-line count, while A's data show pattern 960 at 424 lines on 376 nodes and only sampled confirmation. B calls the event 'not new' despite the different template, and it gives no concrete query to run.",
+    "B is the better answer for an engineer. Both agree on the basics: 1,008 lines on 504 nodes, the first line at 05:33:24.62 on R77-M0-NC-I:J18-U11, and signal 15 immediately before it. B ties these to line IDs and timestamps and shows the same order on sampled nodes. It also reports a key precursor that A misses entirely: the 05:12 xhpl program-load 'Permission denied' failure on 64 nodes. On scope, B gives recurrence data (82 bursts, weekly counts, 1,024 nodes, widespread), states that pattern 968 is new while noting the earlier variant 435, and lists unknowns honestly. Its next steps are concrete: a per-node check for signal 15 against pattern 968, an inspection of the xhpl image permissions, and a comparison of later bursts. A asserts that every one of the 504 nodes had signal 15, with 1,008 matching lines. B's measured count for the signal pattern is 424 lines on 376 nodes, so A's claim looks overstated or unverified. A also admits it never looked at what happened after the error, and gives no recurrence picture beyond the earlier variant."
+   ]
+  },
+  "D-L02": {
+   "result": "ours",
+   "order1": "ours",
+   "order2": "ours",
+   "reasons": [
+    "Both answers report the same weekly counts (4, 21, 11, 11, 11, 3), flag the partial first and last weeks, and name node-platform as owner. A serves a lead better. It gives an explicit investigate-first item with a measured reason, ties in the related FATAL pattern 34 with October bursts, nodes, weeks active and the change against the previous period, and states clearly what is missing: October bursts and nodes for pattern 33, and no split by variant. B adds a useful spread figure (54 nodes), but it makes broader claims that are less clearly supported, such as every line being FATAL and all 61 lines mapping to node-platform, while admitting it read only three lines. B also makes no investigate-first recommendation.",
+    "Both answers report the same weekly counts (4, 21, 11, 11, 11, 3), flag the partial first and last weeks, and name node-platform as owner. B is more careful about what the evidence actually shows. It says plainly that October bursts, node count and the change from the previous period for pattern 33 are not in its results, and it labels the lifetime figures (153 bursts, 150 nodes) as not October-only. A asserts 54 distinct nodes and FATAL severity for every line without showing where those come from, and B's results suggest that per-node October data was unavailable. A also gives fuzzy ranges for the related patterns (\"about 52–55 bursts, up from 47–52\"), while B gives exact figures for pattern 34. For a lead, B adds a prioritized list with a measured reason to investigate first (the 21-line peak week), a testable hypothesis and concrete next steps. A is easier to read but less grounded."
+   ]
+  },
+  "D-L04": {
+   "result": "ours",
+   "order1": "ours",
+   "order2": "ours",
+   "reasons": [
+    "Answer A serves the lead better. It gives the counts (46 lines, 38 nodes, top-node share 0.043) and the trend (33 bursts versus 51 in the previous period). It names the owner (node-platform) and compares the pattern with other KERNEL patterns. It ranks what to investigate first with a measured reason. It is also honest that 'fleet-wide' cannot be confirmed without a total node count, and it flags where the data is truncated. Answer B has a useful detail, the 23 October cluster on R30-M1-NF, but it calls the pattern fleet-wide without a denominator. It also gives no period-over-period trend and no owning team, so it falls short of what a lead needs.",
+    "Answer B is the better fit for a lead. It gives the volume and spread (46 lines, 38 nodes, top-node share 0.043), the owning team (node-platform), and a trend in recurrences (33 bursts versus 51 in the previous period, active all 6 weeks). It also ranks this pattern against related KERNEL patterns, and it is honest that the total node count is missing, so 'fleet-wide' cannot be measured. Answer A has useful detail on the 23 October bursts, but it asserts 'fleet-wide' without a denominator and gives no owner and no comparison with the prior period."
+   ]
+  },
+  "D-E04": {
+   "result": "ours",
+   "order1": "ours",
+   "order2": "ours",
+   "reasons": [
+    "Answer A is the better fit for this engineer. It gives the exact error lines, timestamps and request IDs for both events. It states that the node field is empty instead of skipping the question. It adds a measured baseline (0 earlier 503s) to show the error is new, and checks whether the failures were local or spread. It labels the scheduled-job cause as a hypothesis and says how to confirm or rule it out. It lists the unknowns and gives concrete next checks: request-ID searches, a pattern facet query, and Keystone/Apache logs for specific time windows. Answer B is readable and adds some compute-side context, but it states the identity/proxy cause more as fact than as a hypothesis. It also makes a dubious claim that the same request IDs appeared on earlier 200 responses. It omits the node and baseline evidence, and its next steps are vaguer.",
+    "B serves the engineer better: it is more grounded, more specific, and better matches what an engineer needs. Both answers agree on the core facts: two 503s, Keystone token validation returning an HTML error page, about 24 h apart, fast responses. B goes further on the points an engineer must cover:\n- **Node:** it states the node field is empty, so the producing node is unknown.\n- **Scope and baseline:** it gives the search scope and a measured baseline (0 per hour across 34 earlier windows), so it can say the failure is new and local.\n- **Hypothesis:** it explicitly labels the cause as a hypothesis and says what would confirm or rule it out.\n- **Unknowns:** it lists them clearly.\n- **Next checks:** it gives concrete ones, with exact time windows, request_id searches and a pattern facet query.\n\nA adds some useful context (compute-side activity, an instance spawn). However, it makes an unverified claim that the same request ids appeared on an earlier 200 response. It also omits the node, uses no quantified baseline, and its next steps are vaguer."
+   ]
+  },
+  "D-E03": {
+   "result": "ours",
+   "order1": "ours",
+   "order2": "ours",
+   "reasons": [
+    "Both answers give the same correct, well-grounded create → spawn → delete timeline across nova-api and nova-compute, with timestamps and request ids. A serves the engineer better on the other things they need. It says the node is unknown (no node values). It checks the surrounding context, noting the nearby 404 that is not tied to this instance. It offers a labelled hypothesis for the late `VM Stopped` event and gives concrete next checks: search the lifecycle request id, and compare the deallocate-to-stopped gap across instances by pattern id. It also lists unknowns explicitly, such as the missing scheduler/conductor lines and the duplicate Resumed. B adds useful claim-resource detail but has no next check and no hypothesis framing beyond a passing remark. B also does not flag that a 20 GB claim against 15 GB of total disk was accepted.",
+    "Both answers correctly reconstruct a normal create, spawn and delete lifecycle with accurate timings. B serves the engineer better. It states the scope and truncation of its searches and says the node is unknown (distinct_nodes is 0). It checks neighbouring lines to show nothing nearby was failing, notes an unrelated 404 that is not tied to this instance, and labels its explanation of the late VM Stopped event as a hypothesis. It also lists the unknowns explicitly and gives concrete next queries, naming the request id and the pattern ids. A is accurate and clear but gives no node information, no surrounding-context check and no next steps."
+   ]
+  },
+  "D-M01": {
+   "result": "ours",
+   "order1": "ours",
+   "order2": "ours",
+   "reasons": [
+    "Answer A fits the manager's needs better. Its ranked items each have an owner team and a measured basis: bursts against the previous period, node spread, weeks active and first-seen date. Each also has a concrete decide-or-fund action, such as \"decide whether to assign a dedicated owner\" or \"fund a root-cause effort\". It states several unknowns plainly: cost, downtime, customer impact, root cause, truncation to the top 10, and that scores cannot be compared across datasets. It labels its links between patterns as hypotheses and says how to confirm them. It also covers the apache mod_jk growth with its trend. Answer B is well grounded and goes broader within BGL. However, its actions are mostly technical next steps rather than decisions for a manager, its statement of unknowns is brief, and its period (to 11-28) does not match the question. Its cluster-control figures (23→46) also look inconsistent with the team roll-up.",
+    "Answer B serves the manager better. Each item has an owner team, a measured basis (bursts versus the previous period, node spread, weeks active, first-seen date) and a concrete decide-or-fund action. It states its scope, filter and truncation, and it gives an explicit set of unknowns: no cost, downtime, customer impact or root cause, and scores that cannot be compared across datasets. Its hypotheses come with steps that would confirm them. It also covers the apache dataset, flagging the growing mod_jk errors, and reports the overall weekly trend as improving, which tempers claims of growth. Answer A is well grounded and ranks sensibly, but its actions are mostly 'check' or 'watch' rather than decisions. It says less about what the logs do not show. It also omits apache, referring to OpenStack instead, which may miss a real priority."
+   ]
+  },
+  "D-M04": {
+   "result": "ours",
+   "order1": "ours",
+   "order2": "ours",
+   "reasons": [
+    "Both answers pick the same fix, \"rts: kernel terminated\", owned by node-platform, on the same measured basis: new this period (13 bursts vs 0), 2,666 nodes, 3 weeks active. A serves the manager better. It gives a ranked list with owner, frequency, spread and trend for each item, and attaches a concrete decision or funding action to each one. It also states the period's overall trend (improving) and sets out the unknowns plainly: cost, downtime, root cause, Apache spread, and that the BGL and Apache scores cannot be compared. B adds useful evidence, such as the first-seen date, the low per-node concentration, and related \"bad message header\" patterns flagged as a hypothesis. However, it offers no per-item actions for the runners-up, and its scores differ slightly from A's without explanation. A fits the manager's decision-making needs more closely.",
+    "Both answers pick the same fix, the BGL \"kernel terminated\" pattern owned by node-platform, and back it with the same core evidence: new in August, 0 bursts before versus 13 after, 2,666 nodes and 3 weeks active. B serves the manager better. It gives a ranked list with an owner, measured basis and a specific decide or fund action for each item. It also states the scope and period, gives the overall trend (209 bursts per week falling to 41) and offers hypotheses with a way to confirm each. It lists the unknowns explicitly, including that BGL and Apache scores are not comparable. A has useful extra detail, such as the 0.2% maximum share for any one node and the fault-judgment probabilities. However, it gives no per-item actions, and its runner-up list leaves out the \"node card not fully functional\" item that B ranks second. Both are honest about cost and downtime being unknown, but B is more actionable and more complete."
+   ]
+  },
+  "D-M02": {
+   "result": "ours",
+   "order1": "ours",
+   "order2": "ours",
+   "reasons": [
+    "Answer A covers the whole scope. It ranks the top BGL problems with owner, burst counts versus the prior period, node spread, weeks active and a decision per item. It also gives team roll-ups and trends for both BGL and Apache, including Apache's improving weekly trend, and states the unknowns explicitly: cost, downtime, customer impact and root cause. It has small flaws. It says machine check shares the '2 vs 4' pattern although that pattern went 5 to 10. It cites pattern 120 without listing it, and its Apache hypothesis is muddled. Answer B gives richer BGL detail and useful caveats, such as the kill-job lines carrying no node. However, it presents itself as BGL-only and ignores the Apache data entirely, which in this period holds 374 problem bursts from web-platform. That is a material gap for a manager setting priorities across teams. Overall, A serves the manager better.",
+    "Answer B fits the manager's needs more closely. Its ranked items each carry an owner, measured basis (bursts now vs before, nodes, weeks active, score) and a concrete decide/fund action. It covers both datasets in scope (BGL and Apache) with trend figures, and it separately lists unknowns: cost, downtime, customer impact, root cause, and whether the Apache decline is real. Answer A is insightful, for example noting that the timeout lines carry no node and that the identical counts may be one shared fault. However, it claims the window is BGL only and leaves Apache out entirely. Its actions are also more technical than decision-oriented. B slightly overgeneralizes by saying all machine check interrupts doubled, but overall it is more complete, grounded and honest about limits."
+   ]
+  },
+  "D-M05": {
+   "result": "baseline",
+   "order1": "baseline",
+   "order2": "baseline",
+   "reasons": [
+    "The question asks specifically what the logs cannot tell us, and B answers it more fully and concretely. It separates root cause from stored category judgments and incidents from line or burst counts. It also notes that ordering in time does not prove causation, that resolution is not recorded, and that quiet days do not prove health. It flags the window edge: data ends 28 Nov, so the last week is partial. It warns that 'new' patterns may reflect renaming rather than new faults, and that the priority score ignores business importance. Each limit is tied to measured evidence such as the 3–4 Nov spike, the FATAL line count and the ciod example. B does not invent cost or impact. A has the stronger manager format, with a ranked list, owners, bursts and node counts, actions and next steps. However, its unknowns are generic boilerplate. It also reports both trends as 'improving' from weekly counts whose final week is clearly truncated (18 and 35), without flagging this, which could mislead priority decisions. The two answers disagree on dataset scope: A includes apache, while B says the window is BGL-only and OpenStack is absent. This cannot be resolved from the answers alone. On honesty about unknowns, which is the core of this question, B serves the manager better.",
+    "The question asks what the logs cannot tell us, and A answers it directly. It gives concrete, specific limits: no root cause, cost or impact; line counts are not incidents; temporal order is not causation; FATAL severity is not importance, with examples of user errors; no resolution records; silent days are not proof of health; caveats on the October comparison; and the window ends on 28 Nov. It ties these to measured facts (1,024 and 3,584 nodes, 33 bursts, the 3–4 Nov spike) and names owner teams. It does lack per-item actions. B fits the manager format better, with a ranked list, owners, basis and actions. However, its unknowns are mostly generic boilerplate. It also uncritically reports a declining 'improving' trend whose last week is partial, and it never flags that. A is more honest and more insightful on the question actually asked."
+   ]
+  },
+  "D-L01": {
+   "result": "inconsistent",
+   "order1": "baseline",
+   "order2": "ours",
+   "reasons": [
+    "Both answers pick the new ciod 'Link has been severed' pattern first and back it with bursts, previous-period comparison and node spread. A is stronger on trend over time: it gives weekly per-team counts and daily spikes. However, A calls 968 the pattern with the 'widest node spread', and B's broader results show machine-wide events hitting 3,584 nodes, so that claim looks wrong or at least unsupported. B covers more of the recurring problems with spread and trend, including machine check, parity errors on a single node and tree-network events. It also gives team roll-ups with prior-period change, and it is explicit about what is hypothesis versus measured. B lacks a weekly breakdown and has a small cluster-control count discrepancy (46 vs 55). Even so, its coverage and grounding serve a lead somewhat better.",
+    "Both answers pick the ciod \"Link has been severed\" pattern as the first thing to investigate, with the same core evidence: 27 new bursts, 10,408 lines and 1,024 nodes. B serves the lead better on the time dimension. It gives weekly burst counts per team across the period and daily spikes for the ciod error, such as 5,137 lines on 11-21. It also states the comparison period explicitly. B's team totals are internally consistent: 256 + 96 + 55 = 407, and the weekly figures sum to each team's total. A gives cluster-control as 46 bursts, which conflicts with this, so one of A's figures looks wrong. B also covers the sharp Apache mod_jk rise (8 to 134 bursts), which A omits. B is more transparent about truncation and about partial weeks. A does have strengths: it is easier to read and covers more BGL patterns with spread, such as the tree-network and kernel-terminated events hitting 3,584 nodes and single-node parity errors. However, A cites an unexplained \"score 97.9\" and gives less trend detail over time. Overall, B is better grounded and more consistent for a lead."
+   ]
+  }
+ },
+ "per_run": [
+  {
+   "id": "D-E01",
+   "role": "engineer",
+   "kind": "baseline",
+   "E1_correct": 0.5,
+   "E1_missed": [
+    "kernel panic lines on R43-M0, 2005-08-19 13:40-14:15 = 2"
+   ],
+   "E2a_ledger_grounded": 0.6,
+   "E2a_numbers": 5,
+   "E2a_unverified": [
+    "90",
+    "45"
+   ],
+   "E2b_citation_grounded": null,
+   "E2d_jev_support": null,
+   "E3_separation": {
+    "facts": true,
+    "hypotheses_labelled": true,
+    "unknowns": false
+   },
+   "E5_forbidden": [],
+   "E5_must_not": [],
+   "mentions": 1.0,
+   "E7_required_tools": true,
+   "E7_first_tool": true,
+   "E8_tool_calls": 3,
+   "E8_elapsed_s": 11.7,
+   "E8_tool_s": 0.07,
+   "E8_other_s": 11.6,
+   "E8_tokens_in": 31302,
+   "E8_tokens_out": 1346,
+   "rep": 0,
+   "judge": {
+    "E2c_claim_support": {
+     "score": 0.6666666666666666,
+     "comment": "[{\"sentence\": \"`R43-M0-N8-I:J18-U11` at 13:56:00.63\", \"reason\": \"The evidence shows 13:56:00.628434, so .63 is a rounded value.\"}, {\"sentence\": \"At 12:24–12:26, about 90 minutes earlier, all four I/O node cards logged FATAL `ciod` APP errors.\", \"reason\": \"The times and the four cards (N0, N4, N8, NC) match, but 'about 90 minutes' is a derived value not in the evidence.\"}, {\"sentence\": \"This points to a job that was submitted with a missing working directory.\", \"reason\": \"This is an inferred cause stated as fact.\"}, {\"sentence\": \"The same I/O nodes did not log anything else until 17:12:37–45, about 3 hours later.\", \"reason\": \"The next lines are at 17:12:37–45, but 'about 3 hours' is derived (the actual gap is about 3h16m).\"}, {\"sentence\": \"and not serious.\", \"reason\": \"This severity judgment is not in the evidence.\"}]"
+    },
+    "E3_causes_as_fact": {
+     "score": 1,
+     "comment": null
+    },
+    "E5_judge_invented_impact": {
+     "score": 0.0,
+     "comment": null
+    },
+    "Q_rubric_mean": {
+     "score": 3.6,
+     "comment": "The answer gives the engineer the exact panic lines, nodes, timestamps, and a well-scoped before/after timeline on the midplane, with specific counts and windows. It labels the panic–ciod link as a hypothesis and notes the log gives no cause. It does say the chdir errors 'point to' a job with a missing working directory, and asserts 'no lasting damage', with little hedging. It never checks whether kernel panics recur elsewhere in the system or on these nodes historically, and it offers no concrete next check (query, component to inspect), so it falls short on next step and on part of the role's needs."
+    },
+    "Q_role_fit": {
+     "score": 4,
+     "comment": null
+    },
+    "Q_next_step": {
+     "score": 1,
+     "comment": null
+    },
+    "Q_evidence_use": {
+     "score": 5,
+     "comment": null
+    },
+    "Q_separation": {
+     "score": 4,
+     "comment": null
+    },
+    "Q_clarity": {
+     "score": 4,
+     "comment": null
+    }
+   },
+   "error": null
+  },
+  {
+   "id": "D-E01",
+   "role": "engineer",
+   "kind": "ours",
+   "E1_correct": 1.0,
+   "E1_missed": [],
+   "E2a_ledger_grounded": 1.0,
+   "E2a_numbers": 41,
+   "E2a_unverified": [],
+   "E2b_citation_grounded": 1.0,
+   "E2d_jev_support": 0.762,
+   "E3_separation": {
+    "facts": true,
+    "hypotheses_labelled": true,
+    "unknowns": true
+   },
+   "E5_forbidden": [],
+   "E5_must_not": [],
+   "mentions": 1.0,
+   "E7_required_tools": true,
+   "E7_first_tool": true,
+   "E8_tool_calls": 9,
+   "E8_elapsed_s": 48.3,
+   "E8_tool_s": 0.16,
+   "E8_other_s": 48.1,
+   "E8_tokens_in": 133321,
+   "E8_tokens_out": 6896,
+   "rep": 0,
+   "judge": {
+    "E2c_claim_support": {
+     "score": 0.8947368421052632,
+     "comment": "[{\"sentence\": \"Unknown: Nothing in these logs shows whether the ddr/torus corrected-error lines from 13:17 occurred on R43-M0 or relate to the panic.\", \"reason\": \"The evidence contradicts this. The rack R43 search from 12:56 to 15:56 found only the 2 panic lines, so the 13:17 corrected-error lines were not on R43-M0.\"}, {\"sentence\": \"The corrected-error lines at 13:17 were the only problem-adjacent activity before the panic, but the ledger does not show their location.\", \"reason\": \"The rack R43 search shows no lines other than the panics, which implies those corrected-error lines were not on R43-M0. The ledger therefore does bear on their location.\"}]"
+    },
+    "E3_causes_as_fact": {
+     "score": 0,
+     "comment": null
+    },
+    "E5_judge_invented_impact": {
+     "score": 0.0,
+     "comment": null
+    },
+    "Q_rubric_mean": {
+     "score": 4.6,
+     "comment": "The answer gives the engineer what they need for this one failure. It names the error lines with line IDs, the component, both nodes and exact timestamps. It shows empty before and after context on the midplane, rack and each node, establishes the failure as local to R43-M0, and shows the pattern is recurring, with burst history and a rate against baseline. Facts, the single labelled hypothesis (with a way to confirm it) and the unknowns are clearly separated, and no impact is invented. The next steps are concrete queries tied to the evidence but name no explicit owner. Clarity loses a point for a dense layout and loose references: 'torus' and pattern 6 appear without having been introduced."
+    },
+    "Q_role_fit": {
+     "score": 5,
+     "comment": null
+    },
+    "Q_next_step": {
+     "score": 4,
+     "comment": null
+    },
+    "Q_evidence_use": {
+     "score": 5,
+     "comment": null
+    },
+    "Q_separation": {
+     "score": 5,
+     "comment": null
+    },
+    "Q_clarity": {
+     "score": 4,
+     "comment": null
+    }
+   },
+   "error": null
+  },
+  {
+   "id": "D-E02",
+   "role": "engineer",
+   "kind": "baseline",
+   "E1_correct": 1.0,
+   "E1_missed": [],
+   "E2a_ledger_grounded": 0.75,
+   "E2a_numbers": 16,
+   "E2a_unverified": [
+    "99.7%",
+    "6.4",
+    "0.1",
+    "8.5"
+   ],
+   "E2b_citation_grounded": null,
+   "E2d_jev_support": null,
+   "E3_separation": {
+    "facts": true,
+    "hypotheses_labelled": true,
+    "unknowns": false
+   },
+   "E5_forbidden": [],
+   "E5_must_not": [],
+   "mentions": 1.0,
+   "E7_required_tools": false,
+   "E7_first_tool": true,
+   "E8_tool_calls": 6,
+   "E8_elapsed_s": 12.9,
+   "E8_tool_s": 0.34,
+   "E8_other_s": 12.6,
+   "E8_tokens_in": 31287,
+   "E8_tokens_out": 1677,
+   "rep": 0,
+   "judge": {
+    "E2c_claim_support": {
+     "score": 0.7368421052631579,
+     "comment": "[{\"sentence\": \"about 99.7% of the month's total\", \"reason\": \"This is a derived percentage that does not appear in the evidence.\"}, {\"sentence\": \"roughly 6.4 hours later\", \"reason\": \"This is a derived duration that does not appear in the evidence.\"}, {\"sentence\": \"Rate: The first lines arrived about 0.1 s apart.\", \"reason\": \"This is a derived interval computed from the timestamps; the value itself is not in the evidence.\"}, {\"sentence\": \"By node count the 5 June episode was broad, since it hit 466 nodes over about 8.5 hours.\", \"reason\": \"The 466 count is supported, but the 8.5-hour duration is derived (00:08 to 08:32) and does not appear in the evidence.\"}, {\"sentence\": \"The line count therefore overstates the number of faults.\", \"reason\": \"This is an interpretive claim about the number of faults that the evidence does not establish.\"}]"
+    },
+    "E3_causes_as_fact": {
+     "score": 0,
+     "comment": null
+    },
+    "E5_judge_invented_impact": {
+     "score": 0.0,
+     "comment": null
+    },
+    "Q_rubric_mean": {
+     "score": 4.4,
+     "comment": "The answer gives precise counts, timestamps, node IDs and the two-episode structure. It answers where and when it started and how widespread it was, and notes that line volume overstates distinct faults. The stuck-node idea is explicitly labelled a hypothesis, and the missing surrounding context is stated as unknown. However, what happened just before and after each episode was not examined. The next step is only an offer to pull context, not a concrete query or component check (e.g., inspecting R30-M0-N9 hardware or searching other errors on R20 around 00:08)."
+    },
+    "Q_role_fit": {
+     "score": 4,
+     "comment": null
+    },
+    "Q_next_step": {
+     "score": 3,
+     "comment": null
+    },
+    "Q_evidence_use": {
+     "score": 5,
+     "comment": null
+    },
+    "Q_separation": {
+     "score": 5,
+     "comment": null
+    },
+    "Q_clarity": {
+     "score": 5,
+     "comment": null
+    }
+   },
+   "error": null
+  },
+  {
+   "id": "D-E02",
+   "role": "engineer",
+   "kind": "ours",
+   "E1_correct": 1.0,
+   "E1_missed": [],
+   "E2a_ledger_grounded": 1.0,
+   "E2a_numbers": 70,
+   "E2a_unverified": [],
+   "E2b_citation_grounded": 1.0,
+   "E2d_jev_support": 0.78,
+   "E3_separation": {
+    "facts": true,
+    "hypotheses_labelled": true,
+    "unknowns": true
+   },
+   "E5_forbidden": [],
+   "E5_must_not": [],
+   "mentions": 1.0,
+   "E7_required_tools": true,
+   "E7_first_tool": true,
+   "E8_tool_calls": 7,
+   "E8_elapsed_s": 56.5,
+   "E8_tool_s": 0.31,
+   "E8_other_s": 56.2,
+   "E8_tokens_in": 113787,
+   "E8_tokens_out": 8232,
+   "rep": 0,
+   "judge": {
+    "E2c_claim_support": {
+     "score": 1.0,
+     "comment": "[]"
+    },
+    "E3_causes_as_fact": {
+     "score": 0,
+     "comment": null
+    },
+    "E5_judge_invented_impact": {
+     "score": 0.0,
+     "comment": null
+    },
+    "Q_rubric_mean": {
+     "score": 4.8,
+     "comment": "The answer gives the engineer the first error line (line, node, component, severity, timestamp), the context just before and after (core-dump lines, the instruction address line) and the spread. It separates the broad 251-node burst from the 152182-line single-node flood on R30-M0-N9-C:J16-U01, with counts, window and truncation scope stated. The cause is labelled as a hypothesis with explicit confirmation checks, and unknowns such as root cause, workload, impact and baseline are listed separately. The next steps are runnable queries tied to specific line IDs and time windows, and an owner (node-platform) is named. It is dense and somewhat long, but well ordered."
+    },
+    "Q_role_fit": {
+     "score": 5,
+     "comment": null
+    },
+    "Q_next_step": {
+     "score": 5,
+     "comment": null
+    },
+    "Q_evidence_use": {
+     "score": 5,
+     "comment": null
+    },
+    "Q_separation": {
+     "score": 5,
+     "comment": null
+    },
+    "Q_clarity": {
+     "score": 4,
+     "comment": null
+    }
+   },
+   "error": null
+  },
+  {
+   "id": "D-E03",
+   "role": "engineer",
+   "kind": "baseline",
+   "E1_correct": 0.5,
+   "E1_missed": [
+    "first line time = 2017-05-16 22:51"
+   ],
+   "E2a_ledger_grounded": 0.8,
+   "E2a_numbers": 20,
+   "E2a_unverified": [
+    "30",
+    "37.003",
+    "58",
+    "14"
+   ],
+   "E2b_citation_grounded": null,
+   "E2d_jev_support": null,
+   "E3_separation": {
+    "facts": true,
+    "hypotheses_labelled": false,
+    "unknowns": false
+   },
+   "E5_forbidden": [],
+   "E5_must_not": [],
+   "mentions": 1.0,
+   "E7_required_tools": false,
+   "E7_first_tool": true,
+   "E8_tool_calls": 3,
+   "E8_elapsed_s": 11.2,
+   "E8_tool_s": 0.05,
+   "E8_other_s": 11.1,
+   "E8_tokens_in": 35582,
+   "E8_tokens_out": 1298,
+   "rep": 0,
+   "judge": {
+    "E2c_claim_support": {
+     "score": 0.8,
+     "comment": "[{\"sentence\": \"Instance 9fafc51c-d0dd-41df-99e9-6c79d8334eaf was created, started normally, and deleted about 30 seconds later.\", \"reason\": \"The create and delete events are shown, but 'about 30 seconds' is a derived, rounded value. The evidence gives 22:51:36.647 to 22:52:05.334, which is about 28.7 s.\"}, {\"sentence\": \"22:51:36.647, nova-api: POST /v2/.../servers returned 202 in 478 ms.\", \"reason\": \"The status 202 and timestamp match, but the evidence gives a latency of 477.9122 ms; 478 ms is a rounded value.\"}, {\"sentence\": \"The Paused and skipped power-sync lines are normal during spawning.\", \"reason\": \"This is an interpretation from outside knowledge; the evidence does not state it.\"}, {\"sentence\": \"22:52:05.334, nova-api: DELETE /v2/.../servers/9fafc51c… returned 204 in 256 ms.\", \"reason\": \"The status 204 matches, but the evidence gives a latency of 255.511 ms; 256 ms is a rounded value.\"}, {\"sentence\": \"This came about 7 seconds after the build finished.\", \"reason\": \"This is a derived interval (about 7.26 s) that does not appear in the evidence.\"}]"
+    },
+    "E3_causes_as_fact": {
+     "score": 0,
+     "comment": null
+    },
+    "E5_judge_invented_impact": {
+     "score": 0.0,
+     "comment": null
+    },
+    "Q_rubric_mean": {
+     "score": 4.2,
+     "comment": "The answer traces the instance across nova-api and nova-compute with exact timestamps, request ids, status codes, durations and resource figures, and correctly concludes that nothing failed (all 25 lines are INFO). It clearly flags what is missing (no scheduler lines, no stated reason for the delete) and labels the test or churn idea as a possibility only. It does not name the compute host and gives no concrete follow-up, such as a query for scheduler logs on those request ids or a check for similar create/delete churn, so the next-step score is low."
+    },
+    "Q_role_fit": {
+     "score": 4,
+     "comment": null
+    },
+    "Q_next_step": {
+     "score": 2,
+     "comment": null
+    },
+    "Q_evidence_use": {
+     "score": 5,
+     "comment": null
+    },
+    "Q_separation": {
+     "score": 5,
+     "comment": null
+    },
+    "Q_clarity": {
+     "score": 5,
+     "comment": null
+    }
+   },
+   "error": null
+  },
+  {
+   "id": "D-E03",
+   "role": "engineer",
+   "kind": "ours",
+   "E1_correct": 1.0,
+   "E1_missed": [],
+   "E2a_ledger_grounded": 1.0,
+   "E2a_numbers": 36,
+   "E2a_unverified": [],
+   "E2b_citation_grounded": 1.0,
+   "E2d_jev_support": 0.549,
+   "E3_separation": {
+    "facts": true,
+    "hypotheses_labelled": true,
+    "unknowns": true
+   },
+   "E5_forbidden": [],
+   "E5_must_not": [],
+   "mentions": 1.0,
+   "E7_required_tools": true,
+   "E7_first_tool": false,
+   "E8_tool_calls": 6,
+   "E8_elapsed_s": 43.2,
+   "E8_tool_s": 0.11,
+   "E8_other_s": 43.1,
+   "E8_tokens_in": 195439,
+   "E8_tokens_out": 5345,
+   "rep": 0,
+   "judge": {
+    "E2c_claim_support": {
+     "score": 1.0,
+     "comment": "[]"
+    },
+    "E3_causes_as_fact": {
+     "score": 0,
+     "comment": null
+    },
+    "E5_judge_invented_impact": {
+     "score": 0.0,
+     "comment": null
+    },
+    "Q_rubric_mean": {
+     "score": 4.8,
+     "comment": "The answer traces the full lifecycle across nova-api and nova-compute with exact timestamps, request ids and quoted lines. It states scope and truncation, and notes the absence of node values and of scheduler/conductor lines. The one explanation (late VM Stopped event) is labelled as a hypothesis and paired with a way to confirm it, and the unknowns are listed explicitly, including that impact is not shown. Next steps are concrete queries tied to specific request and pattern ids. The answer is dense and slightly repetitive (the 25-lines statement appears more than once), but it is well ordered."
+    },
+    "Q_role_fit": {
+     "score": 5,
+     "comment": null
+    },
+    "Q_next_step": {
+     "score": 5,
+     "comment": null
+    },
+    "Q_evidence_use": {
+     "score": 5,
+     "comment": null
+    },
+    "Q_separation": {
+     "score": 5,
+     "comment": null
+    },
+    "Q_clarity": {
+     "score": 4,
+     "comment": null
+    }
+   },
+   "error": null
+  },
+  {
+   "id": "D-E04",
+   "role": "engineer",
+   "kind": "baseline",
+   "E1_correct": 1.0,
+   "E1_missed": [],
+   "E2a_ledger_grounded": 0.75,
+   "E2a_numbers": 20,
+   "E2a_unverified": [
+    "24",
+    "250",
+    "400",
+    "1.3",
+    "250"
+   ],
+   "E2b_citation_grounded": null,
+   "E2d_jev_support": null,
+   "E3_separation": {
+    "facts": true,
+    "hypotheses_labelled": true,
+    "unknowns": false
+   },
+   "E5_forbidden": [],
+   "E5_must_not": [],
+   "mentions": 1.0,
+   "E7_required_tools": true,
+   "E7_first_tool": true,
+   "E8_tool_calls": 6,
+   "E8_elapsed_s": 15.8,
+   "E8_tool_s": 0.15,
+   "E8_other_s": 15.7,
+   "E8_tokens_in": 49568,
+   "E8_tokens_out": 1873,
+   "rep": 0,
+   "judge": {
+    "E2c_claim_support": {
+     "score": 0.44,
+     "comment": "[{\"sentence\": \"2 | 2017-05-17 06:25:03.05 | req-abcdb287-… | GET /v2/54fadb41…/servers/detail\", \"reason\": \"The evidence ts is 06:25:03.049; 03.05 is a rounded value.\"}, {\"sentence\": \"The two events are almost exactly 24 hours apart, within about 0.2 s of the same time of day.\", \"reason\": \"The actual difference is 0.179 s; '0.2 s' is a derived, rounded value.\"}, {\"sentence\": \"Each 503 came with the same four log lines within about 3 ms of each other\", \"reason\": \"Event 2 spans 03.044 to 03.049, which is 5 ms, not about 3 ms.\"}, {\"sentence\": \"The identity endpoint returned an HTML error page instead of a token reply, which usually means a web server or proxy error page.\", \"reason\": \"This interpretation relies on outside knowledge; the evidence shows only the DOCTYPE line.\"}, {\"sentence\": \"INFO: the access line with status: 503 len: 323, returned in 8–10 ms.\", \"reason\": \"The status and len match, but the latencies are 8.0531 and 10.186 ms; '8–10 ms' is rounded.\"}]"
+    },
+    "E3_causes_as_fact": {
+     "score": 1,
+     "comment": null
+    },
+    "E5_judge_invented_impact": {
+     "score": 0.0,
+     "comment": null
+    },
+    "Q_rubric_mean": {
+     "score": 4.0,
+     "comment": "The answer fits an engineer's needs well. It gives exact timestamps, request ids, the four-line error sequence, latency comparison, before and after context, and a clear statement that these were the only two 503s, about 24h apart. The periodic-job idea is labelled as a hypothesis and the request-id oddity is flagged as unchecked, but 'The cause is the identity service or the proxy in front of it being unavailable' is stated flatly, though it is only partly supported by the HTML 503 body. Next steps point to Keystone/proxy logs and cron schedules around 06:25 UTC but give no concrete query or owner, and the impact is phrased as a vague 'thousands' of requests rather than an exact count."
+    },
+    "Q_role_fit": {
+     "score": 4,
+     "comment": null
+    },
+    "Q_next_step": {
+     "score": 3,
+     "comment": null
+    },
+    "Q_evidence_use": {
+     "score": 4,
+     "comment": null
+    },
+    "Q_separation": {
+     "score": 4,
+     "comment": null
+    },
+    "Q_clarity": {
+     "score": 5,
+     "comment": null
+    }
+   },
+   "error": null
+  },
+  {
+   "id": "D-E04",
+   "role": "engineer",
+   "kind": "ours",
+   "E1_correct": 1.0,
+   "E1_missed": [],
+   "E2a_ledger_grounded": 1.0,
+   "E2a_numbers": 70,
+   "E2a_unverified": [],
+   "E2b_citation_grounded": 1.0,
+   "E2d_jev_support": 0.448,
+   "E3_separation": {
+    "facts": true,
+    "hypotheses_labelled": true,
+    "unknowns": true
+   },
+   "E5_forbidden": [],
+   "E5_must_not": [],
+   "mentions": 1.0,
+   "E7_required_tools": true,
+   "E7_first_tool": true,
+   "E8_tool_calls": 6,
+   "E8_elapsed_s": 32.8,
+   "E8_tool_s": 0.1,
+   "E8_other_s": 32.7,
+   "E8_tokens_in": 86044,
+   "E8_tokens_out": 4195,
+   "rep": 0,
+   "judge": {
+    "E2c_claim_support": {
+     "score": 0.8947368421052632,
+     "comment": "[{\"sentence\": \"nova-api returned HTTP 503 on only 2 requests (GET .../servers/detail), on 2017-05-16 and 2017-05-17 at about 06:25:03.\", \"reason\": \"The 2 requests, endpoint and dates are in the evidence, but 'about 06:25:03' is a rounded time. The actual 503 lines are at 06:25:02.870 and 06:25:03.049.\"}, {\"sentence\": \"The 503 lines show time: 0.0080531 and time: 0.0101860, against about 0.26–0.28 s for the neighbouring 200 requests.\", \"reason\": \"The 503 times are correct, but the 0.26–0.28 s range is derived and approximate. Some neighbouring 200 requests fall outside it (e.g. 0.2437501, 0.3590829, 0.4054270).\"}]"
+    },
+    "E3_causes_as_fact": {
+     "score": 0,
+     "comment": null
+    },
+    "E5_judge_invented_impact": {
+     "score": 0.0,
+     "comment": null
+    },
+    "Q_rubric_mean": {
+     "score": 4.8,
+     "comment": "The answer gives the engineer what they need: the exact error lines, request IDs, the sequence before and after each failure, timing and length comparisons, the missing node field, the recurrence pattern and a baseline comparison. The cause (identity service briefly unavailable, possibly a scheduled job) is clearly labelled as a hypothesis, says what would confirm or rule it out, and is kept apart from the listed unknowns, including impact. Next steps are concrete queries tied to specific time windows and request IDs. It is dense but well ordered, so clarity loses only one point for verbosity."
+    },
+    "Q_role_fit": {
+     "score": 5,
+     "comment": null
+    },
+    "Q_next_step": {
+     "score": 5,
+     "comment": null
+    },
+    "Q_evidence_use": {
+     "score": 5,
+     "comment": null
+    },
+    "Q_separation": {
+     "score": 5,
+     "comment": null
+    },
+    "Q_clarity": {
+     "score": 4,
+     "comment": null
+    }
+   },
+   "error": null
+  },
+  {
+   "id": "D-E05",
+   "role": "engineer",
+   "kind": "baseline",
+   "E1_correct": 0.5,
+   "E1_missed": [
+    "first occurrence = 2005-11-17 05:33"
+   ],
+   "E2a_ledger_grounded": 0.8333333333333334,
+   "E2a_numbers": 24,
+   "E2a_unverified": [
+    "0.1",
+    "0.4",
+    "44",
+    "24"
+   ],
+   "E2b_citation_grounded": null,
+   "E2d_jev_support": null,
+   "E3_separation": {
+    "facts": true,
+    "hypotheses_labelled": true,
+    "unknowns": false
+   },
+   "E5_forbidden": [],
+   "E5_must_not": [],
+   "mentions": 1.0,
+   "E7_required_tools": true,
+   "E7_first_tool": true,
+   "E8_tool_calls": 10,
+   "E8_elapsed_s": 24.9,
+   "E8_tool_s": 0.41,
+   "E8_other_s": 24.5,
+   "E8_tokens_in": 96456,
+   "E8_tokens_out": 2900,
+   "rep": 0,
+   "judge": {
+    "E2c_claim_support": {
+     "score": 0.56,
+     "comment": "[{\"sentence\": \"The ciod daemon on the I/O nodes lost its connection to the control or service host at 172.16.96.116.\", \"reason\": \"The logs show the link to 172.16.96.116 was severed, but nothing in the evidence identifies that host as a control or service host.\"}, {\"sentence\": \"Every affected node was told to stop, which cut its CioStream socket.\", \"reason\": \"This states a cause as fact. Also, some nodes in the context (e.g. R40-M1-NC, R54-M0-N4-I:J18-U01) show no signal 15 line before their error.\"}, {\"sentence\": \"The \\\"Link has been severed\\\" error is the result of that shutdown.\", \"reason\": \"This is a causal conclusion stated as fact; the evidence does not establish it.\"}, {\"sentence\": \"All are `…-I:J18-U01` or `-U11` nodes, with two lines per node.\", \"reason\": \"Only a sample of rows is shown. The node naming for all 504 nodes and the per-node count for this search are not in the evidence; two per node would be a derived value.\"}, {\"sentence\": \"Every line is APP / FATAL and points at the same peer, 172.16.96.116, on different ports.\", \"reason\": \"Only 23 of the 1008 rows are shown, so this cannot be verified for every line.\"}]"
+    },
+    "E3_causes_as_fact": {
+     "score": 1,
+     "comment": null
+    },
+    "E5_judge_invented_impact": {
+     "score": 0.0,
+     "comment": null
+    },
+    "Q_rubric_mean": {
+     "score": 4.4,
+     "comment": "The answer gives exactly what an engineer needs. It has counts (1,008 lines, 504 nodes, two per node), exact first and last timestamps, the first node, the rack spread, and recurrence against earlier patterns 435 and 968. It also lays out a clear before-timeline of torus warnings, the SystemController start and the FATAL register dumps. The opening 'What failed' section states as fact that the SIGTERM shutdown caused the severed link. That is strongly supported by the signal-15 timing, but it is still an inference, and it comes before the hypothesis is properly labelled. The next steps (check host 172.16.96.116 around 05:33, correlate with the 05:09 restart) are concrete, but they lack a specific query and an owner, and the answer admits it did not examine what happened after each error."
+    },
+    "Q_role_fit": {
+     "score": 5,
+     "comment": null
+    },
+    "Q_next_step": {
+     "score": 4,
+     "comment": null
+    },
+    "Q_evidence_use": {
+     "score": 5,
+     "comment": null
+    },
+    "Q_separation": {
+     "score": 4,
+     "comment": null
+    },
+    "Q_clarity": {
+     "score": 4,
+     "comment": null
+    }
+   },
+   "error": null
+  },
+  {
+   "id": "D-E05",
+   "role": "engineer",
+   "kind": "ours",
+   "E1_correct": 1.0,
+   "E1_missed": [],
+   "E2a_ledger_grounded": 1.0,
+   "E2a_numbers": 87,
+   "E2a_unverified": [],
+   "E2b_citation_grounded": 1.0,
+   "E2d_jev_support": 0.728,
+   "E3_separation": {
+    "facts": true,
+    "hypotheses_labelled": true,
+    "unknowns": true
+   },
+   "E5_forbidden": [],
+   "E5_must_not": [],
+   "mentions": 1.0,
+   "E7_required_tools": true,
+   "E7_first_tool": true,
+   "E8_tool_calls": 6,
+   "E8_elapsed_s": 37.1,
+   "E8_tool_s": 0.16,
+   "E8_other_s": 36.9,
+   "E8_tokens_in": 89741,
+   "E8_tokens_out": 5082,
+   "rep": 0,
+   "judge": {
+    "E2c_claim_support": {
+     "score": 1.0,
+     "comment": "[]"
+    },
+    "E3_causes_as_fact": {
+     "score": 0,
+     "comment": null
+    },
+    "E5_judge_invented_impact": {
+     "score": 0.0,
+     "comment": null
+    },
+    "Q_rubric_mean": {
+     "score": 4.8,
+     "comment": "The answer gives the engineer what they need: the failing component and node, the exact first line and timestamp, the preceding signal 15 line, scope (504 nodes, widespread), and whether the pattern is new or recurring, with the earlier pattern 435 variant noted. The cause is explicitly labelled as a hypothesis, and unknowns are listed separately, including impact. The next steps are concrete queries tied to the evidence. Clarity is slightly reduced by length and some redundancy, but the order makes it easy to act on."
+    },
+    "Q_role_fit": {
+     "score": 5,
+     "comment": null
+    },
+    "Q_next_step": {
+     "score": 5,
+     "comment": null
+    },
+    "Q_evidence_use": {
+     "score": 5,
+     "comment": null
+    },
+    "Q_separation": {
+     "score": 5,
+     "comment": null
+    },
+    "Q_clarity": {
+     "score": 4,
+     "comment": null
+    }
+   },
+   "error": null
+  },
+  {
+   "id": "D-E06",
+   "role": "engineer",
+   "kind": "baseline",
+   "E1_correct": 0.0,
+   "E1_missed": [
+    "machine check interrupt lines (exact template) in October 2005 = 37",
+    "first in October = 2005-10-02 08:34"
+   ],
+   "E2a_ledger_grounded": 0.5652173913043478,
+   "E2a_numbers": 23,
+   "E2a_unverified": [
+    "15",
+    "17",
+    "21",
+    "26",
+    "25",
+    "2.5",
+    "15",
+    "0.07",
+    "11",
+    "31"
+   ],
+   "E2b_citation_grounded": null,
+   "E2d_jev_support": null,
+   "E3_separation": {
+    "facts": true,
+    "hypotheses_labelled": true,
+    "unknowns": false
+   },
+   "E5_forbidden": [],
+   "E5_must_not": [],
+   "mentions": 1.0,
+   "E7_required_tools": true,
+   "E7_first_tool": true,
+   "E8_tool_calls": 6,
+   "E8_elapsed_s": 18.2,
+   "E8_tool_s": 0.32,
+   "E8_other_s": 17.9,
+   "E8_tokens_in": 50066,
+   "E8_tokens_out": 2285,
+   "rep": 0,
+   "judge": {
+    "E2c_claim_support": {
+     "score": 0.6333333333333333,
+     "comment": "[{\"sentence\": \"All are KERNEL, severity FATAL\", \"reason\": \"The severity count_by shows 61 FATAL and 1 INFO, so not all are FATAL. KERNEL is shown only for the 50 rows that were read.\"}, {\"sentence\": \"or roughly 2 a day on average.\", \"reason\": \"Derived average; this value does not appear in the evidence.\"}, {\"sentence\": \"25 minutes apart.\", \"reason\": \"Derived and rounded value (actual gap is about 25m25s); it does not appear in the evidence.\"}, {\"sentence\": \"about 2.5 hours apart.\", \"reason\": \"Derived and rounded value (actual gap is about 2h26m).\"}, {\"sentence\": \"\\\"(bit=0x06): L3 major internal error\\\" is the next most common.\", \"reason\": \"L3 and L2 variants each have 10 rows in the 50 read; it is a tie.\"}]"
+    },
+    "E3_causes_as_fact": {
+     "score": 1,
+     "comment": null
+    },
+    "E5_judge_invented_impact": {
+     "score": 0.0,
+     "comment": null
+    },
+    "Q_rubric_mean": {
+     "score": 4.4,
+     "comment": "The answer gives an engineer what they need: counts, the period, the first and last timestamps, the spread across nodes and racks, the repeat nodes, and a detailed before/after look at the first event. It states that only partial data was read (50 of 61 lines, 20 of 123 window lines). The cause is mostly labelled as a hypothesis, but one sentence presents it as fact: 'So the L3 errors were partly corrected, but a major one still raised the machine check.' The next steps (pull the remaining 11 lines, check whether the repeat nodes such as R02-M0-N4 failed) are concrete, but they are offers rather than specific queries."
+    },
+    "Q_role_fit": {
+     "score": 5,
+     "comment": null
+    },
+    "Q_next_step": {
+     "score": 4,
+     "comment": null
+    },
+    "Q_evidence_use": {
+     "score": 5,
+     "comment": null
+    },
+    "Q_separation": {
+     "score": 4,
+     "comment": null
+    },
+    "Q_clarity": {
+     "score": 4,
+     "comment": null
+    }
+   },
+   "error": null
+  },
+  {
+   "id": "D-E06",
+   "role": "engineer",
+   "kind": "ours",
+   "E1_correct": 0.5,
+   "E1_missed": [
+    "first in October = 2005-10-02 08:34"
+   ],
+   "E2a_ledger_grounded": 1.0,
+   "E2a_numbers": 60,
+   "E2a_unverified": [],
+   "E2b_citation_grounded": 1.0,
+   "E2d_jev_support": 0.822,
+   "E3_separation": {
+    "facts": true,
+    "hypotheses_labelled": true,
+    "unknowns": true
+   },
+   "E5_forbidden": [],
+   "E5_must_not": [],
+   "mentions": 1.0,
+   "E7_required_tools": true,
+   "E7_first_tool": true,
+   "E8_tool_calls": 7,
+   "E8_elapsed_s": 43.1,
+   "E8_tool_s": 0.16,
+   "E8_other_s": 42.9,
+   "E8_tokens_in": 98086,
+   "E8_tokens_out": 6418,
+   "rep": 0,
+   "judge": {
+    "E2c_claim_support": {
+     "score": 0.9473684210526315,
+     "comment": "[{\"sentence\": \"AFTER: FATAL lines followed on the same node within about 9 seconds\", \"reason\": \"'About 9 seconds' is a derived, rounded duration that does not appear in the evidence.\"}]"
+    },
+    "E3_causes_as_fact": {
+     "score": 0,
+     "comment": null
+    },
+    "E5_judge_invented_impact": {
+     "score": 0.0,
+     "comment": null
+    },
+    "Q_rubric_mean": {
+     "score": 4.8,
+     "comment": "The answer gives the engineer what they need: the error lines, component and severity, the first node and timestamp, the before and after context, the local-versus-widespread spread and the recurrence history. Every claim carries counts, the time window and the scope, and truncation is stated openly. The L3/EDRAM cause is labelled as a hypothesis with a confirmation check, and unknowns, including impact, are listed separately. The next steps are concrete queries tied to specific gaps in the evidence. The answer is somewhat dense and repeats a few points, so clarity is slightly below top."
+    },
+    "Q_role_fit": {
+     "score": 5,
+     "comment": null
+    },
+    "Q_next_step": {
+     "score": 5,
+     "comment": null
+    },
+    "Q_evidence_use": {
+     "score": 5,
+     "comment": null
+    },
+    "Q_separation": {
+     "score": 5,
+     "comment": null
+    },
+    "Q_clarity": {
+     "score": 4,
+     "comment": null
+    }
+   },
+   "error": null
+  },
+  {
+   "id": "D-E07",
+   "role": "engineer",
+   "kind": "ours",
+   "E1_correct": 1.0,
+   "E1_missed": [],
+   "E2a_ledger_grounded": 0.9836065573770492,
+   "E2a_numbers": 61,
+   "E2a_unverified": [
+    "40"
+   ],
+   "E2b_citation_grounded": 1.0,
+   "E2d_jev_support": 0.293,
+   "E3_separation": {
+    "facts": true,
+    "hypotheses_labelled": true,
+    "unknowns": true
+   },
+   "E5_forbidden": [],
+   "E5_must_not": [],
+   "mentions": 1.0,
+   "E7_required_tools": true,
+   "E7_first_tool": true,
+   "E8_tool_calls": 3,
+   "E8_elapsed_s": 49.5,
+   "E8_tool_s": 0.31,
+   "E8_other_s": 49.2,
+   "E8_tokens_in": 145516,
+   "E8_tokens_out": 7069,
+   "rep": 0,
+   "judge": {
+    "E2c_claim_support": {
+     "score": 0.96,
+     "comment": "[{\"sentence\": \"Yes. Six instances had spawn and build times above the threshold, all as nova-compute \\\"Took N seconds\\\" lines.\", \"reason\": \"Six flagged instances with spawn/build 'Took N seconds' lines is supported. The component (nova-compute) is shown only for a445709b's lines; the outlier rows carry no component field.\"}]"
+    },
+    "E3_causes_as_fact": {
+     "score": 0,
+     "comment": null
+    },
+    "E5_judge_invented_impact": {
+     "score": 0.0,
+     "comment": null
+    },
+    "Q_rubric_mean": {
+     "score": 4.8,
+     "comment": "The answer names the component, the instance IDs, a before and after timeline and the drill-down window. It also gives the baseline (medians, p95, thresholds, n=2066) and notes that five of the six outliers cluster on 2017-05-14, which is exactly what an engineer investigating slow spawns needs. The possible cause is explicitly labelled a hypothesis, tied to the 44-second gap between 'Creating image' and 'VM Started', and comes with a confirm or refute test. Unknowns (node, root cause, impact) are listed separately. The next steps are concrete queries tied to the evidence, with no named owner, though the asking engineer is the obvious one. The answer is dense but well ordered, and it invents no impact."
+    },
+    "Q_role_fit": {
+     "score": 5,
+     "comment": null
+    },
+    "Q_next_step": {
+     "score": 5,
+     "comment": null
+    },
+    "Q_evidence_use": {
+     "score": 5,
+     "comment": null
+    },
+    "Q_separation": {
+     "score": 5,
+     "comment": null
+    },
+    "Q_clarity": {
+     "score": 4,
+     "comment": null
+    }
+   },
+   "error": null
+  },
+  {
+   "id": "D-E08",
+   "role": "engineer",
+   "kind": "ours",
+   "E1_correct": 1.0,
+   "E1_missed": [],
+   "E2a_ledger_grounded": 1.0,
+   "E2a_numbers": 51,
+   "E2a_unverified": [],
+   "E2b_citation_grounded": 1.0,
+   "E2d_jev_support": 0.67,
+   "E3_separation": {
+    "facts": true,
+    "hypotheses_labelled": true,
+    "unknowns": true
+   },
+   "E5_forbidden": [],
+   "E5_must_not": [],
+   "mentions": 1.0,
+   "E7_required_tools": true,
+   "E7_first_tool": true,
+   "E8_tool_calls": 5,
+   "E8_elapsed_s": 41.1,
+   "E8_tool_s": 0.1,
+   "E8_other_s": 41.0,
+   "E8_tokens_in": 104367,
+   "E8_tokens_out": 4617,
+   "rep": 0,
+   "judge": {
+    "E2c_claim_support": {
+     "score": 1.0,
+     "comment": "[]"
+    },
+    "E3_causes_as_fact": {
+     "score": 0,
+     "comment": null
+    },
+    "E5_judge_invented_impact": {
+     "score": 0.0,
+     "comment": null
+    },
+    "Q_rubric_mean": {
+     "score": 4.8,
+     "comment": "The answer covers everything an engineer needs. It gives the rate against the baseline with counts, notes the window is not unprecedented (5/168 baseline hours were at or above 245 lines), and breaks the lines down by node. It shows the first error line and what came just before and after, and addresses local vs widespread. The machine-check explanation is explicitly labelled a hypothesis, with a confirming check. Unknowns are listed separately, including the node-count inconsistency between tools. The next steps are concrete queries tied to specific nodes, patterns and evidence IDs. Clarity loses a point because the answer is dense and somewhat repetitive."
+    },
+    "Q_role_fit": {
+     "score": 5,
+     "comment": null
+    },
+    "Q_next_step": {
+     "score": 5,
+     "comment": null
+    },
+    "Q_evidence_use": {
+     "score": 5,
+     "comment": null
+    },
+    "Q_separation": {
+     "score": 5,
+     "comment": null
+    },
+    "Q_clarity": {
+     "score": 4,
+     "comment": null
+    }
+   },
+   "error": null
+  },
+  {
+   "id": "D-E09",
+   "role": "engineer",
+   "kind": "ours",
+   "E1_correct": 1.0,
+   "E1_missed": [],
+   "E2a_ledger_grounded": 1.0,
+   "E2a_numbers": 66,
+   "E2a_unverified": [],
+   "E2b_citation_grounded": 1.0,
+   "E2d_jev_support": 0.64,
+   "E3_separation": {
+    "facts": true,
+    "hypotheses_labelled": true,
+    "unknowns": true
+   },
+   "E5_forbidden": [],
+   "E5_must_not": [],
+   "mentions": 1.0,
+   "E7_required_tools": true,
+   "E7_first_tool": false,
+   "E8_tool_calls": 4,
+   "E8_elapsed_s": 53.3,
+   "E8_tool_s": 0.12,
+   "E8_other_s": 53.2,
+   "E8_tokens_in": 102719,
+   "E8_tokens_out": 7629,
+   "rep": 0,
+   "judge": {
+    "E2c_claim_support": {
+     "score": 1.0,
+     "comment": "[]"
+    },
+    "E3_causes_as_fact": {
+     "score": 0,
+     "comment": null
+    },
+    "E5_judge_invented_impact": {
+     "score": 0.0,
+     "comment": null
+    },
+    "Q_rubric_mean": {
+     "score": 4.8,
+     "comment": "The answer gives the IPs, line counts, node, time windows and a before/after timeline for the first burst, which is what an engineer needs. Brute-forcing is labelled as a hypothesis with checks that would confirm it. Unknowns are explicit: exact attempts, success, baseline and impact. The next steps are concrete queries and config checks, each tied to evidence. It is somewhat long and dense, but well ordered."
+    },
+    "Q_role_fit": {
+     "score": 5,
+     "comment": null
+    },
+    "Q_next_step": {
+     "score": 5,
+     "comment": null
+    },
+    "Q_evidence_use": {
+     "score": 5,
+     "comment": null
+    },
+    "Q_separation": {
+     "score": 5,
+     "comment": null
+    },
+    "Q_clarity": {
+     "score": 4,
+     "comment": null
+    }
+   },
+   "error": null
+  },
+  {
+   "id": "D-E10",
+   "role": "engineer",
+   "kind": "ours",
+   "E1_correct": 1.0,
+   "E1_missed": [],
+   "E2a_ledger_grounded": 1.0,
+   "E2a_numbers": 50,
+   "E2a_unverified": [],
+   "E2b_citation_grounded": 1.0,
+   "E2d_jev_support": 0.631,
+   "E3_separation": {
+    "facts": true,
+    "hypotheses_labelled": true,
+    "unknowns": true
+   },
+   "E5_forbidden": [],
+   "E5_must_not": [],
+   "mentions": 1.0,
+   "E7_required_tools": true,
+   "E7_first_tool": false,
+   "E8_tool_calls": 6,
+   "E8_elapsed_s": 37.2,
+   "E8_tool_s": 0.15,
+   "E8_other_s": 37.1,
+   "E8_tokens_in": 237236,
+   "E8_tokens_out": 4162,
+   "rep": 0,
+   "judge": {
+    "E2c_claim_support": {
+     "score": 0.9130434782608695,
+     "comment": "[{\"sentence\": \"The same chain repeated at 20:35:24 (from 10.251.215.16:50010) and at 20:35:27 (from 10.251.107.19:50010), each with Transmitted block, Starting thread and addStoredBlock lines.\", \"reason\": \"No addStoredBlock lines for the 20:35:27 targets (10.251.31.5, 10.251.71.240) appear in the retrieved rows.\"}, {\"sentence\": \"The retrieved rows were truncated and excluded Served, so reads in the final minutes are unconfirmed.\", \"reason\": \"The search requested exclude_text 'Served', but its returned rows do contain Served lines, so they did not exclude Served.\"}]"
+    },
+    "E3_causes_as_fact": {
+     "score": 0,
+     "comment": null
+    },
+    "E5_judge_invented_impact": {
+     "score": 0.0,
+     "comment": null
+    },
+    "Q_rubric_mean": {
+     "score": 4.8,
+     "comment": "The answer walks the block's lifecycle step by step and backs it with timestamps, line counts, components, node IPs and line_ids. It states the scope and the truncation limits. The job-cleanup explanation is labelled as a hypothesis with a way to confirm it, and the unknowns are listed explicitly, including that impact is not in the logs. The next steps are concrete, runnable queries tied to specific gaps. It is somewhat long but well ordered."
+    },
+    "Q_role_fit": {
+     "score": 5,
+     "comment": null
+    },
+    "Q_next_step": {
+     "score": 5,
+     "comment": null
+    },
+    "Q_evidence_use": {
+     "score": 5,
+     "comment": null
+    },
+    "Q_separation": {
+     "score": 5,
+     "comment": null
+    },
+    "Q_clarity": {
+     "score": 4,
+     "comment": null
+    }
+   },
+   "error": null
+  },
+  {
+   "id": "D-L01",
+   "role": "lead",
+   "kind": "baseline",
+   "E1_correct": 1.0,
+   "E1_missed": [],
+   "E2a_ledger_grounded": 1.0,
+   "E2a_numbers": 42,
+   "E2a_unverified": [],
+   "E2b_citation_grounded": null,
+   "E2d_jev_support": null,
+   "E3_separation": {
+    "facts": true,
+    "hypotheses_labelled": true,
+    "unknowns": false
+   },
+   "E5_forbidden": [],
+   "E5_must_not": [],
+   "mentions": 1.0,
+   "E7_required_tools": true,
+   "E7_first_tool": true,
+   "E8_tool_calls": 3,
+   "E8_elapsed_s": 12.5,
+   "E8_tool_s": 0.2,
+   "E8_other_s": 12.3,
+   "E8_tokens_in": 26226,
+   "E8_tokens_out": 1823,
+   "rep": 0,
+   "judge": {
+    "E2c_claim_support": {
+     "score": 0.7777777777777778,
+     "comment": "[{\"sentence\": \"\\\"Bursts\\\" are recurrences separated by more than 30 minutes of quiet. Lines are raw log entries, and one fault can produce thousands of them.\", \"reason\": \"The scope supports the burst and line definitions (30-min gap; lines = log entries). The evidence does not show that one fault produces thousands of lines.\"}, {\"sentence\": \"L3 dcache parity machine check | node-platform | 8 | one node only | new on 11-24\", \"reason\": \"The template reads 'L<N> dcache', so the level '3' is not in the evidence. The other values (8 bursts, 1 node, first seen 11-24) match.\"}, {\"sentence\": \"It started on 11-17 and reached all 1,024 nodes in 27 bursts.\", \"reason\": \"The pattern hit 1024 nodes, but nothing shows that this is 'all' nodes; other patterns hit 3584 nodes.\"}, {\"sentence\": \"This looks like an I/O or network problem between the compute nodes and the I/O nodes.\", \"reason\": \"The judgment kind is 'network or I/O failure', but the compute-node to I/O-node detail is not in the evidence.\"}, {\"sentence\": \"The L3 dcache parity error repeated 8 times on one node from 11-24.\", \"reason\": \"'L3' is not in the evidence (the template reads L<N>). The 8 bursts, single node and 11-24 start do match.\"}]"
+    },
+    "E3_causes_as_fact": {
+     "score": 1,
+     "comment": null
+    },
+    "E5_judge_invented_impact": {
+     "score": 0.0,
+     "comment": null
+    },
+    "Q_rubric_mean": {
+     "score": 4.4,
+     "comment": "The answer gives the lead what was asked for: per-pattern burst counts, spread across nodes, trends against the prior four weeks, team ownership and roll-ups, and a clear first priority (ciod CioStream failures) backed by measured reasons. Next steps name owners and include a concrete check, aligning kernel/tree-network timestamps with the ciod bursts, though they lack a specific runnable query. Hypotheses are mostly labelled: the exception link is explicitly called a hypothesis, and unknowns such as cost, downtime and root cause are stated. However, \"points to a failing part to replace\" reads close to a cause stated as fact, and the 97.9 priority score is not explained."
+    },
+    "Q_role_fit": {
+     "score": 5,
+     "comment": null
+    },
+    "Q_next_step": {
+     "score": 4,
+     "comment": null
+    },
+    "Q_evidence_use": {
+     "score": 5,
+     "comment": null
+    },
+    "Q_separation": {
+     "score": 4,
+     "comment": null
+    },
+    "Q_clarity": {
+     "score": 4,
+     "comment": null
+    }
+   },
+   "error": null
+  },
+  {
+   "id": "D-L01",
+   "role": "lead",
+   "kind": "ours",
+   "E1_correct": 1.0,
+   "E1_missed": [],
+   "E2a_ledger_grounded": 0.9921875,
+   "E2a_numbers": 128,
+   "E2a_unverified": [
+    "1000"
+   ],
+   "E2b_citation_grounded": 1.0,
+   "E2d_jev_support": 0.768,
+   "E3_separation": {
+    "facts": true,
+    "hypotheses_labelled": true,
+    "unknowns": true
+   },
+   "E5_forbidden": [],
+   "E5_must_not": [],
+   "mentions": 1.0,
+   "E7_required_tools": true,
+   "E7_first_tool": true,
+   "E8_tool_calls": 7,
+   "E8_elapsed_s": 40.6,
+   "E8_tool_s": 0.31,
+   "E8_other_s": 40.3,
+   "E8_tokens_in": 110628,
+   "E8_tokens_out": 5505,
+   "rep": 0,
+   "judge": {
+    "E2c_claim_support": {
+     "score": 0.9655172413793104,
+     "comment": "[{\"sentence\": \"New ciod 'Error reading message prefix on CioStream socket ... Link has been severed' (network or I/O failure): the most log lines and the widest node spread in the period, and absent in the previous period.\", \"reason\": \"Patterns 562 and 806 span 3584 nodes, which is more than the 1024 nodes of pattern 968, so 968 does not have the widest node spread.\"}]"
+    },
+    "E3_causes_as_fact": {
+     "score": 1,
+     "comment": null
+    },
+    "E5_judge_invented_impact": {
+     "score": 0.0,
+     "comment": null
+    },
+    "Q_rubric_mean": {
+     "score": 4.4,
+     "comment": "The answer gives the lead what they need: burst counts by team with weekly trends, recurrences against the previous period, node spread, owners, and a single first priority (pattern 968) with a measured reason (new, 27 bursts, 1024 nodes). It states its scope, truncation and partial weeks, and labels hypotheses and unknowns clearly, including that impact is not in the logs. However, item 1 labels the ciod error as a '(network or I/O failure)' as if that were established, and the 15851-line text search versus the 10408-line pattern count is not reconciled. Next steps are concrete but do not name an owner explicitly, and the answer is somewhat repetitive."
+    },
+    "Q_role_fit": {
+     "score": 5,
+     "comment": null
+    },
+    "Q_next_step": {
+     "score": 4,
+     "comment": null
+    },
+    "Q_evidence_use": {
+     "score": 5,
+     "comment": null
+    },
+    "Q_separation": {
+     "score": 4,
+     "comment": null
+    },
+    "Q_clarity": {
+     "score": 4,
+     "comment": null
+    }
+   },
+   "error": null
+  },
+  {
+   "id": "D-L02",
+   "role": "lead",
+   "kind": "baseline",
+   "E1_correct": 0.0,
+   "E1_missed": [
+    "bursts of 'machine check interrupt' started in October 2005 = 34",
+    "distinct nodes with 'machine check interrupt' in October 2005 = 34"
+   ],
+   "E2a_ledger_grounded": 1.0,
+   "E2a_numbers": 15,
+   "E2a_unverified": [],
+   "E2b_citation_grounded": null,
+   "E2d_jev_support": null,
+   "E3_separation": {
+    "facts": true,
+    "hypotheses_labelled": false,
+    "unknowns": false
+   },
+   "E5_forbidden": [],
+   "E5_must_not": [],
+   "mentions": 1.0,
+   "E7_required_tools": true,
+   "E7_first_tool": false,
+   "E8_tool_calls": 4,
+   "E8_elapsed_s": 11.3,
+   "E8_tool_s": 0.08,
+   "E8_other_s": 11.2,
+   "E8_tokens_in": 53386,
+   "E8_tokens_out": 1301,
+   "rep": 0,
+   "judge": {
+    "E2c_claim_support": {
+     "score": 0.7692307692307693,
+     "comment": "[{\"sentence\": \"Every line is FATAL severity from the KERNEL component.\", \"reason\": \"Only three sample rows were retrieved. They are FATAL/KERNEL, but the evidence does not cover the severity or component of all 61 lines.\"}, {\"sentence\": \"That is slightly up from 47–52 in the prior period\", \"reason\": \"The named patterns had 52 and 49 bursts in the prior period. The figure 47 does not correspond to either of them.\"}, {\"sentence\": \"so the underlying machine-check activity looks steady rather than growing.\", \"reason\": \"This is a conclusion drawn from partly incorrect prior-period figures. The evidence shows small increases for these patterns.\"}]"
+    },
+    "E3_causes_as_fact": {
+     "score": 0,
+     "comment": null
+    },
+    "E5_judge_invented_impact": {
+     "score": 0.0,
+     "comment": null
+    },
+    "Q_rubric_mean": {
+     "score": 3.4,
+     "comment": "The answer gives the lead a weekly trend with stated counts, flags the partial weeks, reports spread (61 lines across 54 nodes) and a clear owner (node-platform), which fits the question well. It counts raw lines rather than recurrences or bursts for the main pattern. Its claim that related patterns rose slightly yet machine-check activity is 'steady' is loosely argued. It honestly flags that only three lines were read and attributes no causes as fact. It offers no next step or recommendation on what the team should investigate."
+    },
+    "Q_role_fit": {
+     "score": 4,
+     "comment": null
+    },
+    "Q_next_step": {
+     "score": 1,
+     "comment": null
+    },
+    "Q_evidence_use": {
+     "score": 4,
+     "comment": null
+    },
+    "Q_separation": {
+     "score": 4,
+     "comment": null
+    },
+    "Q_clarity": {
+     "score": 4,
+     "comment": null
+    }
+   },
+   "error": null
+  },
+  {
+   "id": "D-L02",
+   "role": "lead",
+   "kind": "ours",
+   "E1_correct": 1.0,
+   "E1_missed": [],
+   "E2a_ledger_grounded": 1.0,
+   "E2a_numbers": 65,
+   "E2a_unverified": [],
+   "E2b_citation_grounded": 1.0,
+   "E2d_jev_support": 0.8,
+   "E3_separation": {
+    "facts": true,
+    "hypotheses_labelled": true,
+    "unknowns": true
+   },
+   "E5_forbidden": [],
+   "E5_must_not": [],
+   "mentions": 1.0,
+   "E7_required_tools": true,
+   "E7_first_tool": false,
+   "E8_tool_calls": 3,
+   "E8_elapsed_s": 32.5,
+   "E8_tool_s": 0.6,
+   "E8_other_s": 31.9,
+   "E8_tokens_in": 78383,
+   "E8_tokens_out": 4017,
+   "rep": 0,
+   "judge": {
+    "E2c_claim_support": {
+     "score": 1.0,
+     "comment": "[]"
+    },
+    "E3_causes_as_fact": {
+     "score": 0,
+     "comment": null
+    },
+    "E5_judge_invented_impact": {
+     "score": 0.0,
+     "comment": null
+    },
+    "Q_rubric_mean": {
+     "score": 4.2,
+     "comment": "The answer gives the weekly trend with partial weeks flagged, the owner, and lifetime versus October scope for every count, and it clearly states what is missing (October bursts and node counts for pattern 33). Facts, the labelled hypothesis and unknowns are cleanly separated, and impact is explicitly marked unknown. Recurrence and spread for October are missing for the main pattern, so role fit is slightly short. The text is repetitive and dense, and the next steps are concrete but name no owner."
+    },
+    "Q_role_fit": {
+     "score": 4,
+     "comment": null
+    },
+    "Q_next_step": {
+     "score": 4,
+     "comment": null
+    },
+    "Q_evidence_use": {
+     "score": 5,
+     "comment": null
+    },
+    "Q_separation": {
+     "score": 5,
+     "comment": null
+    },
+    "Q_clarity": {
+     "score": 3,
+     "comment": null
+    }
+   },
+   "error": null
+  },
+  {
+   "id": "D-L03",
+   "role": "lead",
+   "kind": "baseline",
+   "E1_correct": 1.0,
+   "E1_missed": [],
+   "E2a_ledger_grounded": 1.0,
+   "E2a_numbers": 1,
+   "E2a_unverified": [],
+   "E2b_citation_grounded": null,
+   "E2d_jev_support": null,
+   "E3_separation": {
+    "facts": true,
+    "hypotheses_labelled": false,
+    "unknowns": false
+   },
+   "E5_forbidden": [],
+   "E5_must_not": [],
+   "mentions": 1.0,
+   "E7_required_tools": true,
+   "E7_first_tool": true,
+   "E8_tool_calls": 3,
+   "E8_elapsed_s": 4.9,
+   "E8_tool_s": 0.06,
+   "E8_other_s": 4.8,
+   "E8_tokens_in": 14241,
+   "E8_tokens_out": 486,
+   "rep": 0,
+   "judge": {
+    "E2c_claim_support": {
+     "score": 1.0,
+     "comment": "[]"
+    },
+    "E3_causes_as_fact": {
+     "score": 0,
+     "comment": null
+    },
+    "E5_judge_invented_impact": {
+     "score": 0.0,
+     "comment": null
+    },
+    "Q_rubric_mean": {
+     "score": 3.2,
+     "comment": "The answer covers the asked basics: per-status line counts (3,969 404s, 2 503s), the service (nova-api) and the owning team (cloud-api). It lacks the time period, trend and recurrence a lead needs, and its only prioritisation is raw volume. It clearly separates facts from limits (line counts, not de-duplicated requests) and openly says it hasn't checked what the 404s were for or when they happened. There is no concrete next step or owner beyond saying cloud-api should look at the 404s, and no causes or impact are invented."
+    },
+    "Q_role_fit": {
+     "score": 3,
+     "comment": null
+    },
+    "Q_next_step": {
+     "score": 2,
+     "comment": null
+    },
+    "Q_evidence_use": {
+     "score": 3,
+     "comment": null
+    },
+    "Q_separation": {
+     "score": 4,
+     "comment": null
+    },
+    "Q_clarity": {
+     "score": 4,
+     "comment": null
+    }
+   },
+   "error": null
+  },
+  {
+   "id": "D-L03",
+   "role": "lead",
+   "kind": "ours",
+   "E1_correct": 1.0,
+   "E1_missed": [],
+   "E2a_ledger_grounded": 1.0,
+   "E2a_numbers": 36,
+   "E2a_unverified": [],
+   "E2b_citation_grounded": 1.0,
+   "E2d_jev_support": 0.613,
+   "E3_separation": {
+    "facts": true,
+    "hypotheses_labelled": true,
+    "unknowns": true
+   },
+   "E5_forbidden": [],
+   "E5_must_not": [],
+   "mentions": 1.0,
+   "E7_required_tools": true,
+   "E7_first_tool": true,
+   "E8_tool_calls": 5,
+   "E8_elapsed_s": 19.6,
+   "E8_tool_s": 0.08,
+   "E8_other_s": 19.5,
+   "E8_tokens_in": 65231,
+   "E8_tokens_out": 2064,
+   "rep": 0,
+   "judge": {
+    "E2c_claim_support": {
+     "score": 1.0,
+     "comment": "[]"
+    },
+    "E3_causes_as_fact": {
+     "score": 0,
+     "comment": null
+    },
+    "E5_judge_invented_impact": {
+     "score": 0.0,
+     "comment": null
+    },
+    "Q_rubric_mean": {
+     "score": 4.2,
+     "comment": "The answer gives counts, scope, period, component and owning team, and it separates facts, a labelled hypothesis and unknowns cleanly. It falls short of a full lead view because the dominant 404 problem has no trend or recurrence breakdown, although it says so and makes that the next step. The next steps are concrete and tied to evidence, but they don't name an owner beyond the cloud-api team attribution and don't clearly rank one item first. The text is repetitive: the counts are restated several times, which makes it longer than needed."
+    },
+    "Q_role_fit": {
+     "score": 4,
+     "comment": null
+    },
+    "Q_next_step": {
+     "score": 4,
+     "comment": null
+    },
+    "Q_evidence_use": {
+     "score": 5,
+     "comment": null
+    },
+    "Q_separation": {
+     "score": 5,
+     "comment": null
+    },
+    "Q_clarity": {
+     "score": 3,
+     "comment": null
+    }
+   },
+   "error": null
+  },
+  {
+   "id": "D-L04",
+   "role": "lead",
+   "kind": "baseline",
+   "E1_correct": 1.0,
+   "E1_missed": [],
+   "E2a_ledger_grounded": 0.75,
+   "E2a_numbers": 12,
+   "E2a_unverified": [
+    "30",
+    "24",
+    "22"
+   ],
+   "E2b_citation_grounded": null,
+   "E2d_jev_support": null,
+   "E3_separation": {
+    "facts": true,
+    "hypotheses_labelled": true,
+    "unknowns": false
+   },
+   "E5_forbidden": [],
+   "E5_must_not": [],
+   "mentions": 0.0,
+   "E7_required_tools": false,
+   "E7_first_tool": false,
+   "E8_tool_calls": 4,
+   "E8_elapsed_s": 11.6,
+   "E8_tool_s": 0.23,
+   "E8_other_s": 11.4,
+   "E8_tokens_in": 34937,
+   "E8_tokens_out": 1319,
+   "rep": 0,
+   "judge": {
+    "E2c_claim_support": {
+     "score": 0.6666666666666666,
+     "comment": "[{\"sentence\": \"All are KERNEL, FATAL, pattern 69.\", \"reason\": \"Only the sample rows show these fields; there is no aggregate over all 46 lines for component, severity or pattern.\"}, {\"sentence\": \"It shows up on most days, with quiet gaps (5–11 October, 14–17 October, 24–25 October).\", \"reason\": \"Only 15 of 31 days have nonzero counts, which is not most days. The listed gaps are correct, but other zero days exist (20–21 and 30 October).\"}, {\"sentence\": \"That is a steady background of single-node panics.\", \"reason\": \"This is an interpretation the evidence does not show; the daily counts are uneven, including a spike of 14.\"}, {\"sentence\": \"R30-M1-NF is the only place with repeated hits.\", \"reason\": \"Contradicted by the count_by result: R02-M1-N6, R10-M0-NE, R31-M1-N9, R42-M1-N3 and R62-M0-N4 also have 2 lines each.\"}]"
+    },
+    "E3_causes_as_fact": {
+     "score": 0,
+     "comment": null
+    },
+    "E5_judge_invented_impact": {
+     "score": 0.0,
+     "comment": null
+    },
+    "Q_rubric_mean": {
+     "score": 4.0,
+     "comment": "The answer settles the lead's question with stated counts over the October period: 46 lines across 38 nodes, a maximum of 2 per node, 30 single-hit nodes, wide rack spread, quiet gaps and the 23 October burst figures. The correlated-event cause is labelled as a hypothesis, and it admits it did not check surrounding logs. Missing for a lead: an owning team, a comparison against other months, and a concrete runnable next step with an owner. 'Look separately at R30-M1-NF' is the right target but is not a specific action."
+    },
+    "Q_role_fit": {
+     "score": 4,
+     "comment": null
+    },
+    "Q_next_step": {
+     "score": 3,
+     "comment": null
+    },
+    "Q_evidence_use": {
+     "score": 5,
+     "comment": null
+    },
+    "Q_separation": {
+     "score": 4,
+     "comment": null
+    },
+    "Q_clarity": {
+     "score": 4,
+     "comment": null
+    }
+   },
+   "error": null
+  },
+  {
+   "id": "D-L04",
+   "role": "lead",
+   "kind": "ours",
+   "E1_correct": 1.0,
+   "E1_missed": [],
+   "E2a_ledger_grounded": 1.0,
+   "E2a_numbers": 62,
+   "E2a_unverified": [],
+   "E2b_citation_grounded": 1.0,
+   "E2d_jev_support": 0.664,
+   "E3_separation": {
+    "facts": true,
+    "hypotheses_labelled": true,
+    "unknowns": true
+   },
+   "E5_forbidden": [],
+   "E5_must_not": [],
+   "mentions": 1.0,
+   "E7_required_tools": true,
+   "E7_first_tool": false,
+   "E8_tool_calls": 5,
+   "E8_elapsed_s": 44.0,
+   "E8_tool_s": 0.74,
+   "E8_other_s": 43.3,
+   "E8_tokens_in": 104744,
+   "E8_tokens_out": 5931,
+   "rep": 0,
+   "judge": {
+    "E2c_claim_support": {
+     "score": 0.8823529411764706,
+     "comment": "[{\"sentence\": \"The 10 sampled log lines come from different racks and midplanes (for example R04-M0-N3-C:J17-U11, R52-M0-NB-C:J04-U01, R22-M0-NA-C:J11-U01, R62-M0-N4-C:J13-U01), all FATAL severity.\", \"reason\": \"Two of the 10 sampled lines come from the same node (R62-M0-N4-C:J13-U01), so not all come from different racks and midplanes. All are FATAL.\"}, {\"sentence\": \"All three are KERNEL FATAL patterns active in 6 weeks with similar node spread (33, 44 and 34 bursts), so they may share a trigger.\", \"reason\": \"'Kill job timed out' has nodes 0, so the claim of similar node spread is contradicted. KERNEL, FATAL, 6 weeks and the burst counts do match.\"}]"
+    },
+    "E3_causes_as_fact": {
+     "score": 1,
+     "comment": null
+    },
+    "E5_judge_invented_impact": {
+     "score": 0.0,
+     "comment": null
+    },
+    "Q_rubric_mean": {
+     "score": 4.6,
+     "comment": "The answer directly addresses the spread question with counts: 46 lines on 38 nodes, top-node share 0.043, and no node above 2 lines. It adds the burst trend against the previous period (33 vs 51), the owning team, and a prioritized list with measured reasons, which is what a lead needs. Hypotheses and unknowns are clearly labelled, though calling 'machine check interrupt' a hardware-failure pattern is asserted without support, and the 'similar node spread' claim for Kill job lacks a node count. The next steps are concrete and runnable but carry no explicit owner, and the answer is somewhat dense."
+    },
+    "Q_role_fit": {
+     "score": 5,
+     "comment": null
+    },
+    "Q_next_step": {
+     "score": 4,
+     "comment": null
+    },
+    "Q_evidence_use": {
+     "score": 5,
+     "comment": null
+    },
+    "Q_separation": {
+     "score": 5,
+     "comment": null
+    },
+    "Q_clarity": {
+     "score": 4,
+     "comment": null
+    }
+   },
+   "error": null
+  },
+  {
+   "id": "D-L05",
+   "role": "lead",
+   "kind": "baseline",
+   "E1_correct": 0.5,
+   "E1_missed": [
+    "FATAL lines in KERNEL (whole BGL) = 626756"
+   ],
+   "E2a_ledger_grounded": 0.6666666666666666,
+   "E2a_numbers": 12,
+   "E2a_unverified": [
+    "73%",
+    "27%",
+    "855,514",
+    "191"
+   ],
+   "E2b_citation_grounded": null,
+   "E2d_jev_support": null,
+   "E3_separation": {
+    "facts": true,
+    "hypotheses_labelled": true,
+    "unknowns": true
+   },
+   "E5_forbidden": [],
+   "E5_must_not": [],
+   "mentions": 1.0,
+   "E7_required_tools": true,
+   "E7_first_tool": true,
+   "E8_tool_calls": 2,
+   "E8_elapsed_s": 8.6,
+   "E8_tool_s": 0.06,
+   "E8_other_s": 8.5,
+   "E8_tokens_in": 13866,
+   "E8_tokens_out": 1044,
+   "rep": 0,
+   "judge": {
+    "E2c_claim_support": {
+     "score": 0.38461538461538464,
+     "comment": "[{\"sentence\": \"KERNEL | 626,771 (about 73%) | node-platform\", \"reason\": \"626,771 matches, but the 73% share is a derived figure not in the evidence. The KERNEL→node-platform mapping is inferred, not shown.\"}, {\"sentence\": \"APP | 228,534 (about 27%) | hpc-workloads\", \"reason\": \"228,534 matches, but the 27% share is derived. The APP→hpc-workloads mapping is not in the evidence.\"}, {\"sentence\": \"MMCS | 3 | cluster-control\", \"reason\": \"MMCS has 3 lines, but the evidence does not show which team owns it. The mapping is inferred from cluster-control also having 3.\"}, {\"sentence\": \"That makes node-platform and hpc-workloads the main owners.\", \"reason\": \"It rests on a component-to-team mapping the evidence does not show.\"}, {\"sentence\": \"A single fault can log thousands of FATAL lines.\", \"reason\": \"This general claim is not shown by the evidence.\"}]"
+    },
+    "E3_causes_as_fact": {
+     "score": 0,
+     "comment": null
+    },
+    "E5_judge_invented_impact": {
+     "score": 0.0,
+     "comment": null
+    },
+    "Q_rubric_mean": {
+     "score": 3.4,
+     "comment": "The answer gives clear FATAL line counts by component and by team for the whole corpus, and correctly warns that line counts are not incidents. A lead also needs the trend over time, how often problems recur, how widely they spread, and a recommendation on what to investigate first, and all of these are missing. The inferred ownership mapping and the small total mismatch are flagged honestly as unconfirmed, so facts and unknowns are well separated. There is no concrete next step, such as resolving who owns LINKCARD or grouping KERNEL FATAL lines into incidents, and no owner is named for one."
+    },
+    "Q_role_fit": {
+     "score": 3,
+     "comment": null
+    },
+    "Q_next_step": {
+     "score": 1,
+     "comment": null
+    },
+    "Q_evidence_use": {
+     "score": 4,
+     "comment": null
+    },
+    "Q_separation": {
+     "score": 5,
+     "comment": null
+    },
+    "Q_clarity": {
+     "score": 4,
+     "comment": null
+    }
+   },
+   "error": null
+  },
+  {
+   "id": "D-L05",
+   "role": "lead",
+   "kind": "ours",
+   "E1_correct": 1.0,
+   "E1_missed": [],
+   "E2a_ledger_grounded": 1.0,
+   "E2a_numbers": 63,
+   "E2a_unverified": [],
+   "E2b_citation_grounded": 1.0,
+   "E2d_jev_support": 0.762,
+   "E3_separation": {
+    "facts": true,
+    "hypotheses_labelled": true,
+    "unknowns": true
+   },
+   "E5_forbidden": [],
+   "E5_must_not": [],
+   "mentions": 1.0,
+   "E7_required_tools": true,
+   "E7_first_tool": true,
+   "E8_tool_calls": 5,
+   "E8_elapsed_s": 35.4,
+   "E8_tool_s": 2.75,
+   "E8_other_s": 32.6,
+   "E8_tokens_in": 84907,
+   "E8_tokens_out": 4494,
+   "rep": 0,
+   "judge": {
+    "E2c_claim_support": {
+     "score": 0.8260869565217391,
+     "comment": "[{\"sentence\": \"It is the most frequent recurring problem and the widest spread across nodes.\", \"reason\": \"The most bursts is shown, but the list is ranked by bursts and truncated (15 of 538), so the widest node spread is not established.\"}, {\"sentence\": \"This is the largest FATAL line volume among the APP patterns.\", \"reason\": \"Only the top 10 of 329 APP candidates, ranked by bursts, are shown; other patterns may have more lines.\"}, {\"sentence\": \"KERNEL 'Lustre mount FAILED' hit all 1024 nodes in a short window of activity.\", \"reason\": \"The evidence shows 1024 nodes but not that this is all nodes.\"}, {\"sentence\": \"It has the most bursts (236) and the widest node spread (3394 nodes) of any problem pattern.\", \"reason\": \"The most bursts is supported by the ranking, but the widest node spread across all 538 candidates is not shown.\"}]"
+    },
+    "E3_causes_as_fact": {
+     "score": 1,
+     "comment": null
+    },
+    "E5_judge_invented_impact": {
+     "score": 0.0,
+     "comment": null
+    },
+    "Q_rubric_mean": {
+     "score": 4.6,
+     "comment": "The answer fits the lead's question well. It gives FATAL counts by component and by owning team with explicit scope, then picks one problem to investigate first ('rts panic') with a measured reason: most bursts and widest node spread. Hypotheses about LINKCARD/MMCS ownership and a shared I/O cause are clearly labelled, and unknowns are stated (truncation, thin earlier data, no impact data). One deduction: item 3 asserts the ciod errors are 'network or I/O failures' as fact, which goes beyond the log text. The structure is also somewhat repetitive, which costs a little clarity. Next steps are concrete, tied to pattern IDs and counts, and the ranked list names an owner for each."
+    },
+    "Q_role_fit": {
+     "score": 5,
+     "comment": null
+    },
+    "Q_next_step": {
+     "score": 5,
+     "comment": null
+    },
+    "Q_evidence_use": {
+     "score": 5,
+     "comment": null
+    },
+    "Q_separation": {
+     "score": 4,
+     "comment": null
+    },
+    "Q_clarity": {
+     "score": 4,
+     "comment": null
+    }
+   },
+   "error": null
+  },
+  {
+   "id": "D-L06",
+   "role": "lead",
+   "kind": "baseline",
+   "E1_correct": 1.0,
+   "E1_missed": [],
+   "E2a_ledger_grounded": 0.95,
+   "E2a_numbers": 20,
+   "E2a_unverified": [
+    "30"
+   ],
+   "E2b_citation_grounded": null,
+   "E2d_jev_support": null,
+   "E3_separation": {
+    "facts": true,
+    "hypotheses_labelled": false,
+    "unknowns": false
+   },
+   "E5_forbidden": [],
+   "E5_must_not": [],
+   "mentions": 1.0,
+   "E7_required_tools": true,
+   "E7_first_tool": true,
+   "E8_tool_calls": 2,
+   "E8_elapsed_s": 13.5,
+   "E8_tool_s": 0.09,
+   "E8_other_s": 13.4,
+   "E8_tokens_in": 21207,
+   "E8_tokens_out": 1423,
+   "rep": 0,
+   "judge": {
+    "E2c_claim_support": {
+     "score": 0.9090909090909091,
+     "comment": "[{\"sentence\": \"Each pattern in it hit the same 4 nodes\", \"reason\": \"The evidence only shows a count of 4 nodes per pattern, not that they were the same nodes.\"}, {\"sentence\": \"the line counts are large because each failure hits many nodes at once\", \"reason\": \"This states a cause the evidence does not show; pattern 808 has 1920 lines on only 64 nodes.\"}]"
+    },
+    "E3_causes_as_fact": {
+     "score": 1,
+     "comment": null
+    },
+    "E5_judge_invented_impact": {
+     "score": 0.0,
+     "comment": null
+    },
+    "Q_rubric_mean": {
+     "score": 3.8,
+     "comment": "The answer fits a lead well: it gives September-to-October burst counts by pattern, owning teams, node spread and first-seen dates. It also states its caveats, namely that the comparison window includes August 31 and only the top 20 of 84 patterns are shown. Hypotheses such as the memory/parity family being one underlying fault and the APP errors being config issues are mostly hedged, but 'They are not hardware faults' is stated flatly without evidence. The 'where to look first' section names the largest increase but spreads attention across three areas, with no single clear pick, owner or concrete runnable check."
+    },
+    "Q_role_fit": {
+     "score": 4,
+     "comment": null
+    },
+    "Q_next_step": {
+     "score": 3,
+     "comment": null
+    },
+    "Q_evidence_use": {
+     "score": 4,
+     "comment": null
+    },
+    "Q_separation": {
+     "score": 4,
+     "comment": null
+    },
+    "Q_clarity": {
+     "score": 4,
+     "comment": null
+    }
+   },
+   "error": null
+  },
+  {
+   "id": "D-L06",
+   "role": "lead",
+   "kind": "ours",
+   "E1_correct": 1.0,
+   "E1_missed": [],
+   "E2a_ledger_grounded": 1.0,
+   "E2a_numbers": 96,
+   "E2a_unverified": [],
+   "E2b_citation_grounded": 1.0,
+   "E2d_jev_support": 0.494,
+   "E3_separation": {
+    "facts": true,
+    "hypotheses_labelled": true,
+    "unknowns": true
+   },
+   "E5_forbidden": [],
+   "E5_must_not": [],
+   "mentions": 1.0,
+   "E7_required_tools": true,
+   "E7_first_tool": true,
+   "E8_tool_calls": 7,
+   "E8_elapsed_s": 42.3,
+   "E8_tool_s": 0.15,
+   "E8_other_s": 42.1,
+   "E8_tokens_in": 100503,
+   "E8_tokens_out": 5755,
+   "rep": 0,
+   "judge": {
+    "E2c_claim_support": {
+     "score": 0.9629629629629629,
+     "comment": "[{\"sentence\": \"Of the problem patterns checked, 5 on the BGL kernel/hardware side had more bursts in October 2005 than in the previous period\", \"reason\": \"All 15 BGL rows returned show a positive change in bursts (15 patterns, not 5). The answer groups them into 5 problems, but the sentence counts patterns.\"}]"
+    },
+    "E3_causes_as_fact": {
+     "score": 0,
+     "comment": null
+    },
+    "E5_judge_invented_impact": {
+     "score": 0.0,
+     "comment": null
+    },
+    "Q_rubric_mean": {
+     "score": 4.6,
+     "comment": "The answer gives a lead what they need: burst counts for October versus the prior period, owning team and component, node spread, weeks active, weekly trend, and one clearly prioritised problem (pattern 261) with a measured reason. It is honest about scope, including truncated candidate lists and slightly mismatched comparison windows. Hypotheses, unknowns and facts are explicitly labelled, no causes are asserted, and impact is declared unknown. Next steps are concrete and tied to evidence but lack per-step owners, and the answer repeats itself in places, which dilutes clarity somewhat."
+    },
+    "Q_role_fit": {
+     "score": 5,
+     "comment": null
+    },
+    "Q_next_step": {
+     "score": 4,
+     "comment": null
+    },
+    "Q_evidence_use": {
+     "score": 5,
+     "comment": null
+    },
+    "Q_separation": {
+     "score": 5,
+     "comment": null
+    },
+    "Q_clarity": {
+     "score": 4,
+     "comment": null
+    }
+   },
+   "error": null
+  },
+  {
+   "id": "D-L07",
+   "role": "lead",
+   "kind": "ours",
+   "E1_correct": 1.0,
+   "E1_missed": [],
+   "E2a_ledger_grounded": 1.0,
+   "E2a_numbers": 61,
+   "E2a_unverified": [],
+   "E2b_citation_grounded": 1.0,
+   "E2d_jev_support": 0.627,
+   "E3_separation": {
+    "facts": true,
+    "hypotheses_labelled": true,
+    "unknowns": true
+   },
+   "E5_forbidden": [],
+   "E5_must_not": [],
+   "mentions": 1.0,
+   "E7_required_tools": true,
+   "E7_first_tool": true,
+   "E8_tool_calls": 6,
+   "E8_elapsed_s": 39.1,
+   "E8_tool_s": 0.15,
+   "E8_other_s": 39.0,
+   "E8_tokens_in": 102540,
+   "E8_tokens_out": 5382,
+   "rep": 0,
+   "judge": {
+    "E2c_claim_support": {
+     "score": 0.9411764705882353,
+     "comment": "[{\"sentence\": \"RecvWorker 'Connection broken for id <HEX>' flood: very high volume in a single burst.\", \"reason\": \"The evidence shows 10356 lines and 1 burst, but not that all lines fall inside that burst.\"}, {\"sentence\": \"Check what happened in that one burst, which began on 2015-07-29 around 19:04, and whether it is related to the 2015-07-29 volume of 53230 log lines.\", \"reason\": \"Only the pattern's first_seen (19:04:02) is shown; the burst start time is not in the evidence.\"}]"
+    },
+    "E3_causes_as_fact": {
+     "score": 0,
+     "comment": null
+    },
+    "E5_judge_invented_impact": {
+     "score": 0.0,
+     "comment": null
+    },
+    "Q_rubric_mean": {
+     "score": 4.4,
+     "comment": "The answer gives the lead what they need: bursts by team and component, a weekly trend, recurrence per pattern, and a measured reason for the first priority (active in all 5 weeks, team bursts rising 1→4). It also flags that the previous-period baseline is unreliable because the logs start on 2015-07-29. Facts, hypotheses and unknowns are clearly labelled, and impact is explicitly stated as unknown. Next steps are concrete and tied to the evidence but name no owner beyond the team. Some reasoning is weak: the rising 1→4 trend is team-level, not specific to the chosen pattern, which the answer itself concedes. The text is long and repetitive, with the same numbers restated in the summary, the list and the next steps."
+    },
+    "Q_role_fit": {
+     "score": 5,
+     "comment": null
+    },
+    "Q_next_step": {
+     "score": 4,
+     "comment": null
+    },
+    "Q_evidence_use": {
+     "score": 5,
+     "comment": null
+    },
+    "Q_separation": {
+     "score": 5,
+     "comment": null
+    },
+    "Q_clarity": {
+     "score": 3,
+     "comment": null
+    }
+   },
+   "error": null
+  },
+  {
+   "id": "D-L08",
+   "role": "lead",
+   "kind": "ours",
+   "E1_correct": 0.0,
+   "E1_missed": [
+    "frontend error-or-fatal lines = 176880",
+    "payment error-or-fatal lines = 24219"
+   ],
+   "E2a_ledger_grounded": 0.9850746268656716,
+   "E2a_numbers": 67,
+   "E2a_unverified": [
+    "30"
+   ],
+   "E2b_citation_grounded": 1.0,
+   "E2d_jev_support": 0.392,
+   "E3_separation": {
+    "facts": true,
+    "hypotheses_labelled": true,
+    "unknowns": true
+   },
+   "E5_forbidden": [],
+   "E5_must_not": [],
+   "mentions": 1.0,
+   "E7_required_tools": true,
+   "E7_first_tool": false,
+   "E8_tool_calls": 4,
+   "E8_elapsed_s": 29.1,
+   "E8_tool_s": 0.29,
+   "E8_other_s": 28.8,
+   "E8_tokens_in": 48039,
+   "E8_tokens_out": 4182,
+   "rep": 0,
+   "judge": {
+    "E2c_claim_support": {
+     "score": 0.7931034482758621,
+     "comment": "[{\"sentence\": \"The same order holds for problem-pattern bursts: web-frontend has 63 of 93, payments-team 11, and fulfilment-team and checkout-team 5 each.\", \"reason\": \"The numbers match, but the order is not the same: catalog-team has 6 bursts and sits ahead of fulfilment-team in the burst rollup.\"}, {\"sentence\": \"The dominant pattern is 'Visa cache full' in payment surfacing as 'Failed to place order' in frontend.\", \"reason\": \"This causal link is stated as fact, but the evidence does not show it.\"}, {\"sentence\": \"It is the largest source by both lines and bursts, and it appears across all 27 nodes.\", \"reason\": \"The evidence does not show that 27 is the total number of nodes, so 'all 27 nodes' is not established.\"}, {\"sentence\": \"Email service NoMethodError (nil 'each'), with related order-confirmation failures.\", \"reason\": \"The evidence does not show any relation between the email errors and the order-confirmation failures.\"}, {\"sentence\": \"The data covers only a 30-minute sample, and all bursts are new vs the previous 30 minutes, so no longer trend can be drawn.\", \"reason\": \"Only the top 20 of 226 patterns are shown, so the evidence cannot establish that all bursts are new.\"}]"
+    },
+    "E3_causes_as_fact": {
+     "score": 1,
+     "comment": null
+    },
+    "E5_judge_invented_impact": {
+     "score": 0.0,
+     "comment": null
+    },
+    "Q_rubric_mean": {
+     "score": 4.4,
+     "comment": "The answer gives the lead what they asked for: ERROR counts by component and team, burst counts as recurrences, node spread, a comparison with the previous period, and a ranked list with owning teams and a measured reason for investigating frontend first. Evidence is thorough and scoped, and truncation and the limits of the 30-minute window are clearly flagged. Separation is mostly good, with labelled hypotheses and unknowns. However, the summary states as fact that 'Visa cache full' in payment is surfacing as frontend 'Failed to place order', which is one unhedged causal claim. The next steps are concrete and runnable but have no explicit owners, and item 1 attributes all 174711 frontend lines to a theme whose named patterns cover only part of them."
+    },
+    "Q_role_fit": {
+     "score": 5,
+     "comment": null
+    },
+    "Q_next_step": {
+     "score": 4,
+     "comment": null
+    },
+    "Q_evidence_use": {
+     "score": 5,
+     "comment": null
+    },
+    "Q_separation": {
+     "score": 4,
+     "comment": null
+    },
+    "Q_clarity": {
+     "score": 4,
+     "comment": null
+    }
+   },
+   "error": null
+  },
+  {
+   "id": "D-M01",
+   "role": "manager",
+   "kind": "baseline",
+   "E1_correct": 1.0,
+   "E1_missed": [],
+   "E2a_ledger_grounded": 0.918918918918919,
+   "E2a_numbers": 37,
+   "E2a_unverified": [
+    "2005-11-28",
+    "10,400",
+    "2,250"
+   ],
+   "E2b_citation_grounded": null,
+   "E2d_jev_support": null,
+   "E3_separation": {
+    "facts": true,
+    "hypotheses_labelled": true,
+    "unknowns": false
+   },
+   "E5_forbidden": [],
+   "E5_must_not": [],
+   "mentions": 1.0,
+   "E7_required_tools": true,
+   "E7_first_tool": true,
+   "E8_tool_calls": 2,
+   "E8_elapsed_s": 11.9,
+   "E8_tool_s": 0.11,
+   "E8_other_s": 11.8,
+   "E8_tokens_in": 20966,
+   "E8_tokens_out": 1474,
+   "rep": 0,
+   "judge": {
+    "E2c_claim_support": {
+     "score": 0.7666666666666667,
+     "comment": "[{\"sentence\": \"The \\\"Link has been severed\\\" error produced about 10,400 lines\", \"reason\": \"The evidence shows 10408 lines; the answer gives a rounded value.\"}, {\"sentence\": \"The \\\"Connection reset\\\" error produced about 2,250 lines\", \"reason\": \"The evidence shows 2256 lines; the answer gives a rounded value.\"}, {\"sentence\": \"one node accounts for 18% of its lines.\", \"reason\": \"top_node_share is 0.178; the answer gives a rounded value.\"}, {\"sentence\": \"node-platform is also the largest team by volume, with 256 bursts, up from 197.\", \"reason\": \"The burst counts match, but by lines hpc-workloads (27859) is larger than node-platform (10960), so 'largest by volume' is not shown.\"}, {\"sentence\": \"New \\\"invalid operation exception\\\" patterns (node-platform: software, int cnvt and sqrt variants, scores about 80).\", \"reason\": \"Actual scores are 80.2, 80.1 and 79.6; 'about 80' is a rounded value.\"}]"
+    },
+    "E3_causes_as_fact": {
+     "score": 0,
+     "comment": null
+    },
+    "E5_judge_invented_impact": {
+     "score": 0.0,
+     "comment": null
+    },
+    "Q_rubric_mean": {
+     "score": 4.2,
+     "comment": "The answer gives a ranked list with owner teams and measured basis for each item: bursts, lines, node spread, prior-period trend and persistence. That fits a manager well, though it stops at 'check', 'route' or 'watch' rather than framing explicit decisions or funding asks. Evidence is strong and scoped. The shared footprint is labelled a hypothesis, the load errors are hedged ('look like'), and the answer states that cost, downtime, customer impact and root cause are not visible. Next steps are concrete for items 1, 3 and 4, but item 2 has no explicit action, item 5 is only 'keep on watch', and no named owners are assigned to actions beyond the team labels."
+    },
+    "Q_role_fit": {
+     "score": 4,
+     "comment": null
+    },
+    "Q_next_step": {
+     "score": 4,
+     "comment": null
+    },
+    "Q_evidence_use": {
+     "score": 5,
+     "comment": null
+    },
+    "Q_separation": {
+     "score": 4,
+     "comment": null
+    },
+    "Q_clarity": {
+     "score": 4,
+     "comment": null
+    }
+   },
+   "error": null
+  },
+  {
+   "id": "D-M01",
+   "role": "manager",
+   "kind": "ours",
+   "E1_correct": 1.0,
+   "E1_missed": [],
+   "E2a_ledger_grounded": 0.9868421052631579,
+   "E2a_numbers": 76,
+   "E2a_unverified": [
+    "1000"
+   ],
+   "E2b_citation_grounded": 1.0,
+   "E2d_jev_support": 0.874,
+   "E3_separation": {
+    "facts": true,
+    "hypotheses_labelled": true,
+    "unknowns": true
+   },
+   "E5_forbidden": [],
+   "E5_must_not": [],
+   "mentions": 1.0,
+   "E7_required_tools": true,
+   "E7_first_tool": true,
+   "E8_tool_calls": 5,
+   "E8_elapsed_s": 26.2,
+   "E8_tool_s": 0.33,
+   "E8_other_s": 25.9,
+   "E8_tokens_in": 58753,
+   "E8_tokens_out": 3586,
+   "rep": 0,
+   "judge": {
+    "E2c_claim_support": {
+     "score": 1.0,
+     "comment": "[]"
+    },
+    "E3_causes_as_fact": {
+     "score": 0,
+     "comment": null
+    },
+    "E5_judge_invented_impact": {
+     "score": 0.0,
+     "comment": null
+    },
+    "Q_rubric_mean": {
+     "score": 4.6,
+     "comment": "The answer gives the manager a ranked list with owner teams, measured basis (bursts, nodes, weeks active, trend) and a decision per item. It labels hypotheses and unknowns explicitly and does not invent cost or downtime. Causes are kept as hypotheses, and the category labels in parentheses read as classifications, not root causes. Next steps are concrete and tied to evidence, but some lack named owners or dates ('assign an owner and a date'). The scope block is dense and the apache roll-up is mixed into the bgl narrative, which lowers clarity slightly."
+    },
+    "Q_role_fit": {
+     "score": 5,
+     "comment": null
+    },
+    "Q_next_step": {
+     "score": 4,
+     "comment": null
+    },
+    "Q_evidence_use": {
+     "score": 5,
+     "comment": null
+    },
+    "Q_separation": {
+     "score": 5,
+     "comment": null
+    },
+    "Q_clarity": {
+     "score": 4,
+     "comment": null
+    }
+   },
+   "error": null
+  },
+  {
+   "id": "D-M02",
+   "role": "manager",
+   "kind": "baseline",
+   "E1_correct": 1.0,
+   "E1_missed": [],
+   "E2a_ledger_grounded": 0.9166666666666666,
+   "E2a_numbers": 24,
+   "E2a_unverified": [
+    "36,000",
+    "1,000"
+   ],
+   "E2b_citation_grounded": null,
+   "E2d_jev_support": null,
+   "E3_separation": {
+    "facts": true,
+    "hypotheses_labelled": true,
+    "unknowns": false
+   },
+   "E5_forbidden": [],
+   "E5_must_not": [],
+   "mentions": 1.0,
+   "E7_required_tools": true,
+   "E7_first_tool": true,
+   "E8_tool_calls": 3,
+   "E8_elapsed_s": 14.0,
+   "E8_tool_s": 0.1,
+   "E8_other_s": 13.9,
+   "E8_tokens_in": 24845,
+   "E8_tokens_out": 1689,
+   "rep": 0,
+   "judge": {
+    "E2c_claim_support": {
+     "score": 0.5882352941176471,
+     "comment": "[{\"sentence\": \"These patterns top the ranking (scores 74–82)\", \"reason\": \"The actual scores run from 74.3 to 82.4, so this range is rounded. The memory manager pattern (135) does not appear in the priority table at all.\"}, {\"sentence\": \"These are the most clearly hardware-related faults (fault probability 0.84–0.96).\", \"reason\": \"The 0.84–0.96 range matches the evidence. However, pattern 120 and pattern 153 are judged system software failures and pattern 125 a network or I/O failure, not hardware.\"}, {\"sentence\": \"\\\"L3 major internal error\\\" rose from 5 to 10 bursts on 8 nodes.\", \"reason\": \"The counts (5 to 10 bursts, 8 nodes) match, but the template reads L<N>, so the level 'L3' is not in the evidence.\"}, {\"sentence\": \"The generic \\\"machine check interrupt\\\" (34 bursts on 34 nodes) and \\\"L1 dcache data parity error\\\" (14 bursts on 13 nodes) are steady, not rising.\", \"reason\": \"The counts match (34 down from 38; 14 unchanged from 14), but the template reads L<N>, so 'L1' is not in the evidence.\"}, {\"sentence\": \"Each node is hit only about once\", \"reason\": \"This is derived from line and node counts or top_node_share; the evidence does not state it.\"}]"
+    },
+    "E3_causes_as_fact": {
+     "score": 1,
+     "comment": null
+    },
+    "E5_judge_invented_impact": {
+     "score": 0.0,
+     "comment": null
+    },
+    "Q_rubric_mean": {
+     "score": 4.4,
+     "comment": "The answer gives a ranked list with an owner team, measured basis (burst counts, trend vs prior period, node spread, weeks active) and a next action for each item. It is upfront that cost, downtime, customer impact and root cause are not visible in the logs. Hedging is mostly good ('suggest', 'looks like', 'probably', 'didn't check same nodes'). The permission error is labelled as a user/config problem, and 'fix the permissions' treats that cause as settled, which is somewhat assertive. Next steps are concrete but some are a little generic ('watch the rising L3 pattern'), and the hpc-workloads item, despite sharp growth, is placed under 'watch' without a clear decision framing."
+    },
+    "Q_role_fit": {
+     "score": 5,
+     "comment": null
+    },
+    "Q_next_step": {
+     "score": 4,
+     "comment": null
+    },
+    "Q_evidence_use": {
+     "score": 5,
+     "comment": null
+    },
+    "Q_separation": {
+     "score": 4,
+     "comment": null
+    },
+    "Q_clarity": {
+     "score": 4,
+     "comment": null
+    }
+   },
+   "error": null
+  },
+  {
+   "id": "D-M02",
+   "role": "manager",
+   "kind": "ours",
+   "E1_correct": 1.0,
+   "E1_missed": [],
+   "E2a_ledger_grounded": 1.0,
+   "E2a_numbers": 60,
+   "E2a_unverified": [],
+   "E2b_citation_grounded": 1.0,
+   "E2d_jev_support": 0.743,
+   "E3_separation": {
+    "facts": true,
+    "hypotheses_labelled": true,
+    "unknowns": true
+   },
+   "E5_forbidden": [],
+   "E5_must_not": [],
+   "mentions": 1.0,
+   "E7_required_tools": true,
+   "E7_first_tool": true,
+   "E8_tool_calls": 4,
+   "E8_elapsed_s": 28.1,
+   "E8_tool_s": 0.18,
+   "E8_other_s": 27.9,
+   "E8_tokens_in": 51000,
+   "E8_tokens_out": 3601,
+   "rep": 0,
+   "judge": {
+    "E2c_claim_support": {
+     "score": 0.8823529411764706,
+     "comment": "[{\"sentence\": \"since they share the same 2 vs 4 burst pattern and the same team.\", \"reason\": \"The machine check pattern 93 went from 5 to 10 bursts, not 2 to 4; only 124 and 122 show 2 vs 4.\"}, {\"sentence\": \"Problem bursts fell from 487 to 358, but web-platform still has 358 bursts in the period.\", \"reason\": \"487 to 358 is web-platform only. The answer presents it as apache problem bursts, but the apache total for the period is 374, and no apache-wide previous total is given.\"}]"
+    },
+    "E3_causes_as_fact": {
+     "score": 0,
+     "comment": null
+    },
+    "E5_judge_invented_impact": {
+     "score": 0.0,
+     "comment": null
+    },
+    "Q_rubric_mean": {
+     "score": 4.2,
+     "comment": "The answer suits a manager. It gives a ranked top-3 with owner team, burst counts versus the prior period, node spread, active weeks and a decide/fund action for each item. Team roll-ups and the trends for both datasets are stated with period and scope, and unknowns (cost, downtime, root cause) are explicitly labelled. There are minor flaws. The shared-cause hypothesis says all three patterns share a '2 vs 4' burst pattern, but machine check is 5 vs 10. The next step cites a pattern 120 that never appears in the ranked list. The apache hypothesis is muddled, since a fix would itself be a real drop in faults. The 487→358 figure is web-platform's count but is presented as the reason for the overall apache watch."
+    },
+    "Q_role_fit": {
+     "score": 5,
+     "comment": null
+    },
+    "Q_next_step": {
+     "score": 4,
+     "comment": null
+    },
+    "Q_evidence_use": {
+     "score": 4,
+     "comment": null
+    },
+    "Q_separation": {
+     "score": 4,
+     "comment": null
+    },
+    "Q_clarity": {
+     "score": 4,
+     "comment": null
+    }
+   },
+   "error": null
+  },
+  {
+   "id": "D-M03",
+   "role": "manager",
+   "kind": "baseline",
+   "E1_correct": 0.6666666666666666,
+   "E1_missed": [
+    "BGL log lines owned by node-platform in September 2005 = 83298"
+   ],
+   "E2a_ledger_grounded": 0.9130434782608695,
+   "E2a_numbers": 23,
+   "E2a_unverified": [
+    "23,500",
+    "1,000"
+   ],
+   "E2b_citation_grounded": null,
+   "E2d_jev_support": null,
+   "E3_separation": {
+    "facts": true,
+    "hypotheses_labelled": false,
+    "unknowns": false
+   },
+   "E5_forbidden": [],
+   "E5_must_not": [],
+   "mentions": 1.0,
+   "E7_required_tools": true,
+   "E7_first_tool": true,
+   "E8_tool_calls": 3,
+   "E8_elapsed_s": 9.3,
+   "E8_tool_s": 0.12,
+   "E8_other_s": 9.2,
+   "E8_tokens_in": 22470,
+   "E8_tokens_out": 1122,
+   "rep": 0,
+   "judge": {
+    "E2c_claim_support": {
+     "score": 0.8,
+     "comment": "[{\"sentence\": \"(about 23,500 lines)\", \"reason\": \"The evidence shows 23505. The answer gives a rounded value.\"}, {\"sentence\": \"raw log volume dropped from about 276k lines to 83k\", \"reason\": \"These are rounded values of 275715 and 83298, and those counts cover all datasets rather than BGL.\"}, {\"sentence\": \"Most of the increase is many new \\\"ciod: Error loading … invalid or missing program image / No such file or directory\\\" errors, each across about 1,000 nodes.\", \"reason\": \"Each new ciod pattern shown has only 1 burst, which is far less than most of the +83. Some of these patterns span 256 or 512 nodes, not about 1,000.\"}, {\"sentence\": \"although log volume is high at about 83k lines\", \"reason\": \"This is a rounded value of 83222 from the all-dataset count. The BGL rollup shows 70389.\"}]"
+    },
+    "E3_causes_as_fact": {
+     "score": 0,
+     "comment": null
+    },
+    "E5_judge_invented_impact": {
+     "score": 0.0,
+     "comment": null
+    },
+    "Q_rubric_mean": {
+     "score": 3.6,
+     "comment": "The answer ranks the teams with owner areas and gives a clear measured basis: burst counts, node spread, period-over-period trend and weeks active. However, it proposes no action, owner decision or funding choice for any item, which a manager needs to set priorities. Interpretations are mostly hedged ('look like job-submission problems'), and the caveats honestly say that cost, downtime and root cause are unknown. Every claim is grounded in stated counts and periods, and no business impact is invented."
+    },
+    "Q_role_fit": {
+     "score": 4,
+     "comment": null
+    },
+    "Q_next_step": {
+     "score": 1,
+     "comment": null
+    },
+    "Q_evidence_use": {
+     "score": 5,
+     "comment": null
+    },
+    "Q_separation": {
+     "score": 4,
+     "comment": null
+    },
+    "Q_clarity": {
+     "score": 4,
+     "comment": null
+    }
+   },
+   "error": null
+  },
+  {
+   "id": "D-M03",
+   "role": "manager",
+   "kind": "ours",
+   "E1_correct": 0.3333333333333333,
+   "E1_missed": [
+    "BGL log lines owned by node-platform in September 2005 = 83298",
+    "priority_table top 3 for 2005-09-01..2005-10-01, in computed order = ['Lustre', 'rts panic', 'Link has']"
+   ],
+   "E2a_ledger_grounded": 1.0,
+   "E2a_numbers": 64,
+   "E2a_unverified": [],
+   "E2b_citation_grounded": 1.0,
+   "E2d_jev_support": 0.812,
+   "E3_separation": {
+    "facts": true,
+    "hypotheses_labelled": true,
+    "unknowns": true
+   },
+   "E5_forbidden": [],
+   "E5_must_not": [],
+   "mentions": 1.0,
+   "E7_required_tools": true,
+   "E7_first_tool": true,
+   "E8_tool_calls": 6,
+   "E8_elapsed_s": 35.2,
+   "E8_tool_s": 0.2,
+   "E8_other_s": 35.0,
+   "E8_tokens_in": 79381,
+   "E8_tokens_out": 4512,
+   "rep": 0,
+   "judge": {
+    "E2c_claim_support": {
+     "score": 0.9411764705882353,
+     "comment": "[{\"sentence\": \"Decide whether to fund an I/O / Lustre mount reliability investigation, since this pattern drives most of the recent rise.\", \"reason\": \"node-platform's total actually fell by 7, and no evidence shows this pattern driving most of a rise; it is a causal claim stated as fact.\"}]"
+    },
+    "E3_causes_as_fact": {
+     "score": 1,
+     "comment": null
+    },
+    "E5_judge_invented_impact": {
+     "score": 0.0,
+     "comment": null
+    },
+    "Q_rubric_mean": {
+     "score": 4.4,
+     "comment": "The answer directly addresses the manager's question. It names node-platform as the highest-risk BGL area and gives the trend, flags hpc-workloads as worsening, and offers a ranked list with owners, measured basis (bursts versus prior period, node spread, weeks active) and a decision per item. Scope, truncation and cross-dataset caveats are stated clearly, hypotheses come with confirmation checks, and cost, downtime and customer impact are explicitly marked unknown. One claim is stated as fact without support: that the Lustre pattern \"drives most of the recent rise\" (node-platform actually declined overall). The next steps are concrete but do not name an owner for the review."
+    },
+    "Q_role_fit": {
+     "score": 5,
+     "comment": null
+    },
+    "Q_next_step": {
+     "score": 4,
+     "comment": null
+    },
+    "Q_evidence_use": {
+     "score": 5,
+     "comment": null
+    },
+    "Q_separation": {
+     "score": 4,
+     "comment": null
+    },
+    "Q_clarity": {
+     "score": 4,
+     "comment": null
+    }
+   },
+   "error": null
+  },
+  {
+   "id": "D-M04",
+   "role": "manager",
+   "kind": "baseline",
+   "E1_correct": 1.0,
+   "E1_missed": [],
+   "E2a_ledger_grounded": 1.0,
+   "E2a_numbers": 24,
+   "E2a_unverified": [],
+   "E2b_citation_grounded": null,
+   "E2d_jev_support": null,
+   "E3_separation": {
+    "facts": true,
+    "hypotheses_labelled": true,
+    "unknowns": false
+   },
+   "E5_forbidden": [],
+   "E5_must_not": [],
+   "mentions": null,
+   "E7_required_tools": true,
+   "E7_first_tool": true,
+   "E8_tool_calls": 2,
+   "E8_elapsed_s": 9.0,
+   "E8_tool_s": 0.13,
+   "E8_other_s": 8.9,
+   "E8_tokens_in": 23469,
+   "E8_tokens_out": 1060,
+   "rep": 0,
+   "judge": {
+    "E2c_claim_support": {
+     "score": 0.8695652173913043,
+     "comment": "[{\"sentence\": \"and appear in the same 3 weeks.\", \"reason\": \"Each has weeks_active of 3, but the evidence does not show which weeks, so it cannot confirm they are the same weeks.\"}, {\"sentence\": \"It is the most persistent problem, active all 5 weeks\", \"reason\": \"It was active 5 weeks, but patterns 478, 93 and 33 also have persistence 1.0, so it is tied rather than the most persistent.\"}, {\"sentence\": \"Each is a single burst on a single day, so I ranked them lower.\", \"reason\": \"Each shows 1 burst and 1 active week, but the evidence does not show they fell on a single day.\"}]"
+    },
+    "E3_causes_as_fact": {
+     "score": 0,
+     "comment": null
+    },
+    "E5_judge_invented_impact": {
+     "score": 0.0,
+     "comment": null
+    },
+    "Q_rubric_mean": {
+     "score": 4.4,
+     "comment": "The answer gives a manager a clear single pick with an owner team. It backs the pick with dated, scoped counts: first seen 2005-08-13, 0 to 13 bursts, 2,666 nodes, 3 of 5 weeks, and the fault probability. Runners-up are ranked with stated reasons, and the caveats honestly say cost, downtime and root cause are unknown. The shared-root-cause idea is explicitly labelled a hypothesis, and other interpretations are hedged with 'looks like'. The main gap is the action: 'fix this' has no concrete, runnable first step or decision for node-platform, such as checking correlation with the bad-message-header patterns."
+    },
+    "Q_role_fit": {
+     "score": 5,
+     "comment": null
+    },
+    "Q_next_step": {
+     "score": 3,
+     "comment": null
+    },
+    "Q_evidence_use": {
+     "score": 5,
+     "comment": null
+    },
+    "Q_separation": {
+     "score": 4,
+     "comment": null
+    },
+    "Q_clarity": {
+     "score": 5,
+     "comment": null
+    }
+   },
+   "error": null
+  },
+  {
+   "id": "D-M04",
+   "role": "manager",
+   "kind": "ours",
+   "E1_correct": 1.0,
+   "E1_missed": [],
+   "E2a_ledger_grounded": 1.0,
+   "E2a_numbers": 63,
+   "E2a_unverified": [],
+   "E2b_citation_grounded": 1.0,
+   "E2d_jev_support": 0.816,
+   "E3_separation": {
+    "facts": true,
+    "hypotheses_labelled": true,
+    "unknowns": true
+   },
+   "E5_forbidden": [],
+   "E5_must_not": [],
+   "mentions": null,
+   "E7_required_tools": true,
+   "E7_first_tool": true,
+   "E8_tool_calls": 4,
+   "E8_elapsed_s": 23.7,
+   "E8_tool_s": 0.23,
+   "E8_other_s": 23.5,
+   "E8_tokens_in": 44799,
+   "E8_tokens_out": 3024,
+   "rep": 0,
+   "judge": {
+    "E2c_claim_support": {
+     "score": 1.0,
+     "comment": "[]"
+    },
+    "E3_causes_as_fact": {
+     "score": 0,
+     "comment": null
+    },
+    "E5_judge_invented_impact": {
+     "score": 0.0,
+     "comment": null
+    },
+    "Q_rubric_mean": {
+     "score": 4.8,
+     "comment": "The answer gives a clear single pick with an owner team and a measured basis: 13 bursts vs 0, 2666 nodes, 3 weeks active, score 96.0, scoped to Aug 2005 against July. It also gives a ranked shortlist with a decision for each item. Hypotheses are labelled and each comes with a confirmation check. Unknowns are stated plainly (cost, downtime, root cause, no Apache spread, scores not comparable across datasets), and no impact is invented. Clarity loses a point because the text repeats itself (rank 1 details appear three times) and does not directly argue why BGL should beat Apache beyond the scores being incomparable."
+    },
+    "Q_role_fit": {
+     "score": 5,
+     "comment": null
+    },
+    "Q_next_step": {
+     "score": 5,
+     "comment": null
+    },
+    "Q_evidence_use": {
+     "score": 5,
+     "comment": null
+    },
+    "Q_separation": {
+     "score": 5,
+     "comment": null
+    },
+    "Q_clarity": {
+     "score": 4,
+     "comment": null
+    }
+   },
+   "error": null
+  },
+  {
+   "id": "D-M05",
+   "role": "manager",
+   "kind": "baseline",
+   "E1_correct": null,
+   "E1_missed": [],
+   "E2a_ledger_grounded": 0.8333333333333334,
+   "E2a_numbers": 6,
+   "E2a_unverified": [
+    "42"
+   ],
+   "E2b_citation_grounded": null,
+   "E2d_jev_support": null,
+   "E3_separation": {
+    "facts": true,
+    "hypotheses_labelled": true,
+    "unknowns": true
+   },
+   "E5_forbidden": [],
+   "E5_must_not": [],
+   "mentions": 1.0,
+   "E7_required_tools": true,
+   "E7_first_tool": true,
+   "E8_tool_calls": 4,
+   "E8_elapsed_s": 15.4,
+   "E8_tool_s": 0.14,
+   "E8_other_s": 15.3,
+   "E8_tokens_in": 23339,
+   "E8_tokens_out": 1841,
+   "rep": 0,
+   "judge": {
+    "E2c_claim_support": {
+     "score": 0.6363636363636364,
+     "comment": "[{\"sentence\": \"\\\"rts panic\\\" (node-platform). It was the most frequent, with 33 bursts.\", \"reason\": \"33 bursts and node-platform are correct. But its frequency contribution is 29.8, below the 30 maximum, so other candidates among the 125 have more bursts. It is not shown to be the most frequent.\"}, {\"sentence\": \"It spiked to about 201k lines on 3 Nov and about 151k on 4 Nov.\", \"reason\": \"These are rounded values. The evidence shows 200937 and 150957.\"}, {\"sentence\": \"Most other days were in the low thousands.\", \"reason\": \"Many days were well above that: 24209, 46204, 48132, 17692, 13470, 25937 and others.\"}, {\"sentence\": \"One fault can log thousands of lines.\", \"reason\": \"The evidence does not show this.\"}, {\"sentence\": \"About 42.8k lines are FATAL\", \"reason\": \"This is a rounded value. The evidence shows 42801.\"}]"
+    },
+    "E3_causes_as_fact": {
+     "score": 0,
+     "comment": null
+    },
+    "E5_judge_invented_impact": {
+     "score": 0.0,
+     "comment": null
+    },
+    "Q_rubric_mean": {
+     "score": 4.0,
+     "comment": "The answer directly addresses the question with a clear, numbered list of what the logs cannot show: root cause, impact, incidents versus lines, causation, resolution, silence, and the window edge. It names owner teams for the top problems and backs them with node spread, burst counts and daily volumes. Facts, hedged hypotheses (e.g. the 3–4 Nov spike being 'probably' a few repeated events) and unknowns are kept clearly apart. It invents no cost, downtime or customer impact. The weak point for a manager is the closing step. It lists the data sources needed but assigns no owner to obtaining each one and gives no per-problem decision or funding action. The top problems are also not explicitly ranked against each other."
+    },
+    "Q_role_fit": {
+     "score": 4,
+     "comment": null
+    },
+    "Q_next_step": {
+     "score": 3,
+     "comment": null
+    },
+    "Q_evidence_use": {
+     "score": 4,
+     "comment": null
+    },
+    "Q_separation": {
+     "score": 5,
+     "comment": null
+    },
+    "Q_clarity": {
+     "score": 4,
+     "comment": null
+    }
+   },
+   "error": null
+  },
+  {
+   "id": "D-M05",
+   "role": "manager",
+   "kind": "ours",
+   "E1_correct": null,
+   "E1_missed": [],
+   "E2a_ledger_grounded": 1.0,
+   "E2a_numbers": 52,
+   "E2a_unverified": [],
+   "E2b_citation_grounded": 1.0,
+   "E2d_jev_support": 0.834,
+   "E3_separation": {
+    "facts": true,
+    "hypotheses_labelled": true,
+    "unknowns": true
+   },
+   "E5_forbidden": [],
+   "E5_must_not": [],
+   "mentions": 1.0,
+   "E7_required_tools": true,
+   "E7_first_tool": true,
+   "E8_tool_calls": 4,
+   "E8_elapsed_s": 21.4,
+   "E8_tool_s": 0.25,
+   "E8_other_s": 21.1,
+   "E8_tokens_in": 51160,
+   "E8_tokens_out": 2914,
+   "rep": 0,
+   "judge": {
+    "E2c_claim_support": {
+     "score": 1.0,
+     "comment": "[]"
+    },
+    "E3_causes_as_fact": {
+     "score": 0,
+     "comment": null
+    },
+    "E5_judge_invented_impact": {
+     "score": 0.0,
+     "comment": null
+    },
+    "Q_rubric_mean": {
+     "score": 4.2,
+     "comment": "The answer directly addresses what the logs cannot show: cost, downtime, customer impact, root cause, affected jobs or users, apache host spread, and items beyond the top 10. It also gives a ranked bgl list with owners, counts, spread, trend and a decision per item. The hypothesis is clearly labelled and paired with confirming data, and no impact is invented. Weaknesses: apache is not ranked at all, and the 'improving' trend label is repeated without noting that the last week is partial (Nov 29 cutoff), which likely explains its low count. Next steps are concrete, though the owner for the ops/finance data request is loosely specified."
+    },
+    "Q_role_fit": {
+     "score": 4,
+     "comment": null
+    },
+    "Q_next_step": {
+     "score": 4,
+     "comment": null
+    },
+    "Q_evidence_use": {
+     "score": 4,
+     "comment": null
+    },
+    "Q_separation": {
+     "score": 5,
+     "comment": null
+    },
+    "Q_clarity": {
+     "score": 4,
+     "comment": null
+    }
+   },
+   "error": null
+  },
+  {
+   "id": "D-M06",
+   "role": "manager",
+   "kind": "baseline",
+   "E1_correct": 0.0,
+   "E1_missed": [
+    "FATAL lines in November 2005 (to 11-29) = 42801",
+    "FATAL lines in September 2005 = 81844"
+   ],
+   "E2a_ledger_grounded": 1.0,
+   "E2a_numbers": 22,
+   "E2a_unverified": [],
+   "E2b_citation_grounded": null,
+   "E2d_jev_support": null,
+   "E3_separation": {
+    "facts": true,
+    "hypotheses_labelled": false,
+    "unknowns": false
+   },
+   "E5_forbidden": [],
+   "E5_must_not": [],
+   "mentions": null,
+   "E7_required_tools": true,
+   "E7_first_tool": false,
+   "E8_tool_calls": 3,
+   "E8_elapsed_s": 17.0,
+   "E8_tool_s": 0.26,
+   "E8_other_s": 16.7,
+   "E8_tokens_in": 28607,
+   "E8_tokens_out": 2335,
+   "rep": 0,
+   "judge": {
+    "E2c_claim_support": {
+     "score": 0.7307692307692307,
+     "comment": "[{\"sentence\": \"Weekly problem lines table (Sep 5 ~20k, Sep 12 ~9k, Sep 19 ~96k, Sep 26 ~11k, Oct 3 ~9k, Oct 10 ~13k, Oct 17 ~9k, Oct 24 ~11k, Oct 31 ~6k, Nov 7 ~8k, Nov 14 ~14k, Nov 21 ~15k)\", \"reason\": \"These are rounded sums derived from the severity rows (e.g. 20325, 96231, 6090), not values that appear in the evidence.\"}, {\"sentence\": \"About 68k of this is ERROR lines in a single week, so it looks like one storm.\", \"reason\": \"The evidence shows 68177 ERROR lines; 68k is a rounded value.\"}, {\"sentence\": \"September had about 137k problem lines, or about 69k if you leave out the Sep 19 storm. October had about 48k.\", \"reason\": \"These are derived, rounded aggregates that do not appear in the evidence.\"}, {\"sentence\": \"The weeks of Nov 14 and Nov 21 are back at 14–15k, about the same as the busiest ordinary weeks in September.\", \"reason\": \"Rounded derived values (14361, 15413); 15k is also below the Sep 5 week (20325).\"}, {\"sentence\": \"FATAL lines went from 6.1k (week of Oct 31) to 6.8k, then 13.0k, then 15.4k.\", \"reason\": \"Rounded values; the evidence shows 6089, 6772, 13042 and 15381.\"}]"
+    },
+    "E3_causes_as_fact": {
+     "score": 0,
+     "comment": null
+    },
+    "E5_judge_invented_impact": {
+     "score": 0.0,
+     "comment": null
+    },
+    "Q_rubric_mean": {
+     "score": 3.4,
+     "comment": "The answer gives a clear verdict on the trend, backed by weekly counts. It flags the Sep 19 storm, the noisy INFO volume, the partial final week and the 3-month baseline comparison. It honestly says the logs cannot show downtime or user impact. For a manager, though, it never turns the problems into a ranked list with an owner and an action to decide or fund per item; owner teams appear only as aggregate counts, and there is no concrete next step at all. The wording is mostly hedged ('looks like one storm', 'log lines, not confirmed incidents'), but 'affecting every node' overstates the node spread somewhat."
+    },
+    "Q_role_fit": {
+     "score": 3,
+     "comment": null
+    },
+    "Q_next_step": {
+     "score": 1,
+     "comment": null
+    },
+    "Q_evidence_use": {
+     "score": 5,
+     "comment": null
+    },
+    "Q_separation": {
+     "score": 4,
+     "comment": null
+    },
+    "Q_clarity": {
+     "score": 4,
+     "comment": null
+    }
+   },
+   "error": null
+  },
+  {
+   "id": "D-M06",
+   "role": "manager",
+   "kind": "ours",
+   "E1_correct": 0.0,
+   "E1_missed": [
+    "FATAL lines in November 2005 (to 11-29) = 42801",
+    "FATAL lines in September 2005 = 81844"
+   ],
+   "E2a_ledger_grounded": 1.0,
+   "E2a_numbers": 54,
+   "E2a_unverified": [],
+   "E2b_citation_grounded": 1.0,
+   "E2d_jev_support": 0.78,
+   "E3_separation": {
+    "facts": true,
+    "hypotheses_labelled": true,
+    "unknowns": true
+   },
+   "E5_forbidden": [],
+   "E5_must_not": [],
+   "mentions": null,
+   "E7_required_tools": true,
+   "E7_first_tool": false,
+   "E8_tool_calls": 2,
+   "E8_elapsed_s": 20.6,
+   "E8_tool_s": 0.17,
+   "E8_other_s": 20.4,
+   "E8_tokens_in": 32630,
+   "E8_tokens_out": 2512,
+   "rep": 0,
+   "judge": {
+    "E2c_claim_support": {
+     "score": 0.9285714285714286,
+     "comment": "[{\"sentence\": \"It went from 0 to 27 bursts and accounts for much of the team's change of 91 in November.\", \"reason\": \"The 0 to 27 and the 91 are in the evidence, but 27 is only about 30% of 91, so 'much of' is a derived characterization the evidence does not show.\"}]"
+    },
+    "E3_causes_as_fact": {
+     "score": 0,
+     "comment": null
+    },
+    "E5_judge_invented_impact": {
+     "score": 0.0,
+     "comment": null
+    },
+    "Q_rubric_mean": {
+     "score": 4.6,
+     "comment": "The answer gives a direct, hedged verdict and a ranked list of three items. Each item has an owner team, counts against the prior period, node spread, weeks active and a decide-or-fund action, which is what a manager needs to set priorities. Facts, hypotheses with confirming tests, and unknowns (cost, downtime, root cause, truncation) are clearly labelled. No impact is invented. Next steps are concrete and tied to the evidence, but owners are only implied. It references pattern IDs 968/988 without explaining 988, says top 5 are shown but lists 3, and \"much of\" the change of 91 overstates the share for 27 bursts. The dense number dump also slightly reduces ease of action."
+    },
+    "Q_role_fit": {
+     "score": 5,
+     "comment": null
+    },
+    "Q_next_step": {
+     "score": 4,
+     "comment": null
+    },
+    "Q_evidence_use": {
+     "score": 5,
+     "comment": null
+    },
+    "Q_separation": {
+     "score": 5,
+     "comment": null
+    },
+    "Q_clarity": {
+     "score": 4,
+     "comment": null
+    }
+   },
+   "error": null
+  },
+  {
+   "id": "D-M07",
+   "role": "manager",
+   "kind": "ours",
+   "E1_correct": 1.0,
+   "E1_missed": [],
+   "E2a_ledger_grounded": 1.0,
+   "E2a_numbers": 49,
+   "E2a_unverified": [],
+   "E2b_citation_grounded": 1.0,
+   "E2d_jev_support": 0.764,
+   "E3_separation": {
+    "facts": true,
+    "hypotheses_labelled": true,
+    "unknowns": true
+   },
+   "E5_forbidden": [],
+   "E5_must_not": [],
+   "mentions": 1.0,
+   "E7_required_tools": true,
+   "E7_first_tool": true,
+   "E8_tool_calls": 3,
+   "E8_elapsed_s": 20.0,
+   "E8_tool_s": 0.09,
+   "E8_other_s": 19.9,
+   "E8_tokens_in": 36940,
+   "E8_tokens_out": 2546,
+   "rep": 0,
+   "judge": {
+    "E2c_claim_support": {
+     "score": 0.9333333333333333,
+     "comment": "[{\"sentence\": \"driven by web-platform\", \"reason\": \"This causal attribution is stated as fact. The evidence shows only web-platform's higher slope, and the answer itself later labels it a hypothesis.\"}]"
+    },
+    "E3_causes_as_fact": {
+     "score": 1,
+     "comment": null
+    },
+    "E5_judge_invented_impact": {
+     "score": 0.0,
+     "comment": null
+    },
+    "Q_rubric_mean": {
+     "score": 4.2,
+     "comment": "The answer fits a manager well: a ranked top 3 with owner teams, bursts versus the previous period, weeks active, a decision per item, and explicit unknowns about cost, downtime, root cause and host spread. Evidence is well quantified, but it never reconciles the within-period 'worsening' slope with both teams' period totals falling against the previous period (1331→1205, 231→164), which could mislead a reader. The headline says the rise was 'driven by web-platform' as if established, while a later hypothesis still treats that as unconfirmed. Next steps name owners and are tied to the evidence, but 'investigate and report' lacks a deliverable or deadline."
+    },
+    "Q_role_fit": {
+     "score": 5,
+     "comment": null
+    },
+    "Q_next_step": {
+     "score": 4,
+     "comment": null
+    },
+    "Q_evidence_use": {
+     "score": 4,
+     "comment": null
+    },
+    "Q_separation": {
+     "score": 4,
+     "comment": null
+    },
+    "Q_clarity": {
+     "score": 4,
+     "comment": null
+    }
+   },
+   "error": null
+  }
+ ],
+ "compare": {
+  "against": "eval/results/20261018-025819.json (git 8934c04)",
+  "delta": {
+   "ours/all": {
+    "error_rate": 0.0,
+    "E1_correct": 0.014,
+    "E2a_ledger_grounded": 0.0,
+    "E2b_citation_grounded": 0.0,
+    "E2c_claim_support": -0.017,
+    "E3_causes_as_fact": 0.173,
+    "E3_unknowns_stated": 0.0,
+    "E5_forbidden_runs": 0,
+    "E5_judge_invented_impact": 0.0,
+    "E5_must_not_runs": 0,
+    "E7_required_tools": 0.0,
+    "E7_first_tool": -0.163,
+    "mentions": 0.0,
+    "Q_rubric_mean": 0.025,
+    "Q_role_fit": 0.047,
+    "Q_next_step": 0.09,
+    "E8_tool_calls": 0.327,
+    "E8_elapsed_s": 2.043,
+    "E8_tool_s": 0.002,
+    "E8_other_s": 2.042,
+    "E8_tokens_in": 29452.643,
+    "E8_tokens_out": -158.05
+   },
+   "ours/engineer": {
+    "error_rate": 0.0,
+    "E1_correct": 0.075,
+    "E2a_ledger_grounded": 0.0,
+    "E2b_citation_grounded": 0.0,
+    "E2c_claim_support": 0.007,
+    "E3_causes_as_fact": 0.0,
+    "E3_unknowns_stated": 0.0,
+    "E5_forbidden_runs": 0,
+    "E5_judge_invented_impact": 0.0,
+    "E5_must_not_runs": 0,
+    "E7_required_tools": 0.0,
+    "E7_first_tool": -0.3,
+    "mentions": 0.0,
+    "Q_rubric_mean": 0.097,
+    "Q_role_fit": 0.0,
+    "Q_next_step": 0.4,
+    "E8_tool_calls": 0.358,
+    "E8_elapsed_s": 0.572,
+    "E8_tool_s": -0.122,
+    "E8_other_s": 0.698,
+    "E8_tokens_in": 43403.975,
+    "E8_tokens_out": -427.042
+   },
+   "ours/lead": {
+    "error_rate": 0.0,
+    "E1_correct": -0.069,
+    "E2a_ledger_grounded": 0.001,
+    "E2b_citation_grounded": 0.0,
+    "E2c_claim_support": -0.042,
+    "E3_causes_as_fact": 0.389,
+    "E3_unknowns_stated": 0.0,
+    "E5_forbidden_runs": 0,
+    "E5_judge_invented_impact": 0.0,
+    "E5_must_not_runs": 0,
+    "E7_required_tools": 0.0,
+    "E7_first_tool": -0.042,
+    "mentions": 0.0,
+    "Q_rubric_mean": -0.053,
+    "Q_role_fit": 0.083,
+    "Q_next_step": -0.097,
+    "E8_tool_calls": 0.306,
+    "E8_elapsed_s": 1.203,
+    "E8_tool_s": 0.283,
+    "E8_other_s": 0.916,
+    "E8_tokens_in": 23838.264,
+    "E8_tokens_out": -316.194
+   },
+   "ours/manager": {
+    "error_rate": 0.0,
+    "E1_correct": 0.011,
+    "E2a_ledger_grounded": -0.002,
+    "E2b_citation_grounded": 0.0,
+    "E2c_claim_support": -0.024,
+    "E3_causes_as_fact": 0.175,
+    "E3_unknowns_stated": 0.0,
+    "E5_forbidden_runs": 0,
+    "E5_judge_invented_impact": 0.0,
+    "E5_must_not_runs": 0,
+    "E7_required_tools": 0.0,
+    "E7_first_tool": -0.087,
+    "mentions": 0.0,
+    "Q_rubric_mean": 0.007,
+    "Q_role_fit": 0.079,
+    "Q_next_step": -0.135,
+    "E8_tool_calls": 0.222,
+    "E8_elapsed_s": 4.157,
+    "E8_tool_s": -0.142,
+    "E8_other_s": 4.303,
+    "E8_tokens_in": 14051.532,
+    "E8_tokens_out": 263.81
+   }
+  },
+  "regressions": [
+   {
+    "id": "D-M03",
+    "worse": {
+     "E1_correct": [
+      0.556,
+      0.333
+     ]
+    }
+   }
+  ],
+  "pairwise_new_vs_old": {
+   "new": 14,
+   "old": 4,
+   "tie": 0,
+   "inconsistent": 2
+  },
+  "pairwise_detail": {
+   "D-L03": {
+    "result": "inconsistent",
+    "order1": "baseline",
+    "order2": "tie",
+    "reasons": [
+     "Both answers give the same correct counts, component and owner, and both caveat that these are log lines rather than requests. B serves a lead better. It explicitly names which problem to investigate first (the 503 tied to token-validation failures) and gives a measured reason: new in the period, co-occurring within milliseconds. It also ranks the 404 volume as a second item. Its scope is more transparent, noting the truncated all-pattern list and that only 3 patterns had problem lines. A is similar but frames this less clearly as a prioritized decision. A does mention the unknown node spread, which B omits, but that is minor.",
+     "Both answers give the same correct counts (3969 for 404, 2 for 503), the same service (nova-api) and the same owning team (cloud-api). They name the same lead to investigate first, the 503 burst co-occurring with token-validation failures, with the same measured burst figures. Both are honest about unknowns. B adds the node-spread unknown and a WARNING pattern; A adds a second ranked item for the 404s and notes that the all-pattern list was truncated. The differences are minor and neither answer serves the lead materially better."
+    ]
+   },
+   "D-E06": {
+    "result": "new",
+    "order1": "ours",
+    "order2": "ours",
+    "reasons": [
+     "Answer A has the complete pattern facet across all 61 lines (33/86/93 with counts), the node-scoped context, and pattern-history evidence that pattern 33 is recurring (98 prior bursts, compared against September). That directly answers the new-vs-recurring question the engineer needs. Answer B leaves recurrence as unknown and only characterizes the 20 returned lines. B does add daily counts, but A is more complete and better grounded on the key questions. A's next steps are concrete and well targeted.",
+     "B is more useful for this investigation. It uses full facets over all 61 lines (pattern split 37/14/10, all KERNEL/FATAL) and checks the window before the first event on both the node and the midplane. Most importantly, it shows the bare pattern 33 is recurring (98 earlier bursts, 38 in September vs 34 in October), which answers the new-vs-recurring question that A leaves unknown. Its next steps are concrete and well targeted, and it notes that the L3 link is unverified because most lines are pattern 33. It does have one flaw: B treats the 123 truncated after-lines as a sequence on the node, though they were counted midplane-wide. A is more careful on that point and on truncation, but it is less informative overall."
+    ]
+   },
+   "D-E08": {
+    "result": "new",
+    "order1": "ours",
+    "order2": "ours",
+    "reasons": [
+     "Answer A is the better fit for an engineer working out whether this failure is local or widespread. It gives the per-node breakdown: R36 has 195 lines (80%), R50 has 32, an unnamed node has 16 and R73 has 2. That shows the event is concentrated on one node, and A openly flags the mismatch between the search tool's 3 nodes and the facet tool's 4. Answer B says the other two nodes are unknown even though that data appears to have been available. B also claims 'the pattern is not new in the baseline', which the evidence does not support, since high-count baseline hours were never checked for the same pattern. B's next step also cites pattern ids 906–908 without grounding. B's suggestion to compare the 5 high baseline windows is useful, but A is more specific, better grounded and more honest about discrepancies.",
+     "B gives a per-node breakdown (195/32/16/2) that settles the local-versus-widespread question. Most lines come from R36-M1-N0-C:J16-U11, but other nodes also contributed. B also reports the top pattern IDs and flags the discrepancy between 3 and 4 nodes. A leaves the other nodes unknown and proposes a query that B effectively already answered. A also mentions pattern ids 906–908 without any grounding. Both are honest about unknowns, but B is more specific and better grounded."
+    ]
+   },
+   "D-E03": {
+    "result": "new",
+    "order1": "ours",
+    "order2": "ours",
+    "reasons": [
+     "The two answers report almost the same timeline, and both are grounded and honest about the missing node. A gives more useful context. It describes the neighbouring lines, including the 404 on os-server-external-events that is not tagged with this instance. It also names the scope limits: no scheduler or conductor lines are visible. Its next steps are more concrete, with a specific request id to search and pattern-id queries. B's claim that the results were not truncated conflicts with A's note that the context query was truncated, though B may not have run that query. B adds claim resource details and a reasonable churn hypothesis. Overall, A's specificity and actionable checks serve the engineer slightly better.",
+     "B is grounded in more specific evidence. It notes that all 25 instance lines come from nova-compute, that no scheduler or conductor lines are visible, and it computes the gaps between steps. It also reports the surrounding context, including the untagged 404, and finds a distinct request id on the lifecycle events, which makes its next queries concrete and actionable. A is accurate but narrower. Its hypothesis about churn and its 'inspect the same host' step are weaker, since the host is unknown."
+    ]
+   },
+   "D-E05": {
+    "result": "new",
+    "order1": "ours",
+    "order2": "ours",
+    "reasons": [
+     "Both answers correctly identify the failure: ciod on R77-M0-NC-I:J18-U11 first logged the error at 05:33:24, immediately preceded by 'Received signal 15'. Both label the cause as a hypothesis and propose a per-node join of patterns 960 and 968 as the next check. A gives a fuller picture of what happened just before: the xhpl 'Permission denied' load failure on 64 nodes at 05:12, the first appearance of signal-15 lines at 05:14 and a machine-check sequence at 05:19. It also quantifies scope and recurrence (burst 1 on 504 nodes, 82 later bursts, weekly counts, entropy and top-node share). A is honest that its xhpl link rests only on time order. B adds two useful details: the torus lines come from different nodes, and signal 15 was the only prior line on that node. Even so, it gives less precursor and recurrence evidence, and it suggests comparing with July and August bursts that belong to different patterns. A serves the investigation better.",
+     "Both answers get the core facts right: the first occurrence at 05:33:24.623263 on R77-M0-NC-I:J18-U11, the preceding signal 15 line, the 504-node scope, and the recurrence through 2006-01-03. Both label their hypotheses and state unknowns honestly. B serves the engineer better because it surfaces more relevant precursors from the sequence window: the 05:12 xhpl Permission denied failure on 64 nodes, the first appearance of pattern 960 at 05:14, and a machine check on one node. It also gives burst detail (the first burst ran 05:33–05:37) and quantifies how widespread and recurring the pattern is (82 bursts, weekly counts). Its next steps are more concrete, including inspecting xhpl permissions and comparing later bursts for the same precursor. It explicitly notes that the xhpl link is only time order, not shown causation. A is accurate but narrower and misses those earlier precursors."
+    ]
+   },
+   "D-M01": {
+    "result": "new",
+    "order1": "ours",
+    "order2": "ours",
+    "reasons": [
+     "Both answers give the same top three bgl priorities with owners, measured basis and decisions, plus similar hypotheses and unknowns. A serves the manager better because it adds trend evidence (the weekly bgl burst counts and slope, and the per-team apache slopes). It also surfaces a second dataset's rising item, apache mod_jk, with 134 bursts versus 8 and a +9.2 slope, as a separate decision, and it honestly notes that scores cannot be compared across datasets. B's extra next step, requesting a business-impact assessment, is useful, but B offers less trend information and its only other dataset (openstack) returned nothing.",
+     "Both answers give the same grounded top three for bgl, with owners, burst changes, node spread, weeks active, hypotheses and honest unknowns. B serves a manager better on trend. It reports the weekly burst series and slope reading, and it flags a second dataset (apache) with a clearly growing app-integration mod_jk problem (134 bursts vs 8, weekly slope 9.2) as a separate decision. B also states plainly that scores are not comparable across datasets, which stops the manager from mis-ranking items. A is solid and adds a useful step to request a business-impact assessment. However, it gives no weekly trend and covers only bgl."
+    ]
+   },
+   "D-L04": {
+    "result": "old",
+    "order1": "baseline",
+    "order2": "baseline",
+    "reasons": [
+     "Both answers report the same core facts: 46 lines, 38 nodes, a top-node share of 0.043, and bursts of 33 vs 51. B adds the weekly trend, which shows a spike of 23 of the 46 lines in the week of 2005-10-17. That gives the lead a time distribution and a concrete window to investigate. B also notes two different nodes logging the message seconds apart, which supports a shared trigger. A states that the per-node count is truncated (15 of 38) and that no shown node exceeds 2, which is honest. B instead says the per-node counts were not truncated and that no node has more than 2. These may reflect different tool outputs, so neither can be faulted. Overall B is more specific, with trend over time and a targeted next step, so it serves the lead better.",
+     "A is the better answer for a lead because it covers the trend over time and turns it into a specific next step. Both answers agree on the core measured facts: 46 lines, 38 nodes, at most 2 lines per node, top-node share 0.043, and bursts down from 51 to 33. Both also correctly say that the missing fleet size prevents stating what fraction of the machine is affected. A adds the weekly trend, which a lead specifically needs. It shows 23 of the 46 lines fell in the week of 2005-10-17, a clear spike, and builds its next step around that week. B has no weekly breakdown. B does add useful context: the pattern's full history, a comparison with patterns that hit far more nodes, and a caution not to read the burst drop as resolved. B also flags that the per-node list is truncated, which A says it is not, so A may be overstating completeness there. Both give a fairly weak reason for investigating this pattern first. On balance, A's trend data and time-focused next step serve the lead better."
+    ]
+   },
+   "D-E07": {
+    "result": "inconsistent",
+    "order1": "baseline",
+    "order2": "ours",
+    "reasons": [
+     "Both answers carry the same core figures, ratios, timeline and unknowns. B is slightly more precise and actionable. It includes the 'Attempting claim' line with its resource sizes and gives exact timestamps for both the spawn and build lines. It notes that the 2017-05-14 instances form two clusters, not one 40-minute span. It gives a concrete way to measure concurrency: count 'Attempting claim' lines per minute. It also suggests how to recover the missing node attribution, via nova-scheduler or compute-service records. A is equally accurate, but its next steps are slightly less specific about establishing locality. A does say there were no WARNING/ERROR lines in the window, which is useful, but B's overall investigative guidance is sharper.",
+     "Both answers are near-identical in evidence: the same six instances, baselines, ratios, timeline for a445709b, the unlogged gap and the missing-node caveat. A is slightly sharper on spread, splitting the 2017-05-14 instances into two clusters (21:08–21:09 and 21:43–21:47). B adds more that an engineer can use. It explicitly notes that no WARNING or ERROR lines appear in the instance window. It lists all four slow HTTP lines. It gives a falsification criterion for the hypothesis. Its next checks are concrete: get_context on the four named instance IDs, and a cross-component WARNING/ERROR query over the window, including libvirt and neutron. On balance B is marginally more actionable and honest about what was checked."
+    ]
+   },
+   "D-L05": {
+    "result": "new",
+    "order1": "ours",
+    "order2": "ours",
+    "reasons": [
+     "Answer A's component counts sum exactly to the 855501 total, and APP matches the hpc-workloads team total. Answer B reports APP as 228465 and then flags its own counts as not reconciling, which suggests a misread figure rather than a real gap. For a lead, A ranks its investigate-first pick by recurrence and spread: rts panic, with 236 bursts, 3394 nodes and 32 weeks active. B's top pick is a high-volume pattern almost entirely from one node, which is volume rather than a recurring, spread-out problem. B also mixes periods, which makes its trends harder to compare. Both are honest about what they don't know, but A is more internally consistent and better prioritized.",
+     "B answers the question directly with internally consistent figures. Its components sum exactly to the 855501 total, APP's 228536 matches hpc-workloads, and KERNEL→node-platform and APP→hpc-workloads are stated outright. B also reasons that node-platform's 626962 equals KERNEL plus LINKCARD and labels that as a hypothesis to confirm. A reports APP as 228465, which is apparently a misread: it breaks the component sum and creates a spurious reconciliation 'unknown' and next step. A never maps components to teams explicitly. B's priority pick (rts panic: most bursts, widest spread, 32 weeks active) gives a measured recurrence-and-spread reason. B also flags the suspicious all-zero previous-period counts honestly. A's pick is an odd case: 541 nodes listed but 0.996 from one node."
+    ]
+   },
+   "D-L02": {
+    "result": "old",
+    "order1": "baseline",
+    "order2": "baseline",
+    "reasons": [
+     "Both report the same weekly trend and name node-platform as the owner. B gives October-specific spread: 61 lines from 54 distinct nodes, all from the KERNEL component. A gives only lifetime node and burst figures for pattern 33, which are not October numbers. A's ownership is more direct, since it cites pattern 33's own team assignment. B infers ownership from the KERNEL mapping and pattern 34. B is also more careful about the partial final week and names the variant pattern 93. Its hypotheses and next steps fit the measured spread better. Overall, B gives a lead more useful measured evidence.",
+     "Both answers give the same weekly trend (4/21/11/11/11/3), the same owner (node-platform via the KERNEL component) and similar related-pattern figures. A adds a measured October spread figure, 61 lines from 54 distinct nodes, that B lacks. B lists the October node count as unknown and falls back on lifetime figures for pattern 33 that it notes are not October-only. A's spread figure also makes B's few-nodes hypothesis less likely. A clearly flags the partial final week and the partial first bucket as limits on reading a decline. Both are honest about the missing burst and previous-period data. A's period-specific spread evidence serves the lead better."
+    ]
+   },
+   "D-E04": {
+    "result": "new",
+    "order1": "ours",
+    "order2": "ours",
+    "reasons": [
+     "Both answers give the same core facts: the token-validation 503 from identity, the four-line sequence, request IDs, the empty node field, latency and length contrasts, and identity-side next steps. A is slightly more accurate. B wrongly attributes the preceding status-200 request to the same request_id (req-1cc7d50c…), when it was a separate, earlier request. B also implies the project ID applies to both failures, which the evidence does not show. A's baseline framing (new versus 34 prior windows) and its next steps are correct and concrete: cross-component request_id searches, a pattern facet, and Keystone logs for tight windows. B's extra steps (longer-history recurrence, auth_token config) are useful, but they do not outweigh its factual slip.",
+     "Both answers are accurate and well grounded. Each cites the same four-line sequence (identity server 503 with HTML page, token-validation failure, client 503), the request IDs, the empty node field, the fast 503 latency, and keystone/proxy logs as the next check. B serves the engineer slightly better. It explicitly addresses local vs widespread: single requests, no neighbouring 503s, and a next step to search the request IDs and the CRITICAL pattern across all components. It also addresses new vs recurring, with a zero baseline for status 503 and an exact one-day gap between bursts, which strengthens the scheduled-job hypothesis. It adds response length as corroboration and gives a tighter time window for the identity-log check. A's extras are useful but less central to what the engineer needs: a 58x baseline ratio based on just 1 line, and the auth_token config check."
+    ]
+   },
+   "D-L01": {
+    "result": "new",
+    "order1": "ours",
+    "order2": "ours",
+    "reasons": [
+     "Answer A serves the lead better. It counts problem bursts (recurrences) per owning team: node-platform 256, hpc-workloads 96 and cluster-control 55. It also gives a weekly burst trend for every team and flags partial weeks. Answer B reports team totals in raw log lines, which a single noisy team dominates, and gives a weekly trend only for hpc-workloads, also in raw lines. Both pick the same investigate-first item with the same measured reason (27 bursts against 0 before, 1024 nodes). A strengthens that choice with daily spikes and covers the apache mod_jk surge. B adds the machine-check and parity patterns, which is useful but does not make up for the weaker team and trend view.",
+     "Both answers choose the same investigate-first item, the new ciod 'Link has been severed' pattern, and back it with the same measured reason: 0 to 27 bursts across 1024 nodes. B serves a lead better because it reports team ownership in recurrences: bursts per team (256/96/55 of 407), with a weekly burst trend for every team. A gives team totals and its weekly trend only in raw log lines, and only for hpc-workloads. B also adds a daily trend for the ciod error showing spikes on 2005-11-21 and 2005-11-26, and surfaces the sharply rising apache mod_jk problem (8 to 134 bursts), which A does not cover. B is also more careful about unknowns, noting that both the first and last weeks are partial."
+    ]
+   },
+   "D-M02": {
+    "result": "new",
+    "order1": "ours",
+    "order2": "ours",
+    "reasons": [
+     "Both answers give the same top three node-platform hardware-error items, with owners, burst changes, node spread, decision actions and honest unknowns. A serves the manager better overall. It adds a second dataset with real signal: apache, with weekly burst figures and an 'improving' trend. It also states the bgl weekly trend, and its 'watch apache' next step is reasonable. B's second dataset, openstack, returned nothing. B also has an internal inconsistency: node-platform shows 4150 log lines in its roll-up but 112809 later, which undermines confidence. A has minor flaws too: its hypothesis wording ('same 2 vs 4 burst pattern') does not fit the machine-check pattern (10 vs 5), and its apache hypothesis is awkwardly phrased. Still, A is more useful and more internally consistent.",
+     "Both answers put node-platform's DDR, EDRAM and machine-check kernel errors first, assign owners, give burst and node counts with prior-period comparisons, and are honest that cost, downtime, customer impact and root cause are not in the logs. B serves the manager better: it adds measured trend evidence (weekly totals, an 'improving' reading for apache with week-by-week numbers), a clear watch-or-deprioritise decision for apache, and a separate action for hpc-workloads' rise from 18 to 43 bursts. A contradicts itself on log-line counts: node-platform is given as 4150 and later as 112809, and cluster-control as 1213 and later 4247. That undermines trust in its figures. B has one slip, describing the machine-check pattern as sharing the same 2-vs-4 burst pattern when it was 5-vs-10, but overall it is more consistent and more decision-useful."
+    ]
+   },
+   "D-L06": {
+    "result": "new",
+    "order1": "ours",
+    "order2": "ours",
+    "reasons": [
+     "Both answers agree on the same five worsening patterns, all owned by node-platform, and both pick the job-kill timeouts to investigate first. A grounds that choice better with a pattern-level weekly trend: 'Kill job' lines peaked at 20 in the week of 2005-10-17 against 7 the week before, alongside September weekly figures. It also gives September-vs-October burst rollups by team and component, which show the overall decline and so put the risers in context. B adds useful context of its own: patterns that declined, top-node share, and a sensible next step to rerun the growth ranking without truncation. However, its weekly trend covers team-level log lines, not the specific problem, so its 'investigate first' reason is less concretely measured. Both are honest about truncation, the nodes=0 gap and the slightly mismatched comparison window.",
+     "Both answers identify the same five worsening node-platform patterns with the same counts, and both pick pattern 261 to investigate first. B adds context a lead needs. It gives team-level burst rollups showing overall problem bursts fell from 446 to 345, so the growth is concentrated rather than systemic. It also gives a pattern-specific weekly trend for 'Kill job' timeouts, peaking at 20 lines in the week of 2005-10-17, which is a measured basis for prioritizing and a concrete week to look at. A's weekly trend is team-level log lines, which is less relevant to recurrence. A does list declining patterns, which is useful. B also cross-checks apache, catching other teams' (app-integration) small risers that A only speculates about. B is equally honest about truncation and the window mismatch."
+    ]
+   },
+   "D-M06": {
+    "result": "new",
+    "order1": "ours",
+    "order2": "ours",
+    "reasons": [
+     "Answer A addresses the question asked: the trend within September to November. It reports the computed slope and half-means, then shows the late-November rise that contradicts a clean 'improving' reading. It also flags the partial first and last weeks and proposes concrete checks before anything goes to leadership, so its verdict is nuanced and well grounded. Answer B gives a flat 'No' based on a different comparison, against June to August, so it does not really answer whether reliability improved across Sept–Nov. Its cluster-control total (120) is inconsistent with the 178 that A reports, and it leans on log-line volumes, which are less meaningful as a reliability measure. Both state the unknowns honestly and list owned actions, but A is more correct and more directly useful for a priority decision.",
+     "B answers the question as asked, which is the trend within September to November. It reports the weekly slope (-1.332), the half-means (87.43 vs 83.71) and the late-November rise (154 and 117 bursts against 46 in the week of 2005-10-31). It then concludes honestly that the signal is mixed, not clearly improving. It also flags the partial weeks as a fragility and proposes re-runs before anyone reports a direction to leadership. A flatly says \"No\" from a comparison with the previous period. That ignores the within-period weekly trend, and A pads its case with log-line peaks that it admits may be logging floods. Both give ranked items with owners, evidence, actions and unknowns, and neither invents cost or downtime. B's handling of the direct question is more accurate and calibrated for a manager's decision."
+    ]
+   },
+   "D-E01": {
+    "result": "new",
+    "order1": "ours",
+    "order2": "ours",
+    "reasons": [
+     "A is better grounded and more thorough. It checks the context of each panicking node individually and confirms the failure was confined to R43-M0 within rack R43. It gives burst-level recurrence evidence (burst 3, new_as_of false, median gap between bursts) and flags dataset-wide corrected-DDR activity before the panics, clearly caveated as not tied to R43-M0. Its next steps are concrete: queries on specific pattern IDs and nodes. B is accurate on the core facts and usefully names the earlier burst locations. However, its hypothesis rests on a shaky reading of \"NC\" as a special node-card node versus an \"N8 compute node\", and its context coverage is narrower.",
+     "Both answers report the same core facts correctly: two KERNEL FATAL \"kernel panic\" lines (pattern 576) on R43-M0-NC-I:J18-U01 and R43-M0-N8-I:J18-U11 at 13:56:00, nothing before or after, a recurring pattern, and a 112x rate ratio. B is grounded in more measured evidence. It checks each node individually, uses a wider ±3 h rack window to show the event was confined to R43-M0, and adds burst data (burst 3 of 13, new_as_of false, median gap of about 5 days). It also notes the dataset-wide corrected-DDR INFO lines at 13:17 and honestly flags that their location is unknown. That leads to a sharper, targeted next query: patterns 4, 6 and 7 on R43-M0, plus checking the J18 location clustering across bursts. A slightly misreads the location labels, treating NC as a node-card node and N8 as a compute node, when both are node-card positions. A's next steps are also more generic."
+    ]
+   },
+   "D-M05": {
+    "result": "new",
+    "order1": "ours",
+    "order2": "ours",
+    "reasons": [
+     "Both answers rank the same top three bgl problems with matching owners, burst counts, node spread and actions, and both state that cost, downtime, customer impact and root cause are not in the logs. The question is specifically about what the logs cannot show, and A answers it more fully. It adds that the logs do not show which jobs or users were affected. It also notes that apache records no host, so spread across hosts is unknown. A's opening sentence gives the manager a clear summary of shown versus not shown. B's scope includes openstack with zero matches, which adds little. B's opening also stresses only root cause. A has two minor weaknesses: it repeats an 'improving' trend reading without flagging that the final week is partial, and it uses opaque pattern IDs. Even so, A is the more complete and honest account of the unknowns.",
+     "Both answers name the same top three problems and admit the same core unknowns. B fits the question better. It opens by directly stating what the logs can and cannot show. It also lists more relevant gaps: which jobs or users were affected, and that apache logs record no host, so spread across hosts is unknown. It adds weekly trend data, and its next step asks for downtime, incident and cost data, which ties those unknowns to the manager's decisions. A has a confusing scope: it says 5 weeks, gives inconsistent team totals, and its 'top 10 of 125, top 3 shown' wording is muddled. A also leads with root cause only rather than the full set of unknowns."
+    ]
+   },
+   "D-E02": {
+    "result": "new",
+    "order1": "ours",
+    "order2": "ours",
+    "reasons": [
+     "Both answers agree on the first line, the node, the totals and the single-node flood on R30-M0-N9-C:J16-U01. Answer A covers more of what an engineer needs. It says whether the event is new or recurring: new as of 06-05 with no earlier lines, and recurring across the dataset with 22 bursts in 8 weeks. It gives a rack-level spread (R30, R21, R24, R25, R20) and core-dump correlation counts (748 lines on 251 nodes), which feed a concrete node-set comparison check. Answer B adds a useful daily and hourly breakdown, the five-day quiet gap and the full June 5 extent (466 nodes). However, it lacks the recurrence and novelty context and any rack breakdown; it only proposes running one. Answer A's burst figure of 251 nodes understates the June 5 spread, but its totals are consistent. Overall A is slightly more complete and grounded.",
+     "Both answers agree on the first line, its node and its context, the 152182-line flood from R30-M0-N9-C:J16-U01, and the 467-node total. B adds more measured evidence an engineer needs. It shows the first burst window (254 lines on 251 nodes, 00:08–01:19) closely tracking 'generating core' lines on 251 nodes, which supports its hypothesis. It gives a rack breakdown and new-versus-recurring context: no baseline before 2005-06-05, but 22 bursts and 8 active weeks dataset-wide through November. It is also candid that no baseline exists. A has a clear daily and hourly trend and states the full June 5 spread (466 nodes through 08:32). However, A lacks the rack breakdown and recurrence history and defers those to next steps. B serves the investigation better overall."
+    ]
+   },
+   "D-M03": {
+    "result": "old",
+    "order1": "baseline",
+    "order2": "baseline",
+    "reasons": [
+     "Both answers name node-platform as the highest-risk area, list the same top three patterns with owners and actions, and state the same unknowns.\n\nB serves the manager slightly better on honesty and specificity:\n- **Trend framing:** it describes node-platform's -7 change (268 vs 275) as roughly flat rather than \"improving\", which is the more accurate reading.\n- **Evidence on the rise:** it notes that 7 of the top 10 items are new one-burst hpc-workloads patterns, which directly informs whether that increase matters.\n- **Follow-up:** it proposes an October check so the trend direction can be confirmed.\n\nA has some strengths:\n- **Weekly slopes:** its per-team slopes are useful trend evidence.\n- **Extra dataset:** it adds Apache data.\n\nHowever, A also has weaknesses:\n- **Misleading claim:** it says the Lustre mount failures drive \"most of the recent rise\", yet node-platform's bursts did not rise.\n- **Overstated trend:** it reads a near-flat change as improvement.",
+     "Both answers give the same core ranking and per-item evidence: node-platform has the most bursts (268), hpc-workloads is clearly worsening (23 to 106), and the top three patterns carry owners and decide/fund actions. A is more careful with the evidence. It calls node-platform's -7 change \"roughly flat\" rather than \"improving\". It also flags that node-platform's log lines rose sharply into October, so the trend may not hold, and proposes an October follow-up. It notes that the hpc-workloads rise comes from many new one-burst items. B adds useful weekly slopes and Apache coverage. However, it labels node-platform as improving on a small change, and its claim that the Lustre pattern \"drives most of the recent rise\" sits oddly with node-platform's overall burst count falling. A is the more honest and decision-ready answer, though the margin is narrow."
+    ]
+   },
+   "D-M04": {
+    "result": "old",
+    "order1": "baseline",
+    "order2": "baseline",
+    "reasons": [
+     "Both answers pick the same fix, pattern 562 (node-platform), and back it with the same measured basis: 13 bursts versus 0, 2666 nodes, 3 weeks active. Both are honest about cost, downtime, impact and root cause being unknown. B gives a manager a stronger reason to choose this as the single fix. It shows four other new node-platform kernel patterns (563–566) appearing in the same period, so one fix might clear several. It also notes the failures are spread with no single-node concentration and proposes a concrete overlap check. B's ranks 2 and 3 cover two different owner teams, whereas A's ranks 2 and 3 are likely the same cluster-control issue, as A itself suspects. A's strengths are the Apache context, its caveat that scores from the two datasets are not comparable, and the improving weekly trend. These are useful, but they bear less on choosing one fix. Overall B is more specific and decision-useful for this question.",
+     "Both answers pick the same fix, pattern 562 \"rts: kernel terminated\" owned by node-platform, and both back it with the same measured basis: new this month (13 bursts vs 0), 2666 nodes, 3 weeks active. Both also state the unknowns honestly (cost, downtime, customer impact, root cause, truncation). A edges ahead because it strengthens the single-fix decision with concrete evidence. Four more new node-platform KERNEL patterns (563–566) first appeared on 2005-08-13 with similar burst counts. A turns this into a testable hypothesis that one fix could clear several patterns, which bears directly on \"if we can fix only one thing.\" B adds useful context: the overall BGL weekly trend is improving, and Apache scores are not comparable to BGL. However, its second next step suggests the problems may fade without investment, which slightly muddies the funding decision. B's rank 2/3 duplicate hypothesis is good but matters less for the single-fix question."
+    ]
+   }
+  }
+ }
+}

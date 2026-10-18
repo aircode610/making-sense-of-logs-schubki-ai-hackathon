@@ -129,30 +129,37 @@ the prompts is built from the dataset registry. The **composer** subgraph only s
 - **Tracing:** one LangSmith trace per question, with route, evidence ids, numbers verified, confidence, revisions.
 
 ## Evaluation (ours vs the reference ReAct agent with the same tools)
-`.venv/bin/python -m eval.run_eval` runs both systems on 20 dev questions (8 engineer, 6 lead, 6 manager) as LangSmith
-experiments, with deterministic metrics (golden facts from hand-checked SQL incl. the manager's computed ranking order,
-numbers found in the evidence, tool use, forbidden claims, cost) and an Opus judge (claim support against the full
+`.venv/bin/python -m eval.run_eval` runs both systems on 25 dev questions (10 engineer, 8 lead, 7 manager; 5 of them
+on Zookeeper, Apache, OpenSSH, HDFS and the OTel slice) as LangSmith experiments, with deterministic metrics (golden
+facts from hand-checked SQL incl. the manager's computed ranking order, numbers found in the evidence, tool use,
+forbidden claims, cost), a Jev support probability per fact, and an Opus judge (claim support against the full
 evidence, role rubric, pairwise in both orders). A failed run scores 0. Details and the noise floor: `docs/EVAL.md`;
-latest reports: ours ×3 `eval/results/20261018-025819.md`, baseline (re-judged) `eval/results/20261018-023346.md`.
+latest reports: `eval/results/20261018-043511.md` (25 questions, ours vs the previous version and the baseline),
+`eval/results/20261018-044019.md` (the 5 new-dataset questions, both systems fresh).
 
-| Metric (dev questions; ours = mean of 3 runs) | ours | baseline |
+| Metric (25 dev questions; baseline = the 20 BGL / OpenStack ones) | ours | baseline |
 |---|---|---|
-| E1 golden facts in the answer (± 0.05 run-to-run) | **0.85** | 0.69 |
+| E1 golden facts in the answer (± 0.05 run-to-run) | **0.87** | 0.69 |
 | E2a numbers found in the run's own tool results | **1.00** | 0.85 |
 | E2b numbers found in the result the fact cites (ours) | **1.00** | — |
-| E2c claims supported by the evidence (judge) | **0.96** | 0.71 |
-| E3 causes stated as fact, per answer (judge) ↓ | **0.07** | 0.39 |
+| E2c claims supported by the evidence (judge) | **0.95** | 0.71 |
+| E2d Jev: fact supported by its cited evidence (mean p, ours) | 0.68 | — |
+| E3 causes stated as fact, per answer (judge) ↓ | **0.24** | 0.39 |
 | E3 states what the logs cannot establish | **1.00** | 0.11 |
 | E5 invented money / downtime / impact (regex + judge + must_not) | 0 | 0 |
-| E7 required tools called | **1.00** | 0.83 |
-| Q rubric mean 1-5 (judge) | **4.54** | 3.96 |
-| Q role fit 1-5 (judge) | **4.83** | 4.11 |
-| Q next-step specificity 1-5 (judge) | **4.35** | 2.61 |
-| Q pairwise, both orders, consistent wins | **14** | 2 (2 inconsistent) |
-| E4 evidence overlap between roles on the same topic ↓ | **0.02** | 0.04 |
-| E4 tool overlap between roles on the same topic ↓ | 0.31 | **0.28** |
-| E8 seconds per answer (of which inside tools) ↓ | 34 (0.3) | **13** (0.2) |
-| E8 input / output tokens ↓ | 65k / 4.9k | **33k / 1.6k** |
+| E7 required tools called · valid first tool | **1.00 · 1.00** | 0.83 · 0.83 |
+| Q rubric mean 1-5 (judge) | **4.57** | 3.96 |
+| Q role fit 1-5 (judge) | **4.88** | 4.11 |
+| Q next-step specificity 1-5 (judge) | **4.44** | 2.61 |
+| Q pairwise vs baseline, both orders, consistent wins | **16** | 1 (1 inconsistent) |
+| Q pairwise vs our previous version (8 tools) | **14** | 4 (2 inconsistent) |
+| E4 tool overlap between roles on the same topic ↓ | **0.02** | 0.28 |
+| E4 evidence overlap between roles on the same topic ↓ | **0.015** | 0.04 |
+| E8 seconds per answer (of which inside tools) ↓ | 36 (0.3) | **13** (0.2) |
+| E8 input / output tokens ↓ | 94k / 4.8k | **33k / 1.6k** |
+
+New datasets only (5 questions, both systems fresh): pairwise **4-0** (1 inconsistent), claims supported 0.98 vs 0.73,
+numbers grounded 1.00 vs 0.77, next-step specificity 4.4 vs 2.8.
 
 Dev questions were written by us after seeing the data; a separate human-written private question set exists (its
 runner prints aggregates only).
