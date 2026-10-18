@@ -1,5 +1,5 @@
 """Ownership tools (plan 057): who owns a component and why, and where ownership is weak. The `ownership` table
-combines the curated table with an inference chain (load/96b_ownership_inferred.sql); every row says its source
+combines the curated table with an inference chain (load/lib/ownership_dataset.sql); every row says its source
 and confidence, so an answer can tell a curated owner from an inferred one."""
 import time
 from typing import Annotated, Optional

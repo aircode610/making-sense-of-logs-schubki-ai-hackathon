@@ -21,6 +21,7 @@ def main() -> int:
     p.add_argument("sources", nargs="+")
     p.add_argument("--name", help="dataset name (one file only)")
     p.add_argument("--year", type=int, help="year for formats that log none")
+    p.add_argument("--title", help="one-line title of a file's dataset (default: file name + format)")
     p.add_argument("--no-judge", action="store_true", help="skip live Jev judging of new data")
     p.add_argument("--confirm-large", action="store_true")
     r = sub.add_parser("remove")
@@ -33,8 +34,9 @@ def main() -> int:
         if a.name and len(a.sources) > 1:
             ap.error("--name needs exactly one source")
         ok = True
-        for s in a.sources:
-            rep = core.load(s, a.name, a.year, "never" if a.no_judge else "auto", a.confirm_large)
+        sources = [x for s in a.sources for x in (core.base_corpus() if s == "base" else [s])]  # 'base' = base corpus
+        for s in sources:
+            rep = core.load(s, a.name, a.year, "never" if a.no_judge else "auto", a.confirm_large, title=a.title)
             print(json.dumps(rep, indent=1, default=str))
             ok &= bool(rep.get("ok"))
         return 0 if ok else 2

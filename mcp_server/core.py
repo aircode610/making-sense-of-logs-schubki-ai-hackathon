@@ -168,7 +168,7 @@ def _registry_all() -> dict:
     for r in query("SELECT dataset, team FROM ownership GROUP BY 1, 2 ORDER BY 1, 2", {}):
         if r["dataset"] in out:
             out[r["dataset"]].setdefault("teams", []).append(r["team"])
-    try:  # load/93_examples.sql (absent on an old database: descriptions just show no examples)
+    try:  # dataset_examples (load/lib/build_dataset.sql; absent on an old database: descriptions just show no examples)
         for r in query("SELECT dataset, field, example FROM dataset_examples ORDER BY dataset, n_values DESC", {}):
             if r["dataset"] in out:
                 out[r["dataset"]]["examples"][r["field"]] = r["example"]

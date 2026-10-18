@@ -135,7 +135,7 @@ def _otel_role(c: psycopg.Connection) -> None:
 
 
 def _cleanup(c: psycopg.Connection) -> None:
-    """load/00_cleanup.py: workspaces and team schemas depend on the tables a schema rebuild drops."""
+    """Was load/00_cleanup.py: workspaces and team schemas depend on the tables a schema rebuild drops."""
     names = tables(c)
     for t in sorted(n for n in names if n.startswith("ws_")):
         c.execute(f"DROP TABLE IF EXISTS {t} CASCADE")
@@ -334,7 +334,7 @@ def build(c: psycopg.Connection, name: str, log: Log = print) -> None:
 
 
 def load(source: str, name: Optional[str] = None, year: Optional[int] = None, judge: str = "auto",
-         confirm_large: bool = False, log: Log = print) -> dict:
+         confirm_large: bool = False, log: Log = print, title: Optional[str] = None) -> dict:
     """Load one dataset end to end. source = catalog name or file path. judge: 'auto' (live Jev for datasets without
     committed judgments when a key works), 'never'. Returns a report dict."""
     t0 = time.time()
@@ -368,7 +368,7 @@ def load(source: str, name: Optional[str] = None, year: Optional[int] = None, ju
         name = name or re.sub(r"[^a-z0-9_]+", "_", path.stem.lower()).strip("_") or "logs"
         if not re.fullmatch(r"[a-z][a-z0-9_]*", name):
             return {"ok": False, "reason": "name: lower case letters, digits and _ (start with a letter)"}
-        r = load_file(c, path, name, year=year, log=log)
+        r = load_file(c, path, name, year=year, title=title, log=log)
         report.update(r, loader="format auto-detection")
         if not r["ok"]:
             return report

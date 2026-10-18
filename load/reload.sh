@@ -12,6 +12,7 @@ skip=0
 if [ "${1:-}" = "--skip-checks" ]; then skip=1; shift; fi
 "${PY[@]}" -m loader reload "$@"
 [ "$skip" = 1 ] && exit 0
+export LOGS_DATASET="*"   # the checks call tools on every dataset directly (multi-dataset mode)
 "${PY[@]}" bench/check_counts.py
 "${PY[@]}" bench/check_patterns.py
-LOGS_DATASET="*" "${PY[@]}" bench/check_tools.py
+"${PY[@]}" bench/check_tools.py

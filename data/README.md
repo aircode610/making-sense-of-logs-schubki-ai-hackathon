@@ -6,7 +6,7 @@
 - Optional extra sets (`download_data.sh --all`, `hdfs`, `linux healthapp`): `zookeeper/`, `apache/`, `ssh/`, `hdfs/`,
   `linux/` (25,567 lines; read as latin-1: some lines carry raw attack bytes) and `healthapp/` (253,395 lines). Linux and
   HealthApp are the plan-012 "unseen" sets: loaded with a loader file + a `*` ownership row only.
-- Auto-detected sets (plan 057 part 3, `scripts/ingest.sh`; downloaded by hand from Loghub Zenodo record 8196385):
+- Auto-detected sets (plan 057 part 3, `scripts/ingest.sh` = `python -m loader load`; downloaded by hand from Loghub Zenodo record 8196385):
   `android/Android.log` (Android_v1, 1,555,005 lines, logcat format, year not logged: 2017 assumed) and
   `proxifier/Proxifier.log` (21,329 lines, year not logged: 2016 assumed). Loaders are generated into `load/gen/`.
 - `pattern_vectors_<ds>.parquet` (committed, plan 057): embeddings of one dataset's templates

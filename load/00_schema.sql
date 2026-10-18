@@ -88,7 +88,7 @@ CREATE INDEX logs_idx ON logs USING inverted (
 -- util.logging, lnav level words). Loaders fill logs.severity_number by joining on upper(severity) = word.
 CREATE TABLE severity_map AS SELECT * FROM read_csv('/data/severity_map.csv', header = true, auto_detect = false,
     columns = {'word': 'VARCHAR', 'severity_number': 'SMALLINT', 'severity_text': 'VARCHAR', 'source': 'VARCHAR'});
--- Auto-detected loaders (plan 057 part 3, load/gen/*.sql written by scripts/ingest.py): one row per generated dataset
+-- Auto-detected loaders (plan 057 part 3, load/gen/*.sql written by loader/detect.py): one row per generated dataset
 -- with the format chosen and how well it fit, and the line ids its regexes did not match (kept as continuation lines).
 -- Hand-written loaders write nothing here. Read by the ingest_report tool.
 CREATE TABLE ingest_runs (
@@ -113,7 +113,7 @@ CREATE TABLE labels (
     label   VARCHAR NOT NULL
 );
 
--- Template text per pattern_id, written by each loader (plan 004); aggregates live in load/95_patterns_episodes.sql.
+-- Template text per pattern_id, written by each loader (plan 004); aggregates live in load/lib/build_dataset.sql.
 CREATE TABLE pattern_templates (
     dataset    VARCHAR NOT NULL,
     pattern_id INTEGER NOT NULL,

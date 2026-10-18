@@ -1,4 +1,4 @@
-"""How well an auto-detected dataset was understood (plan 057 part 3): the format scripts/ingest.py chose, how much of the
+"""How well an auto-detected dataset was understood (plan 057 part 3): the format loader/detect.py chose, how much of the
 file it matched, which field became which column, and samples of the lines it did not match."""
 import json
 import time
