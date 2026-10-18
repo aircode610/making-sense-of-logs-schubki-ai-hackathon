@@ -4,7 +4,12 @@
 -- State = component, severity, masked template, one real example line. Criteria examples are generic log wording,
 -- deliberately NOT taken from BGL (no pattern text appears in them), so the judgment is not fitted to this corpus.
 -- :where is set by the caller (all patterns, or a dry-run subset).
-SET sdb_ai_max_api_calls_per_query = 5000;
+-- Call cap (plan 011 G11): 5000 by default; scripts/ingest.sh raises it for a large new dataset (AI_CAP, plan 057).
+\if :{?ai_cap}
+\else
+\set ai_cap 5000
+\endif
+SET sdb_ai_max_api_calls_per_query = :ai_cap;
 
 COPY (
 SELECT p.dataset, p.component, p.template, p.pattern_id,

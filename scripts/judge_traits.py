@@ -66,7 +66,7 @@ def main(datasets: list[str]) -> None:
     with psycopg.connect(host=env("PGHOST", "localhost"), port=env("PGPORT", "7890"), user=env("PGUSER", "postgres"),
                          dbname=env("PGDATABASE", "postgres"), autocommit=True, row_factory=dict_row) as c:
         c.execute("SET sdb_scan_split = 'never'")
-        c.execute("SET sdb_ai_max_api_calls_per_query = 5000")
+        c.execute(f"SET sdb_ai_max_api_calls_per_query = {int(os.environ.get('AI_CAP', 5000))}")  # plan 057: ingest.sh may raise it
         datasets = datasets or [r["dataset"] for r in c.execute("SELECT dataset FROM datasets ORDER BY pattern_base")]
         for ds in datasets:
             teams = c.execute("SELECT team, string_agg(DISTINCT description, '; ') AS d FROM ownership_raw "

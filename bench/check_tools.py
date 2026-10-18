@@ -19,6 +19,7 @@ load_dotenv(Path(__file__).parent.parent / ".env")
 import analytics
 import counts
 import discover
+import ingestion
 import outliers
 import ownership
 import patterns
@@ -109,6 +110,13 @@ for ds in DATASETS:
     r = run(discover.explain_search, ds, word, ds)
     if r:
         ok("explain_search", ds, "total", r["total_matches"], exact)
+
+    r = run(ingestion.ingest_report, ds, ds, unmatched_limit=3)  # plan 057: auto-detected datasets only
+    if r:
+        auto = one("SELECT count(*) FROM ingest_runs WHERE dataset = %(d)s", P)
+        ok("ingest_report", ds, "report only for auto-detected datasets", len(r["rows"]), auto)
+        if auto:
+            ok("ingest_report", ds, "lines loaded", r["rows"][0]["lines_loaded"], lines_total)
 
     # ---- search
     r = run(search.search_logs, ds, query_text=word, dataset=ds, limit=3)

@@ -16,7 +16,7 @@ CREATE INDEX pattern_index_idx ON pattern_index USING inverted (
 INSERT INTO pattern_index
 SELECT p.dataset, p.pattern_id, p.component, p.template, v.emb::FLOAT[768]
 FROM patterns p
-LEFT JOIN read_parquet('/data/pattern_vectors.parquet') v
+LEFT JOIN read_parquet('/data/pattern_vectors*.parquet') v  -- + per-dataset files of scripts/embed_patterns.py <ds> (plan 057)
   ON v.dataset = p.dataset AND v.component IS NOT DISTINCT FROM p.component AND v.template = p.template;
 VACUUM (REFRESH_TABLE) pattern_index;
 
