@@ -1,6 +1,6 @@
 # 016: Ship as one MCP server: two-step setup, load the base corpus (with Jev) or your own logs from Claude
 
-- **Status:** approved (Amirali, 2026-10-18) · running
+- **Status:** done (approved Amirali 2026-10-18)
 - **Owner:** Amirali · **Branch:** `feat/016-ship-mcp` (from `feat/015-session-report` + merge of `origin/main` = plan 057) · **Date:** 2026-10-18
 - **PLAN.md block / slice:** Execution (20 %: clean checkout, clear setup) + Best MCP Server award ("Claude can connect and
   answer questions using your setup instructions"); builds on 012 / 014 / 015 (Amirali) + 057 (Konark)
@@ -75,14 +75,38 @@ responsive); MCP tool-count / token budget (4 new tools: trim descriptions); `uv
 MCP start timeout (README: `uv sync` once if so; measure); big downloads (709 MB BGL zip) from Zenodo can be slow.
 
 ## 6. Steps
-- [ ] Merge origin/main, resolve conflicts, 057 tools pinned; checks pass
-- [ ] Setup: compose 26.10.1 + port, pyproject + `uv run`, `.mcp.json`, secrets + init from the server/loader
-- [ ] Python SQL runner; reload via it = same tables as psql (diff)
-- [ ] Per-dataset build steps + diff test vs full reload
-- [ ] Catalog + brief-style download; own files: detection library + streaming; replace / remove
-- [ ] Jev at load (committed for known, live with key, `judged` flag + level fallback in every problem tool / macro)
-- [ ] Server: refreshable registry, active dataset + 'all', `load_logs` / `setup_status` / `use_dataset` / `remove_dataset`, jobs
-- [ ] check_tools / counts / patterns / lint; clean-checkout test with headless Claude, 3 roles; timings
-- [ ] README setup rewrite, STATUS, DECISIONS, §7
+- [x] Merge origin/main, resolve conflicts, 057 tools pinned; checks pass
+- [x] Setup: compose 26.10.1 + port, pyproject + `uv run`, `.mcp.json`, secrets + init from the server/loader
+- [x] Python SQL runner; reload via it = same tables as psql (diff)
+- [x] Per-dataset build steps + diff test vs full reload
+- [x] Catalog + brief-style download; own files: detection library + streaming; replace / remove
+- [x] Jev at load (committed for known, live with key, `judged` flag + level fallback in every problem tool / macro)
+- [x] Server: refreshable registry, active dataset + 'all', `load_logs` / `setup_status` / `use_dataset` / `remove_dataset`, jobs
+- [x] check_tools / counts / patterns / lint; clean-checkout test with headless Claude, 3 roles; timings
+- [x] README setup rewrite, STATUS, DECISIONS, §7
 
 ## 7. Results (filled after)
+- **Merge** of main (plan 057) clean: 3 conflicts resolved (lead subset = plan-014 changes + 057 ownership tools; both
+  composer rules; DECISIONS renumbered H30/H31). Konark's tools work in single-dataset mode.
+- **Per-dataset build = old global build:** after a full reload through the new loader, patterns, bursts, episodes,
+  ownership, judgments, traits, datasets, templates, labels, pattern index: identical (EXCEPT ALL both ways = 0);
+  2 example-value ties and the order inside `entities` differed between ANY two runs (also psql vs psql) →
+  `extract_entities` now sorted. Full reload 216 s → 122 s (no psql, no compaction per step).
+- **Add one dataset:** the forced `COMPACT_TABLE` rewrote all 17M rows (41 s) for a 21k-line file → incremental loads
+  only refresh (background compaction merges): **1.6 s** end to end; with live Jev + traits + areas + embeddings 15 s.
+  Android (1,555,005 lines) from the catalog: 19 s, 19,242 patterns (= plan 057).
+- **Live Jev = committed:** Proxifier judged at load vs Konark's committed CSV: corr(p_fault) 0.996, same problem decision
+  287 / 287; ownership inferred for 20 components; embeddings 287 / 287.
+- **No key:** problem rule = explicit error-or-worse / WARN / 5xx lines (`patterns.error_lines`); "no level" lines need
+  Jev (else every syslog pattern would count). Fallback counts = independent SQL (zookeeper without judgments: 21 = 21);
+  judged results unchanged; every problem tool + macro says so in `hints`.
+- **Clean checkout** (fresh clone, empty SereneDB volume on port 7891, repo's `.mcp.json`, headless Claude Sonnet):
+  "Load the base corpus" → 72 s (download 770 MB per the brief + load + committed Jev); engineer / lead / whole-corpus
+  manager questions answered with report links; final run = load + lead answer in one prompt, 106 s.
+- **Checks:** check_counts 42 ok, check_patterns ok, check_tools 39 tools x 10 datasets pass (incl. a file loaded from
+  /tmp without Jev), lint passes; tool definitions 32,203 tokens in the shipped mode (budget 36,000).
+- **Verify:** each recorded call stores its dataset; Verify re-runs on it (switches in between) and skips write steps.
+- Deviations: `use_dataset(name | 'all')` → no 'all' (whole-corpus = one call per dataset, the brief allows it;
+  Claude did this unprompted); the derived step files 93-97 / 96b and `scripts/ingest.py` were replaced (one code path);
+  `requirements.txt` kept for the agent, the server installs from `pyproject.toml`.
+- Not done: our agent's model call could not be run (the `.env` Anthropic key returns 401; MCP side checked).

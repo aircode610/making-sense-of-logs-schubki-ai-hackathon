@@ -32,6 +32,7 @@ Every plan respects: `CLAUDE.md` non-negotiables, `docs/ROLES.md` (role spec), `
 | 011 | [SereneDB full-capability tools, generalized](011-serenedb-features.md) | Amirali | done | `feat/011-serenedb-features` |
 | 012 | [Stand-alone, dataset-agnostic MCP server + tool descriptions](012-mcp-descriptions.md) | Amirali | done | `feat/012-mcp-descriptions` |
 | 013 | [Blind A/B: plan-010 tools vs plan-011 tools, investigator judge](013-blind-ab-tools.md) | Amirali | draft | `feat/013-blind-ab` |
+| 016 | [Ship as one MCP server: two-step setup, load base corpus or your own logs from Claude](016-bring-your-own-logs.md) | Amirali | done | `feat/016-ship-mcp` |
 | 050 | [OpenStack load + ownership](050-openstack-load.md) | Konark | done | `feat/050-openstack-load` |
 | 051 | [count_by + trend MCP tools](051-count-trend-tools.md) | Konark | done | `feat/051-count-trend-tools` |
 | 052 | [One-command reload](052-reload-publish.md) | Konark | done | `feat/051-count-trend-tools` |
