@@ -1,6 +1,6 @@
 # 057: Any log file in (lower-risk version): inferred ownership, severity column, lnav format detection
 
-- **Status:** parts 1–2 done (ownership, severity), part 3 to do · approved (Konark, 2026-10-18: lower-risk version)
+- **Status:** parts 1–2 merged (PRs #15, #16), part 3 done (branch `feat/057-part3-formats`) · approved (Konark, 2026-10-18: lower-risk version)
 - **Owner:** Konark · **Branch:** `feat/057-any-log-file` · **Date:** 2026-10-18
 - **PLAN.md block / slice:** generality ("unseen logs"), on top of Amirali's plans 011–012
 
@@ -62,7 +62,7 @@ Touches Amirali's `94_ownership.sql` and team display in tools (tell him).
 ## 6. Steps
 - [x] Part 1 ownership: rules + areas + chain + disputed + display; `owner_of`, `ownership_gaps`; checks
 - [x] Part 2 severity column; checks unchanged
-- [ ] Part 3 lnav detection + `ingest.sh` + `ingest_report`, `unparsed_lines`; 2 unseen files; one agent run
+- [x] Part 3 lnav detection + `ingest.sh` + `ingest_report`, `unparsed_lines`; 2 unseen files; one agent run
 - [ ] §7, README, STATUS, DECISIONS, plans index; tell Amirali
 
 ## 7. Results (filled after)
@@ -103,4 +103,32 @@ owners and all checks are identical. `search_logs` / `get_context` rows carry th
   re-measured with the same data.
 - Schema change documented: README (generic schema, new log source), `docs/ARCHITECTURE.md`, `data/README.md`,
   `load/00_schema.sql` comments, DECISIONS H28.
+**Part 3 (lnav format detection), done 2026-10-18.** `scripts/ingest.py` scores all 76 vendored lnav formats
+(`formats/lnav/`, BSD-2) on a 2,000-line sample inside SereneDB (PCRE → RE2: named groups kept, unnamed made
+non-capturing, duplicate names renamed; 18 regexes with look-around skipped), maps fields by lnav's roles, picks the
+timestamp format by parse rate, writes `load/gen/<name>.sql` (through `lib/stage_to_logs.sql`); `scripts/ingest.sh` =
+detect → load → Jev judgments / traits / areas / embeddings → reload with checks. Schema: `ingest_runs`,
+`ingest_unparsed`; tool `ingest_report` (one tool instead of the planned two: `unparsed_lines` folded in, because the
+description budget had ~1.3k tokens left).
+
+| Unseen file | Detected | Sample | Lines loaded = `wc -l` | Unmatched | Patterns / problem patterns | Owners (no rows written) |
+|---|---|---|---|---|---|---|
+| Android (Loghub v1) | lnav `logcat_log` | 100 % | 1,555,005 ✓ | 0 | 19,242 / 653 | 1,095 of 1,631 components (Jev area) |
+| Proxifier | lnav `proxifier_log` | 100 % | 21,329 ✓ | 12 (kept, listed) | 287 / 43 | 19 of 51 (Jev area) |
+| Linux (extra test, not UTF-8) | lnav `syslog_log`, read as latin-1 | 100 % | (not loaded: has a hand-written loader) | | | |
+| HealthApp (format not in lnav) | **refused**: 0 % coverage, nothing loaded | | | | | |
+
+- Found and fixed on the way: lnav's logcat regex captures only `\w+` tags (104k lines got an empty component) →
+  empty fields → NULL, empty component → the generic "name: " prefix; Jev call cap (5,000 per query) made
+  overridable (`AI_CAP`, default unchanged) because Android has 19,242 patterns (judged in 5.6 min);
+  `embed_patterns.py <ds>` writes `data/pattern_vectors_<ds>.parquet` (the shared file is never rewritten), read by
+  `97_pattern_vectors.sql` via a glob; non-UTF-8 files read as latin-1 (stated); lint allow-list + 2 Android tag
+  words that are ordinary words in existing code.
+- **Benchmarks vs main** (same session, per-step timed): same 7 datasets 29.4 s (main) vs 29.7 s (branch); + Android
+  + Proxifier: 51.4 s (Android 6.0 s, publish +11 s, patterns +3.7 s); full reload with checks 106.8 s, **39 tools × 9
+  datasets pass (457 checks)**; `ingest_report` median 4.2 ms. `bench/tool_use.py` 29 q Sonnet with 9 datasets loaded:
+  facts 50 → 48 /51 (both misses are wording of correct answers: "3 January 2018", "Alignment-exception dump"),
+  first tool 0.97 → 1.00, 0 errors, calls 3.6 → 3.6, input tokens 125k → 127k (+1.6 %), unseen Linux/HealthApp 10/10.
+- Generated loaders vanished once during the session (with the scratch folder; cause not established); regenerated
+  deterministically from the same command (judgments / vectors are keyed by template, so they still match).
 - Not built: syslog-facility step (no loaded format carries a facility; add when a loader parses `<PRI>`).

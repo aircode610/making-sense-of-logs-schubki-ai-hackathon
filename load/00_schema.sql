@@ -7,6 +7,8 @@ DROP TABLE IF EXISTS labels CASCADE;
 DROP TABLE IF EXISTS pattern_templates CASCADE;
 DROP TABLE IF EXISTS datasets CASCADE;
 DROP TABLE IF EXISTS severity_map CASCADE;
+DROP TABLE IF EXISTS ingest_runs CASCADE;
+DROP TABLE IF EXISTS ingest_unparsed CASCADE;
 
 -- Lowercase alpha tokens, with frequency/position/norm for BM25 + phrase queries (same as otel_logs), and offset so
 -- ts_highlight can mark phrase matches (plan 011). Recreated on every reload so its flags always match this file.
@@ -86,6 +88,23 @@ CREATE INDEX logs_idx ON logs USING inverted (
 -- util.logging, lnav level words). Loaders fill logs.severity_number by joining on upper(severity) = word.
 CREATE TABLE severity_map AS SELECT * FROM read_csv('/data/severity_map.csv', header = true, auto_detect = false,
     columns = {'word': 'VARCHAR', 'severity_number': 'SMALLINT', 'severity_text': 'VARCHAR', 'source': 'VARCHAR'});
+-- Auto-detected loaders (plan 057 part 3, load/gen/*.sql written by scripts/ingest.py): one row per generated dataset
+-- with the format chosen and how well it fit, and the line ids its regexes did not match (kept as continuation lines).
+-- Hand-written loaders write nothing here. Read by the ingest_report tool.
+CREATE TABLE ingest_runs (
+    dataset        VARCHAR NOT NULL,
+    file           VARCHAR,   -- raw file, relative to the repo
+    format         VARCHAR,   -- lnav format name (formats/lnav/<format>.json)
+    format_title   VARCHAR,
+    sample_lines   INTEGER,   -- first N lines scored
+    sample_matched INTEGER,   -- of those, matched by the chosen format
+    ts_format      VARCHAR,   -- strptime format that parsed the most sample timestamps
+    year_assumed   INTEGER,   -- set when the format logs no year
+    field_map      VARCHAR,   -- JSON: role → format field (timestamp, level, body, component, node, request_id, status)
+    candidates     VARCHAR,   -- JSON: top formats with their sample coverage
+    regexes_skipped INTEGER   -- lnav regexes RE2 cannot compile (look-around), over all formats
+);
+CREATE TABLE ingest_unparsed (dataset VARCHAR NOT NULL, line_id BIGINT NOT NULL);
 
 -- Ground-truth labels: evaluation only, never read by agent tools.
 CREATE TABLE labels (

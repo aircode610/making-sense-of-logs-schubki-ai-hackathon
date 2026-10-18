@@ -26,6 +26,9 @@ mcp_server/  FastMCP: parameterized SQL tools (search, context, counts, trend, p
   request/instance/latency parsed from body. Full-text index on `body` (+ filters on ts/dataset/component/severity).
   Loaded by SereneDB in docker: `read_csv` each raw line as one column, parse with SQL string/regex functions, insert
   sorted by ts. Labels go to a separate `labels` table. Python only where SQL can't do a step (e.g. Drain3).
+- `ingest_runs(dataset, file, format, format_title, sample_lines, sample_matched, ts_format, year_assumed, field_map,
+  candidates, regexes_skipped)` + `ingest_unparsed(dataset, line_id)` (plan 057 part 3): written by auto-detected loaders
+  (`load/gen/*.sql` from `scripts/ingest.py`), read by `ingest_report`; empty for hand-written loaders.
 - `patterns(pattern_id, dataset, component, template, lines, nodes, first_ts, last_ts, example)` + Jev judgment columns.
 - `ownership(dataset, component, team, description, area, area_source, area_confidence, source, confidence, disputed_by,
   dispute_confidence)` (plan 057: curated rows + inference chain, built by `load/96b_ownership_inferred.sql`; tools join

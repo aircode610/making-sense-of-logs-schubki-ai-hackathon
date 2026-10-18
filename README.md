@@ -30,7 +30,7 @@ Load the data (SereneDB reads and parses the raw files itself; schema and loader
 LOAD_OTEL=1 ./load/reload.sh  # also pull a slice of the remote 1-billion-record OpenTelemetry Parquet over HTTPS (+2 min)
 ```
 `reload.sh`: `00_cleanup.py` (drops workspaces / team views) → `00_schema.sql` (tables, dictionaries, generic mask +
-entity macros, dataset registry) → `10_bgl`, `20_openstack`, then every `load/3*.sql` / `4*.sql` whose first line
+entity macros, dataset registry) → `10_bgl`, `20_openstack`, then every `load/3*.sql` / `4*.sql` / `gen/*.sql` whose first line
 `-- requires: <raw file>` exists (`30_zookeeper`, `31_apache`, `32_ssh`, `33_hdfs`, `34_linux`, `35_healthapp`,
 `40_otel_demo`; each is one parse query + `\ir lib/stage_to_logs.sql`) → `90_publish` (`VACUUM` refresh + compact) →
 `93_examples` (a real example value per dataset and field, for the tool descriptions) → `94_ownership` (ownership with
@@ -45,7 +45,16 @@ independent SQL on every loaded dataset). Everything AI-generated is committed (
 key to load; regenerate with `scripts/judge_patterns.sh <ds>`, `scripts/judge_traits.py`, `scripts/judge_areas.py`, `scripts/embed_patterns.py`,
 `scripts/summarize_bursts.py` (all run their AI calls inside SereneDB).
 
-**A new log source** = `load/3x_<name>.sql` (first line `-- requires: <raw file>`; parse the raw lines into `stage`:
+**A new log file in a known format = one command, no code** (plan 057 part 3):
+`scripts/ingest.sh data/raw/<dir>/<file>.log <name> [--year 2017]`. It scores every regex of the 76 vendored
+[lnav format definitions](formats/lnav/) on a 2,000-line sample inside SereneDB, picks the best format (≥ 95 % of the
+sample, else it loads nothing and says so: no guessed timestamps), maps fields by lnav's own roles (timestamp, level,
+body, module → component, opid → request_id, host → node), picks the timestamp format that parses most lines, writes
+a readable loader `load/gen/<name>.sql` (run by `reload.sh` like any other), then runs the Jev judgments, areas and
+embeddings for the new dataset and reloads with all checks. Lines the format does not match are kept (continuation
+lines) and listed by the `ingest_report` tool. Android (logcat) and Proxifier were added this way.
+
+**A new log source in an unknown format** = `load/3x_<name>.sql` (first line `-- requires: <raw file>`; parse the raw lines into `stage`:
 ts, component, severity (its word is mapped to `severity_number` automatically; a new word = one row in
 `data/severity_map.csv`, `check_counts.py` flags unmapped words), body, and where the format has them node, location path, request_id (one request / session /
 trace), object_id (a thing followed across requests), status, duration_ms; plus one sentence per filled field saying
@@ -89,6 +98,8 @@ The same questions as SQL (table macros, `load/98_macros.sql`): `logs_count`, `l
 | `otel` (opt.) | 1,702,944 | 30 min (sampled) | OpenTelemetry demo webshop (slice of 1 B remote records) | k8s namespace / node / pod, TraceId |
 | `linux` (opt.) | 25,567 | 264 days | syslog of one Linux server (unseen-dataset test) | host, `<program>-<pid>`, attacker IPs |
 | `healthapp` (opt.) | 253,395 | 11 days | Android health app (unseen-dataset test) | app module, process id |
+| `android` (opt., auto-detected) | 1,555,005 | — | Android framework logcat (format detected from lnav, plan 057) | tag → component, pid |
+| `proxifier` (opt., auto-detected) | 21,329 | — | Proxifier proxy client log (format detected from lnav, plan 057) | app → component, app pid |
 
 All from Loghub (BGL, OpenStack, Zookeeper, Apache, OpenSSH, HDFS, Linux, HealthApp) and the public OpenTelemetry
 `text_bench` Parquet. One generic schema: `node`, `location` (path, any level), `request_id`, `object_id`, `status`,
@@ -105,7 +116,7 @@ source, confidence, disputed_by, dispute_confidence)`, one row per component tha
 rows always win; `disputed_by` flags a curated owner contradicted by confident Jev hints (p ≥ 0.8) for most of the
 component's lines; inferred owners below 0.6 are not stored (the component stays `unowned`).
 
-## Tools (42, one MCP server)
+## Tools (43, one MCP server)
 MCP server [`mcp_server/`](mcp_server/) (FastMCP), written to be handed to ANY agent (Claude Code, our agent, another
 LLM) with a free-form question (plan 012): no roles in the server, nothing dataset-specific in its code.
 - **Descriptions follow one template**: the question the tool answers, *Use when*, *Not for* (names the better
@@ -131,7 +142,7 @@ from a sample. `explain_tool` shows any tool's query plan.
 
 | Group | Tools (what they answer) | SereneDB features |
 |---|---|---|
-| Discover | `describe_corpus` (what is loaded), `list_values` (valid filter values), `suggest_terms` (spelling), `explain_search` (why a search matches) | term dictionary (`ts_dict_*`), `ts_lexize`, `EXPLAIN` |
+| Discover | `ingest_report` (how an auto-detected dataset's format was found and how much matched), `describe_corpus` (what is loaded), `list_values` (valid filter values), `suggest_terms` (spelling), `explain_search` (why a search matches) | term dictionary (`ts_dict_*`), `ts_lexize`, `EXPLAIN` |
 | Search | `search_logs` (match = web / all / any / phrase / near / fuzzy / prefix / at_least / synonyms, `exclude_text`, `highlight`, `order` incl. BM25 × recency decay, `location` at any level, `entity`), `get_context` (before / after on node / location at any level / component / request / object) | inverted index, `ts_phrase(slop)`, `ts_levenshtein`, `ts_any(min_match)`, synonyms dictionary, `ts_highlight`, BM25, `expand_path` |
 | Breakdowns | `facet` (one-pass breakdown of a search), `distinctive_terms` (significant terms: what is different in a window), `top_entities` (top IPs / paths / ids), `check_watchlist` (saved searches that fired) | `GROUPING SETS`, term dictionary, extracted entities |
 | Counts | `count_by`, `trend`, `rate_vs_baseline`, `value_outliers` | aggregates, zero-filled `generate_series`, median / MAD |

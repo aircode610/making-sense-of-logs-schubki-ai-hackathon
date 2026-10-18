@@ -9,6 +9,7 @@ data/*
 !data/pattern_judgments_*.csv
 !data/pattern_traits_*.csv
 !data/pattern_vectors.parquet
+!data/pattern_vectors_*.parquet
 !data/burst_summaries.csv
 !data/watchlist.csv
 !data/remote_sources.csv
