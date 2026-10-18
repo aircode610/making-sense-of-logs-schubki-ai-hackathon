@@ -1,0 +1,28 @@
+# Plan 016: `uv run` installs what the MCP server + loader need on first start (no venv / pip step for users).
+# Our own agent, eval harness and benches: `uv sync --extra agent` (same pins as requirements.txt).
+[project]
+name = "making-sense-of-logs"
+version = "0.16.0"
+description = "SereneDB log investigation MCP server (SchubKI hackathon 2026, SereneDB challenge)"
+requires-python = ">=3.12,<3.13"
+dependencies = [
+    "mcp==1.30.0",
+    "psycopg[binary]==3.3.6",
+]
+
+[project.optional-dependencies]
+agent = [
+    "langgraph==1.2.16",
+    "langchain==1.4.6",
+    "langchain-anthropic==1.7.6",
+    "langchain-mcp-adapters==0.3.2",
+    "langsmith==0.14.11",
+    "typesafe-sdk==0.7.3",
+    "drain3==0.9.11",
+    "streamlit==1.66.0",
+    "python-dotenv==1.2.4",
+    "pyarrow==26.0.0",
+]
+
+[tool.uv]
+package = false

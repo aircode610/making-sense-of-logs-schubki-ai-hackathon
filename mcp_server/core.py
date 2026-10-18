@@ -31,6 +31,15 @@ def conn() -> psycopg.Connection:
         # Correctness workaround (plan 011): a GROUP BY on a keyword column with a document filter is answered from the
         # term dictionary (TsDict); when a segment is split across worker threads its counts came out off by one.
         _conn.execute("SET sdb_scan_split = 'never'")
+        # Plan 016: AI keys from .env into SereneDB on every server start (its secrets are not persisted across container
+        # restarts; replaces ./docker/secrets.sh). Before SET ROLE: needs the admin connection. No key → AI steps skip.
+        try:
+            import sys as _sys
+            _sys.path.insert(0, str(__import__("pathlib").Path(__file__).resolve().parent.parent))
+            from loader.core import register_secrets
+            register_secrets(_conn)
+        except Exception:  # noqa: BLE001  (a read-only user cannot create secrets: AI tools then say so)
+            pass
         # Database-enforced access (plan 011, load/99_roles.py): LOGS_DB_ROLE=logs_engineer | logs_lead | logs_manager
         # | team_<team>. A team role reads its own schema's views (only its components' rows) under the same names.
         role = env("LOGS_DB_ROLE")

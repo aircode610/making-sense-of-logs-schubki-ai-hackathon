@@ -1,24 +1,24 @@
-# Local SereneDB.
-#   docker compose up -d        start
-#   docker compose logs -f      server logs
+# SereneDB for this repo (plan 016: the image and version the organisers run, 26.10.1).
+#   docker compose up -d        start (that is all: the MCP server creates the schema, registers AI keys from .env
+#                               and loads data when Claude asks; no init.sql / secrets.sh step any more)
 #   docker compose down         stop (data kept in the serenedb-data volume)
 #   docker compose down -v      stop and wipe data
-# First start only: psql -h localhost -p 7890 -U postgres -d postgres -f docker/init.sql
-# After EVERY start: ./docker/secrets.sh   (AI secrets are not persisted)
+# 26.10.1 is published for linux/amd64 only: on Apple Silicon Docker emulates it (works, slower; the organisers:
+# "docker can launch different architectures"). SERENEDB_PORT changes the host port (default 7890; set PGPORT to match).
 services:
   serenedb:
-    image: serenedb/serenedb:latest
-    platform: linux/amd64          # no arm64 image published; emulated on Apple Silicon
-    container_name: serenedb
+    image: serenedb/serenedb:26.10.1
+    platform: linux/amd64
+    container_name: ${SERENEDB_CONTAINER:-serenedb}
     environment:
       SERENEDB_HOST_AUTH_METHOD: trust   # local only: no password
     ports:
-      - "127.0.0.1:7890:7890"            # Postgres wire protocol
-      - "127.0.0.1:4318:4318"            # OTLP/HTTP (logs, traces, metrics)
+      - "127.0.0.1:${SERENEDB_PORT:-7890}:7890"   # Postgres wire protocol
+      - "127.0.0.1:${SERENEDB_OTLP_PORT:-4318}:4318"   # OTLP/HTTP (logs, traces, metrics)
     volumes:
       - serenedb-data:/var/lib/serenedb
       - ./docker/serened.conf:/etc/serenedb/serened.conf:ro
-      - ./data:/data:ro                  # COPY ... FROM '/data/raw/...' / read_csv('/data/...')
+      - ./data:/data:ro                  # read_csv('/data/...'): the base corpus + committed Jev outputs
     restart: unless-stopped
 
 volumes:
