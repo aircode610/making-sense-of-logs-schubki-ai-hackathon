@@ -55,7 +55,8 @@ embeddings for the new dataset and reloads with all checks. Lines the format doe
 lines) and listed by the `ingest_report` tool. Android (logcat) and Proxifier were added this way.
 
 **A new log source in an unknown format** = `load/3x_<name>.sql` (first line `-- requires: <raw file>`; parse the raw lines into `stage`:
-ts, component, severity, body, and where the format has them node, location path, request_id (one request / session /
+ts, component, severity (its word is mapped to `severity_number` automatically; a new word = one row in
+`data/severity_map.csv`, `check_counts.py` flags unmapped words), body, and where the format has them node, location path, request_id (one request / session /
 trace), object_id (a thing followed across requests), status, duration_ms; plus one sentence per filled field saying
 what it means here, e.g. `\set request_meaning 'trace id …'`) + `\ir lib/stage_to_logs.sql` + rows in
 `data/ownership.csv` (`<ds>,*,team` covers every component; **optional since plan 057**: without rows, owners are
@@ -102,7 +103,11 @@ The same questions as SQL (table macros, `load/98_macros.sql`): `logs_count`, `l
 
 All from Loghub (BGL, OpenStack, Zookeeper, Apache, OpenSSH, HDFS, Linux, HealthApp) and the public OpenTelemetry
 `text_bench` Parquet. One generic schema: `node`, `location` (path, any level), `request_id`, `object_id`, `status`,
-`duration_ms`, `entities`; what each means per dataset is a row of the `datasets` table.
+`duration_ms`, `entities`; what each means per dataset is a row of the `datasets` table. **`severity_number`** (plan 057):
+one level scale for every format, the OpenTelemetry SeverityNumber (TRACE 1, DEBUG 5, INFO 9, WARN 13, ERROR 17,
+FATAL 21–24) mapped from the raw `severity` word by `data/severity_map.csv` (OTel data model, RFC 5424, Java logging,
+lnav words; e.g. BGL SEVERE → 18, FAILURE → 21, Apache NOTICE → 10, OpenStack CRITICAL → 22); NULL when the format
+has no level (SSH, Linux, HealthApp). Informational: the problem rule still uses the raw level (DECISIONS H22).
 See [`data/README.md`](data/README.md). Ownership (fictional, documented per row): [`data/ownership.csv`](data/ownership.csv).
 **Ownership table (plan 057):** `ownership(dataset, component, team, description, area, area_source, area_confidence,
 source, confidence, disputed_by, dispute_confidence)`, one row per component that has an owner. `source` = `curated`

@@ -20,7 +20,8 @@ mcp_server/  FastMCP: parameterized SQL tools (search, context, counts, trend, p
 ```
 
 ## Schema (first cut; decide in hours 0–6 after DESCRIBE)
-- `logs(dataset, line_id, ts, component, severity, node, location, request_id, object_id, status, duration_ms, entities, body, pattern_id)` (generic since plan 012; per-dataset meanings in `datasets`)
+- `logs(dataset, line_id, ts, component, severity, severity_number, node, location, request_id, object_id, status, duration_ms, entities, body, pattern_id)` (generic since plan 012; per-dataset meanings in `datasets`; `severity_number` = OTel SeverityNumber 1–24 from
+  `severity_map`, plan 057)
   — BGL: node = location field, label = alert category (`-` → NULL); OpenStack: component = nova service,
   request/instance/latency parsed from body. Full-text index on `body` (+ filters on ts/dataset/component/severity).
   Loaded by SereneDB in docker: `read_csv` each raw line as one column, parse with SQL string/regex functions, insert

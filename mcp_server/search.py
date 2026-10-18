@@ -9,7 +9,7 @@ from core import (MATCH_HELP, MAX_ROWS, Component, Dataset as DatasetReq, Datase
                   Node, ObjectId, PatternIdOpt, RequestId, Severity, Start, Status, clean_row, envelope, filters_sql,
                   query, registry, render, search_hints, team_scoped, tsquery_sql)
 
-COLS = "line_id, dataset, ts, component, severity, node, location, request_id, object_id, status, duration_ms, pattern_id, body"
+COLS = "line_id, dataset, ts, component, severity, severity_number, node, location, request_id, object_id, status, duration_ms, pattern_id, body"
 
 Dataset = DatasetOpt
 
