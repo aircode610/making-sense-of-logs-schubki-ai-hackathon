@@ -13,6 +13,7 @@ data/*
 !data/watchlist.csv
 !data/remote_sources.csv
 !data/ownership_rules.csv
+!data/severity_map.csv
 !data/area_teams.csv
 !data/component_areas_*.csv
 !data/README.md

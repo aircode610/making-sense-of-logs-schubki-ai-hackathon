@@ -12,6 +12,10 @@
   BGL component = 9th field of a line (KERNEL, APP, DISCOVERY, MMCS, HARDWARE, MONITOR, LINKCARD, CMCS, BGLMASTER, …);
   OpenStack component = the nova service from the file prefix. Since plan 057 rows are optional: components without
   a row get an inferred owner (below), and only those with no owner at confidence ≥ 0.6 are grouped as `unowned`.
+- `severity_map.csv` (committed, plan 057): raw level word → OpenTelemetry SeverityNumber + text (TRACE 1, DEBUG 5,
+  INFO 9, WARN 13, ERROR 17, FATAL 21–24), with the source of each row (OTel logs data model, RFC 5424, Java
+  util.logging, lnav one-letter levels). Loaded by `load/00_schema.sql` as `severity_map`; loaders fill
+  `logs.severity_number`.
 - `ownership_rules.csv` (committed, plan 057): `priority, match_type (exact|prefix|regex), pattern, area, source_ref`:
   public name lists → functional area (OpenStack service-types authority, Kubernetes components, ~50 common programs).
   Names are normalised first (lower case, no `[pid]`, `(pam_unix)`, trailing `-<n>` / `.service`).

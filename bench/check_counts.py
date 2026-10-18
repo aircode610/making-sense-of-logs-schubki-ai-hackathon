@@ -172,6 +172,13 @@ check("rate_vs_baseline new pattern (R43-M0 kernel panic)",
       rate_vs_baseline(dataset="bgl", location="R43/R43-M0", query_text="kernel panic",
                        start=D(2005, 8, 19, 13), end=D(2005, 8, 19, 15))["new_in_baseline"], True)
 
+# plan 057: every logged level word has a severity_number (an unmapped word = add it to data/severity_map.csv)
+check("level words without severity_number (add to data/severity_map.csv)",
+      query("SELECT list(DISTINCT dataset || ':' || severity) AS w FROM logs "
+            "WHERE severity IS NOT NULL AND severity_number IS NULL", {})[0]["w"] or [], [])
+check("severity_number never set without a level word",
+      query("SELECT count(*) AS n FROM logs WHERE severity IS NULL AND severity_number IS NOT NULL", {})[0]["n"], 0)
+
 times.sort()
 print(f"\n{len(times)} calls: median {statistics.median(times):.0f} ms, p95 {times[int(len(times) * .95) - 1]:.0f} ms, max {times[-1]:.0f} ms")
 sys.exit(1 if fails else 0)
