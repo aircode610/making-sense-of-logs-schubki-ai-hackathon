@@ -212,7 +212,9 @@ the prompts is built from the dataset registry. The **composer** subgraph only s
 
 ## Evaluation: 50 golden questions, blind judge
 **Dashboard: [`docs/dashboard.html`](dashboard.html)** (every question, both answers, the judge's reasons, how
-to re-run). The final run is `eval/results/ab-20261018-193248.md`.
+to re-run). Headline (plan 018): **Claude Code + our MCP vs plain Claude Code on the raw files**, 30-15, 116 vs 186
+wrong claims, 14 s vs 86 s per answer (`eval/results/cc-20261018-205503.md`, `eval/cc_ab.py`). Below: our LangGraph
+agent vs the brief's reference agent (`eval/results/ab-20261018-193248.md`).
 
 **Setup.** 50 questions over 9 datasets for three roles (21 engineer, 15 lead, 14 manager; 6 have a false premise).
 Each has a **frozen answer key** (`eval/answer_keys/*.yaml`): the true answer, the SQL that establishes it, its

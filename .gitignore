@@ -38,3 +38,7 @@ eval/heldout/
 runs/agent/
 runs/sessions/
 load/gen/.*.tmp.sql
+runs/cc_ab/
+
+# Office lock files
+~$*

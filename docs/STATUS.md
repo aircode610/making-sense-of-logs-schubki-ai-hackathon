@@ -1,6 +1,11 @@
 # Status (read first; keep short and current)
 
-_Last updated: 2026-10-18 (plan 017); before: 2026-10-17, plan 009 done (eval: ours vs baseline), plans 053–055 done (OpenStack patterns, Jev judgments, `value_outliers`, `rate_vs_baseline`; 8 MCP tools)._
+_Last updated: 2026-10-18 (plan 018); before: 2026-10-17, plan 009 done (eval: ours vs baseline), plans 053–055 done (OpenStack patterns, Jev judgments, `value_outliers`, `rate_vs_baseline`; 8 MCP tools)._
+
+- **Plan 018 done (headline eval):** Claude Code + our MCP vs plain Claude Code on the raw files, 50 keys, same
+  blind judge: **30-15** (base corpus 18-4, lead 13-2, manager 9-4, engineer 8-9), wrong claims 116 vs 186, golden facts
+  0.64 vs 0.46; **14 s vs 86 s** per answer (BGL/HDFS 14 s vs 168 s, one 25-min timeout). Plain wins small-dataset
+  engineer questions (grep reads every line). `eval/cc_ab.py`, `eval/results/cc-20261018-205503.md`.
 
 - **Plan 017 done (ship):** final A/B on 50 keys, our agent vs the reference ReAct agent: **16-12** (base corpus 13-2,
   engineer 10-2, manager 2-6), wrong claims 53 vs 69, 44 vs 22 s. Worked investigation `docs/INVESTIGATION.md`

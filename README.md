@@ -75,15 +75,23 @@ the SQL and the results. It also has whole-corpus counts by team for BGL and Ope
 query. The evidence page ([`report.html`](docs/investigation/report.html)) opens offline.
 
 ## Evaluation
-We tested on 50 questions with frozen answer keys, against the brief's reference design (a ReAct agent with the same
-tools), with a blind Opus judge. On the base corpus we win **13 to 2**, on engineer questions **10 to 2**, and over
-all 50 questions **16 to 12**. We make fewer wrong claims (53 vs 69). We lose on manager questions on small extra
-datasets (2 to 6). Every answer is in the [dashboard](docs/dashboard.html); re-run with
-`uv run python -m eval.ab --arms product,baseline`.
+**Claude Code with our MCP vs plain Claude Code on the raw log files** (same model, 50 questions with frozen answer
+keys, blind Opus judge that checks claims with SQL): we win **30 to 15** (base corpus 18 to 4), with fewer wrong claims
+(116 vs 186), more golden facts (0.64 vs 0.46) and **14 s vs 86 s per answer** (on BGL / HDFS 14 s vs 168 s; plain
+Claude Code timed out once at 25 min). Plain Claude Code wins engineer questions on small logs (9 to 8), where grep
+reads every line. Every answer and verdict is in the [dashboard](docs/dashboard.html). Re-run with
+`uv run python -m eval.cc_ab`; results in `eval/results/cc-20261018-205503.md`.
+
+**Our own LangGraph agent vs the brief's reference ReAct agent** (both with our tools, same 50 questions and judge):
+on the base corpus we win **13 to 2**, on engineer questions **10 to 2**, and over all 50 questions **16 to 12**. We make fewer wrong claims (53 vs 69). We lose on manager questions on small extra
+datasets (2 to 6). Re-run with `uv run python -m eval.ab --arms product,baseline`; results in
+`eval/results/ab-20261018-193248.md`.
 
 ## Known limitations
 - The logs hold no cost, downtime or customer impact, so answers say so instead of estimating them.
-- An answer takes ~44 s (vs 22 s for the reference agent). Almost all of it is LLM time; the database takes < 1 s.
+- Claude Code + our server answers in ~14 s (vs 86 s on raw files); our LangGraph agent takes ~44 s. Almost all of it
+  is LLM time; the database takes < 1 s.
+- Plain Claude Code still wins some engineer questions on small logs (9 to 8), where grep can read every line.
 - New log files without a `TYPESAFE_API_KEY` judge problems by log level only, which is less accurate.
 - Line counts are not incident counts: tools count recurrences ("bursts") separately.
 - The tools show what happened, not why: causes are labelled as hypotheses.

@@ -27,8 +27,14 @@ def latest(pattern: str, arms: tuple[str, str]) -> Path:
 
 
 def main() -> None:
-    final = Path(sys.argv[1]) if len(sys.argv) > 1 else latest("ab-*.json", ("product", "baseline"))
+    final = Path(sys.argv[1]) if len(sys.argv) > 1 else latest("cc-*.json", ("mcp", "bare"))
     F = json.loads(final.read_text())
+    for st in F["arms"].values():                       # cc runs (plan 018) name a few stats differently
+        st.setdefault("wall_s", st.get("wall_s mean"))
+        st.setdefault("E1", st.get("E1 golden facts"))
+        st.setdefault("found_problem", st.get("found_problem (0-2)"))
+        st.setdefault("rubric", st.get("rubric (1-5)"))
+    F.setdefault("agent_model", "Claude Code " + str(F.get("model", "")))
     A, B = list(F["arms"])
     qs = {q["id"]: q for q in yaml.safe_load((ROOT / "eval/dev_questions.yaml").read_text())}
     runs = {r["id"]: r["runs"] for r in json.loads(final.with_suffix("").with_suffix(".runs.json").read_text())}
@@ -52,11 +58,13 @@ def main() -> None:
 
     # history: earlier committed runs (each step names its file)
     hist = []
-    old_ab = sorted(glob.glob(str(RES / "ab-*.json")))
+    old_ab = sorted(glob.glob(str(RES / "ab-*.json"))) + sorted(glob.glob(str(RES / "cc-*.json")))
     for p in old_ab:
         if p.endswith(".runs.json") or Path(p) == final:
             continue
         d = json.loads(Path(p).read_text())
+        if len(d.get("rows", [])) < 50:                    # pilots and smoke tests are not history steps
+            continue
         a1, a2 = list(d["arms"])
         hist.append({"file": Path(p).name, "arms": [a1, a2], "tally": d["tally"],
                      "acc": [d["arms"][a1]["claim_accuracy"], d["arms"][a2]["claim_accuracy"]],
