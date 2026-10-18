@@ -36,19 +36,22 @@ entity macros, dataset registry) → `10_bgl`, `20_openstack`, then every `load/
 `93_examples` (a real example value per dataset and field, for the tool descriptions) → `94_ownership` (ownership with
 `*` defaults, watchlist, remote sources) →
 `95_patterns_episodes` (patterns, bursts, episodes) → `96_pattern_judgments` (stored Jev judgments + traits) →
+`96b_ownership_inferred` (rebuilds `ownership`: curated rows first, then Jev owner hint, public name rules, Jev area;
+every row with source + confidence, plan 057) →
 `97_pattern_vectors` (template embeddings + IVF index, burst summaries) → `98_macros` (SQL API) → `99_roles.py`
 (database roles) → `bench/check_counts.py`, `bench/check_patterns.py`, `bench/check_tools.py` (every tool vs
 independent SQL on every loaded dataset). Everything AI-generated is committed (`data/pattern_judgments_*.csv`,
-`data/pattern_traits_*.csv`, `data/pattern_vectors.parquet`, `data/burst_summaries.csv`), so a clean checkout needs no
-key to load; regenerate with `scripts/judge_patterns.sh <ds>`, `scripts/judge_traits.py`, `scripts/embed_patterns.py`,
+`data/pattern_traits_*.csv`, `data/component_areas_*.csv`, `data/pattern_vectors.parquet`, `data/burst_summaries.csv`), so a clean checkout needs no
+key to load; regenerate with `scripts/judge_patterns.sh <ds>`, `scripts/judge_traits.py`, `scripts/judge_areas.py`, `scripts/embed_patterns.py`,
 `scripts/summarize_bursts.py` (all run their AI calls inside SereneDB).
 
 **A new log source** = `load/3x_<name>.sql` (first line `-- requires: <raw file>`; parse the raw lines into `stage`:
 ts, component, severity, body, and where the format has them node, location path, request_id (one request / session /
 trace), object_id (a thing followed across requests), status, duration_ms; plus one sentence per filled field saying
 what it means here, e.g. `\set request_meaning 'trace id …'`) + `\ir lib/stage_to_logs.sql` + rows in
-`data/ownership.csv` (`<ds>,*,team` covers every component) + `scripts/judge_patterns.sh <ds>` / `judge_traits.py <ds>`
-/ `embed_patterns.py`. No tool, agent or eval code changes (CLAUDE.md rule 11; `bench/lint_generic.py` enforces it):
+`data/ownership.csv` (`<ds>,*,team` covers every component; **optional since plan 057**: without rows, owners are
+inferred from `data/ownership_rules.csv` + `scripts/judge_areas.py <ds>`, shown as inferred with a confidence) +
+`scripts/judge_patterns.sh <ds>` / `judge_traits.py <ds>` / `embed_patterns.py`. No tool, agent or eval code changes (CLAUDE.md rule 11; `bench/lint_generic.py` enforces it):
 the meanings and real example values reach every MCP client through the server's field guide. Linux and HealthApp
 were added this way (plan 012). Or replay any dataset as OpenTelemetry into SereneDB's built-in OTLP
 receiver: `.venv/bin/python scripts/otlp_replay.py <dataset> 2000`.
@@ -90,8 +93,14 @@ All from Loghub (BGL, OpenStack, Zookeeper, Apache, OpenSSH, HDFS, Linux, Health
 `text_bench` Parquet. One generic schema: `node`, `location` (path, any level), `request_id`, `object_id`, `status`,
 `duration_ms`, `entities`; what each means per dataset is a row of the `datasets` table.
 See [`data/README.md`](data/README.md). Ownership (fictional, documented per row): [`data/ownership.csv`](data/ownership.csv).
+**Ownership table (plan 057):** `ownership(dataset, component, team, description, area, area_source, area_confidence,
+source, confidence, disputed_by, dispute_confidence)`, one row per component that has an owner. `source` = `curated`
+(1.0) / `curated default` (`*` row, 0.95) / `jev owner_hint` (Jev picks among the dataset's curated teams) / `rule: …`
+(public name list → area → team in `data/area_teams.csv`, 0.9) / `jev area` (Jev picks the area, p ≥ 0.6). Curated
+rows always win; `disputed_by` flags a curated owner contradicted by confident Jev hints (p ≥ 0.8) for most of the
+component's lines; inferred owners below 0.6 are not stored (the component stays `unowned`).
 
-## Tools (40, one MCP server)
+## Tools (42, one MCP server)
 MCP server [`mcp_server/`](mcp_server/) (FastMCP), written to be handed to ANY agent (Claude Code, our agent, another
 LLM) with a free-form question (plan 012): no roles in the server, nothing dataset-specific in its code.
 - **Descriptions follow one template**: the question the tool answers, *Use when*, *Not for* (names the better
@@ -121,6 +130,7 @@ from a sample. `explain_tool` shows any tool's query plan.
 | Search | `search_logs` (match = web / all / any / phrase / near / fuzzy / prefix / at_least / synonyms, `exclude_text`, `highlight`, `order` incl. BM25 × recency decay, `location` at any level, `entity`), `get_context` (before / after on node / location at any level / component / request / object) | inverted index, `ts_phrase(slop)`, `ts_levenshtein`, `ts_any(min_match)`, synonyms dictionary, `ts_highlight`, BM25, `expand_path` |
 | Breakdowns | `facet` (one-pass breakdown of a search), `distinctive_terms` (significant terms: what is different in a window), `top_entities` (top IPs / paths / ids), `check_watchlist` (saved searches that fired) | `GROUPING SETS`, term dictionary, extracted entities |
 | Counts | `count_by`, `trend`, `rate_vs_baseline`, `value_outliers` | aggregates, zero-filled `generate_series`, median / MAD |
+| Ownership | `owner_of` (who owns a component, source + confidence, dispute), `ownership_gaps` (unowned / inferred / disputed components with their lines) | curated table + rules + Jev area / owner hint (plan 057) |
 | Patterns | `top_patterns`, `priority_table`, `pattern_history` (new or recurring), `whats_new` | patterns / bursts tables, `cume_dist`, stored Jev judgments |
 | Timeline | `burst_timeline` (which error came first), `spread` (one node or fleet-wide), `precursors` (what comes before, with a control), `co_occurrence` (together, with a control), `periodicity` (on a schedule?), `request_timeline` (one request / session / block end to end) | window functions, **ASOF join**, `approx_top_k`, `entropy` |
 | Analytics | `rollup` (subtotals), `heatmap` (team × week matrix), `reliability_trend` (slope + rule), `latency_profile`, `team_risk` | `ROLLUP`, `PIVOT`, `regr_slope`, `quantile_cont` |

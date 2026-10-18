@@ -10,7 +10,15 @@
   (committed): AI outputs computed inside SereneDB (Jev / embeddings / summaries), so a clean checkout needs no key.
 - `ownership.csv` (committed): **fictional** component → team mapping for team-lead / manager aggregations.
   BGL component = 9th field of a line (KERNEL, APP, DISCOVERY, MMCS, HARDWARE, MONITOR, LINKCARD, CMCS, BGLMASTER, …);
-  OpenStack component = the nova service from the file prefix. Unmapped components are grouped as `unowned`.
+  OpenStack component = the nova service from the file prefix. Since plan 057 rows are optional: components without
+  a row get an inferred owner (below), and only those with no owner at confidence ≥ 0.6 are grouped as `unowned`.
+- `ownership_rules.csv` (committed, plan 057): `priority, match_type (exact|prefix|regex), pattern, area, source_ref`:
+  public name lists → functional area (OpenStack service-types authority, Kubernetes components, ~50 common programs).
+  Names are normalised first (lower case, no `[pid]`, `(pam_unix)`, trailing `-<n>` / `.service`).
+- `area_teams.csv` (committed, plan 057): area → team, **fictional** like `ownership.csv`; the only place inferred
+  team names come from.
+- `component_areas_<ds>.csv` (committed, plan 057): Jev's functional area per component with its probability
+  (`scripts/judge_areas.py`, one `ai_system_one` call per component inside SereneDB).
 
 Labels (for evaluation only, never shown to the agent as answers): BGL first field `-` = normal, otherwise alert
 category; OpenStack `anomaly_labels.txt` lists 3 VM instance ids with injected anomalies (in `openstack_abnormal.log`).

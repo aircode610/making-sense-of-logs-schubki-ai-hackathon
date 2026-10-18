@@ -22,7 +22,7 @@ for f in load/3*.sql load/4*.sql; do
   elif [ -n "$req" ] && [ ! -f "$req" ]; then continue; fi
   run "$f"
 done
-for f in load/90_publish.sql load/93_examples.sql load/94_ownership.sql load/95_patterns_episodes.sql load/96_pattern_judgments.sql \
+for f in load/90_publish.sql load/93_examples.sql load/94_ownership.sql load/95_patterns_episodes.sql load/96_pattern_judgments.sql load/96b_ownership_inferred.sql \
          load/97_pattern_vectors.sql load/98_macros.sql; do
   run "$f"
 done

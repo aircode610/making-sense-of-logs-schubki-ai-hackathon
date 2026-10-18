@@ -1,0 +1,11 @@
+dataset,component,area,confidence
+bgl,APP,application,0.61
+bgl,BGLMASTER,orchestration,0.8
+bgl,CMCS,orchestration,0.58
+bgl,DISCOVERY,hardware,0.89
+bgl,HARDWARE,hardware,1.0
+bgl,KERNEL,kernel/OS,0.98
+bgl,LINKCARD,hardware,0.62
+bgl,MMCS,orchestration,0.37
+bgl,MONITOR,observability,0.83
+bgl,SERV_NET,network,0.99

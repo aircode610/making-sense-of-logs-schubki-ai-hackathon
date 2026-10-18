@@ -10,6 +10,7 @@ import analytics
 import counts
 import discover
 import outliers
+import ownership
 import patterns
 import remote
 import search
@@ -73,6 +74,8 @@ SPEC = [
     (outliers.value_outliers, "Slow operations", READ_ONLY),
     (patterns.top_patterns, "Recurring problems", READ_ONLY),
     (patterns.priority_table, "Priority ranking", READ_ONLY),
+    (ownership.owner_of, "Who owns a component", READ_ONLY),
+    (ownership.ownership_gaps, "Unowned or uncertain owners", READ_ONLY),
     (timeline.pattern_history, "New or recurring", READ_ONLY),
     (timeline.burst_timeline, "Which error came first", READ_ONLY),
     (timeline.spread, "One node or fleet-wide", READ_ONLY),

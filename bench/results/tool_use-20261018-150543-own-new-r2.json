@@ -1,0 +1,166 @@
+{
+ "label": "own-new-r2",
+ "summary": {
+  "anthropic:claude-sonnet-5-5": {
+   "questions": 4,
+   "first_ok": 1.0,
+   "need_ok": 1.0,
+   "facts": 0.875,
+   "errors_per_q": 0.0,
+   "calls_per_q": 2,
+   "tokens_in_per_q": 106676,
+   "seconds_per_q": 8.9,
+   "crashed": 0
+  }
+ },
+ "results": [
+  {
+   "id": "O-1",
+   "dataset": "bgl",
+   "model": "anthropic:claude-sonnet-5-5",
+   "question": "Which team owns the problem that recurs most often on the BGL supercomputer over the whole log, and how certain is that ownership?",
+   "answer": "**The team is node-platform, and the ownership is certain.**\n\n- **Problem:** The most frequently recurring problem on BGL is the KERNEL message \"rts panic! - stopping execution\" (pattern 69). I ranked problems by bursts over the whole log, 2005-06-01 to 2006-01-05. Bursts are recurrences separated by more than 30 minutes of quiet.\n- **Scale:** It had 236 bursts and 3,983 lines, spread over 3,394 nodes and active in 32 weeks. It is a FATAL-level message, and the stored judgment classes it as a \"system software failure\" (p_problem 0.912).\n- **Runner-ups:** The next most frequent problems are \"Kill job <N> timed out. Block freed.\" (215 bursts) and \"machine check interrupt\" (153 bursts). Both are also KERNEL messages owned by node-platform.\n- **Certainty:** The owner comes from the hand-written ownership table (\"curated\"), with confidence 1.0. No other team disputes it. The KERNEL component is described there as \"Compute-node kernel (memory/cache parity, torus, CIOD, interrupts)\".\n- **Caveat:** A separate inferred label (\"kernel/OS\") for the functional area has only 0.9 confidence. That label is not the team assignment.",
+   "calls": [
+    {
+     "name": "top_patterns",
+     "args": {
+      "dataset": "bgl",
+      "start": "2005-06-01",
+      "end": "2006-01-05",
+      "limit": 5
+     }
+    },
+    {
+     "name": "owner_of",
+     "args": {
+      "dataset": "bgl",
+      "component": "KERNEL"
+     }
+    }
+   ],
+   "errors": [],
+   "run_error": null,
+   "first_tool": "top_patterns",
+   "first_ok": true,
+   "need_ok": true,
+   "facts": 1,
+   "facts_total": 2,
+   "facts_missed": [
+    "curated owner of the top recurring pattern = hpc-workloads"
+   ],
+   "n_calls": 2,
+   "n_errors": 0,
+   "tokens_in": 119621,
+   "tokens_out": 664,
+   "elapsed_s": 11.3
+  },
+  {
+   "id": "O-2",
+   "dataset": "linux",
+   "model": "anthropic:claude-sonnet-5-5",
+   "question": "On the Linux server, who owns the messages logged by sshd, and what functional area of the system does sshd belong to?",
+   "answer": "On the Linux server (host `combo`), the `sshd` messages are owned by the **linux-ops** team. They belong to the **auth/security** functional area.\n\n- **Owner:** The `owner_of` lookup returns linux-ops for `sshd` as a \"curated default\" at 0.95 confidence. This is not a rule written specifically for `sshd`. It comes from the dataset's default row, which assigns every program on the Linux server to linux-ops. So the owner is curated but generic.\n- **Functional area:** auth/security. It was inferred from the rule \"common programs: OpenSSH server\" at 0.9 confidence. That makes it a rule-based inference, not a hand-curated assignment.\n- **Component names:** The dataset logs `sshd` under two component names:\n  - Plain `sshd` has 13 lines across 3 patterns.\n  - `sshd(pam_unix)` has 4,996 lines across 30 patterns.\n  - Both resolve to the same owner and area, with the same confidence values.\n- **Disputes:** No dispute is flagged for either component.",
+   "calls": [
+    {
+     "name": "list_values",
+     "args": {
+      "dataset": "linux",
+      "field": "component",
+      "prefix": "sshd"
+     }
+    },
+    {
+     "name": "owner_of",
+     "args": {
+      "dataset": "linux",
+      "component": "sshd"
+     }
+    },
+    {
+     "name": "owner_of",
+     "args": {
+      "dataset": "linux",
+      "component": "sshd(pam_unix)"
+     }
+    }
+   ],
+   "errors": [],
+   "run_error": null,
+   "first_tool": "owner_of",
+   "first_ok": true,
+   "need_ok": true,
+   "facts": 2,
+   "facts_total": 2,
+   "facts_missed": [],
+   "n_calls": 3,
+   "n_errors": 0,
+   "tokens_in": 114710,
+   "tokens_out": 601,
+   "elapsed_s": 9.2
+  },
+  {
+   "id": "O-3",
+   "dataset": "zookeeper",
+   "model": "anthropic:claude-sonnet-5-5",
+   "question": "Is the ownership of any ZooKeeper component disputed or uncertain? Which component, and which team does the evidence point to instead?",
+   "answer": "Yes. One ZooKeeper component has disputed ownership: **`Leader$LearnerCnxAcceptor`**.\n\n- **Current owner:** `coordination-platform`. This comes from the \"curated default\" row, which is the fallback for unlisted ZooKeeper classes. Its confidence is 0.95, and the area is \"orchestration\".\n- **Disputed by:** `client-connectivity`. The Jev hints for this component's lines name that team with a probability of 0.95.\n- **Scale:** the component logged only 2 lines in one pattern, about 0.0% of the dataset's lines. The dispute is real but affects almost nothing.\n\nThe tool guidance is to report both teams and keep the curated owner. The dispute is a flag to check the ownership table, not a correction. A component named \"LearnerCnxAcceptor\" accepts learner connections, which would fit `client-connectivity`. That is my inference, not something the tool states.\n\nNo other ZooKeeper component is unowned, weakly inferred or disputed.\n\nEvidence: ev-dee07cf4a4, ev-e425fa05bb.",
+   "calls": [
+    {
+     "name": "ownership_gaps",
+     "args": {
+      "dataset": "zookeeper",
+      "limit": 50
+     }
+    },
+    {
+     "name": "owner_of",
+     "args": {
+      "dataset": "zookeeper",
+      "component": "Leader$LearnerCnxAcceptor"
+     }
+    }
+   ],
+   "errors": [],
+   "run_error": null,
+   "first_tool": "ownership_gaps",
+   "first_ok": true,
+   "need_ok": true,
+   "facts": 2,
+   "facts_total": 2,
+   "facts_missed": [],
+   "n_calls": 2,
+   "n_errors": 0,
+   "tokens_in": 115966,
+   "tokens_out": 533,
+   "elapsed_s": 9.3
+  },
+  {
+   "id": "O-4",
+   "dataset": "bgl",
+   "model": "anthropic:claude-sonnet-5-5",
+   "question": "Across all loaded logs, which component's owner should a team lead double-check first because the evidence points to a different team, and how many log lines does that component have?",
+   "answer": "The component to double-check first is **APP** in the BGL (Blue Gene/L) dataset. It has **228,536 log lines**, about 4.81% of BGL's lines, across 334 patterns.\n\n- **Current owner:** the curated ownership table assigns APP to `hpc-workloads` (confidence 1.0).\n- **Disputed by:** confident Jev hints point to `node-platform` (dispute confidence 0.939).\n- **Why it comes first:** this is a flag to check the ownership table, not a correction.\n\nThe only other disputed component is `Leader$LearnerCnxAcceptor` in zookeeper. It has just 2 lines. Its curated-default owner is `coordination-platform`, and the dispute points to `client-connectivity` (0.95).",
+   "calls": [
+    {
+     "name": "ownership_gaps",
+     "args": {
+      "limit": 50
+     }
+    }
+   ],
+   "errors": [],
+   "run_error": null,
+   "first_tool": "ownership_gaps",
+   "first_ok": true,
+   "need_ok": true,
+   "facts": 2,
+   "facts_total": 2,
+   "facts_missed": [],
+   "n_calls": 1,
+   "n_errors": 0,
+   "tokens_in": 76408,
+   "tokens_out": 306,
+   "elapsed_s": 6.0
+  }
+ ]
+}

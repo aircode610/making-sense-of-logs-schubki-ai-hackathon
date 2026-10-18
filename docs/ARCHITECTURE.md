@@ -26,7 +26,10 @@ mcp_server/  FastMCP: parameterized SQL tools (search, context, counts, trend, p
   Loaded by SereneDB in docker: `read_csv` each raw line as one column, parse with SQL string/regex functions, insert
   sorted by ts. Labels go to a separate `labels` table. Python only where SQL can't do a step (e.g. Drain3).
 - `patterns(pattern_id, dataset, component, template, lines, nodes, first_ts, last_ts, example)` + Jev judgment columns.
-- `ownership(dataset, component, team)`; `evidence(id, ts, tool, params, sql, rows, truncated, result_json)`.
+- `ownership(dataset, component, team, description, area, area_source, area_confidence, source, confidence, disputed_by,
+  dispute_confidence)` (plan 057: curated rows + inference chain, built by `load/96b_ownership_inferred.sql`; tools join
+  on (dataset, component) and read `team`; `top_patterns` / `priority_table` / `owner_of` also read source /
+  confidence / disputed_by); `evidence(id, ts, tool, params, sql, rows, truncated, result_json)`.
 
 ## Tools (first cut; every result returns `sql`, `filters`, `scope`, `rows_returned`, `total_matches`, `truncated`)
 | Tool | For | Inputs | Returns |

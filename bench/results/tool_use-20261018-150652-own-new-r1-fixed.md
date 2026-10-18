@@ -1,0 +1,12 @@
+# Tool-use benchmark: own-new-r1-fixed (4 questions)
+
+| model | questions | first_ok | need_ok | facts | errors_per_q | calls_per_q | tokens_in_per_q | seconds_per_q | crashed |
+|---|---|---|---|---|---|---|---|---|---|
+| anthropic:claude-sonnet-5-5 | 4 | 1.0 | 1.0 | 1.0 | 0.0 | 2 | 106674 | 9.1 | 0 |
+
+| id | model | first | first ok | need ok | facts | calls | errors | tools |
+|---|---|---|---|---|---|---|---|---|
+| O-1 | sonnet | top_patterns | 1 | 1 | 1/1 | 2 | 0 | top_patterns owner_of |
+| O-2 | sonnet | owner_of | 1 | 1 | 2/2 | 3 | 0 | list_values owner_of owner_of |
+| O-3 | sonnet | ownership_gaps | 1 | 1 | 2/2 | 2 | 0 | ownership_gaps owner_of |
+| O-4 | sonnet | ownership_gaps | 1 | 1 | 2/2 | 1 | 0 | ownership_gaps |
