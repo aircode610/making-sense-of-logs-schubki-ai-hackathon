@@ -1,0 +1,103 @@
+id: D-M07
+role: manager
+dataset: apache
+question: Based on the Apache web server error log from 2005-12-01 to 2006-03-01, what should we prioritise next?
+answer_summary: 'Window taken as 2005-12-01 <= ts < 2006-03-01, on one Apache server. Priority 1 is the ''script not found or unable to stat'' failures, owned by web-platform (httpd). They had 127 bursts
+  in the window, against 29 in the previous three months. That makes them the fastest-growing problem: about 16-21 bursts per week from mid-January to the end of February. All told there are 5,881 lines
+  on 50 days. The client-tagged lines are almost all requests for /var/www/cgi-bin/awstats(.pl) from 86 distinct client IPs. That looks like repeated probing for the AWStats CGI script, but this is a hypothesis,
+  not a confirmed attack. Priority 2 is the Tomcat connector child-initialisation failure ''jk2_init() Can''t find child N in scoreboard'', with its paired ''mod_jk child init 1 -2'', owned by app-integration.
+  It is chronic and rising slightly: 69 bursts on 38 days, against 54 before, recurring at every restart through 2006-02-25. The single biggest pattern by bursts, ''Directory index forbidden by rule'' (853
+  bursts), is routine access-control noise and is declining (1,059 bursts the period before). ''mod_jk child workerEnv in error state'' stopped after 2006-01-25. Neither should come first. The logs say
+  nothing about cost, downtime or customer impact. There is also a near-silent stretch from about 12 Dec to 7 Jan, when only weekly restart lines were logged, so December must not be read as an improvement.'
+findings:
+- fact: '''script not found or unable to stat'' (httpd, pattern 300042, the bare continuation-line form) had 127 bursts starting in the window, against 29 from Sep to Nov 2005 and 31 in the whole history
+    before Dec 2005. Its client-tagged sibling (300033) had 77 against 32, and the mod_jk-attributed copy (300046) had 24 against 17. This is the largest burst growth of any pattern in the period.'
+  sql: SELECT pattern_id, count(*) FILTER (WHERE start_ts>='2005-12-01' AND start_ts<'2006-03-01') now, count(*) FILTER (WHERE start_ts>='2005-09-01' AND start_ts<'2005-12-01') prev, count(*) FILTER (WHERE
+    start_ts<'2005-12-01') before_all FROM bursts WHERE dataset='apache' AND pattern_id IN (300020,300021,300042,300033,300040,300022,300023,300046) GROUP BY 1 ORDER BY 2 DESC
+  result: 300020|853|1059|2120 ; 300021|156|105|257 ; 300042|127|29|31 ; 300033|77|32|42 ; 300040|71|160|192 ; 300023|69|54|100 ; 300022|69|54|100 ; 300046|24|17|17
+  importance: must
+- fact: 'Raw-line scope of the script-not-found family in the window: 5,881 lines on 50 distinct days. They come from httpd (5,546: 2,207 client-tagged plus 3,339 bare), mod_jk (263), mod_jk2 (71) and jk2_init()
+    (1). The untagged lines are continuation lines that inherit the previous line''s component, so the mod_jk/mod_jk2 attribution is a loader artefact. The whole family belongs to httpd, which web-platform
+    owns.'
+  sql: SELECT count(*), count(DISTINCT ts::date) FROM logs WHERE dataset='apache' AND ts>='2005-12-01' AND ts<'2006-03-01' AND body LIKE '%script not found or unable to stat%' ; SELECT body LIKE '[client%'
+    tagged, component, count(*) FROM logs WHERE dataset='apache' AND ts>='2005-12-01' AND ts<'2006-03-01' AND body @@ websearch_to_tsquery('"script not found or unable to stat"') GROUP BY 1,2
+  result: 5881|50 ; f|httpd|3339 ; t|httpd|2207 ; f|mod_jk|263 ; f|mod_jk2|71 ; f|jk2_init()|1
+  importance: must
+- fact: 'What is being requested: the client-tagged lines target /var/www/cgi-bin/awstats.pl (1,101) and /var/www/cgi-bin/awstats (1,083), with only 23 for ip.cgi. They come from 86 distinct client IPs,
+    each active for a day or a few days. The top IP, 211.99.203.228, accounts for 80 lines. The neighbouring lines show the same client also getting ''File does not exist: /var/www/html/awstats/awstats.pl''.
+    This looks like scanning for a missing AWStats CGI script.'
+  sql: 'SELECT regexp_extract(body,''stat: (\S+)'',1) path, count(*), count(DISTINCT regexp_extract(body,''client ([0-9.]+)'',1)) ips FROM logs WHERE dataset=''apache'' AND ts>=''2005-12-01'' AND ts<''2006-03-01''
+    AND pattern_id=300033 GROUP BY 1 ORDER BY 2 DESC LIMIT 8 ; (count distinct IPs) ; SELECT line_id, ts, component, pattern_id, body FROM logs WHERE dataset=''apache'' AND line_id BETWEEN 27040 AND 27060'
+  result: '/var/www/cgi-bin/awstats.pl|1101|80 ; /var/www/cgi-bin/awstats|1083|85 ; /var/www/cgi-bin/ip.cgi|23|1 ; 86 distinct IPs ; e.g. line 27046 2005-12-01 18:27:58 [client 61.19.31.42] script not found
+    or unable to stat: /var/www/cgi-bin/awstats.pl, followed by File does not exist: /var/www/html/awstats/awstats.pl'
+  importance: should
+- fact: 'Trend: weekly bursts of pattern 300042 were 4 in the week of Jan 2, 16 (Jan 9), 18 (Jan 16), 19 (Jan 23), 8 (Jan 30), 18 (Feb 6), 21 (Feb 13) and 19 (Feb 20). There were none in December apart
+    from the week of Nov 28. Monthly lines in the family: 67 in Dec, 3,304 in Jan, 2,510 in Feb. The problem is sustained and still running at the end of the data.'
+  sql: SELECT date_trunc('week',start_ts)::date w, count(*) FROM bursts WHERE dataset='apache' AND pattern_id=300042 AND start_ts>='2005-11-01' GROUP BY 1 ORDER BY 1 ; SELECT date_trunc('month',ts)::date
+    m, count(*) FILTER (WHERE body LIKE '%script not found or unable to stat%') FROM logs WHERE dataset='apache' GROUP BY 1 ORDER BY 1
+  result: '2006-01-02|4 ; 01-09|16 ; 01-16|18 ; 01-23|19 ; 01-30|8 ; 02-06|18 ; 02-13|21 ; 02-20|19 ; 02-27|3 ; monthly lines: 2005-12|67 ; 2006-01|3304 ; 2006-02|2510'
+  importance: must
+- fact: 'Second priority: ''jk2_init() Can''t find child N in scoreboard'' (jk2_init(), ERROR, 300022) and its paired ''mod_jk child init 1 -2'' (300023). There were 415 lines each on 38 days in the window,
+    from 2005-12-03 to 2006-02-25. They formed 69 bursts against 54 the period before, averaging 6 lines per burst. The pattern is chronic, present in 38 weeks since June 2005. It shows up when Apache spawns
+    or restarts children, interleaved with ''workerEnv.init() ok''. The owner is app-integration (the Tomcat connector).'
+  sql: SELECT pattern_id, count(*), count(DISTINCT ts::date), min(ts), max(ts) FROM logs WHERE dataset='apache' AND ts>='2005-12-01' AND ts<'2006-03-01' AND pattern_id IN (300022,300023) GROUP BY 1 ; SELECT
+    count(*), round(avg(lines),1), max(lines) FROM bursts WHERE dataset='apache' AND pattern_id=300022 AND start_ts>='2005-12-01' AND start_ts<'2006-03-01' ; SELECT component, team FROM ownership WHERE
+    dataset='apache'
+  result: 300022|415|38|2005-12-03 17:57:05|2006-02-25 03:52:15 ; 300023|415|38|... ; bursts 69, avg 6, max 64 ; jk2_init()/mod_jk/mod_jk2 -> app-integration ; httpd and others -> web-platform
+  importance: must
+- fact: 'Patterns that should not be put first. ''Directory index forbidden by rule: /var/www/html/'' (300020) has the most bursts at 853 (1,650 lines), but it is judged ''not a problem'' (p_fault 0.12,
+    p_threat 0.66) and is declining (853 against 1,059). ''File does not exist'' (300021) has the most lines at 13,882, mostly probes for blog, drupal, wordpress and xmlrpc paths, but only 156 bursts and
+    p_problem 0.25. ''mod_jk child workerEnv in error state'' (300040) dropped from 160 to 71 bursts, with its last line on 2006-01-25 and 0 lines in February.'
+  sql: SELECT j.pattern_id, j.kind, round(j.p_fault,2), round(j.p_threat,2), round(j.p_problem,2) FROM pattern_judgments j WHERE j.dataset='apache' AND j.pattern_id IN (300020,300021,300040,300042,300022)
+    ; SELECT pattern_id, count(*), count(DISTINCT ts::date), min(ts), max(ts) FROM logs WHERE dataset='apache' AND ts>='2005-12-01' AND ts<'2006-03-01' AND pattern_id IN (300020,300021,300040) GROUP BY
+    1
+  result: '300020|not a problem|0.12|0.66|0.66 ; 300021|network or I/O failure|0.27|0.15|0.25 ; 300040|job or application failure|0.82|0.03|0.75 ; 300042|job or application failure|0.81|0.06|0.75 ; 300022|job
+    or application failure|0.85|0.03|0.8 ; lines: 300021|13882 ; 300020|1650 ; 300040|1623, last 2006-01-25 07:33:59'
+  importance: should
+- fact: 'Data-coverage gap: from 2005-12-12 to 2006-01-07 the log holds only about 48 lines per week, all from the Sunday 04:02 ''Graceful restart requested'' sequence (Dec 11, 18 and 25, Jan 1). Normal
+    activity resumes in the week of Jan 2 with 1,207 lines, followed by about 3,000-3,800 per week.'
+  sql: SELECT date_trunc('week',ts)::date w, count(*), count(DISTINCT ts::date) days FROM logs WHERE dataset='apache' AND ts>='2005-11-28' AND ts<'2006-03-01' GROUP BY 1 ORDER BY 1 ; SELECT ts::date, count(*),
+    min(ts)::time, max(ts)::time FROM logs WHERE dataset='apache' AND ts>='2005-12-10' AND ts<'2006-01-06' GROUP BY 1 ORDER BY 1
+  result: 2005-12-05|1997|6 ; 12-12|48|1 ; 12-19|48|1 ; 12-26|48|1 ; 2006-01-02|1207|3 ; 01-09|3320|7 ... ; 2005-12-18 04:02:14-04:02:20 48 lines (Graceful restart requested, ...)
+  importance: should
+must_conclude:
+- Put 'script not found or unable to stat' (httpd, owned by web-platform) first. It is the fastest-growing recurring problem (127 bursts against 29 the previous period) and is still active at the end of
+  February.
+- Put 'jk2_init() Can't find child in scoreboard' / 'mod_jk child init' (owned by app-integration) second. It is a chronic connector child-init failure that recurs at restarts (69 bursts on 38 days, slightly
+  up).
+- 'Name the owning teams: web-platform for httpd and app-integration for mod_jk, mod_jk2 and jk2_init().'
+- 'Decision-oriented next steps: web-platform should decide whether to block or ignore the AWStats CGI probes or remove the referencing link; app-integration should look into the connector''s child/scoreboard
+  handling at restarts.'
+- State plainly that the logs contain no cost, downtime or customer-impact information.
+traps:
+- Ranking 'Directory index forbidden by rule' first because it has the most bursts (853). It is routine access-control noise, judged not a fault, and it is declining.
+- Ranking 'File does not exist' first because it has the most lines (13,882). Lines are not incidents, and these are mostly client probes for non-existent paths.
+- Reporting 5,881 lines, or 127 bursts, as 127 'outages' or incidents.
+- Splitting the script-not-found family across mod_jk/mod_jk2 and handing part of it to app-integration. The untagged lines are continuation lines that inherited the previous component.
+- Reading the December dip as an improvement. From about 12 Dec to 7 Jan the log is nearly empty apart from weekly restarts.
+- 'Prioritising ''mod_jk child workerEnv in error state'': it disappears after 2006-01-25.'
+- Inventing money, downtime or customers-affected numbers.
+- Treating this as fleet-wide. It is a single server, with no node field.
+not_established:
+- 'Whether the script-not-found requests are malicious scanning or a broken legitimate link: the logs show requests for a missing AWStats CGI from 86 IPs, but not their intent.'
+- Why jk2_init cannot find children in the scoreboard (root cause in mod_jk2/Tomcat config is not in the log).
+- Whether the Dec 12 - Jan 7 near-silence is missing logs or genuinely no traffic/errors.
+- Any user-facing impact, downtime, latency or cost; the error log has no status codes or durations.
+labels_used: none apply (labels has 0 rows for apache).
+golden_check:
+- fact: priority_table top 2 for 2005-12-01..2006-03-01, in computed order
+  golden_value: script not found ; scoreboard
+  my_value: 'script not found (300042: highest burst growth, +98, p_problem 0.75) ; scoreboard (300022: 69 bursts, p_problem 0.80). This is my own independent ranking; I did not run the priority_table tool
+    (off-limits). It agrees with the golden order.'
+  agrees: true
+- fact: bursts of 'script not found or unable to stat' (httpd) in the period
+  golden_value: '127'
+  my_value: '127'
+  agrees: true
+notes: 'Single-server log with no node dimension. The question gives the end as 2006-03-01, which goes past the data''s last line (2006-02-28 03:49). Several patterns describe one problem: 300042, 300033
+  and 300046 are the same script-not-found family, and 300022/300023 are the same scoreboard/child-init event. An answer can group them that way. ''scoreboard'' in the golden order refers to the ''Can''t
+  find child in scoreboard'' ERROR (300022), not to the NOTICE ''Found child N in scoreboard slot N'' (300016, 101 bursts, judged not a problem). An answer that ranks the NOTICE should not get credit.'
+judging: The golden order comes from a tool under test (priority_table); it agrees with the key. Full credit = 'script not found or unable to stat' (web-platform) first, jk2 scoreboard (app-integration)
+  second; do not require the exact tool wording.
+data_update: 'Data update (plan 014, 2026-10-18): the loader now gives continuation lines their own component (httpd), so the mod_jk / mod_jk2 / jk2_init() ''script not found'' artefact described in this
+  key no longer exists in the data. The facts and owners in this key are unchanged; an answer that sees the whole family under httpd is correct, and the artefact trap can no longer be fallen into.'

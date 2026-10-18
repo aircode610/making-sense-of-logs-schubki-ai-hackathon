@@ -134,7 +134,8 @@ def get_context(
     Not for: finding the line in the first place (search_logs), a whole request or object end to end
     (request_timeline), which kinds of messages tend to precede a problem across all its occurrences (precursors).
     Returns: the anchor line, `before` (nearest first) and `after` (nearest first) lines, each side with its total
-    count in the window and a truncated flag.
+    count in the window and a truncated flag, plus nearest_before_window / nearest_after_window: the closest line of
+    the same scope outside the window and how many seconds from the anchor it is.
     Caveats: earlier is not cause: label any causal reading as a hypothesis. A flooded window: narrow before_s /
     after_s or filter by severity.
     Example: get_context(dataset=<dataset>, line_id=<line_id from search_logs>, scope='node', before_s=600)
@@ -168,9 +169,17 @@ def get_context(
             f"SELECT count(*) AS n FROM logs {after_w}"]
     before, after = query(sqls[0], params), query(sqls[1], params)
     nb, na = query(sqls[2], params)[0]["n"], query(sqls[3], params)[0]["n"]
+    # Plan 014: the nearest line of the same scope OUTSIDE the window on each side, so a quiet window never reads as
+    # "nothing happened" when the neighbours are 90 minutes away (one indexed lookup per side, same scope filters).
+    fo = {k: v for k, v in f.items() if k not in ("start", "end")}
+    wo, po = filters_sql(fo)
+    po.update(ws=f["start"], we=f["end"])
+    sqls += [f"SELECT {COLS} FROM logs WHERE ts < %(ws)s{wo} ORDER BY ts DESC, line_id DESC LIMIT 1",
+             f"SELECT {COLS} FROM logs WHERE ts >= %(we)s{wo} ORDER BY ts, line_id LIMIT 1"]
+    prev_out, next_out = query(sqls[4], po), query(sqls[5], po)
     env = envelope("get_context", dict(dataset=dataset, line_id=line_id, before_s=before_s, after_s=after_s,
                                        scope=scope, location_level=location_level, severity=severity, limit=limit),
-                   [render(s, params) for s in sqls], f,
+                   [render(s, params) for s in sqls[:4]] + [render(s, po) for s in sqls[4:]], f,
                    scope=f"{dataset}, {scope}{'=' + str(f.get(col)) if col else ''}, "
                          f"{f['start']} → {a['ts'] + timedelta(seconds=after_s)}",
                    rows=[], t0=t0, total_matches=nb + na, truncated=nb > len(before) or na > len(after))
@@ -178,4 +187,17 @@ def get_context(
     env.update(anchor=clean_row(a),
                before=[clean_row(r) for r in before], before_total=nb, before_truncated=nb > len(before),
                after=[clean_row(r) for r in after], after_total=na, after_truncated=na > len(after))
+    for side, rows, key in (("before", prev_out, "nearest_before_window"), ("after", next_out, "nearest_after_window")):
+        if rows:
+            gap = abs((rows[0]["ts"] - a["ts"]).total_seconds())
+            env[key] = dict(clean_row(rows[0]), seconds_from_anchor=round(gap, 1))
+        else:
+            env[key] = None
+    env["elapsed_ms"] = round((time.perf_counter() - t0) * 1000, 1)   # incl. the two outside-window lookups
+    quiet = [s for s, n in (("before", nb), ("after", na)) if n == 0]
+    if quiet:
+        env.setdefault("hints", []).append(
+            f"no lines {' or '.join(quiet)} the anchor inside the window on this scope: see nearest_before_window / "
+            "nearest_after_window for how far the closest ones are, and widen before_s / after_s (max 86400) or the "
+            "scope before saying nothing happened around it.")
     return env

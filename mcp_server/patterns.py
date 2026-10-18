@@ -9,12 +9,15 @@ from typing import Annotated, Literal, Optional
 
 from pydantic import Field
 
-from core import MAX_ROWS, Component, Dataset, Team, check_dataset, envelope, node_note, query, render
+from core import (MAX_ROWS, Component, Dataset, Team, check_dataset, envelope, is_problem, judged, judged_note,
+                  node_note, query, render)
 
 PROBLEM = "('FATAL', 'FAILURE', 'SEVERE', 'ERROR', 'CRITICAL')"
 # A problem-LEVEL line (candidate; the stored Jev judgment then decides): error-or-worse, WARN (some formats log real
 # faults at WARN, plan 011), a 5xx status (a failed request logged at INFO, plan 054), or a format without levels.
 PROBLEM_LINE = f"(severity IN {PROBLEM} OR severity IN ('WARN', 'WARNING') OR status >= 500 OR severity IS NULL)"
+# The same without "no level": the problem rule of a dataset without Jev judgments (plan 016; see core.is_problem).
+ERROR_LINE = f"(severity IN {PROBLEM} OR severity IN ('WARN', 'WARNING') OR status >= 500)"
 P_PROBLEM_MIN = 0.5
 ProblemFilter = Annotated[Literal["jev", "severity"], Field(
     description="How 'problem pattern' is decided: 'jev' (default) = has problem-level lines (error-or-worse, WARN, "
@@ -50,7 +53,8 @@ def _base_sql(problem_only: bool, problem_filter: str = "jev", extra_where: str 
 WITH now AS (
     SELECT pattern_id, count(*) AS lines, count(DISTINCT node) AS nodes,
            count(DISTINCT date_trunc('week', ts)) AS weeks_active,
-           count(*) FILTER (WHERE {PROBLEM_LINE}) AS problem_lines
+           count(*) FILTER (WHERE {PROBLEM_LINE}) AS problem_lines,
+           count(*) FILTER (WHERE {ERROR_LINE}) AS error_lines
     FROM logs WHERE dataset = %(d)s AND ts >= %(s)s AND ts < %(e)s AND pattern_id IS NOT NULL GROUP BY 1
 ), top_node AS (
     SELECT pattern_id, max(n) AS top_node_lines FROM (
@@ -63,7 +67,7 @@ WITH now AS (
 ), base AS (
     SELECT p.pattern_id, p.template, p.component, coalesce(o.team, 'unowned') AS team, o.source AS owner_source,
            o.confidence AS owner_confidence, o.disputed_by AS owner_disputed_by, p.severity,
-           now.lines, now.problem_lines, now.nodes, now.weeks_active,
+           now.lines, now.problem_lines, now.error_lines, now.nodes, now.weeks_active,
            coalesce(b_now.bursts, 0) AS bursts, coalesce(b_prev.bursts_prev, 0) AS bursts_prev,
            coalesce(b_now.bursts, 0) - coalesce(b_prev.bursts_prev, 0) AS change,
            round(top_node.top_node_lines::DOUBLE / now.lines, 3) AS top_node_share,
@@ -80,8 +84,19 @@ WITH now AS (
 
 
 def _problem_where(problem_filter: str) -> str:
-    w = "AND now.problem_lines > 0"
-    return w if problem_filter == "severity" else w + f" AND j.p_problem >= {P_PROBLEM_MIN}"
+    if problem_filter == "severity":
+        return "AND now.problem_lines > 0"
+    return "AND " + is_problem("j", "now.problem_lines", "now.error_lines", "%(d)s")  # unjudged: level rule (plan 016)
+
+
+def _excluded(dataset, ps, s, e, extra: str = "", params_extra: Optional[dict] = None, n: int = 3) -> tuple[list, str]:
+    """Plan 014: the most-recurring patterns the Jev filter left out although they have problem-level lines, with
+    their judgment, so a frequent pattern judged 'not a fault' is visible (the judge, not the agent, decided it)."""
+    sql = _base_sql(False, "jev", extra + f" AND now.problem_lines > 0 AND coalesce(j.p_problem, 0) < {P_PROBLEM_MIN}") + f"""
+SELECT pattern_id, template, component, team, bursts, lines, nodes, p_problem, kind FROM base
+ORDER BY bursts DESC, pattern_id LIMIT {n}"""
+    params = _params(dataset, ps, s, e, **(params_extra or {}))
+    return query(sql, params), render(sql, params)
 
 
 def _params(dataset, ps, s, e, **kw) -> dict:
@@ -112,6 +127,7 @@ def top_patterns(
     see owner_of), lines, bursts (recurrences split by > 30 min quiet),
     nodes, weeks_active, bursts_prev (previous period of equal length), change, new (first seen in the period),
     top_node_share (1.0 = one node only), p_problem / kind (stored Jev judgment). Both periods as absolute dates.
+    excluded_by_filter = the top recurring patterns with error-level lines that the Jev filter judged not a fault.
     Caveats: bursts count recurrences, not confirmed incidents; lines count log entries. Default period = the
     dataset's last 28 days.
     Example: top_patterns(dataset=<dataset>, start='<month start>', end='<next month start>', rank_by='growth')
@@ -130,11 +146,18 @@ SELECT *, count(*) OVER () AS candidates FROM base ORDER BY {order}, pattern_id 
     for r in rows:
         del r["candidates"]
     f = dict(dataset=dataset, start=s, end=e, team=team, component=component)
+    sqls = [render(sql, params)]
+    excluded = None
+    if problem_only and problem_filter == "jev" and judged(dataset):
+        excluded, xsql = _excluded(dataset, ps, s, e, extra, dict(team=team, comp=component))
+        sqls.append(xsql)
     return envelope("top_patterns", dict(problem_only=problem_only, problem_filter=problem_filter, rank_by=rank_by,
-                                         limit=limit, **f), [render(sql, params)], f,
+                                         limit=limit, **f), sqls, f,
+                    excluded_by_filter=excluded,
                     scope=f"{dataset}, period {s:%Y-%m-%d %H:%M} → {e:%Y-%m-%d %H:%M}, previous {ps:%Y-%m-%d %H:%M} → {s:%Y-%m-%d %H:%M}; "
                           f"bursts = recurrences (30-min gap), lines = log entries" + node_note(dataset),
                     rows=rows, t0=t0, total_matches=n, truncated=n > len(rows),
+                    hints=judged_note(dataset) if problem_only and problem_filter == "jev" else [],
                     period={"start": s.isoformat(sep=" "), "end": e.isoformat(sep=" ")},
                     previous_period={"start": ps.isoformat(sep=" "), "end": s.isoformat(sep=" ")})
 
@@ -166,7 +189,8 @@ def priority_table(
     monday = lambda t: (t - timedelta(days=t.weekday())).date()
     weeks = (monday(e - timedelta(microseconds=1)) - monday(s)).days // 7 + 1
     w = WEIGHTS
-    sev = "p_problem" if problem_filter == "jev" else "round(problem_lines::DOUBLE / lines, 3)"
+    # severity input: Jev p_problem; level share for the 'severity' filter or an unjudged dataset (plan 016)
+    sev = "p_problem" if problem_filter == "jev" and judged(dataset) else "round(problem_lines::DOUBLE / lines, 3)"
     sql = _base_sql(True, problem_filter) + f""",
 inputs AS (
     SELECT *, round(weeks_active::DOUBLE / {weeks}, 3) AS persistence,
@@ -222,6 +246,12 @@ FROM ranked ORDER BY score DESC, bursts DESC, pattern_id"""
                    period={"start": s.isoformat(sep=" "), "end": e.isoformat(sep=" ")},
                    previous_period={"start": ps.isoformat(sep=" "), "end": s.isoformat(sep=" ")})
     del env["rows"]
+    if problem_filter == "jev" and judged(dataset):
+        excluded, xsql = _excluded(dataset, ps, s, e)
+        env["sql"].append(xsql)
+        env["excluded_by_filter"] = excluded
+    elif problem_filter == "jev":
+        env["hints"] = judged_note(dataset)
     env.update(items=items, team_rollup=rollup,
                unknown="Cost, downtime, customer impact and root cause are not in these logs.")
     return env

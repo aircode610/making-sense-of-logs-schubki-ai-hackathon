@@ -2,8 +2,8 @@
 
   .venv/bin/python scripts/embed_patterns.py        → data/pattern_vectors.parquet (committed)
   .venv/bin/python scripts/embed_patterns.py <ds>   → data/pattern_vectors_<ds>.parquet (plan 057: one dataset only,
-                                                       e.g. after scripts/ingest.sh; the shared file stays untouched)
-load/97_pattern_vectors.sql loads it into the `pattern_index` search table (text + IVF vector index), so semantic tools
+                                                       the shared file stays untouched; a dataset added with a key is embedded live by loader/jev.py)
+load/lib/build_dataset.sql loads it into the `pattern_index` search table (text + IVF vector index), so semantic tools
 work from a clean checkout without a key; only find_patterns(mode='semantic') embeds the QUERY text live.
 Model: gemini-embedding-001 at 768 dimensions (OpenAI-compatible secret `gemini`, ./docker/secrets.sh). ~1.6k
 templates = ~16 embedding requests (100 texts per request), a few seconds. Text embedded = 'component: template'.

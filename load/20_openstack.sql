@@ -81,4 +81,4 @@ INSERT INTO datasets VALUES ('openstack', 'OpenStack nova logs (cloud VM lifecyc
 
 DROP TABLE os_stage;
 DROP TABLE os_pat;
--- ownership: load/94_ownership.sql (generic, all datasets).
+-- ownership: load/lib/ownership_dataset.sql (generic, per dataset).

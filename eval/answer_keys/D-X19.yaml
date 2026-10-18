@@ -1,0 +1,66 @@
+id: D-X19
+role: lead
+dataset: zookeeper
+question: "Is the election-address channel failure we saw on 2015-08-24/25 in Zookeeper something new or has it happened before since 2015-07-29? How does this episode compare with earlier ones, and which team owns it?"
+answer_summary: "Not new: the same WARN 'Cannot open channel to <N> at election address' (QuorumCnxManager, pattern 200018) recurred in 7 earlier bursts between 2015-07-29 and 2015-08-18 (167 lines), every one short (12 s to 9.5 min, 8-47 lines) and tied to restarts with elections that completed within minutes. The 2015-08-24/25 episode is different in scale and shape: one continuous burst from 2015-08-24 15:26:57 to 2015-08-25 11:23:57 (~20 h, 2,417 lines, about 120 lines/hour = one retry per peer per minute), almost entirely from ensemble member myid=1 (2,413 lines) trying to reach peers 2 (10.10.34.12) and 3 (10.10.34.13), which were silent from ~10:21 on 08-24 until they restarted at 11:14:51 and 11:16:08 on 08-25; member 1's election then reported 'LEADER ELECTION TOOK - 71276526' ms (~19.8 h) versus at most ~222 s before. So the escalation is that peers 2 and 3 were down for ~20 h (no quorum visible in the logs), not a new kind of error; the channel WARNs are the symptom. Owner: coordination-platform (QuorumCnxManager). First look: why members 2 and 3 stopped at ~10:21 on 08-24 and were not restarted until 11:14 on 08-25."
+findings:
+  - fact: "Recurring, not new: 7 earlier bursts of the election-address channel pattern since 2015-07-29, all before 08-24, totalling 167 lines."
+    sql: "SELECT b.start_ts, b.end_ts, b.lines FROM bursts b JOIN patterns p USING (dataset, pattern_id) WHERE b.dataset='zookeeper' AND p.template LIKE 'Cannot open channel to % at election address%' ORDER BY 1  -- confirmed with a 30-min-gap grouping over raw logs WHERE dataset='zookeeper' AND pattern_id=200018"
+    result: "07-29 17:41-17:45 (28), 07-30 17:52-17:56 (24), 07-30 23:43-23:52 (47), 07-31 15:31-15:36 (36), 08-07 07:27 (14, 19 s), 08-10 18:23-18:25 (8), 08-18 16:09 (10, 12 s), then 08-24 15:26:57 -> 08-25 11:23:57 (2,417). Raw-log regrouping gives the identical 8 groups."
+    importance: must
+  - fact: "This episode is ~15x the line count of all earlier bursts combined and lasts ~20 h versus at most 9.5 min before; the rate is flat at 120 lines/hour (two WARNs every 60 s, one per unreachable peer)."
+    sql: "SELECT date_trunc('hour',ts), count(*) FROM logs WHERE dataset='zookeeper' AND pattern_id=200018 AND ts>='2015-08-24' GROUP BY 1 ORDER BY 1"
+    result: "15:00 79, every full hour 16:00 (08-24) to 10:00 (08-25) = 120, 11:00 = 58; samples 16:00:13.732 'to 2', 16:00:13.733 'to 3', 16:01:13.735 'to 2' ..."
+    importance: must
+  - fact: "The file interleaves three ensemble members (myid 1, 2, 3 by line_id ranges, despite the dataset description saying one member); 2,413 of the 2,417 episode lines come from member 1, targeting peer 2 (10.10.34.12:3888) and peer 3 (10.10.34.13:3888). Earlier bursts were spread over all three members and also targeted peer 1."
+    sql: "SELECT split_part(split_part(body,'My id =  ',2),',',1), min(line_id), max(line_id) FROM logs WHERE dataset='zookeeper' AND body LIKE 'New election. My id%' GROUP BY 1;  SELECT CASE WHEN line_id<=26554 THEN 1 WHEN line_id<=52281 THEN 2 ELSE 3 END m, (ts>='2015-08-24') ep, count(*) FROM logs WHERE dataset='zookeeper' AND pattern_id=200018 GROUP BY 1,2"
+    result: "myid1 lines 16-26505, myid2 26570-52235, myid3 52282-74339. Episode: m1 2413, m2 1, m3 3. Before: m1 110, m2 41, m3 16. Targets before 08-24: peer3 83, peer2 65, peer1 19; episode: peer2 1211, peer3 1206."
+    importance: must
+  - fact: "Root of the long episode in the logs: members 2 and 3 went silent at ~10:21 on 08-24 (last lines are client session closes) and only restarted at 11:14:51 / 11:16:08 on 08-25; member 1 restarted at 15:26:54 on 08-24 and sat in LOOKING until 08-25 11:14:51 ('FOLLOWING - LEADER ELECTION TOOK - 71276526' ms, ~19.8 h)."
+    sql: "SELECT ts, line_id, component, body FROM logs WHERE dataset='zookeeper' AND ts>='2015-08-24' AND (body LIKE 'New election%' OR body IN ('LOOKING','FOLLOWING','LEADING') OR body LIKE '%ELECTION TOOK%' OR component='QuorumPeerMain') ORDER BY ts LIMIT 40"
+    result: "08-24 15:26:54.434 Starting quorum peer (m1), 15:26:54.671 LOOKING; 08-25 11:14:51.173 FOLLOWING, TOOK 71276526; 11:14:51.537 Starting quorum peer (m2) -> LEADING (253 ms); 11:16:08.518 Starting quorum peer (m3) -> FOLLOWING (45 ms); further restarts 11:19-11:26 elect in ~250 ms except m1 at 11:23:56 (223897 ms). Members 2/3 have 0 lines between 08-24 15:26:54 and 08-25 11:14:51; their last lines before are 08-24 10:21:46 and 10:21:39."
+    importance: must
+  - fact: "Earlier episodes resolved quickly: before 08-24 the longest election was ~222 s (07-29 19:56:52, 222231 ms) and most took under 10 s."
+    sql: "SELECT ts, body FROM logs WHERE dataset='zookeeper' AND body LIKE '%ELECTION TOOK%' AND ts<'2015-08-24' ORDER BY ts"
+    result: "max 222231 ms (07-29), others e.g. 206139, 190671, 189045 ms; 08-07/08-10/08-18 elections 39-17228 ms."
+    importance: should
+  - fact: "Owner is coordination-platform (QuorumCnxManager is not listed explicitly; it falls under the zookeeper '*' default row, 'ZooKeeper quorum: leader election, peer connections, ensemble state')."
+    sql: "SELECT * FROM ownership WHERE dataset='zookeeper' AND component IN ('QuorumCnxManager','*')"
+    result: "zookeeper|QuorumCnxManager|coordination-platform|ZooKeeper quorum: leader election, peer connections, ensemble state (default for unlisted classes)"
+    importance: must
+  - fact: "All lines of the pattern are WARN; total 2,584 lines in the dataset (167 before 08-24, 2,417 on 08-24/25)."
+    sql: "SELECT date_trunc('day',ts)::date, count(*), string_agg(DISTINCT severity,',') FROM logs WHERE dataset='zookeeper' AND pattern_id=200018 GROUP BY 1 ORDER BY 1"
+    result: "07-29 28, 07-30 71, 07-31 36, 08-07 14, 08-10 8, 08-18 10, 08-24 1039, 08-25 1378; all WARN"
+    importance: nice
+must_conclude:
+  - "Recurring, not new: 7 earlier bursts (167 lines) between 2015-07-29 and 2015-08-18."
+  - "The 08-24/25 episode is one ~20 h burst of 2,417 lines, far longer and larger than any earlier one (max ~9.5 min / 47 lines)."
+  - "It is a steady retry loop (~120 lines/hour) from member 1 toward peers 2 and 3, which were down/silent until 08-25 11:14-11:16; the election finished only then (~19.8 h)."
+  - "Owner: coordination-platform."
+traps:
+  - "Lines are not incidents: 2,417 lines are one continuous episode (one retry per peer per minute), not 2,417 failures; 'before' is 7 bursts, not 167 incidents."
+  - "Calling it a new error because volume spiked: the pattern existed since the first day of the data."
+  - "Treating the channel WARN as the root cause: it is the symptom of peers 2 and 3 not running; the log shows them silent then restarting."
+  - "Assuming one server: the file contains three members (myid 1/2/3) concatenated; line_id order is not time order across members."
+  - "Splitting the episode into 08-24 and 08-25 by calendar day (1,039 + 1,378) and counting two episodes."
+  - "Owner lookup: QuorumCnxManager has no explicit ownership row; the '*' default gives coordination-platform (not client-connectivity)."
+not_established:
+  - "Why members 2 and 3 stopped at ~10:21 on 08-24 (no shutdown/error lines; their logs simply end) or why member 1 was restarted at 15:26."
+  - "Whether clients were affected or the service was actually unavailable; client impact, downtime and cost are not in the logs (only that member 1 had no quorum while peers were silent)."
+  - "Network vs process failure: 'Cannot open channel' does not distinguish a down process from a network fault, though the peers' own logs being silent suggests they were not running."
+  - "The 08-21 to 08-24 gap: no lines at all on 08-22/23, so logging coverage is incomplete."
+labels_used: "None; zookeeper has no rows in labels (count=0). Evidence is raw logs only."
+golden_check:
+  - fact: "earlier bursts before 2015-08-24"
+    golden_value: "7"
+    my_value: "7 (bursts table and raw-log 30-min regrouping agree)"
+    agrees: true
+  - fact: "earlier lines before 2015-08-24"
+    golden_value: "167"
+    my_value: "167 (28+71+36+14+8+10 by pattern_id 200018; full-text over whole dataset gives 2584 = pattern total)"
+    agrees: true
+  - fact: "owner team"
+    golden_value: "coordination-platform"
+    my_value: "coordination-platform"
+    agrees: true
+notes: "Member attribution by line_id ranges: myid=1 = line_id <= 26554, myid=2 = 26555-52281, myid=3 >= 52282 (each segment starts with 'Reading configuration' on 2015-07-29 and contains 'New election. My id = N' only for its own N). The node field is NULL for zookeeper, so member attribution must come from this reasoning. Dataset ends 2015-08-25 11:26:28."

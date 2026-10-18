@@ -1,0 +1,66 @@
+id: D-X03
+role: lead
+dataset: linux
+question: "On the Linux server combo, logrotate keeps reporting 'ALERT exited abnormally' in December 2005 (2005-12-01 to 2006-01-01). How often does it recur, does it follow a schedule, and which team owns it?"
+answer_summary: "In December 2005 logrotate on combo logged 'ALERT exited abnormally with [1]' exactly once a day, on all 31 days (31 lines = 31 daily occurrences, one per day, not a storm), always in the 04:00 hour (04:02:06 to 04:15:11; from 12-12 onward pinned at about 04:02:07). It is strictly scheduled: it fires right after the nightly cron.daily run (su sessions for cyrus, then news, around 04:02-04:15), so it is the daily logrotate cron job exiting with status 1. It is not new to December: the same line appears every single day from 2005-06-10 (the first 04:00 after logs begin) to 2006-01-26, 231 lines on 231 consecutive days with no gaps, always with exit code [1]. Owner is linux-ops (via the dataset's default '*' ownership row; there is no logrotate-specific owner). Lead takeaway: a chronic, deterministic daily cron failure, not an escalating incident; first look at the logrotate config/state and the cron.daily output, which the logs do not contain."
+findings:
+  - fact: "December 2005: 31 lines on 31 distinct days, one node (combo), first 2005-12-01 04:15:11, last 2005-12-31 04:02:07; earliest time of day 04:02:06, latest 04:15:11."
+    sql: "SELECT count(*), count(DISTINCT ts::date), min(ts), max(ts), min(ts::time), max(ts::time), count(DISTINCT node) FROM logs WHERE dataset='linux' AND component='logrotate' AND ts>='2005-12-01' AND ts<'2006-01-01'"
+    result: "31|31|2005-12-01 04:15:11|2005-12-31 04:02:07|04:02:06|04:15:11|1"
+    importance: must
+  - fact: "All 31 December lines are in the 04:00 hour (daily schedule)."
+    sql: "SELECT hour(ts), count(*) FROM logs WHERE dataset='linux' AND component='logrotate' AND body @@ ts_phrase('alert exited abnormally') AND ts >= '2005-12-01' AND ts < '2006-01-01' GROUP BY 1"
+    result: "4|31"
+    importance: must
+  - fact: "Owner of logrotate on linux is linux-ops (from the dataset's '*' default ownership row)."
+    sql: "SELECT team FROM ownership WHERE dataset='linux' AND component='logrotate'"
+    result: "linux-ops (note: 'Default owner: all programs of the Linux server (unseen-dataset test: only a * row)')"
+    importance: must
+  - fact: "Chronic, not new: 231 lines over the whole dataset, 2005-06-10 04:03:02 to 2006-01-26 04:04:30, every day consecutively (all inter-day gaps = 1), all in hour 04, every line identical 'ALERT exited abnormally with [1]'. Per month: Jun 21, Jul 31, Aug 31, Sep 30, Oct 31, Nov 30, Dec 31, Jan 26."
+    sql: "WITH d AS (SELECT ts::date d FROM logs WHERE dataset='linux' AND component='logrotate'), g AS (SELECT d, d - lag(d) OVER (ORDER BY d) gap FROM d) SELECT gap, count(*) FROM g GROUP BY gap ORDER BY gap"
+    result: "gap 1 day: 230; NULL (first): 1  -> 231 consecutive days; total 231 lines, all hour 4, single body text"
+    importance: must
+  - fact: "Each occurrence immediately follows the nightly cron.daily su sessions (su for cyrus a second before, su for news ~7 min after), e.g. 2005-12-14 04:02:05 su cyrus, 04:02:06 logrotate ALERT, 04:09:18 su news."
+    sql: "SELECT ts, component, body FROM logs WHERE dataset='linux' AND ts>='2005-12-14 03:55' AND ts<'2005-12-14 04:10' ORDER BY ts LIMIT 40"
+    result: "04:02:05 su(pam_unix) session opened for user cyrus; 04:02:06 closed; 04:02:06 logrotate ALERT exited abnormally with [1]; 04:09:18 su news opened; 04:09:19 closed"
+    importance: should
+  - fact: "Time of day tightened in December: 12-01..12-11 varied 04:03-04:15; from 2005-12-12 onward it is at 04:02:06-04:02:17 every day."
+    sql: "SELECT ts, body FROM logs WHERE dataset='linux' AND component='logrotate' AND ts>='2005-12-01' AND ts<'2006-01-01' ORDER BY ts"
+    result: "12-01 04:15:11, 12-10 04:13:53, ... 12-12..12-31 all 04:02:06-04:02:17"
+    importance: nice
+  - fact: "The last occurrence (2006-01-26) is not evidence of a fix: after 2006-01-26 the log contains no su(pam_unix) and no logrotate lines at all; only sshd(pam_unix), ftpd, unix_chkpwd, xinetd, telnetd, snmpd appear until 2006-02-28, so the cron.daily activity is no longer logged."
+    sql: "SELECT component, count(*), min(ts), max(ts) FROM logs WHERE dataset='linux' AND ts>='2006-01-27' GROUP BY 1 ORDER BY 2 DESC"
+    result: "sshd(pam_unix) 778, ftpd 479, unix_chkpwd 153, xinetd 10, telnetd 2, snmpd 1; no su(pam_unix), no logrotate"
+    importance: nice
+must_conclude:
+  - "Recurs once per day, every day of December 2005 (31 lines = 31 daily occurrences)."
+  - "Follows a fixed schedule in the 04: hour (04:02-04:15), tied to the nightly cron.daily run."
+  - "Owner: linux-ops."
+  - "It is a long-standing chronic issue (daily since 2005-06-10), not new in December and not escalating (flat 1/day)."
+traps:
+  - "Treating 31 lines as 31 separate incidents of different kinds or as a surge: it is one deterministic daily job failure, flat rate."
+  - "Calling it new in December: it has fired every day since the logs begin (June 2005)."
+  - "Concluding it was fixed after 2006-01-26: logging of cron/su activity stops entirely after that date."
+  - "Inventing the cause (e.g. a specific config file or disk full): logrotate prints no reason in these logs, only exit code [1]."
+  - "The ownership is a dataset-wide default '*' row, not a logrotate-specific assignment."
+  - "Severity is NULL for these lines; 'ALERT' is part of the message text, not a syslog level."
+not_established:
+  - "Why logrotate exits with status 1 (no stderr/config errors are logged)."
+  - "Whether any log files actually failed to rotate or any impact on the host (disk usage, lost logs)."
+  - "Whether the failure continued after 2006-01-26 (cron activity not logged after that date)."
+  - "Any downtime, cost or user impact."
+labels_used: "None; the linux dataset has no labels (labels count for dataset='linux' = 0)."
+golden_check:
+  - fact: "bursts of the logrotate 'ALERT exited abnormally' pattern started in December 2005"
+    golden_value: "31"
+    my_value: "31 (bursts table, pattern 700263); confirmed by raw logs: 31 lines on 31 distinct days"
+    agrees: true
+  - fact: "of those lines, how many were logged in the 04:00 hour"
+    golden_value: "31"
+    my_value: "31"
+    agrees: true
+  - fact: "owner of the logrotate component"
+    golden_value: "linux-ops"
+    my_value: "linux-ops"
+    agrees: true
+notes: "Pattern 700263 'ALERT exited abnormally with [<N>]'; bursts total 231 = lines 231 (one-line bursts, one per day). Dataset span 2005-06-09 06:06:17 to 2006-02-28 04:48:54; first 04:00 after start is 06-10, so the series covers every possible day until cron logging stops after 01-26. Dec 2005 had 4,750 linux lines in total, logrotate is 31 of them."

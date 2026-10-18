@@ -19,7 +19,8 @@ import re
 import psycopg
 
 READ_TABLES = ["logs", "datasets", "ownership", "ownership_raw", "patterns", "bursts", "episodes", "pattern_templates",
-               "pattern_judgments", "pattern_traits", "pattern_index", "burst_summaries", "watchlist", "remote_sources"]
+               "pattern_judgments", "pattern_traits", "pattern_index", "burst_summaries", "watchlist", "remote_sources",
+               "dataset_examples", "ingest_runs", "ingest_unparsed", "component_areas", "schema_version"]
 # per-team views: (name, SQL with {team}); rows are restricted to the team's (dataset, component) pairs
 TEAM_VIEWS = {
     "logs": "SELECT l.* FROM public.logs l WHERE (l.dataset, l.component) IN ({own})",

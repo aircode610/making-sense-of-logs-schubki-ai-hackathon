@@ -1,0 +1,70 @@
+id: D-E09
+role: engineer
+dataset: ssh
+question: "On the SSH server, which IP addresses drove the failed root logins in the first week of January 2018 (2018-01-01 to 2018-01-08), and how many attempts were there?"
+answer_summary: "From 2018-01-01 to the end of the data (2018-01-07 17:22, so the window really covers 7 days of data), host LabSZ logged 102,039 'Failed password for root' lines from 214 distinct source IPs. Of those lines, 35,393 are 'message repeated N times' lines. Each one stands for N attempts, so the real number of failed root password attempts is 242,933. The attack is very concentrated. 59.63.188.30 is the top source with 28,766 lines (86,294 attempts, 2018-01-03 10:07 to 2018-01-05 12:22). Next come 183.63.110.206 (17,340 lines and attempts) and 58.242.83.25 (14,383 lines, 43,147 attempts). The top 3 IPs make up 59% of the lines and the top 8 make up 92% (94,236 lines); every one of the top 8 is a public address that ran a burst lasting from hours to about two days. There was no successful root login in the window, and none of the top 8 IPs ever logged in successfully. That makes this a sustained brute-force/dictionary campaign against root, not a breach shown in the logs."
+findings:
+  - fact: "102,039 'Failed password for root' lines in the window (2018-01-01 to 2018-01-08; data ends 2018-01-07 17:22:01)"
+    sql: "SELECT count(*) FROM logs WHERE dataset='ssh' AND ts >= '2018-01-01' AND ts < '2018-01-08' AND body @@ ts_phrase('failed password for root')"
+    result: "102039"
+    importance: must
+  - fact: "Top source IPs by lines (attempts after expanding 'message repeated N times', active span): 59.63.188.30 28,766 (86,294; Jan 3 10:07 to Jan 5 12:22); 183.63.110.206 17,340 (17,340; Jan 2 19:15 to Jan 3 10:08); 58.242.83.25 14,383 (43,147; Jan 1 08:48 to Jan 2 17:13); 183.192.189.131 8,670; 218.65.30.30 8,374 (25,102); 218.87.109.156 7,135 (21,377); 182.100.67.120 6,179 (18,513); 182.100.67.52 3,389 (10,126). After these the counts drop to 614 or fewer."
+    sql: "SELECT regexp_extract(body,'from (\\d+\\.\\d+\\.\\d+\\.\\d+)',1) ip, count(*) lines, sum(CASE WHEN body LIKE 'message repeated%' THEN CAST(regexp_extract(body,'repeated (\\d+) times',1) AS INT) ELSE 1 END) attempts, min(ts), max(ts) FROM logs WHERE dataset='ssh' AND ts >= '2018-01-01' AND ts < '2018-01-08' AND body @@ ts_phrase('failed password for root') GROUP BY 1 ORDER BY 2 DESC LIMIT 15"
+    result: "59.63.188.30|28766|86294|2018-01-03 10:07:06|2018-01-05 12:22:59; 183.63.110.206|17340|17340; 58.242.83.25|14383|43147; 183.192.189.131|8670|8670; 218.65.30.30|8374|25102; 218.87.109.156|7135|21377; 182.100.67.120|6179|18513; 182.100.67.52|3389|10126; 183.192.189.133|614; 139.219.239.13|566; ..."
+    importance: must
+  - fact: "Lines are not attempts: 35,393 of the 102,039 lines are 'message repeated N times: [ Failed password for root ...]' lines. Expanding them gives 242,933 failed attempts from 214 distinct IPs."
+    sql: "SELECT count(*) AS lines, sum(CASE WHEN body LIKE 'message repeated%' THEN CAST(regexp_extract(body,'repeated (\\d+) times',1) AS INT) ELSE 1 END) AS attempts, count(DISTINCT regexp_extract(body,'from (\\d+\\.\\d+\\.\\d+\\.\\d+)',1)) AS ips FROM logs WHERE dataset='ssh' AND ts >= '2018-01-01' AND ts < '2018-01-08' AND body @@ ts_phrase('failed password for root')"
+    result: "102039|242933|214  (plain lines 66646, repeated lines 35393)"
+    importance: must
+  - fact: "Concentration: the top IP has 28% of the lines, the top 3 have 59% (60,489), the top 8 have 92% (94,236); only 30 IPs reached 100 or more lines"
+    sql: "WITH t AS (SELECT regexp_extract(body,'from (\\d+\\.\\d+\\.\\d+\\.\\d+)',1) ip, count(*) n FROM logs WHERE dataset='ssh' AND ts >= '2018-01-01' AND ts < '2018-01-08' AND body @@ ts_phrase('failed password for root') GROUP BY 1), r AS (SELECT ip,n,row_number() OVER (ORDER BY n DESC) rk FROM t) SELECT sum(n) FILTER (WHERE rk<=1), sum(n) FILTER (WHERE rk<=3), sum(n) FILTER (WHERE rk<=8), sum(n), count(*) FILTER (WHERE n>=100) FROM r"
+    result: "28766|60489|94236|102039|30"
+    importance: should
+  - fact: "Daily profile: peak on Jan 3 (31,289 lines), then Jan 4 (25,850) and Jan 2 (23,198); the volume falls to 1,258 and 915 on Jan 6 and 7, once the large bursts end"
+    sql: "SELECT CAST(ts AS DATE), count(*) FROM logs WHERE dataset='ssh' AND ts >= '2018-01-01' AND ts < '2018-01-08' AND body @@ ts_phrase('failed password for root') GROUP BY 1 ORDER BY 1"
+    result: "01-01 12831; 01-02 23198; 01-03 31289; 01-04 25850; 01-05 6698; 01-06 1258; 01-07 915"
+    importance: should
+  - fact: "No successful root login in the window, and no successful login from any of the top 8 attacking IPs (the logins that did succeed are other users, e.g. curi, hxu, suyuxin, from other IPs)"
+    sql: "SELECT count(*) FROM logs WHERE dataset='ssh' AND ts >= '2018-01-01' AND ts < '2018-01-08' AND body LIKE 'Accepted % for root %'  -- and the same with body LIKE 'Accepted%' AND body matching any top-8 IP"
+    result: "0 and 0"
+    importance: should
+  - fact: "Attack shape (sample for 59.63.188.30): each connection logs a pam_unix authentication failure for user=root, one 'Failed password', a 'message repeated 5 times' line, and 'PAM 5 more authentication failures'. That works out to about 6 password tries per connection, from a new source port each time."
+    sql: "SELECT body FROM logs WHERE dataset='ssh' AND ts >= '2018-01-03 10:07:00' AND ts < '2018-01-03 10:08:00' AND body LIKE '%59.63.188.30%' LIMIT 8"
+    result: "pam_unix(sshd:auth): authentication failure; ... rhost=59.63.188.30 user=root | Failed password for root from 59.63.188.30 port 11972 ssh2 | message repeated 5 times: [ Failed password for root from 59.63.188.30 port 11972 ssh2] | PAM 5 more authentication failures; ... user=root"
+    importance: nice
+  - fact: "This was not new: Dec 10 to Dec 31 already had 74,745 failed-root lines, so the January week continues an ongoing campaign"
+    sql: "SELECT count(*) FROM logs WHERE dataset='ssh' AND ts >= '2017-12-10' AND ts < '2018-01-01' AND body @@ ts_phrase('failed password for root')"
+    result: "74745"
+    importance: nice
+must_conclude:
+  - "Name 59.63.188.30 as the top source with 28,766 failed-root lines; also name the other heavy hitters (183.63.110.206, 58.242.83.25, and ideally the top-8 set)"
+  - "Give the total of 102,039 failed root password lines in the window, and say whether that figure is lines or attempts (lines with 'message repeated N times' hide extra attempts; about 242,933 attempts)"
+  - "The source is concentrated: a handful of IPs (top 8, about 92%) out of 214 drove nearly all of it, each in a burst lasting hours to days"
+  - "No successful root login appears, so this is brute force against root rather than evidence of compromise. Recommend blocking or rate-limiting the top IPs (e.g. fail2ban) and disabling root password login (PermitRootLogin no / key-only)"
+traps:
+  - "Reporting 102,039 as the number of attempts without noting the 'message repeated N times' lines (the true attempt count is about 242,933), or calling the 102,039 lines 'incidents'"
+  - "Counting all 'Failed password' lines (108,451) or 'authentication failure ... user=root' lines instead of failed root passwords specifically"
+  - "Counting distinct sshd-<pid> request_ids as connections: pids are reused, so these counts are approximate"
+  - "Claiming the server was compromised or that root logged in: no 'Accepted ... for root' line exists in the window"
+  - "Attributing the IPs to a country or organisation (the logs contain no geo or WHOIS data)"
+  - "Assuming the data runs to 2018-01-08: it ends 2018-01-07 17:22, and the year itself is inferred (syslog has no year; Jan is assumed to be 2018)"
+not_established:
+  - "Who is behind the IPs, or whether they are coordinated (e.g. the 182.100.67.x and 183.192.189.x pairs look related, but the logs do not prove it)"
+  - "Whether any other account was compromised by these sources, beyond the absence of Accepted lines from them"
+  - "Whether a firewall or fail2ban acted on them: the end of each burst is visible, but not why it ended"
+  - "Business impact (load, availability) of the attack"
+labels_used: "none apply (the labels table has 0 rows for ssh)"
+golden_check:
+  - fact: "failed root password lines in the week"
+    golden_value: "102039"
+    my_value: "102039"
+    agrees: true
+  - fact: "top attacking IP"
+    golden_value: "59.63.188.30"
+    my_value: "59.63.188.30"
+    agrees: true
+  - fact: "lines of the top IP"
+    golden_value: "28766"
+    my_value: "28766"
+    agrees: true
+notes: "The question says 'how many attempts'. The golden value counts lines (102,039), and the top IP's 28,766 is also a line count. Expanding 'message repeated N times' gives 242,933 attempts overall and 86,294 for 59.63.188.30. An answer that gives the line counts and clearly labels them as lines should get full credit; an answer that also explains the line-vs-attempt difference is better. Cross-checks: a LIKE '%Failed password for root%' count gives the same 102,039, and the regex on the IP and the entities column give identical per-IP counts. Ownership: security-ops (the only team for ssh)."

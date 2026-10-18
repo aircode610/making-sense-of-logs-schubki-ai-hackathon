@@ -1,0 +1,64 @@
+id: D-X02
+role: engineer
+dataset: linux
+question: "Server combo kept kernel-panicking and rebooting in the second half of November 2005 (2005-11-15 to 2005-12-01). When did the panics happen and what triggered them?"
+answer_summary: "The premise is false. Between 2005-11-15 and 2005-12-01 the logs of combo contain no kernel panic (0 lines with 'panic', 'oops' or 'kernel BUG') and no reboot (0 'Linux version' boot banners). The last boot before the window was 2005-10-25 10:08:46, and the next one was 2005-12-06 12:22:57, after an orderly rc shutdown. What really happened was sustained memory exhaustion. The kernel OOM killer logged 6,709 'Out of Memory: Killed process' lines in the window, roughly 94 bursts split at 30-minute gaps. The first was at 2005-11-15 04:30:29 and the worst day was 2005-11-21 with 1,750 lines. The victims were mostly httpd (5,556 lines), then python (908) and sendmail (168). From 2005-11-21 12:41 the kernel also logged 78 page allocation failures, with call traces through do_page_fault and __alloc_pages. The OOM storm went on after the window, peaking on 2005-12-03 and 2005-12-04."
+findings:
+  - fact: "No kernel panics in the window: 0 lines match panic (also 0 for panic/oops/'kernel BUG'); 0 panic lines in the whole dataset."
+    sql: "SELECT count(*) FROM logs WHERE dataset='linux' AND body @@ websearch_to_tsquery('panic') AND ts >= '2005-11-15' AND ts < '2005-12-01'"
+    result: "0 (whole dataset also 0; 'panic OR oops OR \"kernel BUG\"' in the window also 0)"
+    importance: must
+  - fact: "No reboots in the window. The boot banners closest to it are 2005-10-25 10:08:46 (before) and 2005-12-06 12:22:57 (after); the second followed an orderly rc shutdown at 12:20 (httpd shutdown succeeded, sshd -TERM)."
+    sql: "SELECT ts, body FROM logs WHERE dataset='linux' AND body @@ ts_phrase('linux version') ORDER BY ts LIMIT 20"
+    result: "8 boots in total: 2005-06-09, 06-10, 07-27, 09-19, 09-28, 10-25, 12-06 12:22:57, 2006-01-26; none between 2005-11-15 and 2005-12-01"
+    importance: must
+  - fact: "The real problem: 6,709 OOM-killer lines (Out of Memory: Killed process) in the window, first at 2005-11-15 04:30:29 (httpd pid 28473) and last at 2005-11-30 13:56:22, the last line of the window. That is about 94 bursts at a 30-minute gap; lines are not incidents."
+    sql: "SELECT count(*) FROM logs WHERE dataset='linux' AND body @@ ts_phrase('out of memory killed process') AND ts >= '2005-11-15' AND ts < '2005-12-01'"
+    result: "6709; burst count (gap > 30 min) = 94"
+    importance: must
+  - fact: "Daily profile: it rose from 88 lines on 11-15 to a peak of 1,750 on 11-21 (hours 02:00 and 03:00 with 261 and 252), was 200-400 a day from 11-22 to 11-26, 77 on 11-27, then rose again to 514, 727 and 530 on 11-28 to 11-30."
+    sql: "SELECT date_trunc('day',ts), count(*) FROM logs WHERE dataset='linux' AND body @@ ts_phrase('out of memory killed process') AND ts >= '2005-11-15' AND ts < '2005-12-01' GROUP BY 1 ORDER BY 1"
+    result: "11-15 88, 11-16 86, 11-17 144, 11-18 173, 11-19 328, 11-20 848, 11-21 1750, 11-22 404, 11-23 371, 11-24 234, 11-25 223, 11-26 212, 11-27 77, 11-28 514, 11-29 727, 11-30 530"
+    importance: must
+  - fact: "Processes killed: httpd 5,556, python 908, sendmail 168, mrtg 31, mysqld 13, sshd 10, updatedb 8 and a few others. The pressure looks driven by the web server and python workloads; that is a hypothesis."
+    sql: "SELECT regexp_extract(body, 'Killed process [0-9]+ \\(([^)]*)\\)', 1) p, count(*) FROM logs WHERE dataset='linux' AND body @@ ts_phrase('out of memory killed process') AND ts >= '2005-11-15' AND ts < '2005-12-01' GROUP BY 1 ORDER BY 2 DESC LIMIT 10"
+    result: "httpd 5556, python 908, sendmail 168, mrtg 31, mysqld 13, sshd 10, updatedb 8, ld-linux.so.2 5, sort 1, jserver 1"
+    importance: should
+  - fact: "Supporting kernel memory-pressure messages: 78 'page allocation failure' lines (httpd 68, sendmail 10) from 2005-11-21 12:41:10 to 2005-11-29 04:43:44; 78 'Call Trace' blocks (do_page_fault, __alloc_pages, read_swap_cache_async); 24 'VM: killing process' lines. These are allocation-failure traces, not panics."
+    sql: "SELECT count(*), min(ts), max(ts) FROM logs WHERE dataset='linux' AND body @@ ts_phrase('page allocation failure') AND ts >= '2005-11-15' AND ts < '2005-12-01'"
+    result: "78 | 2005-11-21 12:41:10 | 2005-11-29 04:43:44"
+    importance: should
+  - fact: "The OOM storm is new and continues after the window: there are 0 OOM lines before 2005-11-15 and 10,404 in the dataset (2005-11-15 to 2005-12-09), peaking at 960 lines on 12-03 and 1,162 on 12-04."
+    sql: "SELECT date_trunc('day',ts), count(*) FROM logs WHERE dataset='linux' AND body @@ ts_phrase('out of memory killed process') AND ts >= '2005-12-01' GROUP BY 1 ORDER BY 1"
+    result: "12-01 69, 12-02 216, 12-03 960, 12-04 1162, 12-05 816, 12-06 397, 12-08 56, 12-09 19; before 2005-11-15: 0"
+    importance: nice
+must_conclude:
+  - "No kernel panics and no reboots occurred in 2005-11-15 to 2005-12-01; the premise is false."
+  - "The actual event is repeated Out of Memory (OOM killer) process kills: 6,709 lines, mostly killing httpd, then python."
+  - "Timing: from 2005-11-15 04:30 onward, worst on 2005-11-21 (1,750 lines), rising again on 11-28 to 11-30."
+traps:
+  - "Accepting the premise and inventing panic or reboot times."
+  - "Reporting 6,709 lines as 6,709 incidents; there are about 94 bursts, and each line is one killed process."
+  - "Reading the 'syslogd restart' on 11-20 and 11-27 (weekly logrotate at about 04:06) or 'cupsd shutdown' as reboots."
+  - "Reading the kernel Call Trace and page allocation failure lines as an oops or panic."
+  - "Counting the 2005-12-06 reboot, which is outside the window and was an orderly shutdown."
+not_established:
+  - "The root cause of the memory exhaustion (a leak, load, or misconfiguration of httpd or python): the logs show only the victims."
+  - "Whether the service was unavailable, or for how long, and any user impact."
+  - "Why the 2005-12-06 reboot happened (operator action is likely, but the reason is not logged)."
+  - "Memory or swap figures: no meminfo is logged."
+labels_used: "None: the linux dataset has no Loghub labels."
+golden_check:
+  - fact: "lines containing 'panic' in the window"
+    golden_value: "0"
+    my_value: "0"
+    agrees: true
+  - fact: "boot banners ('Linux version') in the window"
+    golden_value: "0"
+    my_value: "0"
+    agrees: true
+  - fact: "Out of Memory kill lines in the window"
+    golden_value: "6709"
+    my_value: "6709"
+    agrees: true
+notes: "Single host combo; the owner is linux-ops (the default * row). The window holds 8,675 lines, ending at 2005-11-30 13:56:48, followed by a 14 h logging gap. The year is not logged and is assumed by the loader (Jun-Dec = 2005)."

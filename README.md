@@ -4,81 +4,92 @@ SchubKI National AI Hackathon 2026 · SereneDB challenge · Team: Amirali, Konar
 
 > **SereneDB counts, Jev judges, the LLM explains — and every sentence is checked against the query that produced it.**
 
-🚧 Work in progress (hackathon running 17–18 Oct 2026). Seven log datasets, 40 MCP tools over SereneDB, one agent for three roles.
+One MCP server that sets itself up: load the base corpus or your own logs from Claude, then 40 analysis tools over SereneDB for three roles.
 
 ## Workflow
 Question → evidence (SereneDB full-text search + aggregations, via MCP tools) → recommendation (agent), for three roles:
 **engineer** (what failed, where, what happened around it), **team lead** (what recurs, how often, which teams),
 **manager** (what to prioritise and why, from measured frequency and spread only).
 
-## Setup (clean checkout)
-Requirements: Docker, Python 3.12, [`uv`](https://docs.astral.sh/uv/), `psql`.
+## Setup (clean checkout): 2 commands, then ask Claude
+Requirements: [Docker](https://docs.docker.com/get-docker/), [`uv`](https://docs.astral.sh/uv/) (it installs Python
+3.12 and the server's two dependencies on first start), [Claude Code](https://claude.com/claude-code). No `psql`, no
+keys needed for the base corpus.
 ```bash
-cp .env.example .env                     # fill in keys (TypeSafe for Jev, Anthropic for the agent, Google for embeddings)
-./scripts/download_data.sh               # BGL + OpenStack (~770 MB) into data/raw/
-./scripts/download_data.sh --all         # optional: Zookeeper, Apache, OpenSSH (small Loghub sets, generality test)
-./scripts/download_data.sh linux healthapp   # optional: the two "unseen" sets (loaded with zero code change, plan 012)
-./scripts/download_data.sh hdfs          # optional: HDFS_v1, 11M lines / 1.5 GB (the scale test)
-docker compose up -d                     # SereneDB on localhost:7890 (+ OTLP/HTTP on :4318)
-psql -h localhost -p 7890 -U postgres -d postgres -f docker/init.sql   # first start only
-./docker/secrets.sh                      # after every start: registers AI keys in SereneDB
-uv venv --python 3.12 && uv pip install -r requirements.txt
+git clone https://github.com/aircode610/making-sense-of-logs-schubki-ai-hackathon && cd making-sense-of-logs-schubki-ai-hackathon
+docker compose up -d          # SereneDB 26.10.1 on localhost:7890 (the organisers' version)
+claude                        # in this folder: approve the project MCP server `logs` (.mcp.json) when asked
 ```
-Load the data (SereneDB reads and parses the raw files itself; schema and loaders in [`load/`](load/)):
+Then, in Claude: **"Load the base corpus"**. Claude calls `load_logs(source='base')`: BGL and OpenStack are downloaded
+exactly as the brief says (`curl -L "https://zenodo.org/records/8196385/files/<file>?download=1"`, into `data/raw/`),
+parsed by SereneDB with our loaders ([`load/`](load/)), and get their stored Jev judgments (committed CSVs, so no key).
+Measured on a clean clone (MacBook, Apple Silicon, emulated amd64 image): **72 s** from the request to both datasets
+loaded (BGL 4,747,963 lines, OpenStack 207,820 lines), 34 s when the raw files are already downloaded. Then ask the
+three roles' questions (examples below). `setup_status` shows the database, the loaded datasets and a running load.
+
+**Your own logs:** "Load ~/logs/app.log" → `load_logs(source='~/logs/app.log')`: the file is streamed into SereneDB
+from wherever it is (`COPY … FROM STDIN`), its format detected from the 76 vendored
+[lnav format definitions](formats/lnav/) (≥ 95 % of a 2,000-line sample, else nothing is loaded and the closest formats
+are listed: no guessed timestamps), only that dataset is built (other datasets untouched), and it becomes the active
+dataset. With `TYPESAFE_API_KEY` in `.env` its patterns are judged by Jev inside SereneDB during the load (Proxifier,
+21,329 lines: 1.6 s without Jev, 15 s with Jev + embeddings; live judgments vs the committed ones: correlation 0.996,
+same problem decision on 287 / 287 patterns); without a key, problem tools fall back to log levels and say so in every
+result. Other Loghub sets: `load_logs(source='zookeeper')` etc. (the brief's table, `data/catalog.csv`).
+
+**One dataset at a time:** tools take no `dataset` argument; they work on the active dataset (the last loaded, or
+`use_dataset(name)`). Whole-corpus questions: Claude switches and reports per dataset (the brief allows that).
+
+**Session report:** at the end Claude gives a link (or ask *"show me the session report"*): a local page with the
+answer, every tool call (what it found, time inside SereneDB, the SQL, the dataset it ran on) and **Verify** buttons
+that re-run each read step on a read-only connection and compare with what Claude saw. `http://127.0.0.1:8765/latest`
+shows the session live. Session files: `runs/sessions/` (local). Port: `LOGS_REPORT_PORT`.
+
+Options (`.env`, all optional; copy `.env.example`): `TYPESAFE_API_KEY` (Jev on new data), `GOOGLE_API_KEY`
+(embeddings for semantic pattern search on new data), `ANTHROPIC_API_KEY` (our own agent). The server registers the
+keys in SereneDB itself on start (no `docker/secrets.sh` step). Another port: `SERENEDB_PORT=7891 docker compose up -d`
+and `PGPORT=7891`. From any folder (user scope):
+`claude mcp add -s user logs -- uv run --quiet --directory "$PWD" python mcp_server/server.py` (run in the repo).
+Any other MCP client: stdio command `uv run --directory <repo> python mcp_server/server.py` (DB via `PGHOST` /
+`PGPORT` / `PGUSER` / `PGDATABASE`, default `localhost:7890`; `LOGS_DATASET=<name>` = the dataset active at start;
+`LOGS_DATASET='*'` = the multi-dataset server where every tool takes `dataset`, used by our eval harness;
+`LOGS_DB_ROLE=logs_manager` or `team_<team>` = database-enforced access, see Roles).
+
+Apple Silicon: SereneDB 26.10.1 is published for linux/amd64 only; `docker compose` runs it under emulation (works,
+slower; a plain `docker pull` without `--platform linux/amd64` fails). Any Linux x86-64 machine runs it natively.
+
+### Without Claude: the same loader as a CLI
 ```bash
-./load/reload.sh              # every dataset whose raw files exist; ~45 s for the five small ones, ~1 min 45 s with HDFS
-LOAD_OTEL=1 ./load/reload.sh  # also pull a slice of the remote 1-billion-record OpenTelemetry Parquet over HTTPS (+2 min)
+uv run python -m loader load base                       # = load_logs(source='base'); also: bgl, openstack, zookeeper, …
+uv run python -m loader load ~/logs/app.log --name app  # any file
+uv run python -m loader status | remove <name> | reload # reload = drop + rebuild every dataset whose raw file exists
+./load/reload.sh                                        # reload + checks (every tool vs independent SQL)
 ```
-`reload.sh`: `00_cleanup.py` (drops workspaces / team views) → `00_schema.sql` (tables, dictionaries, generic mask +
-entity macros, dataset registry) → `10_bgl`, `20_openstack`, then every `load/3*.sql` / `4*.sql` / `gen/*.sql` whose first line
-`-- requires: <raw file>` exists (`30_zookeeper`, `31_apache`, `32_ssh`, `33_hdfs`, `34_linux`, `35_healthapp`,
-`40_otel_demo`; each is one parse query + `\ir lib/stage_to_logs.sql`) → `90_publish` (`VACUUM` refresh + compact) →
-`93_examples` (a real example value per dataset and field, for the tool descriptions) → `94_ownership` (ownership with
-`*` defaults, watchlist, remote sources) →
-`95_patterns_episodes` (patterns, bursts, episodes) → `96_pattern_judgments` (stored Jev judgments + traits) →
-`96b_ownership_inferred` (rebuilds `ownership`: curated rows first, then Jev owner hint, public name rules, Jev area;
-every row with source + confidence, plan 057) →
-`97_pattern_vectors` (template embeddings + IVF index, burst summaries) → `98_macros` (SQL API) → `99_roles.py`
-(database roles) → `bench/check_counts.py`, `bench/check_patterns.py`, `bench/check_tools.py` (every tool vs
-independent SQL on every loaded dataset). Everything AI-generated is committed (`data/pattern_judgments_*.csv`,
-`data/pattern_traits_*.csv`, `data/component_areas_*.csv`, `data/pattern_vectors.parquet`, `data/burst_summaries.csv`), so a clean checkout needs no
-key to load; regenerate with `scripts/judge_patterns.sh <ds>`, `scripts/judge_traits.py`, `scripts/judge_areas.py`, `scripts/embed_patterns.py`,
-`scripts/summarize_bursts.py` (all run their AI calls inside SereneDB).
+How a dataset is built (one code path for the MCP tool, the CLI and the full reload): `load/00_schema.sql` +
+`load/01_derived.sql` once (tables, dictionaries, generic mask + entity macros) → the dataset's loader (`load/10_bgl`,
+`20_openstack`, `30_zookeeper`, …, or a generated one from format detection; each hand-written one is one parse query
++ `\ir lib/stage_to_logs.sql`) → `VACUUM` refresh → [`load/lib/build_dataset.sql`](load/lib/build_dataset.sql) for that
+dataset only (example values, episodes / bursts / patterns, stored Jev judgments + traits + areas, pattern index,
+then [`lib/ownership_dataset.sql`](load/lib/ownership_dataset.sql): curated owners + Konark's inference chain, plan
+057) → macros, roles. The SQL files are run by [`loader/sqlrun.py`](loader/sqlrun.py) (the psql features they use:
+`\set`, `\ir`, `\if`); `psql -f` runs them too. A per-dataset build equals the old whole-corpus build (all derived
+tables identical on 8 datasets, plan 016). Everything AI-generated for our datasets is committed
+(`data/pattern_judgments_*.csv`, `pattern_traits_*.csv`, `component_areas_*.csv`, `pattern_vectors*.parquet`,
+`burst_summaries.csv`); regenerate with `scripts/judge_patterns.sh <ds>`, `judge_traits.py`, `judge_areas.py`,
+`embed_patterns.py`, `summarize_bursts.py` (all run their AI calls inside SereneDB). A new format that lnav does not
+know = a hand-written `load/3x_<name>.sql` (parse query into `stage` + `\ir lib/stage_to_logs.sql`, one sentence per
+filled field, e.g. `\set request_meaning 'trace id …'`) + a row in `data/catalog.csv`; no tool, agent or eval code
+changes (CLAUDE.md rule 11; `bench/lint_generic.py` enforces it). Or replay any dataset as OpenTelemetry into
+SereneDB's built-in OTLP receiver: `uv run python scripts/otlp_replay.py <dataset> 2000`.
 
-**A new log file in a known format = one command, no code** (plan 057 part 3):
-`scripts/ingest.sh data/raw/<dir>/<file>.log <name> [--year 2017]`. It scores every regex of the 76 vendored
-[lnav format definitions](formats/lnav/) on a 2,000-line sample inside SereneDB, picks the best format (≥ 95 % of the
-sample, else it loads nothing and says so: no guessed timestamps), maps fields by lnav's own roles (timestamp, level,
-body, module → component, opid → request_id, host → node), picks the timestamp format that parses most lines, writes
-a readable loader `load/gen/<name>.sql` (run by `reload.sh` like any other), then runs the Jev judgments, areas and
-embeddings for the new dataset and reloads with all checks. Lines the format does not match are kept (continuation
-lines) and listed by the `ingest_report` tool. Android (logcat) and Proxifier were added this way.
-
-**A new log source in an unknown format** = `load/3x_<name>.sql` (first line `-- requires: <raw file>`; parse the raw lines into `stage`:
-ts, component, severity (its word is mapped to `severity_number` automatically; a new word = one row in
-`data/severity_map.csv`, `check_counts.py` flags unmapped words), body, and where the format has them node, location path, request_id (one request / session /
-trace), object_id (a thing followed across requests), status, duration_ms; plus one sentence per filled field saying
-what it means here, e.g. `\set request_meaning 'trace id …'`) + `\ir lib/stage_to_logs.sql` + rows in
-`data/ownership.csv` (`<ds>,*,team` covers every component; **optional since plan 057**: without rows, owners are
-inferred from `data/ownership_rules.csv` + `scripts/judge_areas.py <ds>`, shown as inferred with a confidence) +
-`scripts/judge_patterns.sh <ds>` / `judge_traits.py <ds>` / `embed_patterns.py`. No tool, agent or eval code changes (CLAUDE.md rule 11; `bench/lint_generic.py` enforces it):
-the meanings and real example values reach every MCP client through the server's field guide. Linux and HealthApp
-were added this way (plan 012). Or replay any dataset as OpenTelemetry into SereneDB's built-in OTLP
-receiver: `.venv/bin/python scripts/otlp_replay.py <dataset> 2000`.
-
-Connect Claude Code to the tools: the `logs` MCP server is registered in [`.mcp.json`](.mcp.json), so running
-`claude` in this folder offers it (approve it once). Any other MCP client: stdio command `.venv/bin/python mcp_server/server.py`
-(DB via `PGHOST`/`PGPORT`/`PGUSER`/`PGDATABASE`, default `localhost:7890`; `LOGS_DB_ROLE=logs_manager` or
-`team_<team>` runs it with database-enforced access, see Roles).
-
-Ask the agent (needs `ANTHROPIC_API_KEY` in `.env`; LangSmith tracing if `LANGSMITH_*` are set):
+### Our own agent (second path; the brief accepts an existing agent such as Claude)
+`uv sync --extra agent` once; needs `ANTHROPIC_API_KEY` in `.env` (LangSmith tracing if `LANGSMITH_*` are set):
 ```bash
-.venv/bin/python -m agent.run --role engineer "What failed on the R43-M0 midplane around 2005-08-19 13:56, and what happened just before and after?"
-.venv/bin/python -m agent.run --role lead "Which problems recurred most in November 2005 (2005-11-01 to 2005-11-29), and which teams own them?"
-.venv/bin/python -m agent.run --role manager "Based on November 2005, which problems deserve attention first and what should happen next?"
-.venv/bin/python -m agent.run --role engineer "Which IP addresses drove the failed root logins on the SSH server in the first week of January 2018?"
-.venv/bin/python -m agent.run "Is the rts panic problem getting worse in November 2005?"   # no --role: Jev routes the question
-.venv/bin/python -m agent.run --baseline --role manager "…"                                # the reference ReAct agent
+uv run python -m agent.run --role engineer "What failed on the R43-M0 midplane around 2005-08-19 13:56, and what happened just before and after?"
+uv run python -m agent.run --role lead "Which problems recurred most in November 2005 (2005-11-01 to 2005-11-29), and which teams own them?"
+uv run python -m agent.run --role manager "Based on November 2005, which problems deserve attention first and what should happen next?"
+uv run python -m agent.run --role engineer "Which IP addresses drove the failed root logins on the SSH server in the first week of January 2018?"
+uv run python -m agent.run "Is the rts panic problem getting worse in November 2005?"   # no --role: Jev routes the question
+uv run python -m agent.run --baseline --role manager "…"                                # the reference ReAct agent
 ```
 Each run prints the answer card + evidence (SQL) + the LangSmith trace URL, and saves `runs/agent/<time>-<kind>-<role>.json`.
 

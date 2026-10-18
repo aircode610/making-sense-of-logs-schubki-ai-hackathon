@@ -88,7 +88,7 @@ CREATE INDEX logs_idx ON logs USING inverted (
 -- util.logging, lnav level words). Loaders fill logs.severity_number by joining on upper(severity) = word.
 CREATE TABLE severity_map AS SELECT * FROM read_csv('/data/severity_map.csv', header = true, auto_detect = false,
     columns = {'word': 'VARCHAR', 'severity_number': 'SMALLINT', 'severity_text': 'VARCHAR', 'source': 'VARCHAR'});
--- Auto-detected loaders (plan 057 part 3, load/gen/*.sql written by scripts/ingest.py): one row per generated dataset
+-- Auto-detected loaders (plan 057 part 3, load/gen/*.sql written by loader/detect.py): one row per generated dataset
 -- with the format chosen and how well it fit, and the line ids its regexes did not match (kept as continuation lines).
 -- Hand-written loaders write nothing here. Read by the ingest_report tool.
 CREATE TABLE ingest_runs (
@@ -113,7 +113,7 @@ CREATE TABLE labels (
     label   VARCHAR NOT NULL
 );
 
--- Template text per pattern_id, written by each loader (plan 004); aggregates live in load/95_patterns_episodes.sql.
+-- Template text per pattern_id, written by each loader (plan 004); aggregates live in load/lib/build_dataset.sql.
 CREATE TABLE pattern_templates (
     dataset    VARCHAR NOT NULL,
     pattern_id INTEGER NOT NULL,
@@ -122,11 +122,11 @@ CREATE TABLE pattern_templates (
 );
 
 -- Typed values in a message, generic across formats (plan 011): IPv4, UUID, filesystem path, URL.
-CREATE OR REPLACE MACRO extract_entities(b) AS list_distinct(list_concat(
+CREATE OR REPLACE MACRO extract_entities(b) AS list_sort(list_distinct(list_concat(
     list_transform(regexp_extract_all(coalesce(b, ''), '(?:^|[^\d.])(\d{1,3}(?:\.\d{1,3}){3})(?:[^\d.]|$)', 1), x -> 'ip:' || x),
     list_transform(regexp_extract_all(coalesce(b, ''), '[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}'), x -> 'uuid:' || lower(x)),
     list_transform(regexp_extract_all(coalesce(b, ''), '(?:^|[\s=:(\[''"])((?:/[\w.\-]+){2,})', 1), x -> 'path:' || x),
-    list_transform(regexp_extract_all(coalesce(b, ''), 'https?://[^\s"''<>]+'), x -> 'url:' || x)));
+    list_transform(regexp_extract_all(coalesce(b, ''), 'https?://[^\s"''<>]+'), x -> 'url:' || x))));  -- sorted: list_distinct order varies run to run
 
 -- Generic template mask for new datasets (plan 011; BGL / OpenStack keep their own masks so pattern ids and stored
 -- judgments stay valid). Most specific first, then merge runs of masks and squeeze spaces.

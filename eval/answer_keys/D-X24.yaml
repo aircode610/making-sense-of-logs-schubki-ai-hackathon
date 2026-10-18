@@ -1,0 +1,65 @@
+id: D-X24
+role: lead
+dataset: openstack
+question: "nova-compute logged ERROR lines between 2017-05-16 and 2017-05-18. What is the recurring error, how many times did it occur, over what period, and which team owns it?"
+answer_summary: "All 192 nova-compute ERROR lines in the window belong to one recurring failure: the periodic task ComputeManager._run_image_cache_manager_pass fails with InvalidDiskInfo, because qemu-img info gets 'Could not open ... /var/lib/nova/instances/<uuid>/disk: No such file or directory'. It happened 8 times (8 distinct timestamps, 24 traceback lines each, so 192 lines is not 192 incidents), from 2017-05-16 03:19 to 2017-05-17 05:24, each time on a different instance. Each failure lands milliseconds (about 20 ms) after nova logged 'Deletion of /var/lib/nova/instances/<uuid>_del complete' for that same instance, so it looks like a race between instance deletion and the image-cache scan. The owner is cloud-compute (nova-compute). It's a noisy periodic-task failure, not a VM outage: none of the 8 instances are in the Loghub anomaly labels. Start by checking how the image-cache pass handles instances that are being deleted."
+findings:
+  - fact: "192 nova-compute ERROR lines in [2017-05-16, 2017-05-18), first 2017-05-16 03:19:45, last 2017-05-17 05:24:15; these are all of nova-compute's ERROR lines in the whole dataset"
+    sql: "SELECT count(*), min(ts), max(ts) FROM logs WHERE dataset='openstack' AND component='nova-compute' AND severity='ERROR' AND ts>='2017-05-16' AND ts<'2017-05-18'"
+    result: "192 | 2017-05-16 03:19:45.356 | 2017-05-17 05:24:15.342"
+    importance: must
+  - fact: "The lines group into 8 occurrences (8 distinct timestamps x 24 lines, one multi-line traceback each), each about a different instance disk"
+    sql: "SELECT ts, count(*), max(CASE WHEN body LIKE 'Stderr:%' THEN substr(body, strpos(body,'instances/')+10, 36) END) FROM logs WHERE dataset='openstack' AND component='nova-compute' AND severity='ERROR' AND ts>='2017-05-16' AND ts<'2017-05-18' GROUP BY ts ORDER BY ts"
+    result: "05-16 03:19:45 (16797a0f), 16:30:35 (daf38630), 17:41:20 (74e32610), 19:33:00 (ac7c329c), 20:31:45 (0c28eea9), 22:16:50 (2a841e49), 05-17 00:15:06 (6fc3fd6d), 05:24:15 (bd7d1a40); 24 lines each"
+    importance: must
+  - fact: "The error: 'Error during ComputeManager._run_image_cache_manager_pass' -> InvalidDiskInfo: qemu-img failed to execute on /var/lib/nova/instances/<uuid>/disk; Stderr: qemu-img: Could not open '<disk>': No such file or directory (8 qemu-img 'Could not open' lines, 8 'Error during' header lines)"
+    sql: "SELECT count(*) FROM logs WHERE dataset='openstack' AND component='nova-compute' AND severity='ERROR' AND body @@ websearch_to_tsquery('qemu-img \"Could not open\"') AND ts >= '2017-05-16' AND ts < '2017-05-18'"
+    result: "8 (also 8 lines LIKE 'Error during ComputeManager._run_image_cache_manager_pass%'; 16 InvalidDiskInfo lines = 2 per traceback)"
+    importance: must
+  - fact: "Owner: nova-compute -> cloud-compute (Nova compute agent, VM lifecycle on hosts)"
+    sql: "SELECT * FROM ownership WHERE dataset='openstack' AND component='nova-compute'"
+    result: "openstack|nova-compute|cloud-compute|Nova compute agent (VM lifecycle on hosts)"
+    importance: must
+  - fact: "Each failure comes about 20 ms after nova logged 'Deletion of ..._del complete' for the same instance, which points to a race between deletion and the image-cache scan (hypothesis)"
+    sql: "WITH e AS (SELECT ts, substr(body, strpos(body,'instances/')+10, 36) AS inst FROM logs WHERE dataset='openstack' AND component='nova-compute' AND severity='ERROR' AND body LIKE 'Stderr:%') SELECT e.ts, e.inst, (SELECT max(l.ts) FROM logs l WHERE l.dataset='openstack' AND l.object_id=e.inst AND l.body LIKE '%Deletion of % complete%' AND l.ts<=e.ts) FROM e ORDER BY e.ts"
+    result: "8/8 instances have a deletion-complete line 17-46 ms before the error (e.g. 16797a0f deleted 03:19:45.338, error 03:19:45.356)"
+    importance: should
+  - fact: "None of the 8 instances are among the 4 Loghub-labelled anomalous OpenStack instances"
+    sql: "SELECT count(*) FROM labels WHERE dataset='openstack' AND label IN ('16797a0f-32fb-494c-8f36-38588148c35d','daf38630-e1ca-42b1-8b71-4df078076a47','74e32610-53a0-4e61-9125-83f6edc60a90','ac7c329c-1a20-4735-bf9a-b15102f1c44d','0c28eea9-14ec-4f20-ad24-1cf8a2c5975d','2a841e49-df08-45c9-b387-003e2e28fc0d','6fc3fd6d-f9fa-4daf-8199-70b455b4ac58','bd7d1a40-cf7c-4389-bad7-698bbe124454')"
+    result: "0 (labels table has 4 openstack rows in total)"
+    importance: nice
+  - fact: "Baseline: about 1868 instance deletions completed in the window but only 8 triggered the error, so the failure is rare and intermittent. The only other ERROR/CRITICAL lines in the dataset are 2 nova-api ERROR + 2 CRITICAL token validation 503s (cloud-api), not nova-compute"
+    sql: "SELECT severity, component, count(*) FROM logs WHERE dataset='openstack' AND severity IN ('ERROR','CRITICAL') GROUP BY 1,2"
+    result: "ERROR nova-compute 192; ERROR nova-api 2; CRITICAL nova-api 2. Deletions completed in window: 1868"
+    importance: nice
+must_conclude:
+  - "The recurring error is the image cache manager periodic task failing (InvalidDiskInfo, qemu-img 'Could not open' ... 'No such file or directory' on an instance disk)"
+  - "8 occurrences, not 192: 192 lines = 8 tracebacks x 24 lines"
+  - "Period: 2017-05-16 03:19 to 2017-05-17 05:24 (about 26 hours, irregular gaps)"
+  - "Owner: cloud-compute"
+traps:
+  - "Reporting 192 errors or incidents: these are traceback lines, 24 per occurrence"
+  - "Treating it as a disk or storage outage: the disk is missing because the instance was just deleted"
+  - "Mixing in the nova-api token-validation 503 ERROR/CRITICAL lines (owned by cloud-api, different component)"
+  - "Claiming VM failures or customer impact: none of the affected instances are labelled anomalous"
+  - "Assigning the error to cloud-api, or saying the dataset continues past 2017-05-17 12:02 (its last line)"
+not_established:
+  - "Which compute host was affected (node is NULL for openstack lines), so we can't tell whether it's one host or several"
+  - "Whether the image cache was left uncleaned or anything leaked because of the failed passes"
+  - "The root cause in code; the deletion race is a hypothesis from timing only"
+  - "Any customer, cost or downtime impact"
+labels_used: "labels(openstack) = 4 Loghub anomalous instance uuids; none match the 8 instances in these errors, so the errors aren't tied to labelled anomalies"
+golden_check:
+  - fact: "qemu-img 'Could not open' ERROR lines"
+    golden_value: "8"
+    my_value: "8"
+    agrees: true
+  - fact: "first occurrence"
+    golden_value: "2017-05-16 03:19"
+    my_value: "2017-05-16 03:19"
+    agrees: true
+  - fact: "last occurrence"
+    golden_value: "2017-05-17 05:24"
+    my_value: "2017-05-17 05:24"
+    agrees: true
+notes: "The dataset spans 2017-05-14 19:39 to 2017-05-17 12:02 (no 05-15 data), so 'until 05-18' really means until the data ends. Every nova-compute ERROR line in the dataset falls in this window. The search for 'Could not open' matches only the Stderr line per traceback, so it counts occurrences correctly."

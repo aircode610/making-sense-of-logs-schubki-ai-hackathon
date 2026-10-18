@@ -1,0 +1,63 @@
+id: D-X18
+role: engineer
+dataset: zookeeper
+question: "From 2015-08-24 the Zookeeper node kept logging 'Cannot open channel ... at election address'. When did it start, which peers could it not reach, what happened just before, and when (if ever) did it rejoin a quorum before 2015-08-26?"
+answer_summary: "The failing node is server myid=1 (10.10.34.11, host mesos-master-1). It was restarted at 2015-08-24 15:26:54 (QuorumPeerMain 'Starting quorum peer' -> LOOKING) and the first 'Cannot open channel to 2 at election address /10.10.34.12:3888' came at 15:26:57.688, followed by 'to 3 at /10.10.34.13:3888' at 15:27:03.681. It could not reach either peer, sid 2 (10.10.34.12) and sid 3 (10.10.34.13). Retries backed off (notification timeout 400 ms doubling to 60000 ms) so it logged about one failure per peer per minute (120 lines/hour) for ~20 h: 2,390 lines before rejoining (2,417 incl. the later flapping). Just before: on 2015-08-24 ~10:21 all three servers' client sessions were closed/expired (last lines of each server's log), then the log is silent ~5 h until server 1 restarts alone; servers 2 and 3 log nothing again until 2015-08-25 11:14:51 and 11:16:08 (their own restarts), i.e. the peers were down, not a server-1 network fault as far as the logs show. Server 1 rejoined a quorum at 2015-08-25 11:14:51.173 (FOLLOWING, 'LEADER ELECTION TOOK - 71276526' ms ~ 19.8 h) the instant server 2 came up and became LEADING (11:14:52, 'Have quorum of supporters' 11:14:53); the quorum then flapped (leader changes at 11:19, 11:20-11:23 LOOKING again, back FOLLOWING 11:23:56) until the data ends at 11:26:28."
+findings:
+  - fact: "First failure 2015-08-24 15:26:57.688 on myid=1, to sid 2 at /10.10.34.12:3888; first to sid 3 /10.10.34.13:3888 at 15:27:03.681"
+    sql: "SELECT line_id, ts, severity, component, body FROM logs WHERE dataset='zookeeper' AND ts >= '2015-08-24' AND body @@ ts_phrase('cannot open channel') ORDER BY ts LIMIT 5"
+    result: "22844 15:26:57.688 WARN 'Cannot open channel to 2 at election address /10.10.34.12:3888'; 22847 15:27:03.681 'Cannot open channel to 3 at election address /10.10.34.13:3888'"
+    importance: must
+  - fact: "Unreachable peers: sid 2 = 10.10.34.12 (1,208 lines) and sid 3 = 10.10.34.13 (1,205 lines) from myid=1; until rejoin 2,390 lines all from myid=1; steady 120 lines/hour (one per peer per minute) from 16:00 on 08-24 to 10:00 on 08-25"
+    sql: "SELECT regexp_extract(location,'myid=([0-9]+)',1) m, regexp_extract(body,'to ([0-9]+) at',1) peer, count(*), min(ts), max(ts) FROM logs WHERE dataset='zookeeper' AND ts >= '2015-08-24' AND body @@ ts_phrase('cannot open channel') GROUP BY 1,2 ORDER BY 1,2"
+    result: "myid1->2: 1208 (08-24 15:26:57 .. 08-25 11:23:56); myid1->3: 1205 (08-24 15:27:03 .. 08-25 11:23:07); myid2->3: 1 (08-25 11:14:51); myid3->2: 3 (08-25 11:19:48..11:23:57). Before 11:14:51.173: myid1 only, 2390 lines"
+    importance: must
+  - fact: "Just before: server 1 restarted at 2015-08-24 15:26:54 (zoo.cfg read 15:26:54.374, 'Starting quorum peer' 15:26:54.434, LOOKING 15:26:54.671, 'Notification time out: 400' then backoff to 60000). Prior to that a ~5 h silence; the last lines before were on 08-24 10:21:10-10:21:46: client sockets closed and sessions expired ('timeout of 10000ms exceeded') on all three servers"
+    sql: "SELECT line_id, ts, severity, component, left(body,160) FROM logs WHERE dataset='zookeeper' AND ts >= '2015-08-18' AND ts < '2015-08-24 15:27:01' ORDER BY ts DESC, line_id DESC LIMIT 40"
+    result: "22828..22843 restart sequence 15:26:54; previous line 52114 at 10:21:46.003 'Processed session termination'; 22819-22827 and 74245-74248 'Closed socket connection for client ...' at 10:21"
+    importance: must
+  - fact: "Peers 2 and 3 were absent: their logs have no lines between 2015-08-24 10:21:46 and their own restarts on 2015-08-25 (server 2 'Reading configuration' 11:14:51.48; server 3 11:16:08.467)"
+    sql: "SELECT line_id, ts, severity, component, left(body,120) FROM logs WHERE dataset='zookeeper' AND line_id BETWEEN 74240 AND 74256 ORDER BY line_id"
+    result: "74248 2015-08-24 10:21:39 last pre-gap line of server 3, 74249 2015-08-25 11:16:08 'Reading configuration from: /etc/zookeeper/conf/zoo.cfg'; same for server 2 at lines 52114 -> 52115 (2015-08-25 11:14:51.48)"
+    importance: should
+  - fact: "Rejoin: myid=1 went FOLLOWING at 2015-08-25 11:14:51.173 with 'LEADER ELECTION TOOK - 71276526' (ms, ~19.8 h); server 2 LEADING 11:14:52.022 and 'Have quorum of supporters' 11:14:53.089; server 3 joined as FOLLOWING 11:16:08.775"
+    sql: "SELECT line_id, ts, component, location, body FROM logs WHERE dataset='zookeeper' AND component='QuorumPeer' AND body IN ('LEADING','FOLLOWING','LOOKING') AND ts>='2015-08-24' ORDER BY ts LIMIT 30"
+    result: "22841 08-24 15:26:54 myid1 LOOKING; 26431 08-25 11:14:51.173 myid1 FOLLOWING; 52134 11:14:52.022 myid2 LEADING; 74269 11:16:08.775 myid3 FOLLOWING; then 11:19:47 myid1 LOOKING->FOLLOWING (myid3 LEADING), 11:20:12 myid1 LOOKING, 11:23:56 FOLLOWING, myid3 LEADING 11:23:57, myid2 restart 11:26:27 -> FOLLOWING 11:26:28"
+    importance: must
+  - fact: "After rejoining the quorum flapped: 11:19:47 'Exception when following the leader' / 'Connection broken for id 2' (server 2 left), 11:20:12 'Connection broken for id 3', myid=1 LOOKING again with 23 more election-channel failures until 11:23:56; dataset ends 2015-08-25 11:26:28"
+    sql: "SELECT line_id, ts, severity, component, left(location,40), left(body,150) FROM logs WHERE dataset='zookeeper' AND line_id BETWEEN 26450 AND 26554 AND (severity<>'INFO' OR component NOT IN ('Environment')) AND NOT body @@ ts_phrase('cannot open channel') AND body NOT LIKE 'Notification time out%' ORDER BY line_id LIMIT 60"
+    result: "26458 11:19:47.348 WARN Follower 'Exception when following the leader'; 26459 'Connection broken for id 2, my id = 1'; 26488-26489 11:20:12 same for id 3; 26503 LOOKING; 26545 11:23:56 FOLLOWING"
+    importance: should
+must_conclude:
+  - "Failures started 2015-08-24 15:26:57 (first line 15:26:57.688), right after server myid=1 restarted at 15:26:54"
+  - "Unreachable peers: 10.10.34.12 (sid 2) and 10.10.34.13 (sid 3), election port 3888"
+  - "Before: ~10:21 on 08-24 client sessions closed/expired on all servers, ~5 h silence, then server 1 restarted alone"
+  - "Rejoined quorum 2015-08-25 11:14:51 as FOLLOWING when server 2 restarted and became leader (election took ~19.8 h); yes, before 2015-08-26"
+  - "2,417 lines (2,390 before rejoin) are retries of one outage, not 2,417 incidents"
+traps:
+  - "Lines are not incidents: ~2,400 lines are a once-per-minute retry loop per peer (notification timeout backed off to 60000 ms) during one ~20 h outage"
+  - "The dataset description says 'one ensemble member' but the corpus contains three servers' logs (myid 1/2/3, hosts mesos-master-1..3) merged; the 'node' column is empty, so the failing node must be identified from location (myid=1) / Listener address 10.10.34.11"
+  - "line_id is per-source-file, so line_id ordering interleaves three files; order by ts"
+  - "Do not count the post-rejoin 11:14-11:24 flapping lines or the single myid2/myid3 failures as part of the original outage"
+  - "'Cannot open channel' also occurred earlier (07-29..08-18, 167 lines); the 08-24 episode is not the first ever"
+  - "The cause is not a network fault on node 1 as far as logs show: peers 2 and 3 produced no logs at all during the window (down / not running)"
+not_established:
+  - "Why servers 2 and 3 were down or why everything stopped around 10:21 on 08-24 (no shutdown or error lines; logs simply stop)"
+  - "Why server 1 was restarted at 15:26 (operator action vs crash is not logged)"
+  - "Whether clients were impacted between 10:21 and 11:14 the next day (no client-request lines; no customer impact can be derived)"
+  - "Network reachability of 3888 (connection refused vs timeout is not in the message text)"
+labels_used: "none; the labels table has no zookeeper rows"
+golden_check:
+  - fact: "election-channel failure lines 2015-08-24..26"
+    golden_value: "2417"
+    my_value: "2417 (2390 before the 11:14:51 rejoin, all from myid=1)"
+    agrees: true
+  - fact: "first failure"
+    golden_value: "2015-08-24 15:26"
+    my_value: "2015-08-24 15:26:57.688"
+    agrees: true
+  - fact: "first LEADING / FOLLOWING state after it"
+    golden_value: "2015-08-25 11:14"
+    my_value: "2015-08-25 11:14:51.173 (myid=1 FOLLOWING)"
+    agrees: true
+notes: "Owner: coordination-platform (QuorumCnxManager, QuorumPeer per ownership table). Host mapping: myid1=mesos-master-1 (election listener 10.10.34.11:3888), peers at 10.10.34.12 and 10.10.34.13. Election backoff: 'Notification time out' 400,800,...,51200 then 60000 x1185 between 08-24 15:26 and 08-25 11:14. Data ends 2015-08-25 11:26:28, so 'before 2015-08-26' covers all remaining data."

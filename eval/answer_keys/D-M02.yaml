@@ -1,0 +1,100 @@
+id: D-M02
+role: manager
+dataset: bgl
+question: Based on October 2005 (2005-10-01 to 2005-11-01), which observed problems deserve attention first and what should happen next?
+answer_summary: 'The top priority for October 2005 is uncorrectable memory failures on compute cards: uncorrectable external-DDR errors, uncorrectable EDRAM errors and L3 ''major internal error'' machine
+  checks. In the computed priority order these come first (DDR, EDRAM, major internal error). They are hardware faults that the node could not correct. Each burst count rose from 1 in the previous 28 days
+  to 4 in October (10 vs 4 for L3 major internal error). They are concentrated on a few cards: the DDR and EDRAM errors hit 4 nodes (R04-M0-N3, R63-M1-NC, R15-M0-N6 and R42-M1-N3). Generic ''machine check
+  interrupt'' bursts were flat (34 in October vs 37 before), so the problem is getting a bit worse but is not fleet-wide. All of this belongs to the node-platform team (KERNEL). That team also owns most
+  of the month''s problem recurrences: 251 of 345 bursts. Next steps: node-platform should check whether the affected compute cards were replaced or drained, and watch them for repeat failures. Separately,
+  someone should decide whether the large APP/ciod error storms (hpc-workloads), which are big in line count but few in recurrences, need a job-side review. The logs say nothing about cost, downtime or
+  which jobs or users were affected.'
+findings:
+- fact: 'Uncorrectable memory faults recurred more in October than in the previous 28 days: DDR uncorrectable (124) and EDRAM uncorrectable (122) had 4 bursts each vs 1, and L3 major internal error (93)
+    had 10 vs 4. These are the top-3 computed priorities.'
+  sql: SELECT b.pattern_id, count(*) FILTER (WHERE b.start_ts>='2005-10-01') oct_b, count(*) FILTER (WHERE b.start_ts<'2005-10-01') prev_b, left(min(p.template),60) FROM bursts b JOIN patterns p USING (dataset,pattern_id)
+    WHERE b.dataset='bgl' AND b.start_ts>='2005-09-03' AND b.start_ts<'2005-11-01' AND b.pattern_id IN (33,93,122,124,86,69,261,165,478) GROUP BY 1 ORDER BY 2 DESC
+  result: 261|44|21 Kill job timed out; 33|34|37 machine check interrupt; 69|33|43 rts panic; 165|20|18 Node card not fully functional; 86|14|12 L2 dcache parity; 93|10|4 L3 major internal error; 478|8|13
+    ciod LOAD_MESSAGE; 124|4|1 uncorrectable error in external DDR; 122|4|1 uncorrectable error in EDRAM bank
+  importance: must
+- fact: 'The uncorrectable events are concentrated, not fleet-wide: 12 DDR/EDRAM-uncorrectable lines on 4 compute cards, each a single episode on one card (R04-M0-N3-C:J17-U11 on 10-01, R63-M1-NC-C:J06-U01
+    on 10-04, R15-M0-N6-C:J15-U01 on 10-18, R42-M1-N3-C:J17-U11 on 10-27). Each starts with an ''L3 major internal error'' machine check about 20 s to 2 min earlier. The L3 major internal error itself hit
+    8 nodes (10 lines), including R27-M1-N8 twice (10-09 and 10-11).'
+  sql: SELECT g.pattern_id, g.node, g.ts, g.line_id, left(g.body,100) FROM logs g WHERE g.dataset='bgl' AND g.ts>='2005-10-01' AND g.ts<'2005-11-01' AND g.pattern_id IN (122,124,93,795,771) ORDER BY g.ts
+    LIMIT 40
+  result: '93 R04-M0-N3-C:J17-U11 2005-10-01 11:02:23 (line 3532873) L3 major internal error -> 122/124 same node 11:02:45-46; 93 R63-M1-NC 10-04 08:52:14 -> 122/124 08:53:00; 93 R27-M1-N1 10-05; 93 R61-M1-N2
+    10-07; 93 R27-M1-N8 10-09 and 10-11; 771 R30-M0-N7 10-18 00:43 redundant bit steering failed; 93 R15-M0-N6 10-18 05:02 and 07:29 -> 122/124 07:29:49-51; 795 MMCS R55-M0-Nd 10-23; 93 R21-M0-ND 10-25;
+    93 R42-M1-N3 10-27 05:05 -> 122/124 05:06:51-52. Count check: pattern_id IN (122,124) -> 12 lines, 4 distinct nodes'
+  importance: must
+- fact: 'Ownership: all the top memory and machine-check problems are KERNEL, owned by node-platform. node-platform also carries most October problem recurrences: 251 bursts (4,150 lines). cluster-control
+    has 51 bursts (2,338 lines) and hpc-workloads 43 bursts (36,295 lines).'
+  sql: SELECT coalesce(o.team,'unowned'), count(*) bursts, sum(b.lines) lines FROM bursts b JOIN patterns p USING (dataset,pattern_id) JOIN pattern_judgments j USING (dataset,pattern_id) LEFT JOIN ownership
+    o ON o.dataset='bgl' AND o.component=p.component WHERE b.dataset='bgl' AND b.start_ts>='2005-10-01' AND b.start_ts<'2005-11-01' AND j.p_problem>=0.5 AND p.problem_lines>0 GROUP BY 1 ORDER BY 2 DESC
+  result: node-platform|251|4150; cluster-control|51|2338; hpc-workloads|43|36295
+  importance: must
+- fact: The generic 'machine check interrupt' had 34 bursts in October (37 lines, at most 2 nodes per burst), against 37 bursts in the previous 28 days. It is a steady background, not a new surge. Month
+    by month it peaked in Sep/Oct (38/37 lines) and fell in Nov/Dec (19/3).
+  sql: 'SELECT count(*), sum(b.lines), max(b.nodes) FROM bursts b JOIN patterns p USING (dataset, pattern_id) WHERE b.dataset=''bgl'' AND p.template=''machine check interrupt'' AND b.start_ts >= ''2005-10-01''
+    AND b.start_ts < ''2005-11-01''  -- plus monthly: SELECT date_trunc(''month'',ts), count(*) FILTER (WHERE pattern_id=33) FROM logs WHERE dataset=''bgl'' AND pattern_id=33 GROUP BY 1'
+  result: '34|37|2 ; monthly lines 2005-06..12: 13, 23, 28, 38, 37, 19, 3'
+  importance: should
+- fact: 'Large line counts come from short storms, not from frequent recurrence. APP ciod ''Error reading message prefix after LOAD_MESSAGE'' produced 3,434 lines on 1,013 nodes but only 8 bursts (labelled
+    APPSEV). Lustre mount FAILED produced 1,667 lines on 979 nodes in 3 storms (10-06, 10-14, 10-27; labelled KERNMNTF). On 10-28 12:59-13:00 there were ''rts: kernel terminated'' (1,031 lines) and tree-network
+    receive errors (1,024 lines) on 1,024 nodes in 2 racks (KERNTERM / KERNREC). These are real, wide events and should be noted as secondary items. Ranking by lines would put them above the memory faults.'
+  sql: SELECT g.pattern_id, date_trunc('hour',g.ts) h, count(*), count(DISTINCT g.node), count(DISTINCT substr(g.node,1,3)) racks FROM logs g WHERE g.dataset='bgl' AND g.ts>='2005-10-01' AND g.ts<'2005-11-01'
+    AND g.pattern_id IN (464,562,806,478) GROUP BY 1,2 ORDER BY 1,2
+  result: '464: 10-06 10h 128 lines/8 racks, 10-14 04h 866/64 racks, 10-27 13h 673/64 racks; 562: 10-14 7 lines on 1 node, 10-28 12-13h 1024 lines/2 racks; 806: 10-28 13h 1024 lines/1024 nodes/2 racks;
+    478: 8 bursts 10-02..10-16 up to 909 lines/64 racks'
+  importance: should
+- fact: 'Corrected DDR/EDRAM errors (INFO, ''detected and corrected'') are very common: 9,157 ''ddr errors detected and corrected'' lines on 1,123 nodes in October, the highest monthly line count. They
+    are routine, corrected events (Jev p_problem 0.06) and are not alerts in the labels. They are background context for the memory story, not the priority.'
+  sql: SELECT date_trunc('month',g.ts) m, count(*) FILTER (WHERE g.pattern_id=4) ddr_corr, count(DISTINCT g.node) FILTER (WHERE g.pattern_id=4) ddr_nodes, count(*) FILTER (WHERE g.pattern_id=20) edram_corr
+    FROM logs g WHERE g.dataset='bgl' AND g.pattern_id IN (4,20) GROUP BY 1 ORDER BY 1
+  result: '2005-10: ddr_corr 9157 on 1123 nodes, edram_corr 830 (Sep 6361/977, Nov 3696/729)'
+  importance: nice
+- fact: '''Kill job N timed out. Block freed.'' has the most bursts (44 vs 21 before), but it has no node (47 lines, 0 nodes). It is a job-management message, not a hardware fault.'
+  sql: SELECT count(*), count(DISTINCT node), min(ts), max(ts), left(min(body),60) FROM logs WHERE dataset='bgl' AND ts>='2005-10-01' AND ts<'2005-11-01' AND pattern_id=261
+  result: 47|0|2005-10-01 05:21|2005-10-31 21:12|Kill job 45734 timed out. Block freed.
+  importance: nice
+must_conclude:
+- 'Put uncorrectable memory faults first (uncorrectable external DDR, uncorrectable EDRAM, L3 major internal error machine checks): unrecoverable hardware faults whose recurrence grew compared with the
+  previous period.'
+- 'They are concentrated on a handful of compute cards (4 nodes for DDR/EDRAM uncorrectable errors), so the action is targeted: inspect, drain or replace the specific cards and watch for repeats. A fleet-wide
+  program is not needed.'
+- 'Owner: node-platform (KERNEL), which also carries most of October''s problem recurrences.'
+- Count in recurrences (bursts) and nodes, not log lines. The large APP/ciod, Lustre and 10-28 rts/tree-network storms are big in lines but few in occurrences. Mention them as secondary or follow-up items,
+  not as the top priority.
+- State that the logs do not show cost, downtime, job or customer impact, or root cause.
+traps:
+- 'Ranking by line count: APP ciod errors (hpc-workloads, 36k problem lines) or Lustre mount failures would come out on top, although they are a few storms.'
+- Treating the 9,157 corrected DDR error lines (INFO) as the main memory problem. They were corrected and are not alerts.
+- Calling the memory problem fleet-wide. Uncorrectable errors were on 4 cards. The corrected errors are widespread but benign.
+- Saying generic 'machine check interrupt' is surging. It was flat (34 bursts in October vs 37 before); the growth is in the uncorrectable and L3 major internal error variants.
+- Presenting 12 lines or 34 bursts as '12/34 incidents' without saying what the unit is. The 4 DDR/EDRAM bursts correspond to 4 node failures, each logging multiple lines.
+- Inventing money, downtime hours or affected customers.
+- Treating 'Kill job timed out' (most bursts) as a hardware priority.
+not_established:
+- 'Root cause of the memory faults (aging DIMMs, manufacturing batch, thermal): not in the logs.'
+- Whether the affected cards were replaced or repaired, or whether jobs were lost or rerun.
+- Any cost, downtime, SLA or user impact.
+- Whether the 10-28 tree-network / kernel-terminated storm was caused by hardware or by a job; correlation in time only.
+labels_used: 8,434 labelled alert lines in October. KERNMC (machine check) has 65 lines on 54 nodes, spread over the month (machine check interrupt on 19 days). APPSEV has 4,511 lines (ciod), KERNMNTF 1,667
+  (Lustre), KERNTERM 1,031 and KERNREC 1,024 (10-28 storm). KERNBIT (1 line) confirms the 10-18 redundant-bit-steering failure. The labels confirm the machine-check and memory events are real alerts. They
+  also show that line-heavy labels (APPSEV, KERNMNTF) come from a few storms. The uncorrectable DDR/EDRAM lines themselves are mostly unlabelled detail lines; KERNMC labels sit on the machine-check header
+  lines.
+golden_check:
+- fact: bursts of 'machine check interrupt' in October 2005
+  golden_value: '34'
+  my_value: 34 (37 lines, max 2 nodes per burst)
+  agrees: true
+- fact: priority_table top 3 for 2005-10-01..2005-11-01, in computed order
+  golden_value: DDR, EDRAM, major internal error
+  my_value: 'Not re-run (the priority_table tool is off-limits). Its inputs are consistent with this order: 124 ''uncorrectable error detected in external DDR'' (p_problem 0.88, 4 bursts vs 1), 122 ''uncorrectable
+    error detected in EDRAM bank'' (0.87, 4 vs 1), 93 ''L3 major internal error'' (0.85, 10 vs 4).'
+  agrees: true
+notes: October is a calendar month (31 days); 'previous period' here = the 28 days 2005-09-03..2005-10-01. The order of the golden top 3 comes from the tool's weighted score; I confirmed the inputs (growth,
+  p_problem, nodes) from SQL but not the weights. Several sibling DDR/EDRAM detail patterns (120, 123, 153, 154, 158, 160) also show 4 vs 1 bursts. They are lines of the same 4 machine-check dumps, not
+  separate problems. An answer that lists 'uncorrectable memory errors on a few cards' as the top item, with node-platform as owner, should get credit even if it does not reproduce the exact three-name
+  order.
+judging: 'The golden top-3 order is output of a tool under test (priority_table), not ground truth: do not require the exact order. Full credit = uncorrectable memory errors (DDR / EDRAM / L3 major internal
+  error) on a few specific cards as the top item, owner node-platform, concentrated not fleet-wide.'

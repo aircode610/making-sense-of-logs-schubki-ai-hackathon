@@ -1,0 +1,99 @@
+id: D-M01
+role: manager
+dataset: bgl
+question: Based on November 2005 (2005-11-01 to 2005-11-29), what should we prioritise next?
+answer_summary: 'Priority 1 is the ciod ''Error reading message prefix on CioStream socket ..., Link has been severed'' failure. It is an APP/FATAL pattern owned by hpc-workloads, with 10,408 lines in 27
+  bursts. It reached all 1,024 I/O nodes (the whole I/O fleet). It started on 17 Nov and got worse in the last week (about 1,000-3,500 lines per day from 24-27 Nov), and it was still running in December
+  (14,616 lines). Every line names the same peer, 172.16.96.116, so this is a systemic loss of the I/O-node connection to one common endpoint, not a set of individual bad nodes. Priority 2 is ''rts: kernel
+  terminated'' (KERNEL/FATAL, node-platform): 5,120 lines and 7 bursts on 3,584 compute nodes between 8 and 16 Nov. Each burst takes down whole midplanes (512 nodes) and comes with tree-network packet errors.
+  It stopped after 16 Nov. Priority 3 is ''rts panic! - stopping execution'' (KERNEL/FATAL, node-platform). It is low in volume (45 lines, 35 nodes) but steady: 33 bursts on 17 days. It is a persistent
+  background problem, not a fleet event. The logs give no cost, downtime or customer impact, and do not identify the root cause of the severed links.'
+findings:
+- fact: The Link-severed ciod pattern is the largest problem of the period. It has 10,408 FATAL lines on 1,024 distinct nodes, from 2005-11-17 05:33 to 2005-11-28 10:55, and every line is on an I/O node
+    (node type 'I').
+  sql: 'SELECT substr(l.node,11,1) t, count(*), count(DISTINCT l.node) FROM logs l JOIN pattern_templates pt ON pt.dataset=''bgl'' AND pt.pattern_id=l.pattern_id WHERE l.dataset=''bgl'' AND l.ts>=''2005-11-01''
+    AND l.ts<''2005-11-29'' AND pt.template=''ciod: Error reading message prefix on CioStream socket to <N>, Link has been severed'' GROUP BY 1'
+  result: I|10408|1024 (the whole dataset has 1,024 distinct I/O nodes, so this is 100% of the I/O fleet)
+  importance: must
+- fact: There are 27 bursts, and they get worse late in the month. Bursts covering all 1,024 I/O nodes repeat on 24, 25 and 26 Nov, up to 6 bursts a day on 26 Nov.
+  sql: 'SELECT date_trunc(''day'',l.ts)::date d, count(*), count(DISTINCT l.node), count(DISTINCT substr(l.node,1,6)) FROM logs l JOIN pattern_templates pt ON pt.dataset=''bgl'' AND pt.pattern_id=l.pattern_id
+    WHERE l.dataset=''bgl'' AND l.ts>=''2005-11-01'' AND l.ts<''2005-11-30'' AND pt.template=''ciod: Error reading message prefix on CioStream socket to <N>, Link has been severed'' GROUP BY 1 ORDER BY
+    1'
+  result: '11-17 1008/504 nodes; 11-18 203/203; 11-21 10; 11-22 50; 11-23 45; 11-24 2047/1023/128 midplanes; 11-25 2045/1024; 11-26 3466/965; 11-27 1022/512; 11-28 512/512; (11-29, outside window: 1327/950)'
+  importance: must
+- fact: It keeps going after the window. By month it has 11,800 lines in Nov, 14,616 in Dec and 130 in Jan 2006, and it never appears before November.
+  sql: 'SELECT date_trunc(''month'',l.ts)::date m, count(*), count(DISTINCT l.node) FROM logs l JOIN pattern_templates pt ON pt.dataset=''bgl'' AND pt.pattern_id=l.pattern_id WHERE l.dataset=''bgl'' AND
+    pt.template=''ciod: Error reading message prefix on CioStream socket to <N>, Link has been severed'' GROUP BY 1 ORDER BY 1'
+  result: 2005-11|11800|1024; 2005-12|14616|1024; 2006-01|130|130
+  importance: should
+- fact: Every Link-severed line (and every CioStream error in the period, 15,851 lines) names the same peer IP, 172.16.96.116. That points to one common endpoint or network path, not to individual node
+    faults.
+  sql: 'SELECT e, count(*) FROM (SELECT unnest(l.entities) e FROM logs l JOIN pattern_templates pt ON pt.dataset=''bgl'' AND pt.pattern_id=l.pattern_id WHERE l.dataset=''bgl'' AND l.ts>=''2005-11-01'' AND
+    l.ts<''2005-11-29'' AND pt.template=''ciod: Error reading message prefix on CioStream socket to <N>, Link has been severed'') x GROUP BY 1 ORDER BY 2 DESC LIMIT 10'
+  result: ip:172.16.96.116|10408
+  importance: should
+- fact: 'Priority 2 is ''rts: kernel terminated for reason <N>'' (KERNEL FATAL, owner node-platform): 5,120 lines and 7 bursts on 3,584 compute nodes, 8-16 Nov. Each burst is a whole midplane of 512 C-nodes
+    (4 midplanes on 15 Nov). Each line is paired with ''Error receiving packet on tree network'' (also 5,120 lines on 3,584 nodes). Nothing appears after 16 Nov.'
+  sql: 'SELECT date_trunc(''hour'',l.ts), count(*), count(DISTINCT substr(l.node,1,6)), min(substr(l.node,11,1)) FROM logs l JOIN pattern_templates pt ON pt.dataset=''bgl'' AND pt.pattern_id=l.pattern_id
+    WHERE l.dataset=''bgl'' AND l.ts>=''2005-11-01'' AND l.ts<''2005-11-29'' AND pt.template=''rts: kernel terminated for reason <N>'' GROUP BY 1 ORDER BY 1'
+  result: 11-08 12h 512/1 midplane C; 11-08 13h 512; 11-08 17h 512; 11-10 19h 512; 11-14 18h 512; 11-15 19h 2048/4 midplanes; 11-16 12h 512. Bursts in period = 7
+  importance: must
+- fact: 'Priority 3 is ''rts panic! - stopping execution'' (KERNEL FATAL, node-platform): only 45 lines on 35 nodes, but 33 bursts across 17 different days, spread over many racks. It is chronic, low-volume
+    and persistent (46-47 lines/month since Oct).'
+  sql: SELECT date_trunc('day',l.ts)::date d, count(*), count(DISTINCT l.node), string_agg(DISTINCT substr(l.node,1,6), ',') FROM logs l JOIN pattern_templates pt ON pt.dataset='bgl' AND pt.pattern_id=l.pattern_id
+    WHERE l.dataset='bgl' AND l.ts>='2005-11-01' AND l.ts<'2005-11-29' AND pt.template='rts panic! - stopping execution' GROUP BY 1 ORDER BY 1
+  result: '17 days from 11-01 to 11-28, 1-10 lines a day; bursts query: 33 bursts / 45 lines; monthly: Oct 46, Nov 47, Dec 44'
+  importance: should
+- fact: 'Ownership: the APP component (ciod Link severed) belongs to hpc-workloads; KERNEL (kernel terminated, rts panic) belongs to node-platform; MONITOR/DISCOVERY belong to cluster-control.'
+  sql: SELECT * FROM ownership WHERE dataset='bgl'
+  result: bgl|APP|hpc-workloads; bgl|KERNEL|node-platform; bgl|MONITOR|cluster-control; bgl|DISCOVERY|cluster-control ...
+  importance: must
+- fact: The ground-truth labels agree. The three patterns are labelled alerts APPSEV (10,408), KERNTERM (5,120) and KERNRTSP (45). APPSEV is the largest alert category in the window (11,604 lines on 1,024
+    nodes, 17-28 Nov).
+  sql: SELECT lb.label, count(*), count(DISTINCT l.node), min(l.ts), max(l.ts) FROM logs l JOIN labels lb ON lb.dataset='bgl' AND lb.line_id=l.line_id WHERE l.dataset='bgl' AND l.ts>='2005-11-01' AND l.ts<'2005-11-29'
+    GROUP BY 1 ORDER BY 2 DESC
+  result: APPSEV|11604|1024; KERNTERM|5120|3584; KERNREC|5120|3584; APPRES|2256|1014; APPTO|1991|972; KERNMNTF|230|160; ... KERNRTSP|45|33
+  importance: nice
+must_conclude:
+- Name the ciod 'Link has been severed' pattern (APP, FATAL) as the top priority, owned by hpc-workloads.
+- 'State that it is fleet-wide: all 1,024 I/O nodes, 27 bursts, rising in the last week of the period (24-27 Nov) and continuing past it.'
+- 'Name ''rts: kernel terminated'' (node-platform) as the second priority, and rts panic (node-platform) as a smaller but recurring third.'
+- 'Recommend one decision or owner per item: hpc-workloads (with network / I/O infrastructure) investigates the common CioStream endpoint 172.16.96.116 first; node-platform reviews the kernel-terminated
+  / tree-network midplane events.'
+- Say clearly that the logs carry no cost, downtime or customer-impact information.
+traps:
+- 'Ranking by raw line volume: KERNEL INFO lines (about 572k) dominate the month but are informational, not the priority.'
+- Presenting 10,408 lines (or 1,024 nodes) as 10,408 or 1,024 incidents. The incident-like unit is 27 bursts.
+- Calling the Link-severed issue 1,024 bad nodes or a hardware fault per node. Every line names the same peer IP, so it looks like a shared endpoint or path issue (hypothesis).
+- Saying kernel terminated is still active or growing. It stopped after 16 Nov.
+- 'Over-weighting the many one-off ''ciod: Error loading ... Permission denied / No such file'' APP FATAL bursts. Each is a single user job or path issue over minutes, not a recurring platform problem.'
+- Ranking rts panic first because it has the most bursts (33). It touches only 35 nodes with 45 lines.
+- Assigning ciod issues to node-platform because the KERNEL description mentions CIOD. The Link-severed lines are component APP, which maps to hpc-workloads.
+- Inventing dollar costs, downtime hours or affected customers.
+not_established:
+- 'The root cause of the severed links: what 172.16.96.116 is, and whether the fault is on the service/front-end side, the network, or ciod.'
+- Whether jobs were actually lost or how long the machine was unavailable (no downtime / job-impact data).
+- Any cost, revenue or customer impact.
+- Whether the 15-17 Nov service actions (PrepareForService, 183 lines on 15 Nov) caused or merely preceded the problem. The first Link-severed burst on 17 Nov 05:33 sits inside a service action on one midplane,
+  but the later fleet-wide bursts have no such marker established.
+labels_used: The labels table gives the three top patterns as labelled alert categories APPSEV (10,408 of 11,604 APPSEV lines), KERNTERM (5,120) and KERNRTSP (45). APPSEV is the largest alert class in the
+  window, which confirms the priority order by alert volume and scope.
+golden_check:
+- fact: bursts of the ciod 'Link has been severed' pattern in the period
+  golden_value: '27'
+  my_value: '27'
+  agrees: true
+- fact: nodes with that pattern in the period
+  golden_value: '1024'
+  my_value: '1024'
+  agrees: true
+- fact: priority_table top 3 for 2005-11-01..2005-11-29, in computed order
+  golden_value: Link has been severed, kernel terminated, rts panic
+  my_value: 'Same order by independent SQL reasoning (Link severed: 27 bursts / 1,024 nodes / rising; kernel terminated: 7 bursts / 3,584 nodes; rts panic: 33 bursts / 35 nodes). The priority_table tool
+    itself was not run (off-limits).'
+  agrees: true
+notes: 'The window ends at 2005-11-29 exclusive, so 29-30 Nov are excluded, even though Link severed continues on 29 Nov (1,327 lines). Monthly totals (11,800) include 29 Nov and differ from the 10,408
+  in-window count. There is room for judgement on the 2/3 ordering: rts panic has more bursts but tiny scope, while kernel terminated has huge scope but ended on 16 Nov. Accept either ordering of items
+  2 and 3 if justified, but item 1 must be Link severed / hpc-workloads.'
+judging: 'Window: end 2005-11-29 is exclusive (golden SQL convention); monthly totals including Nov 29 are acceptable if labelled. Item 1 must be ciod ''Link has been severed'' (hpc-workloads); order of
+  items 2 and 3 is free if justified.'

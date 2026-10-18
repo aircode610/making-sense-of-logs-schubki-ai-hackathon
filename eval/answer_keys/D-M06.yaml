@@ -1,0 +1,85 @@
+id: D-M06
+role: manager
+dataset: bgl
+question: Is overall reliability on BGL improving from September to November 2005 (2005-09-01 to 2005-11-29)?
+answer_summary: 'No. The logs do not show a steady improvement. October was the quietest month, and November went back up. FATAL lines halved from September (81,844) to October (42,589), then held flat
+  in November (44,538 for the whole month; 42,801 up to 11-29). Ground-truth alert lines tell a V-shape: 34,742 in September, 8,434 in October, then 27,952 in November, spread over 4,649 distinct nodes
+  (about 2,100 to 2,400 in the earlier months). November also brought new alert categories (KERNSERV, MONILL, APPTO, LINKBLL) and the most distinct alert patterns (32 vs 23). September''s high line count
+  was inflated by storms: a Lustre mount failure hit all 1,024 nodes of one I/O group (23,505 lines), and on 09-20 a user job with bad paths produced about 24k FATAL lines that are not labelled alerts.
+  Ownership: the alerts are almost all APP (hpc-workloads) and KERNEL (node-platform). APP took the lead in October and November. The verdict is ''improved in October, regressed in November: no clear improving
+  trend''. Cost, downtime and user impact are not in the logs.'
+findings:
+- fact: 'FATAL lines per month were Sep 81,844, Oct 42,589, Nov 44,538 (Nov 1-28: 42,801). That is a drop and then a plateau, not a continuing decline.'
+  sql: SELECT date_trunc('month',ts)::date m, severity, count(*) FROM logs WHERE dataset='bgl' AND ts>='2005-09-01' AND ts<'2005-11-30' GROUP BY 1,2 ORDER BY 1,2
+  result: Sep FATAL 81844, ERROR 69958, SEVERE 2504, FAILURE 3 | Oct FATAL 42589, ERROR 1162, SEVERE 1241 | Nov FATAL 44538, ERROR 741, SEVERE 626, FAILURE 1665, INFO 580564
+  importance: must
+- fact: Labelled alert lines (ground truth) were Sep 34,742 on 2,387 nodes, Oct 8,434 on 2,115 nodes, Nov 27,952 on 4,649 nodes. November regressed sharply from October and its alerts reached the widest
+    spread of nodes.
+  sql: SELECT date_trunc('month',l.ts)::date m, count(*), count(DISTINCT l.node) FROM logs l JOIN labels b ON b.dataset='bgl' AND b.line_id=l.line_id WHERE l.dataset='bgl' AND l.ts>='2005-09-01' AND l.ts<'2005-11-30'
+    GROUP BY 1 ORDER BY 1
+  result: 2005-09-01|34742|2387 ; 2005-10-01|8434|2115 ; 2005-11-01|27952|4649
+  importance: must
+- fact: Alert episodes (labelled alerts split by a quiet gap of more than 30 minutes) were Sep 123, Oct 81, Nov 96, on 29, 28 and 28 alert-days. Alerts happened almost every day in every month, so the frequency
+    of incidents barely changed while the line counts swung widely.
+  sql: WITH a AS (SELECT l.ts FROM logs l JOIN labels b ON b.dataset='bgl' AND b.line_id=l.line_id WHERE l.dataset='bgl' AND l.ts>='2005-09-01' AND l.ts<'2005-11-30'), g AS (SELECT ts, CASE WHEN ts - lag(ts)
+    OVER (ORDER BY ts) > INTERVAL '30 minutes' OR lag(ts) OVER (ORDER BY ts) IS NULL THEN 1 ELSE 0 END s FROM a) SELECT date_trunc('month',ts)::date, sum(s), count(DISTINCT date_trunc('hour',ts)), count(DISTINCT
+    ts::date) FROM g GROUP BY 1 ORDER BY 1
+  result: Sep 123 episodes, 140 alert-hours, 29 days ; Oct 81, 83, 28 ; Nov 96, 96, 28
+  importance: must
+- fact: 'September''s volume is inflated by storms. The top FATAL template was KERNEL ''Lustre mount FAILED : bglio<N>'' with 23,505 lines on 1,024 nodes. On 2005-09-20, the worst day (23,932 FATAL+FAILURE
+    lines), a user job with a bad path logged ''ciod: LOGIN chdir(...MINIBEN...) failed'' plus program-image errors, and 0 of those lines are labelled alerts.'
+  sql: SELECT l.component, t.template, count(*), count(DISTINCT l.node), count(b.line_id) FROM logs l JOIN pattern_templates t ON t.dataset='bgl' AND t.pattern_id=l.pattern_id LEFT JOIN labels b ON b.dataset='bgl'
+    AND b.line_id=l.line_id WHERE l.dataset='bgl' AND l.severity='FATAL' AND l.ts>='2005-09-20' AND l.ts<'2005-09-21' GROUP BY 1,2 ORDER BY 3 DESC LIMIT 4
+  result: 'APP|ciod: LOGIN chdir(/bgl/apps/SWL/performance/MINIBEN///<N>) failed|11088|1008|0 ; APP|...torus-latency.rts...|4032|1008|0 ; ...broadcast.rts...|3120|1008|0'
+  importance: should
+- fact: 'Labelled FATAL lines share of all FATAL lines was Sep 34,739/81,844, Oct 8,434/42,589, Nov 27,937/44,538. Counting FATAL severity alone hides November''s regression: November''s FATAL lines are
+    much more often real alerts.'
+  sql: SELECT date_trunc('month',l.ts)::date m, count(*) fatal, count(b.line_id) fatal_labeled FROM logs l LEFT JOIN labels b ON b.dataset='bgl' AND b.line_id=l.line_id WHERE l.dataset='bgl' AND l.severity='FATAL'
+    AND l.ts>='2005-09-01' AND l.ts<'2005-11-30' GROUP BY 1 ORDER BY 1
+  result: 2005-09-01|81844|34739 ; 2005-10-01|42589|8434 ; 2005-11-01|44538|27937
+  importance: should
+- fact: Ownership of the labelled alerts by component was Sep KERNEL 25,334 / APP 9,253; Oct APP 4,511 / KERNEL 3,920; Nov APP 17,218 / KERNEL 10,717. KERNEL belongs to node-platform and APP to hpc-workloads
+    (data/ownership.csv). The mix shifted from kernel-dominated (the Lustre mount failure, KERNMNTF) to application-dominated (APPSEV, APPRES, APPTO). In November there were also KERNTERM and KERNREC with
+    5,120 lines each on 3,584 nodes.
+  sql: SELECT date_trunc('month',l.ts)::date m, l.component, count(*) FROM logs l JOIN labels b ON b.dataset='bgl' AND b.line_id=l.line_id WHERE l.dataset='bgl' AND l.ts>='2005-09-01' AND l.ts<'2005-11-30'
+    GROUP BY 1,2 ORDER BY 1,3 DESC
+  result: Sep KERNEL 25334, APP 9253, LINKCARD 152 | Oct APP 4511, KERNEL 3920 | Nov APP 17218, KERNEL 10717, MONITOR 10, BGLMASTER 5
+  importance: should
+- fact: 'Four new alert categories first appeared in November: KERNSERV (11-17), MONILL (11-18), APPTO (11-21) and LINKBLL (11-29). November had 32 distinct alerting patterns, against 23 in each of September
+    and October. Weekly alert lines peaked in the week of 11-21 at 14,001.'
+  sql: SELECT b.label, min(l.ts) FROM logs l JOIN labels b ON b.dataset='bgl' AND b.line_id=l.line_id WHERE l.dataset='bgl' AND l.ts<'2005-11-30' GROUP BY 1 HAVING min(l.ts)>='2005-09-01' ORDER BY 2
+  result: KERNEXT 09-10, KERNFLOAT 10-02, KERNBIT 10-18, KERNRTSA 10-19, MMCS 10-23, KERNREC 10-28, KERNSERV 11-17, MONILL 11-18, APPTO 11-21, LINKBLL 11-29
+  importance: nice
+must_conclude:
+- Reliability is not clearly improving. October was better than September, but November regressed (alerts more than tripled from October, and alert nodes doubled).
+- 'Counts of lines differ from counts of incidents. September''s high count comes from a few fleet-wide storms (the Lustre mount failure, a misconfigured user job). By episodes the change is modest: 123,
+  then 81, then 96.'
+- 'Name the owners: hpc-workloads (APP) and node-platform (KERNEL). Recommend looking at November''s application-side alerts and the new categories first.'
+- Do not state any cost, downtime or customer impact.
+traps:
+- '''FATAL fell from 81,844 to about 42,800, so reliability improved by about 48%.'' This compares September with November on raw FATAL lines, ignores October and ignores the composition of the lines. Labelled
+  alerts show November near September''s level and on twice as many nodes.'
+- Treating line counts as incident counts. September's 81,844 FATAL lines are dominated by a few bursts, each repeated on about 1,024 nodes.
+- Treating November's INFO volume (580,564 lines) as a sign of more problems, or using total line volume as a reliability measure.
+- 'Comparing a partial November (to 11-29) with full months without noting it. The difference is small, though: 42,801 vs 44,538 FATAL lines.'
+- Inventing downtime, job loss or money figures.
+not_established:
+- Whether a cause or fix explains October's dip. Nothing in the logs records maintenance, configuration changes or workload changes.
+- Real downtime, the number of jobs lost, or user impact. Lines and alerts are not outages.
+- Whether November's rise reflects more use of the machine (more jobs) rather than worse hardware or software. The logs do not normalise by workload.
+labels_used: 'The BGL alert labels (any label other than ''-'') are the main reliability measure: 34,742 / 8,434 / 27,952 alert lines per month, with episodes and new categories. They show that FATAL severity
+  alone overstates September (the 09-20 job-path storm has 0 labelled lines) and understates November''s regression.'
+golden_check:
+- fact: FATAL lines in November 2005 (to 11-29)
+  golden_value: '42801'
+  my_value: '42801 (full November to 11-30: 44538)'
+  agrees: true
+- fact: FATAL lines in September 2005
+  golden_value: '81844'
+  my_value: '81844'
+  agrees: true
+notes: The golden facts frame the question as FATAL September vs November, which by itself suggests 'improving'. The labelled alerts and the October midpoint show a V-shape. A good answer should give a
+  nuanced 'no clear improvement' or 'improved, then regressed' verdict, not 'improving by 48%'. The window's end of 2005-11-29 is exclusive in the golden SQL, so November is 28 days. A burst-based reliability_trend
+  may give a different slope; judge on whether the answer separates lines, episodes and labelled alerts.
+judging: 'Verdict: credit ''no clear improvement'' / ''improved in October, regressed in November'' (V-shape), separating lines, labelled alerts and episodes. The golden FATAL numbers (81,844 -> 42,801)
+  are true and should appear, but ''improving by ~48%'' stated without the alert / October caveat is a wrong conclusion and loses the found_problem point.'

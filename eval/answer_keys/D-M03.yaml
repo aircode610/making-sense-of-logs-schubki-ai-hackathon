@@ -1,0 +1,95 @@
+id: D-M03
+role: manager
+dataset: bgl
+question: Which team's area carried the most risk in September 2005 (2005-09-01 to 2005-10-01), and is it getting better or worse?
+answer_summary: 'node-platform (KERNEL, HARDWARE, LINKCARD) carried the most risk in September 2005. It had 268 problem bursts (recurrences), against 106 for hpc-workloads and 44 for cluster-control. It
+  also had 25,486 of the 34,742 labelled alert lines, spread over 2,385 nodes. Its top problems were rts panics (49 bursts, 478 alert lines on 279 nodes over 25 of 30 days), Lustre mount failures (40 bursts,
+  23,641 alert lines on all 1,024 I/O-node ids), machine checks, job-kill timeouts and a link-card iap failure on one midplane. The direction is mixed. Alert volume improved sharply inside the month: the
+  Lustre mount storm stopped after 2005-09-16, so weekly alert lines fell from about 12,000 to 28, and October has only 3,922 node-platform alert lines. The recurrence rate did not improve much: about 55-61
+  bursts a week (H1 145 vs H2 123; October 251 bursts vs September 268, after 460 in August), and rts panics kept recurring until the month''s end. So it is better than August and late September is calmer,
+  but it is not a clear improvement; the recurring kernel faults remain. Fix Lustre mount / rts panic first. The logs give no cost, downtime or customer impact.'
+findings:
+- fact: 'node-platform has the most problem bursts in Sept 2005: node-platform 268, hpc-workloads 106, cluster-control 44 (Jev problem filter, problem-level severity).'
+  sql: SELECT date_trunc('month',b.start_ts)::date m, o.team, count(*) FROM bursts b JOIN patterns p ON p.dataset=b.dataset AND p.pattern_id=b.pattern_id JOIN ownership o ON o.dataset=p.dataset AND o.component=p.component
+    JOIN pattern_judgments j ON j.dataset=p.dataset AND j.pattern_id=p.pattern_id WHERE b.dataset='bgl' AND b.start_ts >= '2005-07-01' AND b.start_ts < '2005-12-01' AND j.p_fault*(1-j.p_dump) >= 0.5 AND
+    p.pattern_id IN (SELECT DISTINCT pattern_id FROM logs WHERE dataset='bgl' AND ts >= '2005-07-01' AND ts < '2005-12-01' AND severity IN ('FATAL','FAILURE','SEVERE','ERROR','CRITICAL')) GROUP BY 1,2 ORDER
+    BY 1,2
+  result: 'Jul: cc 27, hpc 57, np 259 | Aug: cc 95, hpc 44, np 460 | Sep: cc 44, hpc 106, np 268 | Oct: cc 30, hpc 43, np 251 | Nov: cc 51, hpc 106, np 283 (the pattern set here uses Jul-Nov severity; the
+    Sept-only golden filter gives the same np 268)'
+  importance: must
+- fact: 'Ground-truth labels agree: of the Sept alert lines, 25,486 are node-platform (2,385 distinct nodes), 9,253 hpc-workloads and 3 cluster-control.'
+  sql: SELECT o.team, count(*) FROM logs l JOIN labels b ON b.dataset=l.dataset AND b.line_id=l.line_id JOIN ownership o ON o.dataset=l.dataset AND o.component=l.component WHERE l.dataset='bgl' AND l.ts
+    >= '2005-09-01' AND l.ts < '2005-10-01' GROUP BY 1 ORDER BY 2 DESC
+  result: node-platform|25486 ; hpc-workloads|9253 ; cluster-control|3
+  importance: must
+- fact: node-platform's main September risks are rts panic (49 bursts), Lustre mount FAILED (40 bursts), machine check interrupt (38 + 14 parity), Kill job timed out (25) and LinkCard iap failed (16, on
+    a single link card R63-M0-L2).
+  sql: SELECT o.team, b.pattern_id, count(*) bursts, (SELECT substr(min(template),1,80) FROM pattern_templates t WHERE t.dataset='bgl' AND t.pattern_id=b.pattern_id) FROM bursts b JOIN patterns p ON ...
+    JOIN ownership o ON ... JOIN pattern_judgments j ON ... WHERE b.dataset='bgl' AND b.start_ts >= '2005-09-01' AND b.start_ts < '2005-10-01' AND <golden problem filter> GROUP BY 1,2 ORDER BY 3 DESC LIMIT
+    12
+  result: np|69|49|rts panic! ; np|609|40|Lustre mount FAILED ; np|33|38|machine check interrupt ; np|261|25|Kill job timed out ; cc|166|23|Can not get assembly information for node card ; np|487|16|MidplaneSwitchController::receiveTrain()
+    iap failed ; np|86|14|L2 dcache parity ; hpc|478|14|ciod ... Link has been severed
+  importance: must
+- fact: 'Label view of the same problems in Sept: KERNMNTF (Lustre mount) 23,641 lines on 1,024 nodes over 11 days (Sep 1-16); KERNRTSP (rts panic) 478 lines on 279 nodes over 25 days (through Sep 30);
+    KERNTERM 1,087 on 2 days; LINKIAP 150 lines on 1 node.'
+  sql: SELECT b.label, l.component, count(*), count(DISTINCT l.node), min(ts)::date, max(ts)::date, count(DISTINCT date_trunc('day',ts)) FROM logs l JOIN labels b ON b.dataset=l.dataset AND b.line_id=l.line_id
+    WHERE l.dataset='bgl' AND l.ts >= '2005-09-01' AND l.ts < '2005-10-01' GROUP BY 1,2 ORDER BY 3 DESC LIMIT 20
+  result: KERNMNTF|KERNEL|23641|1024|09-01..09-16|11 ; APPSEV|APP|9248|1024|09-02..09-30|11 ; KERNTERM|1087|1087|2 days ; KERNRTSP|478|279|09-01..09-30|25 ; LINKIAP|LINKCARD|150|1|4 days ; KERNMC|62|61|23
+    days
+  importance: must
+- fact: Within September, node-platform alert lines collapsed after mid-month (the Lustre storm ended Sep 16), but weekly bursts stayed about flat.
+  sql: SELECT date_trunc('week',l.ts)::date w, count(*), count(*) FILTER (WHERE b.label='KERNMNTF'), count(DISTINCT l.node) FROM logs l JOIN labels b ON ... JOIN ownership o ON ... WHERE l.dataset='bgl'
+    AND o.team='node-platform' AND l.ts >= '2005-09-01' AND l.ts < '2005-10-01' GROUP BY 1 ORDER BY 1  -- plus the same week grouping on bursts
+  result: 'alert lines per week (from Aug 29): 12191, 9045, 3648, 574, 28 ; node-platform bursts per week: 61, 61, 32, 55, 59 ; half-month bursts H1 (Sep 1-15) 145 vs H2 (Sep 16-30) 123'
+  importance: must
+- fact: 'Month over month: node-platform alert lines Aug 18,148, Sep 25,486, Oct 3,922, Nov 10,720. Problem bursts Aug 460, Sep 268, Oct 251, Nov 283. Lustre (KERNMNTF) Aug 3,783, Sep 23,641, Oct 1,667.
+    rts panic (KERNRTSP) lines Aug 581, Sep 478, Oct 46.'
+  sql: SELECT date_trunc('month',l.ts)::date, o.team, count(*), count(DISTINCT l.node) FROM logs l JOIN labels b ON ... JOIN ownership o ON ... WHERE l.dataset='bgl' AND l.ts >= '2005-07-01' AND l.ts <
+    '2005-12-01' GROUP BY 1,2 ; and per label IN ('KERNMNTF','KERNRTSP','KERNTERM') by month
+  result: 'np alerts: Jul 5149, Aug 18148, Sep 25486, Oct 3922, Nov 10720 ; KERNMNTF Aug 3783 / Sep 23641 / Oct 1667 / Nov 230 ; KERNRTSP Aug 581 / Sep 478 / Oct 46 / Nov 47'
+  importance: should
+- fact: 'Trap: by raw line volume cluster-control (83,222 lines, 72,350 at problem severity) looks almost as bad as node-platform (83,298). But 68,012 of those are ''Ido packet timeout'' MMCS ERROR lines
+    from one day (2005-09-20), and only 3 cluster-control lines are labelled alerts.'
+  sql: SELECT o.team, count(*), count(*) FILTER (WHERE l.severity IN ('FATAL','FAILURE','SEVERE','ERROR')) FROM logs l JOIN ownership o ON ... WHERE l.dataset='bgl' AND l.ts >= '2005-09-01' AND l.ts < '2005-10-01'
+    GROUP BY 1 ; SELECT date_trunc('day',ts)::date, count(*) FROM logs WHERE dataset='bgl' AND component='MMCS' AND severity='ERROR' AND ts >= '2005-09-01' AND ts < '2005-10-01' GROUP BY 1 ORDER BY 2 DESC
+  result: node-platform|83298|29202 ; cluster-control|83222|72350 ; hpc-workloads|52757|52757 ; MMCS ERROR 2005-09-20|68012 (of 68018 in the month)
+  importance: should
+must_conclude:
+- node-platform carried the most risk in September 2005, by bursts (268) and by labelled alert lines (25,486).
+- 'Name the drivers: rts panic, Lustre mount failures, machine checks / parity errors, job-kill timeouts (and a localized link-card iap fault).'
+- 'Trend is mixed or modestly improving, not a clean ''better'': alert volume fell sharply after Sep 16 and in October, but recurrence (bursts per week) stayed roughly flat and rts panics recur all month.
+  August was worse in bursts (460).'
+- Recommend that node-platform prioritise the recurring kernel faults (rts panic / Lustre mount on I/O nodes) and track bursts, not lines, as the trend metric.
+- Say that the logs do not give cost, downtime or customer impact.
+traps:
+- 'Ranking teams by raw line count: cluster-control looks like a tie (83,222 vs 83,298) because of a one-day Ido packet timeout storm (68,012 lines on 2005-09-20).'
+- Calling 25,486 or 83,298 lines 'incidents'. Lines are not incidents; the Lustre storm alone is 23,641 lines.
+- Saying 'much worse' because September alert lines exceed August, or 'resolved' because October lines dropped. Bursts were about flat (268 to 251) and rts panics continued.
+- Blaming hpc-workloads because of the 'Link has been severed' ciod lines (top-3 priority item). They are app-side symptoms (APPSEV, 9,248 lines, 11 days) and rank below node-platform.
+- Inventing money, downtime or customer numbers.
+not_established:
+- Root cause of the Lustre mount failures or rts panics (e.g. I/O server vs network); the logs show only the symptoms.
+- 'Business impact: cost, job loss, downtime or users affected.'
+- Whether the October drop came from a fix or from changes in workload or scheduling.
+- Whether the 1,024 Lustre-failure node ids are distinct physical failures or one shared I/O dependency reported by every node.
+labels_used: 'BGL alert labels (non ''-'') per line confirmed the ranking: 25,486 node-platform, 9,253 hpc-workloads and 3 cluster-control alert lines in Sept. They showed that cluster-control''s large
+  ERROR volume (Ido packet timeout) is not labelled as alerts, and gave the per-category (KERNMNTF, KERNRTSP) month-over-month trend.'
+golden_check:
+- fact: BGL log lines owned by node-platform in September 2005
+  golden_value: '83298'
+  my_value: '83298'
+  agrees: true
+- fact: bursts of node-platform problem patterns (Jev filter) in September 2005
+  golden_value: '268'
+  my_value: '268'
+  agrees: true
+- fact: priority_table top 3 for 2005-09-01..2005-10-01, in computed order
+  golden_value: Lustre, rts panic, Link has
+  my_value: Not reproduced (priority_table is a tool under test, and its weighting is not plain SQL). By bursts alone, rts panic (49) leads Lustre mount (40), and 'Link has been severed' (pattern 478, hpc-workloads)
+    has 14 bursts. All three items are consistent with my top problems. The order depends on the tool's weights (spread, change, persistence).
+  agrees: true
+notes: '''Most risk'' is not defined. Bursts of problem patterns, labelled alerts and node spread all point to node-platform, so the team answer is robust. ''Better or worse'' depends on the metric. Line
+  volume improved strongly (late Sept and Oct), while recurrence was flat (Sep 268 to Oct 251) and better than August (460). A good answer gives that nuance, or picks one metric and says which. Golden fact
+  3 is a tool output, so the order Lustre > rts panic > Link has reflects the priority_table weights, not a single SQL count.'
+judging: 'The golden top-3 order is output of a tool under test (priority_table), not ground truth: do not require it. Full credit = node-platform carries the most risk, with the Lustre storm and rts panics
+  as its main problems, and a metric-dependent trend verdict (volume improved, recurrence flat).'

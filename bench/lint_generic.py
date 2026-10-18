@@ -6,7 +6,8 @@
 2. Every tool description has the parts of the template: the question it answers (first line), Use when, Not for,
    Returns, Caveats, Example, Next.
 3. Budget: all tool definitions together (name + description + input schema) ≤ 36k tokens (+20 % over the
-   plan-011 server's 29,963), counted with the
+   plan-011 server's 29,963), measured on the server as shipped (plan 016: the single-dataset mode, LOGS_DATASET unset
+   or a name; the multi-dataset harness mode LOGS_DATASET='*' is reported, not enforced), counted with the
    Anthropic token counter when a key is set (else estimated as characters / 4).
 Run: .venv/bin/python bench/lint_generic.py   (exit 1 on a violation)
 """
@@ -24,7 +25,7 @@ sys.path.insert(0, str(ROOT / "mcp_server"))
 from dotenv import load_dotenv
 
 load_dotenv(ROOT / ".env")
-from core import query, registry
+from core import loaded_datasets, query, single
 
 PARTS = ["Use when:", "Not for:", "Returns:", "Caveats:", "Example:", "Next:"]
 BUDGET = 36_000  # counted tokens = the plan's "+20 %" over the plan-011 server (29,963 counted)
@@ -35,8 +36,8 @@ COMMON = {"email", "payment", "shipping", "checkout", "quote", "cart", "frontend
 
 
 def forbidden() -> set[str]:
-    words = set(registry())
-    for v in registry().values():
+    words = set(loaded_datasets())   # every loaded dataset, whatever the server mode
+    for v in loaded_datasets().values():
         # identifier-like component names only: plain lower-case words ('last', 'login', 'kernel') are ordinary English
         words |= {c for c in v.get("components") or [] if len(c) >= 4 and not re.fullmatch(r"[a-z]+", c)}
     for r in query("SELECT field, example FROM dataset_examples WHERE field IN ('node', 'location', 'request_id', 'object_id')", {}):
@@ -95,7 +96,8 @@ def main() -> int:
     tokens, how = count_tokens(defs)
     print(f"{len(defs)} tools, definitions {tokens:,} tokens ({how}; budget {BUDGET:,})")
     if tokens > BUDGET:
-        errors.append(f"tool definitions {tokens:,} tokens > budget {BUDGET:,}")
+        (errors if single() else warnings).append(f"tool definitions {tokens:,} tokens > budget {BUDGET:,}"
+                                                  + ("" if single() else " (multi-dataset harness mode: not enforced)"))
     for w in warnings:
         print("warn ", w)
     for e in errors:

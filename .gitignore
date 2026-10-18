@@ -17,6 +17,7 @@ data/*
 !data/severity_map.csv
 !data/area_teams.csv
 !data/component_areas_*.csv
+!data/catalog.csv
 !data/README.md
 
 # third-party doc dumps (re-fetch with scripts/refresh_docs.sh; use the typesafe-docs MCP instead)
@@ -37,3 +38,5 @@ eval/heldout/
 
 # agent run outputs (answer cards + evidence ledgers, plan 007)
 runs/agent/
+runs/sessions/
+load/gen/.*.tmp.sql

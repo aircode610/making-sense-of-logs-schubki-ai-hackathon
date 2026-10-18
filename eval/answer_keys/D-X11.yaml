@@ -1,0 +1,71 @@
+id: D-X11
+role: manager
+dataset: ssh
+question: "Attackers got root access to our SSH server in the first week of January 2018 (2018-01-01 to 2018-01-08). How bad is it, and what should we do first?"
+answer_summary: "The premise is false: the logs show no successful root login and no root session at all, in that week or anywhere in the log (2017-12-10 to 2018-01-07 17:22, host LabSZ). What did happen is a heavy, sustained password brute-force campaign against root: 66,646 'Failed password for root' lines in 2018-01-01..07 (about 48% of all such lines in the whole log), plus 35,393 'message repeated N times' summaries hiding about 176k more attempts, from 214 distinct source IPs, peaking on 2018-01-03 (26,602 root failures that day). The week's 94 successful logins were all password logins by the five named accounts that also log in throughout December (curi, hxu, jmzhu, suyuxin, tzhao) from 26 IPs, and none of those IPs ran the root brute force (one IP had a single failed root try, which looks like a misconfigured client of a legitimate user). Risk is therefore exposure, not a confirmed compromise: root password login is reachable from the internet and is attacked continuously. First action for security-ops (owner of sshd): disable root/password SSH login (PermitRootLogin no, key-only auth) and rate-limit/block the top attacking IPs; then confirm the one-off tzhao login from 73.239.249.49 is genuine."
+findings:
+  - fact: "No successful root password login and no root session exist anywhere in the SSH log (whole dataset, not just the week)."
+    sql: "SELECT count(*) FROM logs WHERE dataset='ssh' AND body @@ ts_phrase('accepted password for root'); SELECT count(*) FROM logs WHERE dataset='ssh' AND body @@ ts_phrase('session opened for user root')"
+    result: "0 and 0"
+    importance: must
+  - fact: "All 182 accepted logins in the whole log are password logins for 9 named non-root users; in 2018-01-01..07 there are 94, for curi 39, hxu 30, jmzhu 18, suyuxin 6, tzhao 1; the 182 'session opened' lines match the same users exactly."
+    sql: "SELECT split_part(body,' from ',1),count(*) FROM logs WHERE dataset='ssh' AND body ILIKE 'Accepted%' AND ts>='2018-01-01' GROUP BY 1 ORDER BY 2 DESC"
+    result: "curi 39, hxu 30, jmzhu 18, suyuxin 6, tzhao 1 (total 94); whole log 182 accepted, 182 session opened, no root"
+    importance: must
+  - fact: "The real event is a root password brute-force: 66,646 'Failed password for root' lines in the week (vs 73,172 in all of Dec 10-31), from 214 distinct IPs, plus 35,393 'message repeated' lines (all for root failures) representing 176,287 further attempts; 102,037 PAM authentication-failure lines for user=root."
+    sql: "SELECT count(*) FROM logs WHERE dataset='ssh' AND ts>='2018-01-01' AND ts<'2018-01-08' AND body ILIKE 'Failed password for root%'; SELECT count(DISTINCT split_part(split_part(body,' from ',2),' ',1)) FROM logs WHERE dataset='ssh' AND ts>='2018-01-01' AND ts<'2018-01-08' AND body ILIKE 'Failed password for root%'; SELECT sum(split_part(split_part(body,'repeated ',2),' ',1)::int) FROM logs WHERE dataset='ssh' AND ts>='2018-01-01' AND ts<'2018-01-08' AND body ILIKE 'message repeated%'"
+    result: "66,646 lines; 214 IPs; 35,393 repeat lines summing to 176,287 attempts"
+    importance: must
+  - fact: "Attack is concentrated: top IPs 183.63.110.206 (17,340 root failures, Jan 2-3), 59.63.188.30 (14,384, Jan 3-5), 183.192.189.131 (8,670, Jan 3), 58.242.83.25 (7,192, Jan 1-2), 218.65.30.30 (4,189); top 3 = ~60% of the week's root failures."
+    sql: "SELECT split_part(split_part(body,' from ',2),' ',1) ip,count(*),min(ts),max(ts) FROM logs WHERE dataset='ssh' AND ts>='2018-01-01' AND ts<'2018-01-08' AND body ILIKE 'Failed password for root%' GROUP BY 1 ORDER BY 2 DESC LIMIT 10"
+    result: "183.63.110.206 17340; 59.63.188.30 14384; 183.192.189.131 8670; 58.242.83.25 7192; 218.65.30.30 4189; ..."
+    importance: should
+  - fact: "Trend: daily root failures 6,661 (Jan 1), 14,647 (Jan 2), 26,602 (Jan 3, peak), 13,330 (Jan 4), 3,712 (Jan 5), 963 (Jan 6), 731 (Jan 7, partial: log ends 17:22). Similar waves occurred in December (e.g. 13,241 on Dec 17, 11,010 on Dec 30): recurring, not new."
+    sql: "SELECT date_trunc('day',ts)::date d,count(*) FILTER (WHERE body ILIKE 'Failed password for root%') FROM logs WHERE dataset='ssh' GROUP BY 1 ORDER BY 1"
+    result: "see fact; Jan 3 highest day in the whole log"
+    importance: should
+  - fact: "No overlap between brute-force sources and successful-login sources, except 183.62.156.108: one failed root try at 2018-01-02 11:20:13 (JSch client, 'Auth cancel'), followed 8 s later by a legitimate suyuxin login from the same IP; this IP is used by jmzhu/fztu/suyuxin since Dec 10. Looks like a misconfigured client, not an attacker."
+    sql: "WITH acc AS (SELECT DISTINCT split_part(split_part(body,' from ',2),' ',1) ip FROM logs WHERE dataset='ssh' AND ts>='2018-01-01' AND body ILIKE 'Accepted%') SELECT l.ts,l.body FROM logs l JOIN acc ON split_part(split_part(l.body,' from ',2),' ',1)=acc.ip WHERE l.dataset='ssh' AND (l.body ILIKE 'Failed password for root%' OR l.body ILIKE 'Invalid user%') LIMIT 3"
+    result: "1 row: 2018-01-02 11:20:13 Failed password for root from 183.62.156.108"
+    importance: should
+  - fact: "Only new account in the week: tzhao, a single login on 2018-01-05 12:21:42 from 73.239.249.49 (3 lines total for tzhao, IP seen nowhere else). Worth a quick confirmation with the user, but not linked to the brute force."
+    sql: "SELECT ts,body FROM logs WHERE dataset='ssh' AND body LIKE '%tzhao%' ORDER BY ts"
+    result: "Accepted, session opened, session closed; nothing else"
+    importance: nice
+  - fact: "Owner: security-ops (sshd: authentication, sessions, break-in attempts)."
+    sql: "SELECT * FROM ownership WHERE dataset='ssh'"
+    result: "ssh|sshd|security-ops"
+    importance: should
+must_conclude:
+  - "The logs show no root access: 0 accepted root logins and 0 root sessions in the whole log; the premise is false."
+  - "What happened is a large failed root password brute-force (tens of thousands of lines from ~200 IPs, peak Jan 3), i.e. exposure/risk, not a confirmed breach."
+  - "Successful logins in the week (94) are all named non-root users who log in regularly."
+  - "First action: disable root and password SSH login / move to keys, rate-limit or block the attacking IPs; owner security-ops."
+traps:
+  - "Accepting the premise and describing a root compromise."
+  - "Counting failed-login lines as incidents or as successful attacks; reporting 66,646 as 'attacks' without noting lines vs attempts (message repeated lines hide ~176k more attempts)."
+  - "Treating the 94 accepted logins as attacker logins."
+  - "'session opened ... by (uid=0)' lines contain uid=0 but are sessions for normal users (sshd runs as root); not root logins."
+  - "'Invalid user rootuser/myroot/wwwroot' are not root."
+  - "The week ends at 2018-01-07 17:22 (data end), not 2018-01-08."
+  - "Inventing cost, downtime or customer impact."
+not_established:
+  - "Whether root (or anyone) got in by other means not logged here (key-based login is never seen; other services, console, privilege escalation after a normal login, log tampering)."
+  - "Whether any of the 94 user logins were made with stolen credentials; the logs only show they came from IPs not running the brute force."
+  - "Business impact, cost, downtime or data exposure."
+  - "The server's sshd configuration (whether root login is permitted at all) beyond the fact that sshd evaluates root passwords."
+labels_used: "None: the ssh dataset has no labels (labels count = 0)."
+golden_check:
+  - fact: "successful root password logins in the whole SSH log"
+    golden_value: "0"
+    my_value: "0"
+    agrees: true
+  - fact: "root sessions opened in the whole SSH log"
+    golden_value: "0"
+    my_value: "0"
+    agrees: true
+  - fact: "accepted (non-root) password logins in the week"
+    golden_value: "94"
+    my_value: "94"
+    agrees: true
+notes: "Root failure counts use body ILIKE 'Failed password for root%' (excludes the 35,393 'message repeated' lines, which all repeat root failures). Week total of all failed passwords: 73,058 lines from 355 IPs. Total log lines in the week: 352,870 of 655,147."

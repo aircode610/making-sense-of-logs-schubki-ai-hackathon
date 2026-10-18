@@ -1,7 +1,7 @@
 """Jev functional area per component (plan 057): one ai_system_one choice per (dataset, component), inside SereneDB.
 
   .venv/bin/python scripts/judge_areas.py [dataset ...]     # default: every dataset in the `datasets` table
-  → data/component_areas_<dataset>.csv (committed; load/96b_ownership_inferred.sql loads it; a clean checkout needs no key)
+  → data/component_areas_<dataset>.csv (committed; load/lib/build_dataset.sql loads it; a clean checkout needs no key)
 
 Input per component: its name, the dataset's title and up to 3 example messages (from its most frequent patterns).
 Choices = the areas of data/area_teams.csv with their descriptions (generic operations wording, no dataset text).

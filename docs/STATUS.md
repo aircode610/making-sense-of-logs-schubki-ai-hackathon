@@ -1,10 +1,38 @@
 # Status (read first; keep short and current)
 
-_Last updated: 2026-10-18 (plan 012); before: 2026-10-17, plan 009 done (eval: ours vs baseline), plans 053–055 done (OpenStack patterns, Jev judgments, `value_outliers`, `rate_vs_baseline`; 8 MCP tools)._
+_Last updated: 2026-10-18 (plan 016); before: 2026-10-17, plan 009 done (eval: ours vs baseline), plans 053–055 done (OpenStack patterns, Jev judgments, `value_outliers`, `rate_vs_baseline`; 8 MCP tools)._
 
 - **Plan 010 done:** eval fit for iteration: judge sees full evidence (claims supported ours 0.92 / baseline 0.71
   after re-judging), failures score 0, `--compare/--reuse-baseline/--rejudge/--repeat`, E6 ranking golden facts,
   tool-vs-LLM seconds (tools ≈ 1 %), `bench/replay_tools.py`. Noise floor: E1 ±0.05, rubric ±0.06 (`docs/EVAL.md`).
+
+- **Plan 016 done (ship as one MCP server; merges Konark's plan 057):** setup = `docker compose up -d` (SereneDB
+  26.10.1 pinned, the organisers' version) + `claude` in the repo (`uv run` installs the 2 deps) + "load the base
+  corpus". New tools `load_logs` (base corpus per the brief's Zenodo links, any Loghub set, or a user file anywhere on
+  disk: streamed, format from lnav, only that dataset built), `setup_status`, `use_dataset`, `remove_dataset`; one
+  ACTIVE dataset, no restart. Loader without psql (`loader/`), per-dataset build = old global build (tables identical);
+  live Jev at load (Proxifier: corr 0.996 vs committed, 287/287 same decisions); no key → level rule, said in results.
+  Clean clone + wiped DB + headless Claude: base corpus loaded in 72 s, three role questions answered with report links.
+  Checks: 39 tools x 10 datasets, lint (shipped mode 32.2k tokens). Next: refine the MCP for shipping.
+
+- **Plan 015 done (session report):** every MCP session is recorded; `session_report` gives judges a local SereneDB-
+  styled page: the answer with each number traced to its step, the session strip (time in SereneDB vs tool vs Claude),
+  one line per step (details + SQL on click), and **Verify** (re-runs the step read-only, compares). README: judges add
+  the pinned MCP with one `claude mcp add` line. Next: on-demand indexing (016), live incident replay (017).
+
+- **Plan 014 done (one dataset per server + 8 gaps):** `LOGS_DATASET` pins the MCP server to the user's own dataset
+  (no dataset parameter); fixes from the plan-013 traces (latency_profile by median, top_entities for leads, get_context
+  nearest-outside-window, HDFS node, Apache continuation component, honest trend / history / truncation, excluded
+  patterns shown). A/B pinned: **new 17 · old 6 · tie 18**; wrong claims 34 vs 60, golden facts 0.90 vs 0.85; speed
+  unchanged (LLM 90 %). Next: merge main (Konark plan 057 ownership), worked investigation, judge MCP setup, slides.
+
+- **Plan 013 done (blind A/B of the toolsets):** same agent, only the MCP tools differ (plan-010 8 tools vs plan-011
+  40), one tool-neutral prompt, an Opus judge with read-only SQL grading against **50 frozen answer keys** (built by
+  context-free agents from raw SQL + labels; 25 new questions so every dataset has ≥ 3, incl. 6 false-premise).
+  **New 19 · old 11 · tie 13** (engineer 11-4); wrong claims 53 vs 64, found the real problem 1.58 vs 1.40. Speed:
+  44.4 vs 41.0 s per answer, **LLM 91 %**, SereneDB < 1 % (~50 ms per query), MCP overhead ~0.5 s per call; new
+  tools are not faster (more calls, +34 % tokens). Fixed: `corpus()` prompt had silently fallen back since plan 012.
+  Details `plans/013-…` §7.
 
 - **Plan 012 (Amirali, in review):** the MCP server as a stand-alone API any agent can dig with, on any dataset.
   Generic columns (`location`, `object_id`, `duration_ms`), per-dataset meanings + real examples → one field guide in

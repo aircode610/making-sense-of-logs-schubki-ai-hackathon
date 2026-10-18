@@ -1,36 +1,34 @@
-"""Detect the format of an unseen log file and write a loader for it (plan 057 part 3). No hand-written parse query.
+"""Detect an unseen log file's format from the lnav format definitions and build its loader SQL (plan 057 part 3 by
+Konark, made a library in plan 016 so the MCP server and the CLI share it).
 
-  .venv/bin/python scripts/ingest.py data/raw/<dir>/<file>.log <name> [--year 2017] [--title "…"] [--min-coverage 0.95]
-  → load/gen/<name>.sql (a normal loader: readable, committed, run by load/reload.sh) + a report on stdout.
-  scripts/ingest.sh does this, reloads, runs the Jev / area judgments and prints the result.
+How (unchanged from scripts/ingest.py): the first 2,000 lines are scored inside SereneDB against every regex of every
+vendored lnav format (formats/lnav/*.json, BSD-2, github.com/tstack/lnav), converted from PCRE to RE2 (named groups
+kept, unnamed made non-capturing, duplicate names renamed; look-around → that regex is skipped and counted). The format
+matching the most lines wins (tie → more named fields), only if it covers >= min_coverage of the sample (else nothing is
+loaded: no guessed timestamps). Fields come from lnav's own roles (timestamp, level-field + level map, body-field,
+module-field, opid-field) and common field names; the timestamp format is the one that parses most sample timestamps;
+a format without a year gets `year` (stated). Lines the format does not match are kept as continuation lines and listed
+in `ingest_unparsed`.
 
-How: the first 2,000 lines go into SereneDB (read_csv, as every loader). Every regex of every lnav format definition
-(formats/lnav/*.json, BSD-2, github.com/tstack/lnav) is converted to RE2 (named groups kept, unnamed groups made
-non-capturing, duplicate names renamed; look-around is not supported by RE2 → that regex is skipped and listed) and
-counted on the sample inside SereneDB. The format matching the most lines wins (tie → more named fields); it is used
-only if it covers >= --min-coverage of the sample, otherwise nothing is loaded (no guessed timestamps).
-Fields come from lnav's own roles (timestamp, level-field + level map, body-field, module-field, opid-field) and
-common field names (log_hostname → node, log_procname / tag / app_name → component, …); the timestamp format is the
-one that parses most sample timestamps in SereneDB (lnav's timestamp-format first, then common formats); a format
-without a year gets --year (stated in the dataset description). Lines the format does not match are kept: they become
-continuation lines (body = whole line, time of the previous line) and are listed in `ingest_unparsed`.
+Plan 016: the lines come from any SQL relation with columns (line_id, line): `read_csv('/data/…')` for a file under the
+repo's data/ (the reproducible committed loaders in load/gen/), or a table the server streamed the user's file into
+(COPY … FROM STDIN; works for a file anywhere on the user's disk and for a remote SereneDB).
 """
-import argparse
 import json
-import os
 import re
-import sys
-from datetime import datetime
+from dataclasses import dataclass, field
 from pathlib import Path
+from typing import Optional
 
 import psycopg
 
 ROOT = Path(__file__).resolve().parent.parent
+FORMATS = ROOT / "formats/lnav"
 SAMPLE = 2000
 LEVELS = {"fatal": "FATAL", "critical": "CRITICAL", "error": "ERROR", "warning": "WARNING", "info": "INFO",
           "stats": "INFO", "notice": "NOTICE", "debug": "DEBUG", "debug2": "DEBUG", "debug3": "DEBUG",
           "debug4": "DEBUG", "debug5": "DEBUG", "trace": "TRACE"}
-ROLE_NAMES = {  # first present wins; lnav's own *-field settings come first (see fields())
+ROLE_NAMES = {  # first present wins; lnav's own *-field settings come first (see build())
     "component": ["log_procname", "tag", "app_name", "module", "component", "logger", "class", "category", "service",
                   "procname", "proc", "src"],
     "node": ["log_hostname", "hostname", "host", "server", "s_ip"],
@@ -81,35 +79,33 @@ def lit(s: str) -> str:
     return "'" + s.replace("'", "''") + "'"
 
 
-def main() -> int:
-    ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument("file"); ap.add_argument("name")
-    ap.add_argument("--year", type=int, help="year for formats that do not log one (stated in the dataset row)")
-    ap.add_argument("--title"); ap.add_argument("--min-coverage", type=float, default=0.95)
-    a = ap.parse_args()
-    src = Path(a.file).resolve()
-    rel = src.relative_to(ROOT / "data")  # SereneDB sees ./data as /data
-    if not re.fullmatch(r"[a-z][a-z0-9_]*", a.name):
-        sys.exit("name: lower case letters, digits, _")
-    env = os.environ.get
-    c = psycopg.connect(host=env("PGHOST", "localhost"), port=env("PGPORT", "7890"), user=env("PGUSER", "postgres"),
-                        dbname=env("PGDATABASE", "postgres"), autocommit=True)
-    encoding = ""
-    try:  # the whole file must decode: UTF-8, else latin-1 (raw bytes in attack payloads etc.; stated in the loader)
-        c.execute(f"SELECT count(*) FROM read_csv('/data/{rel}', columns = {{'line': 'VARCHAR'}}, header = false, "
-                  f"delim = E'\\x01', quote = '', escape = '', auto_detect = false)")
-    except psycopg.Error:
-        encoding = ", encoding = 'latin-1'"
-        print("NOTE: not valid UTF-8; reading as latin-1")
-    read = (f"read_csv('/data/{rel}', columns = {{'line': 'VARCHAR'}}, header = false, delim = E'\\x01', quote = '', "
-            f"escape = '', auto_detect = false{encoding})")
-    c.execute("DROP TABLE IF EXISTS ingest_sample")
-    c.execute(f"CREATE TEMP TABLE ingest_sample AS SELECT line FROM {read} LIMIT {SAMPLE}")
-    n = c.execute("SELECT count(*) FROM ingest_sample").fetchone()[0]
+@dataclass
+class Detection:
+    ok: bool
+    reason: str = ""                    # why nothing is loaded (ok = False)
+    sample_lines: int = 0
+    candidates: list = field(default_factory=list)   # [(format, coverage)] best first
+    regexes_skipped: int = 0
+    format: str = ""
+    format_title: str = ""
+    coverage: float = 0.0
+    ts_format: str = ""
+    year_assumed: Optional[int] = None
+    field_map: dict = field(default_factory=dict)
+    stage_sql: str = ""                 # CREATE TEMP TABLE stage AS … (from the given relation)
+    hits: int = 0
 
-    # ---- score every lnav format on the sample, inside SereneDB
+
+def detect(c: psycopg.Connection, relation: str, year: Optional[int] = None, min_coverage: float = 0.95) -> Detection:
+    """Score every lnav format on the first SAMPLE lines of `relation` (columns line_id, line) and build the stage SQL."""
+    c.execute("DROP TABLE IF EXISTS ingest_sample")
+    c.execute(f"CREATE TEMP TABLE ingest_sample AS SELECT line FROM {relation} ORDER BY line_id LIMIT {SAMPLE}")
+    n = c.execute("SELECT count(*) FROM ingest_sample").fetchone()[0]
+    if not n:
+        return Detection(False, "the file has no lines")
+
     results, skipped = [], []
-    for f in sorted((ROOT / "formats/lnav").glob("*.json")):
+    for f in sorted(FORMATS.glob("*.json")):
         d = json.loads(f.read_text())
         fname = next(k for k in d if not k.startswith("$"))
         fmt = d[fname]
@@ -129,14 +125,13 @@ def main() -> int:
             results.append({"format": fname, "title": fmt.get("title", fname), "fmt": fmt, "patterns": pats,
                             "hits": hits, "fields": len({x for _, _, ns in pats for x in ns})})
     results.sort(key=lambda r: (-r["hits"], -r["fields"], r["format"]))
-    print(f"sample: {n} lines of {rel}; {sum(1 for _ in (ROOT / 'formats/lnav').glob('*.json'))} lnav formats, "
-          f"{len(skipped)} regexes skipped (RE2 lacks the feature)")
-    for r in results[:5]:
-        print(f"  {r['format']:<22} {r['hits'] / n:6.1%}  ({r['fields']} fields)")
-    if not results or results[0]["hits"] / n < a.min_coverage:
-        print(f"NOT LOADED: best coverage {results[0]['hits'] / n if results else 0:.1%} < {a.min_coverage:.0%}; "
-              "no known format fits (no guessed timestamps). Write a loader by hand (README: a new log source).")
-        return 2
+    cands = [(r["format"], round(r["hits"] / n, 3)) for r in results[:5]]
+    det = Detection(False, sample_lines=n, candidates=cands, regexes_skipped=len(skipped))
+    if not results or results[0]["hits"] / n < min_coverage:
+        best = results[0]["hits"] / n if results else 0
+        det.reason = (f"no known log format fits: best coverage {best:.1%} < {min_coverage:.0%} of a {n}-line sample "
+                      f"({len(list(FORMATS.glob('*.json')))} lnav formats tried). Nothing loaded (no guessed timestamps).")
+        return det
     best = results[0]
     fmt, pats = best["fmt"], best["patterns"]
     allnames = []
@@ -149,19 +144,20 @@ def main() -> int:
     # ---- roles from lnav's own settings, then common names
     role = {"timestamp": fmt.get("timestamp-field", "timestamp"), "body": fmt.get("body-field", "body"),
             "level": fmt.get("level-field", "level")}
-    for r, cands in ROLE_NAMES.items():
+    for r, cands_ in ROLE_NAMES.items():
         own = {"component": fmt.get("module-field"), "request_id": fmt.get("opid-field")}.get(r)
-        role[r] = next((x for x in ([own] if own else []) + cands if present(x)), None)
+        role[r] = next((x for x in ([own] if own else []) + cands_ if present(x)), None)
 
-    def field(base: str | None) -> str:
+    def fld(base: Optional[str]) -> str:
         if not base or not present(base):
             return "NULL"
         return "nullif(coalesce(" + ", ".join(f"r{i}.{x}" for i, (_, _, ns) in enumerate(pats) for x in ns
-                                               if x == base or x.startswith(base + "__")) + "), '')"  # unmatched group = 
+                                               if x == base or x.startswith(base + "__")) + "), '')"  # unmatched group = ''
 
-    ts_expr = field(role["timestamp"])
+    ts_expr = fld(role["timestamp"])
     if ts_expr == "NULL":
-        print("NOT LOADED: the format has no timestamp field."); return 2
+        det.reason = f"the best format ({best['format']}) has no timestamp field. Nothing loaded."
+        return det
 
     # ---- timestamp format: the one that parses most sample timestamps (lnav's own formats first)
     m_cols = ", ".join(f"CASE WHEN regexp_matches(line, {lit(p)}) THEN regexp_extract(line, {lit(p)}, "
@@ -173,10 +169,7 @@ def main() -> int:
     best_ts, best_ok, year_used = None, 0, None
     for tf in dict.fromkeys(lnav_ts + TS_FORMATS):
         needs_year = not any(k in tf for k in ("%Y", "%y"))
-        if needs_year and not a.year:
-            yr = 2000
-        else:
-            yr = a.year
+        yr = (year or 2000) if needs_year else year
         expr = f"try_strptime({lit(str(yr) + ' ')} || t, {lit('%Y ' + tf)})" if needs_year else f"try_strptime(t, {lit(tf)})"
         try:
             ok = c.execute(f"SELECT count(*) FILTER (WHERE {expr} IS NOT NULL) FROM ingest_ts").fetchone()[0]
@@ -185,14 +178,13 @@ def main() -> int:
         if ok > best_ok:
             best_ts, best_ok, year_used = tf, ok, (yr if needs_year else None)
     tsn = c.execute("SELECT count(*) FROM ingest_ts").fetchone()[0]
-    if not best_ts or best_ok / max(tsn, 1) < a.min_coverage:
-        print(f"NOT LOADED: no timestamp format parses >= {a.min_coverage:.0%} of the timestamps "
-              f"(best {best_ts} {best_ok}/{tsn})."); return 2
-    if year_used is not None and not a.year:
-        print("NOTE: the format logs no year; assuming 2000. Pass --year to set it.")
+    if not best_ts or best_ok / max(tsn, 1) < min_coverage:
+        det.reason = (f"format {best['format']} matched, but no timestamp format parses >= {min_coverage:.0%} of its "
+                      f"timestamps (best {best_ts} {best_ok}/{tsn}). Nothing loaded.")
+        return det
 
     # ---- level: lnav level map (regexes RE2 accepts) on the level field, else the value itself
-    lvl_src = field(role["level"]) if role["level"] != "body" else field(role["body"])
+    lvl_src = fld(role["level"]) if role["level"] != "body" else fld(role["body"])
     lvl = "NULL"
     if lvl_src != "NULL":
         cases = []
@@ -202,7 +194,7 @@ def main() -> int:
                     c.execute(f"SELECT regexp_matches('', {lit(rx)})")
                     cases.append(f"WHEN regexp_matches({lvl_src}, {lit(rx)}) THEN '{LEVELS[k]}'")
                 except psycopg.Error:
-                    skipped.append(f"{best['format']}.level.{k}: not RE2")
+                    det.regexes_skipped += 1
         order = list(LEVELS.values())
         cases.sort(key=lambda s: order.index(s.split("THEN '")[1].rstrip("'")))
         if cases:
@@ -213,52 +205,29 @@ def main() -> int:
     ts_sql = (f"try_strptime({lit(str(year_used) + ' ')} || regexp_replace(trim({ts_expr}), '\\s+', ' ', 'g'), "
               f"{lit('%Y ' + best_ts)})" if year_used is not None else
               f"try_strptime(regexp_replace(trim({ts_expr}), '\\s+', ' ', 'g'), {lit(best_ts)})")
-    body = field(role["body"])
+    body = fld(role["body"])
     # component: the format's field; when it is empty on a matched line (e.g. a logcat tag with '-' or '.'), the generic
     # "name: message" prefix of the body; never NULL on a matched line (NULL = continuation line in stage_to_logs.sql)
-    comp = field(role["component"])
+    comp = fld(role["component"])
     prefix = f"nullif(regexp_extract(coalesce({body}, line), '^([A-Za-z][\\w.$-]*): ', 1), '')"
-    comp_sql = f"CASE WHEN {{matched}} THEN coalesce({comp + ', ' if comp != 'NULL' else ''}{prefix}, '-') END"
     matched = " OR ".join(f"r{i} IS NOT NULL" for i in range(len(pats)))
-    node = field(role["node"])
-    status = field(role["status"])
+    comp_sql = f"CASE WHEN {matched} THEN coalesce({comp + ', ' if comp != 'NULL' else ''}{prefix}, '-') END"
+    node = fld(role["node"])
+    status = fld(role["status"])
     status_sql = f"TRY_CAST({status} AS INTEGER)" if status != "NULL" else "NULL::INTEGER"
     fieldmap = {k: v for k, v in role.items() if v and (k != "level" or lvl != "NULL")}
-    coverage = best["hits"] / n
 
-    # ---- pattern base: unique, after every existing loader's
-    bases = [int(x) for f in list((ROOT / "load").glob("*.sql")) + list((ROOT / "load/gen").glob("*.sql"))
-             if f.stem != a.name for x in re.findall(r"^\\set pbase (\d+)", f.read_text(), re.M)]
-    pbase = max(bases + [800000]) + 100000
-    title = a.title or f"{src.stem} ({best['title']}, auto-detected)"
-    desc = (f"Loaded by scripts/ingest.py: format auto-detected as lnav {best['format']} ({best['title']}), "
-            f"{coverage:.1%} of a {n}-line sample matched; timestamp format {best_ts}"
-            + (f"; the log has no year, {year_used} assumed" if year_used is not None else "")
-            + f"; fields: {', '.join(f'{k} = {v}' for k, v in fieldmap.items())}. Unmatched lines are kept as continuation "
-              "lines (ingest_report lists them).")
-    out = ROOT / "load/gen" / f"{a.name}.sql"
-    out.parent.mkdir(exist_ok=True)
-    meanings = {"node": f"{role['node']} field of the {best['format']} format" if node != "NULL" else "",
-                "location": "same as node" if node != "NULL" else "",
-                "request": f"{role['request_id']} field of the {best['format']} format" if role["request_id"] else "",
-                "status": f"{role['status']} field" if status != "NULL" else ""}
-    sql = f"""-- requires: data/{rel}
--- GENERATED by scripts/ingest.py on {datetime.now():%Y-%m-%d %H:%M} (plan 057 part 3); edit by re-running it, not by hand.
--- Format: lnav {best['format']} ({best['title']}), {best['hits']}/{n} sample lines matched ({coverage:.1%}).
--- Fields: {json.dumps(fieldmap)}; timestamp format {best_ts}{f'; year {year_used} assumed (not logged)' if year_used is not None else ''}.
--- Unmatched lines: body = whole line, time / component / level of the previous line (stage_to_logs.sql), listed in
--- ingest_unparsed. Patterns converted from PCRE to RE2 by scripts/ingest.py (formats/lnav/{best['format']}.json).
-\\timing on
-CREATE TEMP TABLE stage AS
-WITH raw AS (
-    SELECT row_number() OVER () AS line_id, line FROM {read}
-), m AS (
+    det.ok, det.format, det.format_title = True, best["format"], best["title"]
+    det.hits, det.coverage, det.ts_format, det.year_assumed = best["hits"], best["hits"] / n, best_ts, year_used
+    det.field_map = fieldmap
+    det.stage_sql = f"""CREATE TEMP TABLE stage AS
+WITH m AS (
     SELECT line_id, line, {m_cols}
-    FROM raw
+    FROM {relation}
 )
 SELECT line_id,
        CASE WHEN {matched} THEN {ts_sql} END AS ts,
-       {comp_sql.format(matched=matched)}::VARCHAR AS component,
+       {comp_sql}::VARCHAR AS component,
        {lvl}::VARCHAR AS severity,
        {node}::VARCHAR AS node,
        {node}::VARCHAR AS location,
@@ -267,14 +236,38 @@ SELECT line_id,
        CASE WHEN {matched} THEN coalesce({body}, line) ELSE line END AS body,
        NULL::VARCHAR AS label,
        NULL::VARCHAR AS object_id,
-       {field(role['request_id'])}::VARCHAR AS request_id,
+       {fld(role['request_id'])}::VARCHAR AS request_id,
        ({matched}) AS parsed
-FROM m;
-INSERT INTO ingest_unparsed SELECT {lit(a.name)}, line_id FROM stage WHERE NOT parsed;
-INSERT INTO ingest_runs VALUES ({lit(a.name)}, {lit('data/' + str(rel))}, {lit(best['format'])}, {lit(best['title'])},
-    {n}, {best['hits']}, {lit(best_ts)}, {year_used if year_used is not None else 'NULL'}, {lit(json.dumps(fieldmap))},
-    {lit(json.dumps([r['format'] + ' ' + format(r['hits'] / n, '.3f') for r in results[:5]]))}, {len(skipped)});
-\\set ds {a.name}
+FROM m"""
+    return det
+
+
+def loader_sql(det: Detection, name: str, file_label: str, pbase: int, title: Optional[str] = None) -> str:
+    """A complete psql loader (run by loader.sqlrun or psql): stage from the detection + ingest report rows + the shared
+    second half (lib/stage_to_logs.sql). `\\ir` is relative to load/gen/, where repo loaders are written."""
+    n = det.sample_lines
+    title = title or f"{Path(file_label).stem} ({det.format_title}, auto-detected)"
+    desc = (f"Loaded by format auto-detection: lnav {det.format} ({det.format_title}), "
+            f"{det.coverage:.1%} of a {n}-line sample matched; timestamp format {det.ts_format}"
+            + (f"; the log has no year, {det.year_assumed} assumed" if det.year_assumed is not None else "")
+            + f"; fields: {', '.join(f'{k} = {v}' for k, v in det.field_map.items())}. Unmatched lines are kept as "
+              "continuation lines (ingest_report lists them).")
+    role = det.field_map
+    meanings = {"node": f"{role['node']} field of the {det.format} format" if role.get("node") else "",
+                "location": "same as node" if role.get("node") else "",
+                "request": f"{role['request_id']} field of the {det.format} format" if role.get("request_id") else "",
+                "status": f"{role['status']} field" if role.get("status") else ""}
+    return f"""-- Format: lnav {det.format} ({det.format_title}), {det.hits}/{n} sample lines matched ({det.coverage:.1%}).
+-- Fields: {json.dumps(det.field_map)}; timestamp format {det.ts_format}{f'; year {det.year_assumed} assumed (not logged)' if det.year_assumed is not None else ''}.
+-- Unmatched lines: body = whole line, time / component / level of the previous line (stage_to_logs.sql), listed in
+-- ingest_unparsed. Patterns converted from PCRE to RE2 by loader/detect.py (formats/lnav/{det.format}.json).
+\\timing on
+{det.stage_sql};
+INSERT INTO ingest_unparsed SELECT {lit(name)}, line_id FROM stage WHERE NOT parsed;
+INSERT INTO ingest_runs VALUES ({lit(name)}, {lit(file_label)}, {lit(det.format)}, {lit(det.format_title)},
+    {n}, {det.hits}, {lit(det.ts_format)}, {det.year_assumed if det.year_assumed is not None else 'NULL'}, {lit(json.dumps(det.field_map))},
+    {lit(json.dumps([f'{f} {c:.3f}' for f, c in det.candidates]))}, {det.regexes_skipped});
+\\set ds {name}
 \\set pbase {pbase}
 \\set title {lit(title)}
 \\set description {lit(desc)}
@@ -284,12 +277,3 @@ INSERT INTO ingest_runs VALUES ({lit(a.name)}, {lit('data/' + str(rel))}, {lit(b
 \\set status_meaning {lit(meanings['status'])}
 \\ir ../lib/stage_to_logs.sql
 """
-    out.write_text(sql)
-    print(f"format: {best['format']} ({coverage:.1%}), timestamp {best_ts}, fields {fieldmap}"
-          + (f", year {year_used} assumed" if year_used is not None else ""))
-    print(f"wrote {out.relative_to(ROOT)} (pattern base {pbase})")
-    return 0
-
-
-if __name__ == "__main__":
-    sys.exit(main())

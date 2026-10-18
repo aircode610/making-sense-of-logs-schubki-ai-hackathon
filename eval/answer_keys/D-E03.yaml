@@ -1,0 +1,66 @@
+id: D-E03
+role: engineer
+dataset: openstack
+question: "What happened to OpenStack instance 9fafc51c-d0dd-41df-99e9-6c79d8334eaf, step by step across the nova services?"
+answer_summary: "Instance 9fafc51c went through a complete, normal create-then-delete lifecycle in about 44 seconds on 2017-05-16, and nothing failed. nova-api accepted POST /servers (req-3ac9b75e, 202) at 22:51:36.647. nova-compute then claimed resources (claim successful at 22:51:37.003), created the image, started and paused the VM, received network-vif-plugged through nova-api os-server-external-events (200), and resumed it. It reported 'Instance spawned successfully' at 22:51:57.936 (spawn 20.32 s, build 21.12 s, close to the dataset median of 19.74 s / 20.55 s). About 7 s later a DELETE (req-6dc007d0, 204) at 22:52:05.334 terminated the VM: it was destroyed, its files were deleted, the hypervisor destroy took 1.03 s and network deallocation 0.45 s, and the lifecycle event 'VM Stopped' followed at 22:52:20.587. All 25 instance-tagged lines are INFO from nova-compute, nova-scheduler logged nothing for this instance, and the Loghub labels do not list it as anomalous."
+findings:
+  - fact: "25 lines carry [instance: 9fafc51c...], all from nova-compute and all INFO (0 non-INFO), spanning 22:51:36.968 to 22:52:20.587 on 2017-05-16"
+    sql: "SELECT line_id, ts, component, severity, request_id, duration_ms, body FROM logs WHERE dataset='openstack' AND object_id='9fafc51c-d0dd-41df-99e9-6c79d8334eaf' ORDER BY ts, line_id LIMIT 40"
+    result: "25 rows, line_id 132511..132614, all nova-compute INFO; separate check: count(*) with severity<>'INFO' = 0"
+    importance: must
+  - fact: "Create: nova-api POST /v2/54fadb.../servers status 202 (req-3ac9b75e) at 22:51:36.647. The same request id continues on nova-compute: Attempting claim (memory 2048 MB, disk 20 GB, vcpus 1) at 22:51:36.968, Claim successful at 22:51:37.003, Creating image at 22:51:37.619. nova-api also served a GET /servers/9fafc51c... with status 200 (req-b36b8c2b) at 22:51:37.261"
+    sql: "SELECT line_id, ts, component, request_id, status, left(body,200) FROM logs WHERE dataset='openstack' AND ts BETWEEN '2017-05-16 22:51:25' AND '2017-05-16 22:51:38' ORDER BY ts, line_id LIMIT 40"
+    result: "132509 22:51:36.647 nova-api req-3ac9b75e 202 POST .../servers; 132511 Attempting claim; 132518 22:51:37.003 Claim successful; 132520 GET .../servers/9fafc51c... 200; 132521 22:51:37.619 Creating image"
+    importance: must
+  - fact: "Spawn: VM Started at 22:51:51.023 and VM Paused at 22:51:51.084 (lifecycle events, req-3ea4052c = periodic power-state sync, which skips because of the pending 'spawning' task). nova-api created event network-vif-plugged:4bbe198c... for the instance (req-6eb8d7a5, os-server-external-events 200) at 22:51:57.91. VM Resumed at 22:51:57.927, 'Instance spawned successfully' at 22:51:57.936, 'Took 20.32 seconds to spawn the instance on the hypervisor', 'Took 21.12 seconds to build instance' at 22:51:58.074"
+    sql: "SELECT line_id, ts, component, request_id, status, left(body,220) FROM logs WHERE dataset='openstack' AND ts BETWEEN '2017-05-16 22:45:00' AND '2017-05-16 22:58:00' AND body LIKE '%9fafc51c%' AND object_id IS DISTINCT FROM '9fafc51c-d0dd-41df-99e9-6c79d8334eaf' ORDER BY ts LIMIT 40"
+    result: "3 untagged nova-api lines: 132520 GET 200 (22:51:37.261), 132562 Creating event network-vif-plugged:4bbe198c-342c-4c28-8086-d48dc2ca6e3f for instance 9fafc51c... (22:51:57.91), 132579 DELETE .../servers/9fafc51c... 204 (22:52:05.334); req 6eb8d7a5 also has 132563 POST os-server-external-events 200"
+    importance: must
+  - fact: "Delete: nova-api DELETE /servers/9fafc51c... status 204 (req-6dc007d0) at 22:52:05.334, about 7 s after the build completed. nova-compute (same request): Terminating instance 22:52:05.374, Instance destroyed successfully 22:52:05.59, Deleting instance files ..._del 22:52:06.285, Deletion complete 22:52:06.287, Took 1.03 s to destroy on hypervisor, Took 0.45 s to deallocate network 22:52:06.858. Finally 'VM Stopped (Lifecycle Event)' at 22:52:20.587"
+    sql: "SELECT request_id, component, count(*), min(ts), max(ts) FROM logs WHERE dataset='openstack' AND ts BETWEEN '2017-05-16 22:45:00' AND '2017-05-16 22:58:00' AND request_id IN ('req-3ac9b75e-aada-4a82-a102-140cc653fdaf','req-6dc007d0-d454-4226-977c-2e3431d1ad61','req-3ea4052c-895d-4b64-9e2d-04d64c4d94ab','req-b36b8c2b-f262-4826-9e3c-8065cbdd059a','req-6eb8d7a5-f0f7-479e-ae18-8a37d0ac405f') GROUP BY 1,2 ORDER BY 4"
+    result: "req-3ac9b75e: nova-api 1 + nova-compute 11 (22:51:36.647..22:51:58.074); req-b36b8c2b nova-api 1; req-6eb8d7a5 nova-api 2; req-6dc007d0: nova-api 1 + nova-compute 5 (22:52:05.334..22:52:06.858); req-3ea4052c nova-compute 111 lines 22:45:01..22:57:29 (shared periodic/lifecycle request, not specific to this VM)"
+    importance: must
+  - fact: "The spawn and build times are normal: 20.32 s spawn vs a dataset median of 19.74 s (p90 20.55 s, n=2066), and 21.12 s build vs a median of 20.55 s (p90 21.35 s)"
+    sql: "SELECT count(*), quantile_cont(duration_ms,0.5), quantile_cont(duration_ms,0.9) FROM logs WHERE dataset='openstack' AND body @@ websearch_to_tsquery('\"seconds to spawn the instance\"')  -- and the same for '\"seconds to build instance\"'"
+    result: "spawn: 2066 | 19740 | 20550 (ms); build: 2066 | 20550 | 21350 (ms)"
+    importance: should
+  - fact: "The Loghub ground truth does not list this instance as anomalous (only 4 anomalous instances are labelled), and its lines come from the normal2 file (line_id > 70746)"
+    sql: "SELECT count(*) FROM labels WHERE dataset='openstack' AND label LIKE '9fafc51c%'"
+    result: "0 (total openstack labels = 4)"
+    importance: must
+  - fact: "nova-scheduler logged nothing about this instance. Its only line in the window is an unrelated periodic 'Successfully synced instances from host' (req-766e5ee3, 22:52:13)"
+    sql: "SELECT line_id, ts, component, request_id, left(body,200) FROM logs WHERE dataset='openstack' AND ts BETWEEN '2017-05-16 22:51:30' AND '2017-05-16 22:52:25' AND component='nova-scheduler' LIMIT 20"
+    result: "132598 2017-05-16 22:52:13.125 nova-scheduler req-766e5ee3 Successfully synced instances from host 'cp-1.slowvm1...'"
+    importance: should
+  - fact: "The only non-INFO line in the instance's window is a nova-compute WARNING 'Unknown base file: /var/lib/nova/instances/_base/a489c868...' (22:52:11.068, req-addc1839). It comes from the image-cache periodic task and is unrelated to the instance: 3059 such warnings in the dataset, all under one request id"
+    sql: "SELECT count(*), count(DISTINCT request_id) FROM logs WHERE dataset='openstack' AND severity='WARNING' AND body @@ websearch_to_tsquery('\"Unknown base file\"')"
+    result: "3059 | 1"
+    importance: nice
+must_conclude:
+  - "Nothing failed: the instance had a normal, successful create, spawn and delete lifecycle (an explicit DELETE request, not a crash)"
+  - "Give the ordered sequence with timestamps: POST /servers 202, then claim, Creating image, VM Started/Paused, network-vif-plugged, Resumed, spawned (20.32 s) and built (21.12 s), then DELETE 204, Terminating, destroyed, files deleted, network deallocated, VM Stopped"
+  - "Tie the services together by request id (req-3ac9b75e for create, req-6dc007d0 for delete) across nova-api and nova-compute; nova-scheduler logged nothing for it"
+  - "25 instance-tagged lines in all (all nova-compute INFO), plus a few nova-api lines that name the uuid in the URL or event text but carry no instance tag"
+traps:
+  - "Calling the termination a failure or crash: it was a user/API-initiated DELETE (204) about 7 s after a successful build"
+  - "Attributing the 'Unknown base file' WARNING or the 'During sync_power_state ... pending task (spawning). Skip.' lines to a problem with this VM: both are routine periodic-task output"
+  - "Flagging 'VM Paused' as a fault: pause/resume during spawn is the normal libvirt boot sequence"
+  - "Flagging 'disk 20 GB' claimed against 'Total disk: 15 GB' as a failure: the claim succeeded because the disk limit is unlimited (this is overcommit and is only worth a remark)"
+  - "Treating req-3ea4052c (111 lines over 12 minutes) as this VM's request: it is a shared periodic or lifecycle request id"
+  - "Saying the instance is anomalous: it is not in the labels"
+  - "Counting only the 25 object_id lines and missing the nova-api GET, external-event and DELETE lines that reference the uuid in the body"
+not_established:
+  - "Who or why the instance was deleted 7 s after it was built: the logs show only the API call from 10.11.10.1 under tenant 54fadb412c4e40cdbaed9335e4c35a9e (it looks like a scripted create/delete test, but that is an inference)"
+  - "Which scheduler decision placed it: nova-scheduler logged nothing for this request, and the logs carry no compute host field"
+  - "What the guest did inside the VM"
+labels_used: "labels (openstack = anomalous instance ids, 4 in all) do not contain 9fafc51c, which confirms this is a normal lifecycle with no injected anomaly"
+golden_check:
+  - fact: "log lines for the instance"
+    golden_value: "25"
+    my_value: "25"
+    agrees: true
+  - fact: "first line time"
+    golden_value: "2017-05-16 22:51"
+    my_value: "2017-05-16 22:51 (22:51:36.968; the API POST that triggered it was at 22:51:36.647)"
+    agrees: true
+notes: "The question presupposes that something 'happened', but the honest answer is a clean, successful lifecycle. An answer that invents a failure should score low. The uuid appears in 3 nova-api lines without the [instance:] tag (GET, network-vif-plugged event, DELETE), so object_id-only searches miss the API side. The POST that created it does not contain the uuid and is linked only through request id req-3ac9b75e."

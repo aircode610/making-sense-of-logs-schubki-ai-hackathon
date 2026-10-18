@@ -1,5 +1,10 @@
 {
   "mcpServers": {
+    "logs": {
+      "type": "stdio",
+      "command": "uv",
+      "args": ["run", "--quiet", "--directory", ".", "python", "mcp_server/server.py"]
+    },
     "serenedb-docs": {
       "type": "http",
       "url": "https://api.serenedb.com/mcp"
@@ -11,13 +16,6 @@
     "langchain-docs": {
       "type": "http",
       "url": "https://docs.langchain.com/mcp"
-    },
-    "logs": {
-      "type": "stdio",
-      "command": ".venv/bin/python",
-      "args": [
-        "mcp_server/server.py"
-      ]
     }
   }
 }

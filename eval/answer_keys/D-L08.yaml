@@ -1,0 +1,60 @@
+id: D-L08
+role: lead
+dataset: otel
+question: "In the sampled OpenTelemetry demo logs (2025-09-23 00:00 to 00:30), which services and teams have the most error-level problems?"
+answer_summary: "frontend (team web-frontend) has by far the most error-level lines: 176,880 ERROR+FATAL (174,711 ERROR), about 83% of the 211,992 error-or-fatal lines in the slice. payment (payments-team) is a distant second with 24,219 (23,984 ERROR); by team, payments-team has 24,620 (payment + currency + accounting + fraud-detection) and web-frontend 176,880. Most frontend errors come from downstream calls, so they are not frontend-internal faults. About 91k of them carry payment's 'Visa cache full: cannot add new item' error (payment itself logs 11,253 of those lines), and about 61k are currency-conversion failures (currency Unavailable / convert price to USD). The fix to investigate first is therefore the payment Visa cache, then currency availability, even though frontend tops the line count. Two caveats: the FATAL level is misleading, because all 8,807 FATAL lines are '[ALERT-TASK] {\"level\":\"info\"...}' noise. And the data is a 0.1 s-per-minute sample with no earlier baseline, so these are line counts, not incidents, and say nothing about trend."
+findings:
+  - fact: "Error-or-fatal lines per service: frontend 176,880 (174,711 ERROR + 2,169 FATAL), cart 4,039 (4,036 FATAL), email 4,981 (4,218 ERROR + 763 FATAL), recommendation 558, currency 358, checkout 320, quote 287, shipping 278, payment 24,219 (23,984 ERROR + 235 FATAL). Total 211,992 of 1,702,944 lines."
+    sql: "SELECT component, severity, count(*) FROM logs WHERE dataset='otel' GROUP BY 1,2 ORDER BY 1,3 DESC"
+    result: "frontend|ERROR|174711; frontend|FATAL|2169; payment|ERROR|23984; payment|FATAL|235; email|ERROR|4218; email|FATAL|763; cart|FATAL|4036; cart|ERROR|3; currency|ERROR|199; currency|FATAL|159; ... total error_or_fatal=211992 of 1702944"
+    importance: must
+  - fact: "By owning team (ownership table, '*' default = shop-platform): web-frontend 176,880; payments-team 24,620; fulfilment-team 5,546; checkout-team 4,359; catalog-team 579; shop-platform 8."
+    sql: "SELECT coalesce(o.team, d.team) team, count(*) FROM logs l LEFT JOIN ownership o ON o.dataset='otel' AND o.component=l.component LEFT JOIN ownership d ON d.dataset='otel' AND d.component='*' WHERE l.dataset='otel' AND l.severity IN ('ERROR','FATAL') GROUP BY 1 ORDER BY 2 DESC"
+    result: "web-frontend|176880; payments-team|24620; fulfilment-team|5546; checkout-team|4359; catalog-team|579; shop-platform|8"
+    importance: must
+  - fact: "Frontend ERROR lines are mostly propagated downstream failures: 91,362 contain 'Visa cache full' (a payment charge failure), 31,982 are 'failed to convert shipping cost to currency' (currency rpc Unavailable), 28,658 are 'failed to prepare order: failed to convert price ... to USD', 21,821 are 'Failed to place order', and 888 are other (ECONNRESET, RESOURCE_EXHAUSTED). One failure is logged in several formats (Error:, ⨯, JSON, details:), so line counts multiply the actual failures."
+    sql: "SELECT CASE WHEN body ILIKE '%Visa cache full%' THEN 'visa_cache_full' WHEN body ILIKE '%convert shipping cost%' THEN 'currency_unavailable_shipping' WHEN body ILIKE '%convert price%' THEN 'prepare_order_convert_price' WHEN body ILIKE 'Failed to place order%' THEN 'failed_to_place_order' ELSE 'other' END c, count(*) FROM logs WHERE dataset='otel' AND component='frontend' AND severity='ERROR' GROUP BY 1 ORDER BY 2 DESC"
+    result: "visa_cache_full|91362; currency_unavailable_shipping|31982; prepare_order_convert_price|28658; failed_to_place_order|21821; other|888"
+    importance: must
+  - fact: "payment ERROR lines (23,984) split into 11,253 'Visa cache full: cannot add new item.' and 12,731 bare JSON stubs {\"level\":\"error\",span_id,trace_id} with no message. The errors are spread over 54 pod locations (69 payment locations in total), so the problem is fleet-wide across payment pods, not one pod."
+    sql: "SELECT left(regexp_replace(body,'[0-9a-f]{16,}','X','g'),90), count(*) FROM logs WHERE dataset='otel' AND component='payment' AND severity='ERROR' GROUP BY 1 ORDER BY 2 DESC LIMIT 6; SELECT component, count(DISTINCT request_id), count(DISTINCT node), count(DISTINCT location) FROM logs WHERE dataset='otel' AND severity IN ('ERROR','FATAL') AND component='payment' GROUP BY 1"
+    result: "{\"level\":\"error\",\"span_id\":\"X\",...}|12731; Visa cache full: cannot add new item.|11253; payment: 11253 distinct traces, 24 nodes, 54 locations"
+    importance: must
+  - fact: "Every FATAL line in the dataset (8,807) is an '[ALERT-TASK] {\"level\":\"info\",...}' message (e.g. 'Connection established to MongoDB', 'Going to process 0 alerts'). They are not real fatal errors, and they account for cart's 4,036 'FATAL' lines and most of checkout's, recommendation's and shipping's."
+    sql: "SELECT count(*), count(*) FILTER (WHERE body LIKE '[ALERT-TASK]%'), count(*) FILTER (WHERE body LIKE '%\"level\":\"info\"%') FROM logs WHERE dataset='otel' AND severity='FATAL'"
+    result: "8807|8807|8807"
+    importance: should
+  - fact: "Errors are steady across the whole window. Every sampled minute has about 3,600-8,000 frontend ERROR lines and about 690-930 payment ERROR lines, so there is no single burst or onset inside 00:00-00:29."
+    sql: "SELECT date_trunc('minute',ts) m, count(*) FILTER (WHERE component='frontend'), count(*) FILTER (WHERE component='payment'), count(*) FILTER (WHERE body ILIKE '%Visa cache full%') FROM logs WHERE dataset='otel' AND severity='ERROR' GROUP BY 1 ORDER BY 1"
+    result: "00:00|5833|737|2812 ... 00:17|8040|812|4943 ... 00:29|7565|686|4033 (30 rows, min frontend 3643 at 00:03, max 8040 at 00:17)"
+    importance: should
+  - fact: "Third place is email (fulfilment-team) with 4,218 ERROR lines. These are Ruby NoMethodError lines ('undefined method each for nil:NilClass', 2,104) plus stack-trace frame lines (2,102), so the line count is inflated by multi-line traces."
+    sql: "SELECT count(*) FILTER (WHERE body ILIKE '%NoMethodError%'), count(*) FILTER (WHERE body LIKE E'\\t%' OR body LIKE '%/gems/%'), count(*) FROM logs WHERE dataset='otel' AND component='email' AND severity='ERROR'"
+    result: "2104|2102|4218"
+    importance: nice
+must_conclude:
+  - "frontend / web-frontend has the most error-level lines (about 175-177k, about 83% of all error-or-fatal lines); payment / payments-team is second (about 24k)."
+  - "Most frontend errors are symptoms of downstream failures (payment 'Visa cache full', currency conversion unavailable), so payments-team (and the currency owner, also payments-team) is where to investigate first, not only the frontend."
+  - "These are line counts from a sampled slice (0.1 s per minute), not incidents or full volumes; one failure is logged in several lines and formats."
+traps:
+  - "Treating FATAL as the most severe class: all 8,807 FATAL lines are info-level '[ALERT-TASK]' messages. Ranking cart high because of its 4,036 FATAL lines is wrong; cart has only 3 ERROR lines."
+  - "Presenting 176,880 lines as 176,880 incidents or failed orders (each failure is logged in about 4-6 formats)."
+  - "Concluding that the frontend itself is broken; its errors embed payment and currency rpc errors."
+  - "Claiming a trend (growing or shrinking): the window is 30 minutes with no baseline, and the per-minute rate is flat."
+  - "Extrapolating the slice counts to full-volume numbers without stating that the data is 0.1 s/min sampled."
+not_established:
+  - "Why the Visa cache fills up, and why currency is Unavailable (root cause, any deployment or config change)."
+  - "Business impact: number of lost orders, revenue, customer impact. Neither the logs nor the sampling support it."
+  - "Whether this is new or recurring: there is no data before 2025-09-23 00:00 and only one 30-min slice."
+  - "The real volume over the 30 minutes (the slice is 0.1 s of every minute; the full source has about 1 B records)."
+labels_used: "none apply (otel has no labels; label column is NULL in the loader)"
+golden_check:
+  - fact: "frontend error-or-fatal lines"
+    golden_value: "176880"
+    my_value: "176880 (174711 ERROR + 2169 FATAL)"
+    agrees: true
+  - fact: "payment error-or-fatal lines"
+    golden_value: "24219"
+    my_value: "24219 (23984 ERROR + 235 FATAL)"
+    agrees: true
+notes: "The otel dataset spans exactly 00:00:00 to 00:29:00.1 on 2025-09-23, so the question's window equals the whole dataset. 'Error-level' can be read as ERROR only or as ERROR+FATAL; the ranking is the same either way at the top (frontend, then payment, then email). Below that, cart only ranks high under ERROR+FATAL because of misleveled info lines. Team totals counting ERROR only: web-frontend 174,711, payments-team about 24,191 (payment 23,984 + currency 199 + accounting 8), fulfilment-team about 4,240. Severity also has an 'INFORMATION' variant alongside INFO (irrelevant here)."

@@ -28,10 +28,10 @@ mcp_server/  FastMCP: parameterized SQL tools (search, context, counts, trend, p
   sorted by ts. Labels go to a separate `labels` table. Python only where SQL can't do a step (e.g. Drain3).
 - `ingest_runs(dataset, file, format, format_title, sample_lines, sample_matched, ts_format, year_assumed, field_map,
   candidates, regexes_skipped)` + `ingest_unparsed(dataset, line_id)` (plan 057 part 3): written by auto-detected loaders
-  (`load/gen/*.sql` from `scripts/ingest.py`), read by `ingest_report`; empty for hand-written loaders.
+  (`load/gen/*.sql` from `loader/detect.py`), read by `ingest_report`; empty for hand-written loaders.
 - `patterns(pattern_id, dataset, component, template, lines, nodes, first_ts, last_ts, example)` + Jev judgment columns.
 - `ownership(dataset, component, team, description, area, area_source, area_confidence, source, confidence, disputed_by,
-  dispute_confidence)` (plan 057: curated rows + inference chain, built by `load/96b_ownership_inferred.sql`; tools join
+  dispute_confidence)` (plan 057: curated rows + inference chain, built per dataset by `load/lib/ownership_dataset.sql`; tools join
   on (dataset, component) and read `team`; `top_patterns` / `priority_table` / `owner_of` also read source /
   confidence / disputed_by); `evidence(id, ts, tool, params, sql, rows, truncated, result_json)`.
 

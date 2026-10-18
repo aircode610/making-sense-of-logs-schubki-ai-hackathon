@@ -1,0 +1,65 @@
+id: D-X12
+role: engineer
+dataset: apache
+question: "The Apache web server logged a lot of errors on 2006-01-08. Is that unusual compared with the previous 7 days, what were the errors and who sent the requests?"
+answer_summary: "Yes, compared with the previous 7 days it is unusual. 2006-01-08 has 965 ERROR lines (1,039 lines in all), against 156 ERROR lines for 2006-01-01 to 2006-01-07 combined. Only 3 of those 7 days have any log lines (Jan 1: 23, Jan 6: 85, Jan 7: 48), so that baseline is thin. Across the whole log it is not exceptional: the mean is about 184 ERROR lines per active day, and 7 of 230 days reach 965 or more. Nearly all of it is client-side 404-type noise, not a server fault. 605 lines are 'File does not exist' and 261 are 'script not found or unable to stat' (132 carry a client IP, 129 carry none). They come from automated scans that probe for vulnerable web apps: awstats.pl, xmlrpc, xmlsrv, blog(s), wordpress, drupal and phpgroupware. Three IPs each ran one scan of under a minute: 193.19.219.217 (253 lines, 16:42:20-16:42:38), 61.134.40.151 (233 lines, 16:35:32-16:36:18) and 218.106.165.188 (198 lines, 18:24:47-18:25:09). Those three IPs account for 684 of the 965 lines, and the 16:00 and 18:00 hours hold 849 of them. The smaller remainder: 71 mod_jk / jk2_init() child-init errors on the Tomcat connector (owned by app-integration; httpd itself is owned by web-platform), 42 'Directory index forbidden' lines, and 23 'File does not exist' probes for /var/www/html/sumthin from 83.16.14.142."
+findings:
+  - fact: "2006-01-08 has 965 ERROR lines (plus 74 NOTICE, 1,039 in all). The previous 7 days have 156 ERROR lines. Only 3 of those days logged anything (Jan 1: 23, Jan 6: 85, Jan 7: 48); Jan 2-5 have no lines at all."
+    sql: "SELECT ts::date, count(*) FILTER (WHERE severity='ERROR'), count(*) FROM logs WHERE dataset='apache' AND ts >= '2006-01-01' AND ts < '2006-01-09' GROUP BY 1 ORDER BY 1"
+    result: "2006-01-01|23|48; 2006-01-06|85|89; 2006-01-07|48|79; 2006-01-08|965|1039 (separate counts: 965 and 156)"
+    importance: must
+  - fact: "Error mix on 2006-01-08: 'File does not exist' 605, 'script not found or unable to stat' 261 (132 with a path and client, 129 bare with no client), 'Directory index forbidden by rule' 42, and 71 Tomcat connector lines (mod_jk 49, jk2_init() 22). By component: httpd 894, mod_jk 49, jk2_init() 22."
+    sql: "SELECT regexp_replace(regexp_replace(body,'\\[client [0-9.]+\\] ',''),'/[^ ]*','<path>') t, count(*) FROM logs WHERE dataset='apache' AND severity='ERROR' AND ts >= '2006-01-08' AND ts < '2006-01-09' GROUP BY 1 ORDER BY 2 DESC LIMIT 15"
+    result: "File does not exist: <path>|605; script not found or unable to stat: <path>|132; script not found or unable to stat|129; Directory index forbidden by rule: <path>|42; mod_jk child init 1 -2|22; ..."
+    importance: must
+  - fact: "Top client IPs in the ERROR lines: 193.19.219.217 (253), 61.134.40.151 (233), 218.106.165.188 (198), 83.16.14.142 (23), 84.155.141.86 (17), 61.234.149.52 (14). There are 27 distinct IPs. The top three account for 684 of the 965 lines."
+    sql: "SELECT replace(e,'ip:',''), count(*) FROM (SELECT unnest(entities) e FROM logs WHERE dataset='apache' AND ts >= '2006-01-08' AND ts < '2006-01-09' AND severity='ERROR') x WHERE e LIKE 'ip:%' GROUP BY 1 ORDER BY 2 DESC LIMIT 10"
+    result: "193.19.219.217|253; 61.134.40.151|233; 218.106.165.188|198; 83.16.14.142|23; 84.155.141.86|17; 61.234.149.52|14; 70.113.52.160|13; 211.98.106.42|9"
+    importance: must
+  - fact: "Each of the top three IPs ran one short scan of the same path list: /var/www/html/blog (twice per round), blogs, drupal, wordpress, phpgroupware, xmlrpc, xmlsrv, awstats/awstats.pl, and /var/www/cgi-bin/awstats(.pl). This is web-app exploit scanning (awstats / XML-RPC probes), not a server malfunction. None of the three IPs appears anywhere else in the log."
+    sql: "SELECT regexp_extract(body, '\\[client ([0-9.]+)\\]',1) ip, count(*), min(ts), max(ts) FROM logs WHERE dataset='apache' AND (body LIKE '%193.19.219.217%' OR body LIKE '%61.134.40.151%' OR body LIKE '%218.106.165.188%') GROUP BY 1"
+    result: "61.134.40.151|233|16:35:32|16:36:18; 193.19.219.217|253|16:42:20|16:42:38; 218.106.165.188|198|18:24:47|18:25:09 (all on 2006-01-08, whole dataset)"
+    importance: must
+  - fact: "The spike is concentrated in time. The 16:00 hour has 599 ERROR lines and the 18:00 hour has 250; no other hour has more than 28."
+    sql: "SELECT date_trunc('hour',ts), count(*) FROM logs WHERE dataset='apache' AND severity='ERROR' AND ts >= '2006-01-08' AND ts < '2006-01-09' GROUP BY 1 ORDER BY 1"
+    result: "02h 28, 04h 22, 08h 26, 15h 25, 16h 599, 18h 250, others <=2"
+    importance: should
+  - fact: "Across the whole dataset, 965 ERROR lines in a day is high but not unique. The mean is 184 per active day over 230 days, and 7 days reach 965 or more (the maximum is 2006-02-20 with 1,524). The same scan probes continue on Jan 9 (262) and Jan 10 (160)."
+    sql: "SELECT count(*) FROM (SELECT ts::date, count(*) c FROM logs WHERE dataset='apache' AND severity='ERROR' GROUP BY 1) x WHERE c>=965"
+    result: "7 (avg 184.0/day over 230 days; top days 2006-02-20 1524, 2005-11-29 1346, 2005-07-21 1154, 2006-01-14 1086, ...)"
+    importance: should
+  - fact: "The Tomcat connector errors (mod_jk 'child init 1 -2' / 'workerEnv in error state', jk2_init() 'Can't find child N in scoreboard') total 71 lines. 45 of them fall in the 16:00 hour. app-integration owns them; httpd is owned by web-platform."
+    sql: "SELECT date_trunc('hour',ts), component, count(*) FROM logs WHERE dataset='apache' AND severity='ERROR' AND ts >= '2006-01-08' AND ts < '2006-01-09' AND component<>'httpd' GROUP BY 1,2 ORDER BY 1"
+    result: "16h: jk2_init() 11, mod_jk 34; 04h: 6+8; others small"
+    importance: nice
+must_conclude:
+  - "Unusual versus the previous 7 days: 965 ERROR lines against 156 for the whole week, and only 3 of those days have data."
+  - "The dominant error is 'File does not exist' (605), followed by 'script not found or unable to stat' (261)."
+  - "The requests came from automated vulnerability scanners. The top IP is 193.19.219.217 (253 lines); 61.134.40.151 (233) and 218.106.165.188 (198) are next. They probed awstats, xmlrpc, wordpress, drupal and phpgroupware."
+  - "These are client requests for missing resources, not a server outage. Lines are not incidents: the bulk is about three scan bursts, each under a minute long."
+traps:
+  - "Treating 965 error lines as 965 incidents or as a server failure. They are mostly 404-style probe responses from three scans."
+  - "The 'previous 7 days' baseline is thin: Jan 2-5 have no lines at all, so a daily-average ratio over 7 days overstates the anomaly."
+  - "129 bare 'script not found or unable to stat' lines carry no client IP. Any per-IP attribution leaves them out, so per-IP sums do not reach 965."
+  - "Over the whole log, 965 per day is not exceptional (7 of 230 days reach it). Calling it 'never seen before' is wrong."
+  - "Ownership: httpd belongs to web-platform, while mod_jk and jk2_init() belong to app-integration."
+not_established:
+  - "Whether any probe succeeded. This is the error log only; there is no access log or status codes."
+  - "Who the IPs belong to (attacker identity, geolocation) and whether the three IPs are coordinated."
+  - "Whether the mod_jk / jk2_init() child-init errors are caused by the scan load or affected real users."
+  - "Any user or service impact. Apache has no labels in the labels table."
+labels_used: "None. labels has 0 rows for apache."
+golden_check:
+  - fact: "ERROR lines on 2006-01-08"
+    golden_value: "965"
+    my_value: "965"
+    agrees: true
+  - fact: "ERROR lines in the previous 7 days"
+    golden_value: "156"
+    my_value: "156"
+    agrees: true
+  - fact: "top client IP in the ERROR lines of 2006-01-08"
+    golden_value: "193.19.219.217"
+    my_value: "193.19.219.217 (253 lines)"
+    agrees: true
+notes: "The day has 1,039 lines in all, of which 74 are NOTICE. The probe paths (blog, awstats, xmlrpc) appeared on 2005-12-01 and 2006-01-06 too, with 80 and 24 lines, and continued on Jan 9-10. That points to a recurring internet scanning campaign rather than a one-off event."

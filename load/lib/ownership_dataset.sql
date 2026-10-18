@@ -1,33 +1,22 @@
--- Inferred ownership (plan 057): rebuild `ownership` = Amirali's curated table (94_ownership.sql) + an inference chain,
--- so every component of any dataset gets team, area, source and confidence. Run after 96_pattern_judgments.sql
--- (needs the Jev owner_hint per pattern). First hit wins for the team:
+-- Ownership of ONE dataset (plan 057 chain by Konark, per dataset since plan 016; was 94_ownership + 96b). Run after the
+-- dataset's Jev traits / component areas exist (lib/build_dataset.sql, or loader/jev.py after live judging).
+-- First hit wins for the team:
 --   1 curated exact row (data/ownership.csv)                 source 'curated'          confidence 1.0
 --   2 curated dataset default ('*' row)                      source 'curated default'  confidence 0.95
 --   3 Jev owner_hint among the dataset's curated teams       source 'jev owner_hint'   confidence = Jev p (>= 0.6)
 --   4 area from a name rule (data/ownership_rules.csv) → team (data/area_teams.csv)   'rule: <source_ref>'  0.9
---   5 area from Jev (data/component_areas_*.csv, p >= 0.6) → team                    'jev area'   confidence = Jev p
+--   5 area from Jev (component_areas, p >= 0.6) → team                                'jev area'   confidence = Jev p
 --   6 none → no row (tools show 'unowned')
 -- Every row also gets an area (name rule first, else Jev area >= 0.6) and, for curated rows, a dispute flag when the
--- component's Jev owner hints (p >= 0.8) mostly name another curated team.
-\timing on
-SET sdb_scan_split = 'never';  -- TsDict facet counts off by one with split segments (plan 011)
-
-DROP TABLE IF EXISTS ownership_rules CASCADE;
-CREATE TABLE ownership_rules AS SELECT * FROM read_csv('/data/ownership_rules.csv', header = true, auto_detect = true);
-DROP TABLE IF EXISTS area_teams CASCADE;
-CREATE TABLE area_teams AS SELECT * FROM read_csv('/data/area_teams.csv', header = true, auto_detect = true);
-DROP TABLE IF EXISTS component_areas CASCADE;
-CREATE TABLE component_areas AS
-SELECT * FROM read_csv('/data/component_areas_*.csv', header = true, auto_detect = false,
-                       columns = {'dataset': 'VARCHAR', 'component': 'VARCHAR', 'area': 'VARCHAR', 'confidence': 'DOUBLE'});
-
-DROP TABLE IF EXISTS ownership_new CASCADE;
-CREATE TABLE ownership_new AS
+-- component's Jev owner hints (p >= 0.8) mostly name another curated team. psql variable: ds.
+SET sdb_scan_split = 'never';
+DELETE FROM ownership WHERE dataset = :'ds';
+INSERT INTO ownership
 WITH c AS (
     SELECT DISTINCT dataset, component,
            -- normalise a program name: drop "[pid]", "(pam_unix)", a trailing "-<n>" / ".service", lower case
            lower(regexp_replace(regexp_replace(component, '(\[\d+\]|\(.*\))$', ''), '(-\d+|\.service)$', '')) AS norm
-    FROM logs WHERE component IS NOT NULL
+    FROM logs WHERE dataset = :'ds' AND component IS NOT NULL
 ), rule AS (
     SELECT dataset, component, area, source_ref FROM (
         SELECT c.dataset, c.component, r.area, r.source_ref,
@@ -43,7 +32,7 @@ WITH c AS (
            CASE WHEN r.area IS NOT NULL THEN 'rule: ' || r.source_ref WHEN j.confidence >= 0.6 THEN 'jev area' END AS area_source,
            CASE WHEN r.area IS NOT NULL THEN 0.9 WHEN j.confidence >= 0.6 THEN j.confidence END AS area_confidence
     FROM c LEFT JOIN rule r USING (dataset, component)
-    LEFT JOIN component_areas j USING (dataset, component)
+    LEFT JOIN (SELECT * FROM component_areas WHERE dataset = :'ds') j USING (dataset, component)
 ), hint AS (  -- per component: the curated team its Jev owner hints name most (by lines), and how strongly
     SELECT dataset, component, owner_hint, conf, share FROM (
         SELECT p.dataset, p.component, j.owner_hint,
@@ -51,7 +40,7 @@ WITH c AS (
                sum(p.lines) / sum(sum(p.lines)) OVER (PARTITION BY p.dataset, p.component) AS share,
                row_number() OVER (PARTITION BY p.dataset, p.component ORDER BY sum(p.lines) DESC, j.owner_hint) AS rk
         FROM patterns p JOIN pattern_traits j USING (dataset, pattern_id)
-        WHERE j.owner_hint IS NOT NULL AND j.owner_confidence >= 0.6 AND p.component IS NOT NULL
+        WHERE p.dataset = :'ds' AND j.owner_hint IS NOT NULL AND j.owner_confidence >= 0.6 AND p.component IS NOT NULL
         GROUP BY 1, 2, 3)
     WHERE rk = 1
 ), strong AS (  -- the same, counting only confident hints (p >= 0.8): basis of the dispute flag
@@ -61,7 +50,7 @@ WITH c AS (
                sum(p.lines) / sum(sum(p.lines)) OVER (PARTITION BY p.dataset, p.component) AS share,
                row_number() OVER (PARTITION BY p.dataset, p.component ORDER BY sum(p.lines) DESC, j.owner_hint) AS rk
         FROM patterns p JOIN pattern_traits j USING (dataset, pattern_id)
-        WHERE j.owner_hint IS NOT NULL AND j.owner_confidence >= 0.8 AND p.component IS NOT NULL
+        WHERE p.dataset = :'ds' AND j.owner_hint IS NOT NULL AND j.owner_confidence >= 0.8 AND p.component IS NOT NULL
         GROUP BY 1, 2, 3)
     WHERE rk = 1
 ), x AS (
@@ -96,7 +85,3 @@ SELECT dataset, component,
 FROM x
 WHERE coalesce(exact_team, default_team, owner_hint, area_team) IS NOT NULL
 ORDER BY 1, 2;
-
--- Swap in place: curated (team, description) unchanged for curated rows; new columns added.
-DROP TABLE IF EXISTS ownership CASCADE;
-ALTER TABLE ownership_new RENAME TO ownership;

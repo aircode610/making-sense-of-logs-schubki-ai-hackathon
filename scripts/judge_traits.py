@@ -1,7 +1,7 @@
 """Jev pattern traits (plan 011): one multi-question ai_system_one call per pattern, inside SereneDB, stored as CSV.
 
   .venv/bin/python scripts/judge_traits.py [dataset ...]     # default: every dataset in the `datasets` table
-  → data/pattern_traits_<dataset>.csv (committed; load/96_pattern_judgments.sql loads it; a clean checkout needs no key)
+  → data/pattern_traits_<dataset>.csv (committed; load/lib/build_dataset.sql loads it; a clean checkout needs no key)
 
 Questions (calibrated probabilities, never LLM prose):
   threat     noul   security event (attack, intrusion attempt, failed / invalid authentication, unauthorized access)

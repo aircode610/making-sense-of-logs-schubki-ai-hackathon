@@ -34,6 +34,17 @@ from core import query, registry, tsquery_sql
 fails, times, matrix = [], {}, {}
 PROBLEM_LEVEL = ("(l.severity IN ('FATAL', 'FAILURE', 'SEVERE', 'ERROR', 'CRITICAL', 'WARN', 'WARNING') "
                  "OR l.status >= 500 OR l.severity IS NULL)")
+# Dataset without Jev judgments (plan 016): an explicit error-or-worse / WARN / 5xx line, no judgment
+ERROR_LEVEL = ("(l.severity IN ('FATAL', 'FAILURE', 'SEVERE', 'ERROR', 'CRITICAL', 'WARN', 'WARNING') "
+               "OR l.status >= 500)")
+
+
+def problem_rule(ds: str) -> tuple[str, str]:
+    """(join, condition) on logs l that independently selects the lines of problem patterns, for a judged dataset (Jev)
+    or an unjudged one (level rule)."""
+    if one("SELECT count(*) FROM pattern_judgments WHERE dataset = %(d)s", {"d": ds}):
+        return "JOIN pattern_judgments j USING (dataset, pattern_id)", f"j.p_problem >= 0.5 AND {PROBLEM_LEVEL}"
+    return "", ERROR_LEVEL
 
 
 def mark(tool, ds, state):
@@ -84,9 +95,10 @@ for ds in DATASETS:
     end_all = hi + timedelta(seconds=1)
     P = {"d": ds}
     # generic inputs from the dataset's own data
-    pid = one("SELECT p.pattern_id FROM patterns p JOIN pattern_judgments j USING (dataset, pattern_id) "
-              "WHERE p.dataset = %(d)s ORDER BY (j.p_problem >= 0.5 AND p.problem_lines > 0) DESC, p.bursts DESC, "
-              "p.pattern_id LIMIT 1", P)
+    # a problem pattern (Jev; a dataset added without a key has no judgments: level rule, plan 016)
+    pid = one("SELECT p.pattern_id FROM patterns p LEFT JOIN pattern_judgments j USING (dataset, pattern_id) "
+              "WHERE p.dataset = %(d)s ORDER BY (coalesce(j.p_problem, 1) >= 0.5 AND p.problem_lines > 0) DESC, "
+              "p.bursts DESC, p.pattern_id LIMIT 1", P)
     line = one("SELECT example_line_id FROM patterns WHERE dataset = %(d)s AND pattern_id = %(p)s", {"d": ds, "p": pid})
     word = one("SELECT t FROM (SELECT unnest(ts_dict_agg(body)) AS t, unnest(ts_dict_count(body)) AS c FROM logs_idx "
                "WHERE dataset @@ %(d)s) WHERE length(t) >= 5 AND regexp_matches(t, '^[a-z]+$') ORDER BY c DESC LIMIT 1", P)
@@ -213,8 +225,8 @@ for ds in DATASETS:
         skip("latency_profile", ds, "no durations")
 
     # ---- patterns and priorities (whole span)
-    n_prob = one(f"SELECT count(DISTINCT l.pattern_id) FROM logs l JOIN pattern_judgments j USING (dataset, pattern_id) "
-                 f"WHERE l.dataset = %(d)s AND j.p_problem >= 0.5 AND {PROBLEM_LEVEL}", P)
+    pj, pc = problem_rule(ds)
+    n_prob = one(f"SELECT count(DISTINCT l.pattern_id) FROM logs l {pj} WHERE l.dataset = %(d)s AND {pc}", P)
     r = run(patterns.top_patterns, ds, ds, lo, end_all, limit=5)
     if r:
         ok("top_patterns", ds, "problem patterns", r["total_matches"], n_prob)
@@ -228,9 +240,9 @@ for ds in DATASETS:
             tr = run(analytics.team_risk, ds, ds, team, lo, end_all)
             if tr:
                 ok("team_risk", ds, f"{team} problem patterns", tr["total_matches"], one(
-                    f"SELECT count(DISTINCT l.pattern_id) FROM logs l JOIN pattern_judgments j USING (dataset, pattern_id) "
+                    f"SELECT count(DISTINCT l.pattern_id) FROM logs l {pj} "
                     f"LEFT JOIN ownership o ON o.dataset = l.dataset AND o.component = l.component "
-                    f"WHERE l.dataset = %(d)s AND j.p_problem >= 0.5 AND {PROBLEM_LEVEL} "
+                    f"WHERE l.dataset = %(d)s AND {pc} "
                     f"AND coalesce(o.team, 'unowned') = %(t)s", {"d": ds, "t": team}))
         else:
             skip("team_risk", ds, "no problem patterns")
@@ -257,8 +269,10 @@ for ds in DATASETS:
     # ---- timeline
     r = run(timeline.pattern_history, ds, ds, pid)
     if r:
-        ok("pattern_history", ds, "bursts in series", sum(x["bursts"] for x in r["rows"]),
+        ok("pattern_history", ds, "bursts in series", sum(x["bursts_started"] for x in r["rows"]),
            one("SELECT count(*) FROM bursts WHERE dataset = %(d)s AND pattern_id = %(p)s", {"d": ds, "p": pid}))
+        ok("pattern_history", ds, "lines in series (own timestamps)", sum(x["lines"] for x in r["rows"]),
+           one("SELECT count(*) FROM logs WHERE dataset = %(d)s AND pattern_id = %(p)s", {"d": ds, "p": pid}))
     r = run(timeline.burst_timeline, ds, ds, pid)
     if r:
         ok("burst_timeline", ds, "contains the pattern", pid in [x["pattern_id"] for x in r["rows"]] or r["truncated"], True)
@@ -302,15 +316,18 @@ for ds in DATASETS:
         ok("heatmap", ds, "cells sum = lines", r["total_matches"], lines_total)
     try:
         r = analytics.reliability_trend(ds, bucket="day")
+        pj, pc = problem_rule(ds)
         ok("reliability_trend", ds, "total = problem bursts", r["total_matches"], one(
-            "SELECT count(*) FROM bursts b JOIN pattern_judgments j USING (dataset, pattern_id) JOIN patterns p "
-            "USING (dataset, pattern_id) WHERE b.dataset = %(d)s AND j.p_problem >= 0.5 AND p.problem_lines > 0", P))
+            f"SELECT count(*) FROM bursts b WHERE b.dataset = %(d)s AND b.pattern_id IN "
+            f"(SELECT l.pattern_id FROM logs l {pj} WHERE l.dataset = %(d)s AND {pc})", P))
     except ValueError as e:
         skip("reliability_trend", ds, str(e))
 
     # ---- semantic
     r = run(semantic.similar_patterns, ds, ds, pid, 3)
-    if r:
+    if r and not r["rows"] and r.get("hints"):
+        skip("similar_patterns", ds, "no embeddings (dataset added without an embedding key)")
+    elif r:
         ok("similar_patterns", ds, "distances ascending", [x["distance"] for x in r["rows"]],
            sorted(x["distance"] for x in r["rows"]))
     r = run(semantic.find_patterns, ds, word, ds, "lexical", 3)

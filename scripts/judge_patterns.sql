@@ -4,7 +4,7 @@
 -- State = component, severity, masked template, one real example line. Criteria examples are generic log wording,
 -- deliberately NOT taken from BGL (no pattern text appears in them), so the judgment is not fitted to this corpus.
 -- :where is set by the caller (all patterns, or a dry-run subset).
--- Call cap (plan 011 G11): 5000 by default; scripts/ingest.sh raises it for a large new dataset (AI_CAP, plan 057).
+-- Call cap (plan 011 G11): 5000 by default; loader/jev.py sets it per dataset (plan 016).
 \if :{?ai_cap}
 \else
 \set ai_cap 5000

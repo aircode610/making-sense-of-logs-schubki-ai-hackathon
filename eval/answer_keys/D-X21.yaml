@@ -1,0 +1,65 @@
+id: D-X21
+role: engineer
+dataset: otel
+question: "Checkout trace 559cdb671a24df91566226b0d22afa4f (OpenTelemetry demo, 2025-09-23 00:16) failed. Walk me through it step by step across the services. Which service failed first and with what error?"
+answer_summary: "The trace has 13 log lines, all within about 65 ms (2025-09-23 00:16:00.014 to 00:16:00.079). frontend logs 'Checkout' (00.014), cart runs GetCartAsync (00.021), currency converts 4 times (00.025-00.041), quote calculates a quote (00.051), currency converts once more (00.055), and payment receives the charge request (00.062). The first error is in payment at 00:16:00.074: 'Visa cache full: cannot add new item.' (payment pod payment-58fc8669d6-4d2tk on node gke-clickstack-demo-demo-pool-50a4aa65-ilhf). frontend then logs 'Failed to place order' (00.077) and two gRPC code 13 errors (00.078, 00.079) that wrap the same payment error ('failed to charge card ... Visa cache full'), so these are consequences, not separate faults. This is not a one-off: in the 30-minute slice, payment logs 11,253 'Visa cache full' errors, each in a different trace, at a steady 318-441 per minute from 00:00 to 00:29, so this trace is one instance of a failure that runs across the whole slice."
+findings:
+  - fact: "The trace has 13 lines across 5 services: frontend, cart, currency (5 lines), quote and payment. They run in order from frontend 'Checkout' to payment 'Charge request received.' between 00:16:00.014 and 00:16:00.062."
+    sql: "SELECT line_id, ts, component, severity, node, left(body,400) FROM logs WHERE dataset='otel' AND request_id='559cdb671a24df91566226b0d22afa4f' ORDER BY ts, line_id"
+    result: "910901 00.014 frontend INFO Checkout | 915071 00.0208 cart INFORMATION GetCartAsync | 917564/920653/924144/926851 currency INFO Convert conversion successful (00.025-00.041) | 932932 00.0513 quote INFO Calculated quote | 935063 00.0548 currency INFO Convert | 939442 00.062 payment INFO Charge request received. | 946406 00.074 payment ERROR Visa cache full | 948243 00.077 frontend ERROR Failed to place order | 948933 00.078 and 949579 00.079 frontend ERROR gRPC code 13 'failed to charge card: ... Visa cache full'"
+    importance: must
+  - fact: "The first error-level line in the trace is from payment at 2025-09-23 00:16:00.074: 'Visa cache full: cannot add new item.' (line 946406), 12 ms after payment received the charge request. All services before payment logged success."
+    sql: "SELECT line_id, ts, component, body FROM logs WHERE dataset='otel' AND request_id='559cdb671a24df91566226b0d22afa4f' AND severity IN ('ERROR','FATAL') ORDER BY ts, line_id LIMIT 1"
+    result: "946406 | 2025-09-23 00:16:00.074 | payment | Visa cache full: cannot add new item."
+    importance: must
+  - fact: "The 3 frontend ERROR lines come after the payment error and propagate it ('failed to charge card: could not charge the card: rpc error: code = Unknown desc = Visa cache full'). frontend is where the failure shows up, not where it starts. Two of these lines have no node or location."
+    sql: "SELECT line_id, ts, location, left(body,200) FROM logs WHERE dataset='otel' AND request_id='559cdb671a24df91566226b0d22afa4f' AND component='frontend' AND severity='ERROR' ORDER BY ts"
+    result: "948243 00.077 Failed to place order; 948933 00.078 and 949579 00.079 code 13 Visa cache full (location empty)"
+    importance: must
+  - fact: "The failing payment instance is pod payment-58fc8669d6-4d2tk on node gke-clickstack-demo-demo-pool-50a4aa65-ilhf. frontend runs on node ...-0280ddea-dsqn."
+    sql: "SELECT line_id, location FROM logs WHERE dataset='otel' AND request_id='559cdb671a24df91566226b0d22afa4f' ORDER BY ts"
+    result: "939442/946406 otel-demo/gke-clickstack-demo-demo-pool-50a4aa65-ilhf/payment-58fc8669d6-4d2tk"
+    importance: should
+  - fact: "The error is systemic, not specific to this trace. payment logged 11,253 'Visa cache full' ERROR lines in 11,253 distinct traces, from 24 nodes and 45 pod locations, between 00:00:00 and 00:29:00.099 (the whole slice). The rate is a flat 318-441 per minute (395 in the 00:16 minute)."
+    sql: "SELECT count(*), count(DISTINCT request_id), min(ts), max(ts), count(DISTINCT node) FROM logs WHERE dataset='otel' AND component='payment' AND body @@ websearch_to_tsquery('\"Visa cache full\"'); SELECT date_trunc('minute',ts), count(*) FROM logs WHERE dataset='otel' AND component='payment' AND body LIKE 'Visa cache full%' GROUP BY 1 ORDER BY 1"
+    result: "11253 | 11253 | 2025-09-23 00:00:00 | 2025-09-23 00:29:00.099 | 24 nodes; per minute 318-441, 00:16 = 395"
+    importance: should
+  - fact: "Not every charge fails. In the slice, payment logs 14,164 'Charge request received.', 11,253 'Visa cache full' and 2,965 'Transaction complete.' lines; 82 transactions completed in the 00:16 minute alone."
+    sql: "SELECT severity, left(body,80), count(*) FROM logs WHERE dataset='otel' AND component='payment' GROUP BY 1,2 ORDER BY 3 DESC LIMIT 10"
+    result: "Charge request received. 14164; Visa cache full 11253; Transaction complete. 2965"
+    importance: nice
+  - fact: "frontend logged 21,821 'Failed to place order' lines in 21,821 traces. Only 4,397 of those traces also contain a payment 'Visa cache full' line. The other failed orders have other causes (connection errors, read errors, empty details) or no payment line in the slice."
+    sql: "WITH f AS (SELECT DISTINCT request_id FROM logs WHERE dataset='otel' AND component='frontend' AND body='Failed to place order'), v AS (SELECT DISTINCT request_id FROM logs WHERE dataset='otel' AND component='payment' AND body LIKE 'Visa cache full%') SELECT (SELECT count(*) FROM f), (SELECT count(*) FROM f JOIN v USING(request_id))"
+    result: "21821 | 4397"
+    importance: nice
+must_conclude:
+  - "payment is the first service to fail, at 2025-09-23 00:16:00.074, with 'Visa cache full: cannot add new item.'"
+  - "The trace has 13 lines. Steps before payment (frontend Checkout, cart GetCartAsync, currency conversions, quote) all succeed."
+  - "The frontend errors ('Failed to place order' and gRPC code 13 'failed to charge card') are downstream propagation of the payment error."
+  - "The same payment error recurs throughout the slice (about 11k lines/traces), so this trace is not an isolated failure."
+traps:
+  - "Naming frontend as the failing service because it logs 3 of the 4 ERROR lines and the user-facing 'Failed to place order'."
+  - "Counting the 4 ERROR lines as 4 failures or incidents: they are one failure plus its propagation."
+  - "Counting the 11,253 Visa cache full lines as 11,253 incidents: they are one ongoing condition that affects many requests."
+  - "Assuming every 'Failed to place order' in the slice is caused by Visa cache full: only 4,397 of 21,821 traces show it."
+  - "Two frontend lines have empty node/location, so a node-scoped context view misses them."
+not_established:
+  - "Why the Visa cache is full (capacity, leak or deliberate fault injection). The OTel demo has feature flags that inject payment failures, but the logs do not show that this is the cause."
+  - "Whether a retry succeeded or the user retried. No later lines exist in this trace."
+  - "Customer or revenue impact."
+  - "When the condition started. It is already present at the first second of the 30-minute slice."
+labels_used: "None. The otel dataset has no Loghub labels."
+golden_check:
+  - fact: "log lines in the trace"
+    golden_value: "13"
+    my_value: "13"
+    agrees: true
+  - fact: "service of the first error-level line in the trace"
+    golden_value: "payment"
+    my_value: "payment"
+    agrees: true
+  - fact: "time of the first error in the trace"
+    golden_value: "2025-09-23 00:16"
+    my_value: "2025-09-23 00:16:00.074"
+    agrees: true
+notes: "Owners (ownership table): payment -> payments-team, frontend -> web-frontend. The whole trace takes about 65 ms. All slice-wide counts cover the loaded 30-minute slice (00:00-00:29), not the full 1B-record remote source."

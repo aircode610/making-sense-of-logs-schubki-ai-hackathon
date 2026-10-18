@@ -1,4 +1,4 @@
-"""How well an auto-detected dataset was understood (plan 057 part 3): the format scripts/ingest.py chose, how much of the
+"""How well an auto-detected dataset was understood (plan 057 part 3): the format loader/detect.py chose, how much of the
 file it matched, which field became which column, and samples of the lines it did not match."""
 import json
 import time
@@ -22,7 +22,7 @@ def ingest_report(
     samples with line_id), timestamp format, assumed year if the log has none, the field → column map, the runner-up
     formats with their coverage.
     Caveats: unmatched lines keep their text but inherit time, component and level from the previous line.
-    Example: ingest_report(dataset)
+    Example: ingest_report(dataset=<dataset>, unmatched_limit=5)
     Next: search_logs / get_context(line_id) on an unmatched line; describe_corpus for the field meanings.
     """
     t0 = time.perf_counter()

@@ -1,0 +1,61 @@
+id: D-L07
+role: lead
+dataset: zookeeper
+question: "Which problems recurred most in the Zookeeper ensemble between 2015-07-29 and 2015-08-26, which teams own them, and what should the team investigate first?"
+answer_summary: "By recurrence (bursts split by >30 min quiet), the top problem is NIOServerCnxn 'caught end of stream exception' (18 bursts, 1,670 lines, 7 active days), followed by ZooKeeperServer 'Connection request from old client ... will be dropped if server is in r-o mode' (14 bursts, 1,861 lines); both are owned by client-connectivity, and they move together on the same days (07-29..07-31, 08-10, 08-20/21), i.e. client sessions dropping/reconnecting. Coordination-platform owns the long tail of quorum/election patterns (Leader/Follower zxid warnings 9 bursts each, LearnerHandler shutdown ERROR 7 bursts, 'Cannot open channel to N at election address' 8 bursts) and has more problem bursts in total (91 vs 44). Line volume is a misleading ranking: ~41k QuorumCnxManager Send/RecvWorker lines are one storm in a single hour (2015-07-29 19:00). Investigate first the client-connectivity end-of-stream / old-client reconnect waves (most recurrent), but flag that from 2015-08-24 15:00 until the end of the data this member cannot open election channels to peers 2 and 3 (steady 120 lines/hour, 2,417 lines), an ongoing quorum-connectivity problem that a burst ranking under-counts because it is continuous."
+findings:
+  - fact: "Most recurrent problem pattern in the period: 'caught end of stream exception' (NIOServerCnxn, WARN), 18 bursts, 1,670 lines; owner client-connectivity. Confirmed from raw logs: 18 gap>30min bursts."
+    sql: "WITH x AS (SELECT ts, lag(ts) OVER (ORDER BY ts) p FROM logs WHERE dataset='zookeeper' AND pattern_id=200062) SELECT count(*) FILTER (WHERE p IS NULL OR ts-p > INTERVAL '30 minutes') FROM x"
+    result: "18 (1,670 lines, 2015-07-29 19:39 .. 2015-08-21 15:55, 7 distinct days)"
+    importance: must
+  - fact: "Second: ZooKeeperServer 'Connection request from old client /<IP>; will be dropped if server is in r-o mode', 14 bursts, 1,861 lines, client-connectivity; it occurs on the same days as end-of-stream (one client-reconnect phenomenon, clients 10.10.34.11-13)."
+    sql: "SELECT CAST(ts AS DATE) d, count(*) FILTER (WHERE pattern_id=200062) eos, count(*) FILTER (WHERE pattern_id=200055) oldc FROM logs WHERE dataset='zookeeper' AND ts>='2015-07-29' AND ts<'2015-08-26' GROUP BY 1 ORDER BY 1"
+    result: "07-29 250/309, 07-30 742/703, 07-31 371/379, 08-10 132/220, 08-11 3/0, 08-20 171/206, 08-21 1/44; 14 bursts for 200055"
+    importance: must
+  - fact: "Ranking of problem patterns by bursts with owner (ownership table, '*' default = coordination-platform): Leader 'Commiting zxid ... not first!' 9, Leader 'First is ...' 9, NIOServerCnxn 'Unexpected Exception' ERROR 9 (client-connectivity), Follower 'Got zxid ... expected' 9, QuorumCnxManager 'Cannot open channel to N at election address' 8, LearnerHandler 'Unexpected exception causing shutdown while sock still open' ERROR 7 and 'GOODBYE' 7."
+    sql: "SELECT p.pattern_id, p.component, coalesce(o.team,d.team) team, count(*) bursts, p.lines, p.template FROM bursts b JOIN patterns p USING (dataset,pattern_id) LEFT JOIN ownership o ON o.dataset=p.dataset AND o.component=p.component LEFT JOIN ownership d ON d.dataset=p.dataset AND d.component='*' WHERE b.dataset='zookeeper' AND b.start_ts>='2015-07-29' AND b.start_ts<'2015-08-26' AND p.problem_lines>0 GROUP BY 1,2,3,5,6 ORDER BY bursts DESC LIMIT 20"
+    result: "200062 18 client-connectivity; 200055 14 client-connectivity; 200036/200037/200089/200057 9; 200018 8; 200048/200049 7; Send/RecvWorker 6"
+    importance: must
+  - fact: "Team totals of problem bursts in the period: coordination-platform 91, client-connectivity 44 (storage-persistence none). Client-connectivity owns the top 2 single patterns; coordination-platform owns more problems overall."
+    sql: "SELECT coalesce(o.team,'coordination-platform') team, count(*) bursts FROM bursts b JOIN patterns p USING (dataset,pattern_id) LEFT JOIN ownership o ON o.dataset=p.dataset AND o.component=p.component WHERE b.dataset='zookeeper' AND p.problem_lines>0 AND b.start_ts>='2015-07-29' AND b.start_ts<'2015-08-26' GROUP BY 1"
+    result: "coordination-platform|91 ; client-connectivity|44"
+    importance: should
+  - fact: "Highest line volume is not highest recurrence: QuorumCnxManager Send/RecvWorker warnings (~41.5k lines across 4 patterns) are almost entirely one storm in the hour 2015-07-29 19:00 (41,445 lines), only ~6 bursts each."
+    sql: "SELECT date_trunc('hour',ts) h, count(*) FROM logs WHERE dataset='zookeeper' AND pattern_id IN (200050,200051,200052,200053) GROUP BY 1 ORDER BY 2 DESC LIMIT 5"
+    result: "2015-07-29 19:00|41445; next hours 23, 18, 15, 12"
+    importance: must
+  - fact: "Ongoing at data end: 'Cannot open channel to 2/3 at election address /10.10.34.12:3888 / 10.10.34.13:3888' every ~60 s per peer from 2015-08-24 15:00 to the last line 2015-08-25 11:23 (2,417 lines in this run; 2,584 lines over 8 days total), coordination-platform. Continuous, so it counts as only ~1 burst."
+    sql: "SELECT date_trunc('hour',ts) h, count(*) FROM logs WHERE dataset='zookeeper' AND pattern_id=200018 AND ts>='2015-08-24' GROUP BY 1 ORDER BY 1"
+    result: "08-24 15:00 79, then 120 every hour through 08-25 10:00, 08-25 11:00 58; split 1211 to peer 2, 1206 to peer 3"
+    importance: should
+  - fact: "ERROR lines are rare (617 of 74,380) and concentrated on 2015-07-29 (598), mainly LearnerHandler 'Unexpected exception causing shutdown while sock still open' (590 lines, 7 bursts)."
+    sql: "SELECT CAST(ts AS DATE), count(*) FILTER (WHERE severity='ERROR') FROM logs WHERE dataset='zookeeper' GROUP BY 1 ORDER BY 1"
+    result: "2015-07-29 598, 07-30 12, 07-31 4, 08-20 3"
+    importance: nice
+must_conclude:
+  - "Top recurring problem is 'caught end of stream exception' (NIOServerCnxn), 18 bursts, owned by client-connectivity; second is the 'old client ... r-o mode' warning (14 bursts), also client-connectivity."
+  - "Name owners: client-connectivity for NIOServerCnxn/ZooKeeperServer, coordination-platform for quorum/election (Leader, Follower, LearnerHandler, QuorumCnxManager)."
+  - "Rank by recurrence (bursts / days), not by line count, and say counts are bursts or lines, not incidents."
+  - "Recommend investigating first the client disconnect/reconnect waves (end-of-stream + old-client) and their link to quorum events on the same days; also flag the election-channel failures to peers 2 and 3 that are ongoing at the end of the data."
+traps:
+  - "Ranking by lines puts QuorumCnxManager Send/RecvWorker 'Interrupted while waiting'/'Send worker leaving thread' (~10.4k lines each) on top; that is one storm in one hour, not the most recurrent problem."
+  - "Calling 18 bursts '18 incidents' or 1,670 lines '1,670 failures'."
+  - "Attributing NIOServerCnxn/ZooKeeperServer to coordination-platform (only the '*' default) or to storage-persistence."
+  - "Treating 'caught end of stream exception' as proven server fault: it often just means a client closed its socket; the logs show symptoms, not cause."
+  - "Ignoring that the dataset ends 2015-08-25 11:26, so the window effectively covers the whole dataset (no data on 08-26)."
+not_established:
+  - "Root cause of client disconnects (client-side restart, network, server restarts / elections) is not in the logs."
+  - "Whether peers 2 and 3 were down or unreachable from 2015-08-24 15:00 (only this member's logs exist)."
+  - "Client or business impact, downtime, or which applications the clients belong to."
+  - "Whether the 'old client' warnings indicate a real version mismatch problem or are benign."
+labels_used: "none apply (labels table has 0 zookeeper rows)"
+golden_check:
+  - fact: "bursts of 'caught end of stream exception' in the period"
+    golden_value: "18"
+    my_value: "18 (bursts table and recomputed from raw logs with a 30-min gap rule)"
+    agrees: true
+  - fact: "owner of that pattern"
+    golden_value: "client-connectivity"
+    my_value: "client-connectivity"
+    agrees: true
+notes: "Data spans 2015-07-29 17:41 to 2015-08-25 11:26, so the question window is the whole dataset. Activity is clustered on a few days (07-29..07-31, 08-07, 08-10, 08-18, 08-20/21, 08-24/25). A strong lead answer may legitimately prioritise the ongoing 08-24/25 election-channel failures over the more recurrent client warnings if it justifies it; it should still name end-of-stream as the most recurrent. Pattern ids: 200062 end-of-stream, 200055 old client, 200018 cannot open channel."

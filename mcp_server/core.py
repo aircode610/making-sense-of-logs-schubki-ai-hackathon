@@ -8,7 +8,6 @@ import json
 import os
 import time
 from datetime import datetime
-from functools import lru_cache
 from typing import Annotated, Literal, Optional
 
 import psycopg
@@ -32,6 +31,15 @@ def conn() -> psycopg.Connection:
         # Correctness workaround (plan 011): a GROUP BY on a keyword column with a document filter is answered from the
         # term dictionary (TsDict); when a segment is split across worker threads its counts came out off by one.
         _conn.execute("SET sdb_scan_split = 'never'")
+        # Plan 016: AI keys from .env into SereneDB on every server start (its secrets are not persisted across container
+        # restarts; replaces ./docker/secrets.sh). Before SET ROLE: needs the admin connection. No key → AI steps skip.
+        try:
+            import sys as _sys
+            _sys.path.insert(0, str(__import__("pathlib").Path(__file__).resolve().parent.parent))
+            from loader.core import register_secrets
+            register_secrets(_conn)
+        except Exception:  # noqa: BLE001  (a read-only user cannot create secrets: AI tools then say so)
+            pass
         # Database-enforced access (plan 011, load/99_roles.py): LOGS_DB_ROLE=logs_engineer | logs_lead | logs_manager
         # | team_<team>. A team role reads its own schema's views (only its components' rows) under the same names.
         role = env("LOGS_DB_ROLE")
@@ -62,8 +70,84 @@ def execute(sql: str, params: Optional[dict] = None) -> None:
 # ---------------------------------------------------------------- dataset registry (plan 011: nothing dataset-specific
 # in tool code; names, components, severities and teams come from the loaded data, so a new dataset needs no change here)
 
-@lru_cache(maxsize=1)
+# Plan 016: the server works on ONE dataset at a time (the user's own logs), chosen at run time: LOGS_DATASET (or the
+# first loaded dataset) at start, then load_logs / use_dataset switch it. Tools have no `dataset` parameter; the
+# wrapper in server.py passes the active one. LOGS_DATASET='*' = the multi-dataset server (every tool takes `dataset`;
+# kept for the eval harness / comparisons, plan 011-013).
+_active: Optional[str] = None
+_reg_cache: Optional[dict] = None
+
+
+def single() -> bool:
+    """True = one active dataset, no `dataset` parameter (the shipped mode); False = LOGS_DATASET='*'."""
+    return os.environ.get("LOGS_DATASET") != "*"
+
+
+def active() -> Optional[str]:
+    """The dataset every tool works on (None = nothing loaded yet: tools ask to load first)."""
+    global _active
+    if not single():
+        return None
+    if _active is None:
+        loaded = _registry_all_cached()
+        want = os.environ.get("LOGS_DATASET")
+        _active = want if want in loaded else next(iter(loaded), None)
+    return _active
+
+
+def set_active(dataset: Optional[str]) -> None:
+    global _active
+    _active = dataset
+
+
+def pinned() -> Optional[str]:
+    """Plan 014 name, kept for callers: the active dataset in single-dataset mode."""
+    return active()
+
+
+def refresh() -> None:
+    """Re-read the dataset registry (after load_logs / remove_dataset); keeps the active dataset if it still exists."""
+    global _reg_cache, _active
+    _reg_cache = None
+    if _active is not None and _active not in _registry_all_cached():
+        _active = None
+
+
+def _registry_all_cached() -> dict:
+    global _reg_cache
+    if _reg_cache is None:
+        try:
+            _reg_cache = _registry_all()
+        except psycopg.errors.UndefinedTable:  # an empty database: no schema yet (load_logs creates it)
+            _reg_cache = {}
+    return _reg_cache
+
+
 def registry() -> dict:
+    """The loaded datasets; in single-dataset mode only the active one ({} before anything is loaded)."""
+    reg = _registry_all_cached()
+    if single():
+        a = active()
+        return {a: reg[a]} if a in reg else {}
+    return reg
+
+
+def loaded_datasets() -> dict:
+    """Every loaded dataset (for setup_status / use_dataset), whatever the mode."""
+    return _registry_all_cached()
+
+
+def need_dataset() -> str:
+    """The active dataset, or a clear error telling the client how to get one."""
+    a = active()
+    if a is None:
+        names = ", ".join(_registry_all_cached()) or "none"
+        raise ValueError("No dataset is loaded yet: load_logs(source=<name>) for each base-corpus dataset (setup_status "
+                         "lists them), or load_logs(source='/path/to/your.log'); loaded: " + names)
+    return a
+
+
+def _registry_all() -> dict:
     """{dataset: {title, description, <field>_meaning, first_ts, last_ts, lines, components[], severities[], teams[],
     examples{field: value}, entity_kinds[]}} read once per server process from the `datasets` / `dataset_examples`
     tables and the data itself (plan 012: what each generic field means per dataset lives in data, not code)."""
@@ -84,7 +168,7 @@ def registry() -> dict:
     for r in query("SELECT dataset, team FROM ownership GROUP BY 1, 2 ORDER BY 1, 2", {}):
         if r["dataset"] in out:
             out[r["dataset"]].setdefault("teams", []).append(r["team"])
-    try:  # load/93_examples.sql (absent on an old database: descriptions just show no examples)
+    try:  # dataset_examples (load/lib/build_dataset.sql; absent on an old database: descriptions just show no examples)
         for r in query("SELECT dataset, field, example FROM dataset_examples ORDER BY dataset, n_values DESC", {}):
             if r["dataset"] in out:
                 out[r["dataset"]]["examples"][r["field"]] = r["example"]
@@ -204,7 +288,9 @@ def check_dataset(dataset: Optional[str]) -> Optional[str]:
 # per concept, written once and reused by every tool, with the per-dataset meaning and real example values from the
 # registry, so the model knows what to pass for the dataset it is working on.
 
-DatasetName = Literal[dataset_names()]  # JSON-schema enum of the datasets loaded when the server started
+# JSON-schema enum of the datasets loaded at start (multi-dataset mode only; in the shipped single-dataset mode the
+# parameter is removed from every tool and the datasets can change while the server runs)
+DatasetName = str if single() else Literal[dataset_names()]
 _DS_HELP = "Dataset (log source); see the field guide."
 Dataset = Annotated[DatasetName, Field(description=_DS_HELP)]
 DatasetOpt = Annotated[Optional[DatasetName], Field(description=_DS_HELP + " Omit to cover all datasets.")]
@@ -234,6 +320,30 @@ Team = Annotated[Optional[str], Field(
     description="Owning team, or 'unowned' (component without an owner). Teams per dataset: field guide.")]
 PatternIdOpt = Annotated[Optional[int], Field(
     description="Log pattern id (a kind of message; rows of most tools carry one).")]
+
+
+def is_problem(j: str, problem_lines: str, error_lines: str, ds: str) -> str:
+    """SQL condition "this pattern is a problem" (DECISIONS H18 + plan 016 fallback). Judged dataset: problem-level lines
+    (error-or-worse, WARN, 5xx, or no level) AND stored Jev p_problem >= 0.5. Dataset never judged (added without an AI
+    key): at least one explicit error-or-worse / WARN / 5xx line (a line with no level cannot be judged without Jev);
+    results say so via judged_note. j = pattern_judgments alias; the others are SQL expressions."""
+    return (f"(CASE WHEN EXISTS (SELECT 1 FROM pattern_judgments jx WHERE jx.dataset = {ds}) "
+            f"THEN {problem_lines} > 0 AND {j}.p_problem >= 0.5 ELSE {error_lines} > 0 END)")
+
+
+def judged(dataset: Optional[str]) -> bool:
+    """Whether the dataset's patterns carry Jev judgments (False → problem tools use the level rule)."""
+    return dataset is None or bool(query("SELECT 1 AS x FROM pattern_judgments WHERE dataset = %(d)s LIMIT 1",
+                                         {"d": dataset}))
+
+
+def judged_note(dataset: Optional[str]) -> list[str]:
+    """[] or the hint every problem-ranking result carries for an unjudged dataset."""
+    if judged(dataset):
+        return []
+    return [f"{dataset} has no Jev judgments (added without an AI key): problem = a pattern with error-or-worse / "
+            "WARN / 5xx lines, not a judged real fault (diagnostic dumps and corrected errors may be included; lines "
+            "without a level are not counted). Say so in the answer."]
 
 
 def filters_sql(f: dict) -> tuple[str, dict]:
@@ -394,7 +504,15 @@ def envelope(tool: str, params: dict, sqls: list[str], filters: dict, scope: str
              t0: float, **extra) -> dict:
     sql_text = "; ".join(sqls)
     eid = hashlib.sha1(json.dumps([tool, sql_text], default=str).encode()).hexdigest()[:10]
-    return {"tool": tool, "params": plain({k: v for k, v in params.items() if v is not None}, "T"),
-            "sql": sqls, "filters": plain({k: v for k, v in filters.items() if v is not None}, "T"), "scope": scope,
-            **plain(extra, "T"), "rows": [clean_row(r) for r in rows],
-            "elapsed_ms": round((time.perf_counter() - t0) * 1000, 1), "evidence_id": f"ev-{eid}"}
+    env = {"tool": tool, "params": plain({k: v for k, v in params.items() if v is not None}, "T"),
+           "sql": sqls, "filters": plain({k: v for k, v in filters.items() if v is not None}, "T"), "scope": scope,
+           **plain(extra, "T"), "rows": [clean_row(r) for r in rows],
+           "elapsed_ms": round((time.perf_counter() - t0) * 1000, 1), "evidence_id": f"ev-{eid}"}
+    # Plan 014: a truncated result says how much is missing and how to get it, so a small but important row (a rare
+    # new error, one IP) is not silently cut. Totals stay exact either way.
+    total = extra.get("total_matches")
+    if extra.get("truncated") and rows and isinstance(total, int) and total > len(rows):
+        env["truncation"] = {"shown": len(rows), "of": total,
+                             "how_to_see_more": f"raise limit (max {MAX_ROWS}) or narrow the filters / period; "
+                                                "group with count_by / facet for the full distribution"}
+    return env

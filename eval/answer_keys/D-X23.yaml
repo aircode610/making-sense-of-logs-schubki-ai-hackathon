@@ -1,0 +1,65 @@
+id: D-X23
+role: engineer
+dataset: openstack
+question: "Which nova-api endpoint has the slowest HTTP request times between 2017-05-14 and 2017-05-18, and how does it compare with a typical request?"
+answer_summary: "POST /v2/<tenant>/servers (VM create, always status 202) is the slowest nova-api endpoint with real volume: 2,065 requests, median 0.504 s, mean 0.519 s, p95 0.648 s, max 1.793 s. A typical nova-api request (all 98,733 timed requests in the window) has a median of 0.26 s (mean 0.234 s, p95 0.382 s), so server creation is roughly 2x slower at the median; even its fastest call (0.423 s) is above the overall median. The dominant endpoint, GET /v2/<tenant>/servers/detail (67,716 requests), sits at the typical 0.265 s median. The single slowest request is not a POST: GET /servers/detail?all_tenants=True&changes-since=... took 4.164 s at 2017-05-17 06:25:15, inside a short window where nova-api logged a keystone token-validation failure (503, CRITICAL 'Unable to validate token') and several other >2 s requests. The logs show steady create latency (median ~0.50 s on each logged day), not a degradation trend."
+findings:
+  - fact: "Ranked by median request time per normalized endpoint (tenant id / uuid / query string masked), POST /v2/<tenant>/servers is slowest among endpoints with more than one request: 2065 requests, median 0.504 s, mean 0.519 s, p95 0.648 s, max 1.793 s, all status 202. Next: GET /servers/detail 0.265 s, DELETE /servers/<uuid> 0.261 s."
+    sql: "WITH r AS (SELECT duration_ms, status, regexp_replace(regexp_replace(regexp_extract(body, '\"([A-Z]+ [^ ?]+)[^ ]* HTTP', 1), '[0-9a-f]{32}', '<tenant>','g'), '[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}', '<uuid>','g') AS ep FROM logs WHERE dataset='openstack' AND status IS NOT NULL AND ts >= '2017-05-14' AND ts < '2017-05-18') SELECT ep, count(*), round(median(duration_ms)/1000,3), round(avg(duration_ms)/1000,3), round(quantile_cont(duration_ms,0.95)/1000,3), round(max(duration_ms)/1000,3), string_agg(DISTINCT status::text, ',') FROM r GROUP BY ep ORDER BY 3 DESC"
+    result: "POST /v2/<tenant>/servers|2065|0.504|0.519|0.648|1.793|202 ; GET /v2/<tenant>/images|1|0.365 ; GET /v2/<tenant>/servers/detail|67716|0.265|0.264|0.365|4.164|200,503 ; DELETE /v2/<tenant>/servers/<uuid>|2064|0.261|0.268|0.297|1.251|204 ; metadata endpoints 0.001-0.23"
+    importance: must
+  - fact: "Typical nova-api request over the same window: 98,733 timed requests, median 0.26 s, mean 0.234 s, p95 0.382 s, max 4.164 s. POST /servers median is about 1.9x the overall median and above the overall p95."
+    sql: "SELECT count(*), round(median(duration_ms)/1000,3), round(avg(duration_ms)/1000,3), round(quantile_cont(duration_ms,0.95)/1000,3), round(max(duration_ms)/1000,3) FROM logs WHERE dataset='openstack' AND status IS NOT NULL AND ts >= '2017-05-14' AND ts < '2017-05-18'"
+    result: "98733|0.26|0.234|0.382|4.164"
+    importance: must
+  - fact: "POST /servers is consistently slow, not driven by a few outliers: minimum 0.423 s (above the overall median), only 4 of 2065 calls exceed 1 s, 104 exceed 0.648 s."
+    sql: "SELECT count(*) FILTER (WHERE duration_ms>1000), count(*) FILTER (WHERE duration_ms>648), round(min(duration_ms)/1000,3) FROM logs WHERE dataset='openstack' AND status IS NOT NULL AND body LIKE '%\"POST /v2/%/servers HTTP%' AND ts >= '2017-05-14' AND ts < '2017-05-18'"
+    result: "4|104|0.423"
+    importance: should
+  - fact: "No trend: POST /servers median is 0.507 s (05-14, 196 req), 0.504 s (05-16, 1313 req), 0.503 s (05-17, 556 req). There are no log lines at all on 2017-05-15."
+    sql: "SELECT date_trunc('day',ts), count(*), round(median(duration_ms)/1000,3) FROM logs WHERE dataset='openstack' AND status IS NOT NULL AND body LIKE '%\"POST /v2/%/servers HTTP%' AND ts >= '2017-05-14' AND ts < '2017-05-18' GROUP BY 1 ORDER BY 1"
+    result: "2017-05-14|196|0.507 ; 2017-05-16|1313|0.504 ; 2017-05-17|556|0.503"
+    importance: should
+  - fact: "The single slowest request is GET /v2/<tenant>/servers/detail?all_tenants=True&changes-since=...&host=cp-1.slowvm1... at 2017-05-17 06:25:15.882, 4.164 s (line_id 194089, req-619608b8-...). Other top requests (meta_data.json 2.244 s, vendor_data.json 2.239 s, os-server-external-events 2.145 s) fall in the same 06:25 minute."
+    sql: "SELECT line_id, ts, request_id, round(duration_ms/1000,3), left(body,140) FROM logs WHERE dataset='openstack' AND status IS NOT NULL AND ts >= '2017-05-14' AND ts < '2017-05-18' ORDER BY duration_ms DESC LIMIT 8"
+    result: "194089|2017-05-17 06:25:15.882|req-619608b8-...|4.164|GET .../servers/detail?all_tenants=True&changes-since=... ; 194084|06:25:15.035|2.244|GET /openstack/2012-08-10/meta_data.json ; 194092|06:25:17.384|2.239|vendor_data.json ; 194070|06:25:06.597|2.145|POST os-server-external-events ; 161100|2017-05-17 02:21:31|1.793|POST /servers"
+    importance: should
+  - fact: "Just before that cluster, at 06:25:03 nova-api logged ERROR 'Bad response code while validating token: 503', CRITICAL 'Unable to validate token: Failed to fetch token data from identity server' and returned a 503 for GET /servers/detail; 4 of the window's 20 requests over 1 s fall between 06:24 and 06:27 on 05-17."
+    sql: "SELECT ts, component, severity, left(body,130) FROM logs WHERE dataset='openstack' AND ts>='2017-05-17 06:24:50' AND ts<'2017-05-17 06:25:20' AND (severity<>'INFO' OR duration_ms>1000) ORDER BY ts LIMIT 15"
+    result: "06:25:03.044 nova-api ERROR Bad response code while validating token: 503 ; 06:25:03.046 nova-api CRITICAL Unable to validate token ; 06:25:06.597 os-server-external-events 2.145 s ; 06:25:15.035 meta_data.json 2.244 s ; 06:25:15.882 servers/detail 4.164 s"
+    importance: nice
+  - fact: "nova-api (team cloud-api) is the only component logging HTTP status/time lines: 98,733 lines, all in 2017-05-14 19:39 to 2017-05-17 11:55."
+    sql: "SELECT component, count(*), count(duration_ms), min(ts), max(ts) FROM logs WHERE dataset='openstack' AND status IS NOT NULL GROUP BY 1"
+    result: "nova-api|98733|98733|2017-05-14 19:39:01.445|2017-05-17 11:55:11.889 ; ownership: nova-api -> cloud-api"
+    importance: nice
+must_conclude:
+  - "The slowest endpoint is POST /v2/<tenant>/servers (create VM, status 202), median about 0.50 s over 2,065 requests."
+  - "A typical nova-api request has a median of about 0.26 s, so creation is roughly 2x slower (p95 0.65 s vs 0.38 s overall)."
+  - "Compare using medians/percentiles over all requests of an endpoint, not a single max."
+traps:
+  - "Ranking by max picks GET /servers/detail (4.164 s single request during a keystone 503 hiccup), but that endpoint's median (0.265 s) is typical."
+  - "Not masking tenant ids, uuids and query strings splits endpoints into thousands of one-off 'endpoints' (each changes-since URL looks like a unique slow endpoint)."
+  - "Single-request endpoints (GET /v2/<tenant>/images, 1 request, 0.365 s) should not be called the slowest endpoint."
+  - "Metadata endpoints (/latest/meta-data/*) have medians around 1 ms but high means; median vs mean differ strongly, so state which statistic is used."
+  - "VM spawn/build times ('Took N seconds to spawn') are nova-compute durations, not HTTP request times; they must not be mixed in."
+  - "No data exists for 2017-05-15; the window really covers 05-14 evening, 05-16 and 05-17 morning."
+not_established:
+  - "Why POST /servers is slower (likely synchronous scheduling/DB/quota work before returning 202) is not shown by the logs; it is a hypothesis."
+  - "Whether 0.5 s violates any SLO; no latency target is in the logs."
+  - "Any user or customer impact of the latency."
+  - "Root cause of the 06:25 keystone 503; the logs only show nova-api's view of it."
+labels_used: "None. OpenStack labels mark 4 anomalous instance uuids (VM lifecycle anomalies), which do not apply to HTTP endpoint latency."
+golden_check:
+  - fact: "median request time of POST /v2/<tenant>/servers, seconds"
+    golden_value: "0.5"
+    my_value: "0.50 (0.504)"
+    agrees: true
+  - fact: "median request time of all nova-api requests, seconds"
+    golden_value: "0.26"
+    my_value: "0.26"
+    agrees: true
+  - fact: "POST /v2/<tenant>/servers requests"
+    golden_value: "2065"
+    my_value: "2065"
+    agrees: true
+notes: "duration_ms is parsed from 'time: N' in nova-api access lines. Endpoint normalization: method + path without query string, 32-hex tenant ids -> <tenant>, uuids -> <uuid>. Status breakdown in window: 200=90633, 404=3969, 202=2065, 204=2064, 503=2."

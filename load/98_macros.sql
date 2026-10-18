@@ -9,14 +9,16 @@ CREATE OR REPLACE MACRO logs_count(ds, q, s, e) AS TABLE
 CREATE OR REPLACE MACRO logs_search(ds, q, s, e, k := 20) AS TABLE
     SELECT line_id, ts, component, severity, node, pattern_id, body
     FROM logs WHERE dataset = ds AND ts >= s AND ts < e AND body @@ websearch_to_tsquery(q) ORDER BY ts, line_id LIMIT k;
--- problem patterns of a period (stored Jev judgment) with recurrences, spread and owner
+-- problem patterns of a period (stored Jev judgment; a dataset added without a key: the level rule, plan 016) with
+-- recurrences, spread and owner
 CREATE OR REPLACE MACRO problem_patterns(ds, s, e) AS TABLE
     SELECT p.pattern_id, p.template, p.component, coalesce(o.team, 'unowned') AS team,
            count(*) AS bursts, sum(b.lines) AS lines, max(b.nodes) AS max_nodes_per_burst, round(j.p_problem, 3) AS p_problem
     FROM bursts b JOIN patterns p ON p.dataset = b.dataset AND p.pattern_id = b.pattern_id
-    JOIN pattern_judgments j ON j.dataset = b.dataset AND j.pattern_id = b.pattern_id
+    LEFT JOIN pattern_judgments j ON j.dataset = b.dataset AND j.pattern_id = b.pattern_id
     LEFT JOIN ownership o ON o.dataset = p.dataset AND o.component = p.component
-    WHERE b.dataset = ds AND b.start_ts >= s AND b.start_ts < e AND j.p_problem >= 0.5 AND p.problem_lines > 0
+    WHERE b.dataset = ds AND b.start_ts >= s AND b.start_ts < e AND CASE WHEN EXISTS (SELECT 1 FROM pattern_judgments jx WHERE jx.dataset = ds)
+          THEN p.problem_lines > 0 AND j.p_problem >= 0.5 ELSE p.error_lines > 0 END
     GROUP BY ALL ORDER BY bursts DESC, lines DESC;
 -- problem bursts per team, this period vs the previous period of equal length
 CREATE OR REPLACE MACRO team_problem_bursts(ds, s, e) AS TABLE
@@ -24,9 +26,10 @@ CREATE OR REPLACE MACRO team_problem_bursts(ds, s, e) AS TABLE
            count(*) FILTER (WHERE b.start_ts >= s) AS bursts,
            count(*) FILTER (WHERE b.start_ts < s) AS bursts_previous
     FROM bursts b JOIN patterns p ON p.dataset = b.dataset AND p.pattern_id = b.pattern_id
-    JOIN pattern_judgments j ON j.dataset = b.dataset AND j.pattern_id = b.pattern_id
+    LEFT JOIN pattern_judgments j ON j.dataset = b.dataset AND j.pattern_id = b.pattern_id
     LEFT JOIN ownership o ON o.dataset = p.dataset AND o.component = p.component
-    WHERE b.dataset = ds AND b.start_ts >= s - (e - s) AND b.start_ts < e AND j.p_problem >= 0.5 AND p.problem_lines > 0
+    WHERE b.dataset = ds AND b.start_ts >= s - (e - s) AND b.start_ts < e AND CASE WHEN EXISTS (SELECT 1 FROM pattern_judgments jx WHERE jx.dataset = ds)
+          THEN p.problem_lines > 0 AND j.p_problem >= 0.5 ELSE p.error_lines > 0 END
     GROUP BY 1 ORDER BY bursts DESC;
 -- one pattern's bursts per week over the whole dataset
 CREATE OR REPLACE MACRO pattern_weeks(ds, pid) AS TABLE
