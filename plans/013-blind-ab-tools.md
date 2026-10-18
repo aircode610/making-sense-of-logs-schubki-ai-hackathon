@@ -26,6 +26,7 @@ where the only difference is the MCP toolset, compared by a blind judge that inv
   prompt only if it is not worse than the current one (separate check, not this plan).
 - **Coverage nudge:** only the role checklist items both arms can satisfy (search_logs + get_context; top_patterns +
   trend/count_by; priority_table), unchanged.
+- **Deviation (2026-10-18):** the judge's `sql` tool runs as DB role `logs_manager` (database-enforced read-only, 60 s cancel, 200 rows), which cannot read `labels`; the label evidence is already in the frozen answer keys, so the compare step grades against the key + SQL and the separate per-run investigation step is dropped (replaced by the keys).
 - **Judge = an agent** (Opus, `JUDGE_MODEL`), tool `sql` (one SELECT/WITH statement, read-only role, 200-row cap,
   60 s timeout) over every table incl. raw `logs` (full text search `body @@ …`), `labels` (ground truth where the
   dataset has it), `ownership`, `patterns`, `bursts`, `episodes`.
@@ -63,8 +64,8 @@ judge investigations against our golden facts. Held-out untouched.
 - [x] Answer keys: 25 parallel context-free agents → `eval/answer_keys/`, human spot-check, freeze
 - [x] 25 more questions (writers per dataset) + their answer keys (50 keys, all golden facts agree; judgement calls settled + frozen, H27)
 - [x] Neutral recipes + `role_tools` parameter; diff of rendered prompts = empty (prompt depends only on role + shared recipes; leak scan: no tool name in it; smoke: both arms stay in their toolsets). Also fixed `corpus()` (plan-012 column rename had silently reduced it to a one-line fallback)
-- [ ] `sql` judge tool (read-only), investigate + compare agents, blinding + leak scan
-- [ ] Smoke on 2 questions, read transcripts
+- [x] `sql` judge tool (logs_manager, read-only), compare agents against the frozen keys, blinding + leak scan (`eval/ab.py`)
+- [x] Smoke on 2 questions (D-X25, D-M07): prompts identical, no leaks, judge verifies with SQL and caught a false claim; first verdicts flipped with order (position bias on near-ties) → judge told order is random and to call tie unless one is clearly better; re-judged: 2 consistent ties
 - [ ] Full run, results file, STATUS / EVAL.md
 
 ## 7. Results (filled after)
