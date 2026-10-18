@@ -31,18 +31,37 @@ uv sync                  # Python 3.12 + the server's dependencies (optional: `u
 claude                   # approve the MCP server "logs" when asked
 ```
 Then tell Claude: **"Load the base corpus"**. BGL and OpenStack are downloaded from the brief's Zenodo links and
-loaded by our loader (`src/sql/`) in 72 s. To also run the Jev step live instead of using its committed
-outputs: `uv run python -m loader load base --fresh` (needs `TYPESAFE_API_KEY`).
+loaded by our loader (`src/sql/`) in 72 s, with the committed Jev outputs. To run the whole pipeline live, Jev
+included: `uv run python -m loader load base --fresh` (about 2 min; needs a key, see [Keys](#keys-env)).
 
 | Also | Command |
 |---|---|
-| Our own agent, the eval | `uv sync --extra agent` and `ANTHROPIC_API_KEY` in `.env` (copy `.env.example`) |
-| Jev on your own new logs | `TYPESAFE_API_KEY` in `.env` (without it, problems are judged by log level) |
+| Our own agent, the eval | `uv sync --extra agent` (keys: see below) |
 | Use the server from any folder | `claude mcp add -s user logs -- uv run --directory "$PWD" python src/mcp_server/server.py` (run in the repo) |
 | Any other MCP client | stdio command `uv run --directory <repo> python src/mcp_server/server.py` |
 | Load without Claude | `uv run python -m loader load base` |
 
 Apple Silicon runs the amd64 image under emulation: it works, slower.
+
+## Keys (`.env`)
+**None are needed to try it:** the base corpus loads with its committed Jev outputs, and every tool works.
+Keys only matter when you load data **live** (`--fresh`, your own log files, other Loghub sets) or run our agent / the eval.
+`cp .env.example .env`, fill what you need. The server registers the AI keys in SereneDB itself on start.
+
+| Key | Used for | Without it |
+|---|---|---|
+| `TYPESAFE_API_KEY` | **Jev** at load time: real fault or routine, kind, security threat, cause, owner and area per kind of message | Loading still works. Problems are judged by **log level only** (stated in every result), which is less accurate: real alerts in the top 10 drop from 5 to 1 on BGL. Logs without levels (e.g. SSH) then have no problem patterns: rankings come back empty, search and counts still work. |
+| `GOOGLE_API_KEY` | Gemini **embeddings** of message templates at load time (semantic / hybrid pattern search) | `find_patterns` falls back to word (lexical) search; `similar_patterns` says it has no vectors. Everything else is unaffected. |
+| `ANTHROPIC_API_KEY` | **our own LangGraph agent** and the **evaluation** (agents + Opus judge) | Not needed for the MCP server with Claude Code (Claude Code uses your own Claude login). |
+| `LANGSMITH_*` | optional tracing of our agent | no traces |
+| `PG*` | the SereneDB connection (default `localhost:7890`) | defaults are used |
+
+| You want to | Keys |
+|---|---|
+| Try it with Claude Code on the base corpus | none |
+| Run the full pipeline live: `uv run python -m loader load base --fresh` | `TYPESAFE_API_KEY` (+ `GOOGLE_API_KEY` for semantic search) |
+| Load your own log file (*"Load ~/logs/app.log"*) | `TYPESAFE_API_KEY` recommended (+ `GOOGLE_API_KEY`) |
+| Run our agent or the evaluation | `ANTHROPIC_API_KEY` (+ `uv sync --extra agent`) |
 
 ## Run it
 Ask in plain words:
