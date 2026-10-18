@@ -77,13 +77,22 @@ def record(fn):
         finally:
             try:
                 _write({"kind": "call", "ts": datetime.now().isoformat(timespec="milliseconds"), "tool": fn.__name__,
-                        "args": {k: v for k, v in kwargs.items() if v is not None},
+                        "args": {k: v for k, v in kwargs.items() if v is not None}, "dataset": _active(),
                         "wall_ms": round((time.perf_counter() - t0) * 1000, 1), "error": err,
                         "result": _short(out) if isinstance(out, dict) else None})
             except Exception:  # noqa: BLE001  (recording must never break a tool)
                 pass
     wrapper.__wrapped_tool__ = fn
     return wrapper
+
+
+def _active():
+    """The dataset the call ran on (plan 016: it can change during a session), so Verify re-runs on the same one."""
+    import core
+    return core.active() if core.single() else None
+
+
+WRITE_TOOLS = {"load_logs", "remove_dataset", "use_dataset", "create_focus_index", "drop_focus_index", "remote_index"}
 
 
 def load(session: str) -> dict:
@@ -97,7 +106,9 @@ def load(session: str) -> dict:
             calls.append(r)
         elif r["kind"] == "report":
             report = r
-    return {"session": session, "calls": calls, "report": report, "dataset": os.environ.get("LOGS_DATASET")}
+    datasets = list(dict.fromkeys(c.get("dataset") for c in calls if c.get("dataset")))  # plan 016: in order of use
+    return {"session": session, "calls": calls, "report": report,
+            "dataset": ", ".join(datasets) or os.environ.get("LOGS_DATASET")}
 
 
 # ---------------------------------------------------------------- number check (same rule as the agent's checker)
@@ -264,9 +275,19 @@ def verify(session: str, step: int) -> dict:
     fn = getattr(server.TOOLS.get(c["tool"]), "__wrapped_tool__", None) or server.TOOLS.get(c["tool"])
     if fn is None or c.get("error"):
         return {"step": step, "status": "skipped", "detail": "this step failed or the tool is gone"}
+    if c["tool"] in WRITE_TOOLS:
+        return {"step": step, "status": "skipped", "detail": "a setup / write step: not re-run (verify re-runs reads only)"}
+    import core
     t0 = time.perf_counter()
     with _verify_lock, _readonly():
-        fresh = fn(**c.get("args", {}))
+        prev = core.active() if core.single() else None
+        if c.get("dataset") and core.single():  # the dataset the step ran on, not the one active now
+            core.set_active(c["dataset"])
+        try:
+            fresh = fn(**c.get("args", {}))
+        finally:
+            if core.single():
+                core.set_active(prev)
     ms = round((time.perf_counter() - t0) * 1000, 1)
     compared, ok = [], True     # [{what, recorded, rerun, same}]: the page shows this table
     for k in ("total_matches", "total_lines", "distinct_nodes", "first_ts", "last_ts", "nodes", "top_node_share"):
