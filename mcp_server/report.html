@@ -11,55 +11,100 @@
 /* SereneDB tokens (serenedb.com: Urbanist, ink #11121d, mist #f0f2f5, accent #4a7aad / #80beff, brand gradient) */
 :root {
   --bg: #ffffff; --surface: #ffffff; --mist: #f0f2f5; --line: #e7e7e7; --ink: #11121d; --ink-2: #506182;
-  --muted: #7a8296; --accent: #4a7aad; --brand-a: #a162f0; --brand-b: #3e318c; --ok: #22c55e; --warn: #d97706;
-  --db: #895af8; --tool: #c9cfdb; --radius: .625rem;
+  --muted: #7a8296; --accent: #4a7aad; --brand-a: #a162f0; --brand-b: #3e318c; --ok: #16a34a; --warn: #d97706;
+  --tool: #c9cfdb; --radius: .75rem;
   --sans: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; --display: "Urbanist", var(--sans);
   --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
   color-scheme: light;
 }
 @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
-  --bg: #1c1c1c; --surface: #212121; --mist: #151515; --line: rgba(255,255,255,.1); --ink: #ffffff; --ink-2: #bbbbbb;
-  --muted: #8b93a7; --accent: #80beff; --tool: #3a3f4b; color-scheme: dark; } }
+  --bg: #1c1c1c; --surface: #212121; --mist: #171717; --line: rgba(255,255,255,.1); --ink: #ffffff; --ink-2: #bbbbbb;
+  --muted: #8b93a7; --accent: #80beff; --tool: #3a3f4b; --ok: #22c55e; color-scheme: dark; } }
 :root[data-theme="dark"] {
-  --bg: #1c1c1c; --surface: #212121; --mist: #151515; --line: rgba(255,255,255,.1); --ink: #ffffff; --ink-2: #bbbbbb;
-  --muted: #8b93a7; --accent: #80beff; --tool: #3a3f4b; color-scheme: dark; }
+  --bg: #1c1c1c; --surface: #212121; --mist: #171717; --line: rgba(255,255,255,.1); --ink: #ffffff; --ink-2: #bbbbbb;
+  --muted: #8b93a7; --accent: #80beff; --tool: #3a3f4b; --ok: #22c55e; color-scheme: dark; }
 
 * { box-sizing: border-box; }
 [hidden] { display: none !important; }
-html, body { margin: 0; background: var(--bg); color: var(--ink); font: 15px/1.55 var(--sans); }
-.wrap { max-width: 880px; margin: 0 auto; padding: 28px 16px 64px; }
+html, body { margin: 0; background: var(--bg); color: var(--ink); font: 15px/1.6 var(--sans); }
+.wrap { max-width: 920px; margin: 0 auto; padding: 28px 16px 72px; }
 button { font: inherit; color: inherit; }
 :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 6px; }
+code { font-family: var(--mono); font-size: .9em; background: var(--mist); padding: 1px 5px; border-radius: 4px; }
 
 /* header */
-.top { display: flex; align-items: center; gap: 12px; margin-bottom: 36px; }
+.top { display: flex; align-items: center; gap: 12px; margin-bottom: 34px; }
 .mark { width: 26px; height: 26px; border-radius: 7px; background: linear-gradient(135deg, var(--brand-a), var(--brand-b)); flex: none; }
 .brand { font-family: var(--display); font-weight: 600; font-size: 17px; letter-spacing: -.01em; }
 .brand span { color: var(--muted); font-weight: 500; }
-.meta { margin-left: auto; display: flex; gap: 8px; align-items: center; color: var(--muted); font-size: 13px; }
-.chip { display: inline-flex; align-items: center; gap: 6px; padding: 3px 10px; border: 1px solid var(--line); border-radius: 999px; font-size: 12.5px; color: var(--ink-2); background: var(--surface); }
+.meta { margin-left: auto; display: flex; gap: 8px; align-items: center; }
+.chip { display: inline-flex; align-items: center; gap: 6px; padding: 3px 10px; border: 1px solid var(--line); border-radius: 999px; font-size: 12.5px; color: var(--ink-2); background: var(--surface); white-space: nowrap; }
 .live-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--ok); box-shadow: 0 0 0 3px color-mix(in srgb, var(--ok) 25%, transparent); }
 .icon-btn { border: 1px solid var(--line); background: var(--surface); border-radius: 8px; width: 30px; height: 30px; cursor: pointer; color: var(--muted); }
 
-/* question + answer */
 .eyebrow { font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); margin-bottom: 8px; }
-h1 { font-family: var(--display); font-weight: 600; font-size: clamp(24px, 3.4vw, 34px); line-height: 1.18; letter-spacing: -.02em; margin: 0 0 22px; }
-.answer { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 20px 22px; }
-.answer p { margin: 0 0 10px; } .answer p:last-child { margin-bottom: 0; }
-.answer ul { margin: 6px 0 10px; padding-left: 20px; } .answer li { margin: 3px 0; }
-.answer h3 { font-family: var(--display); font-size: 16px; margin: 14px 0 6px; }
-.num { border-bottom: 1.5px dotted var(--accent); cursor: pointer; font-variant-numeric: tabular-nums; }
-.num.miss { border-bottom-color: var(--warn); }
-.num:hover, .num.on { background: color-mix(in srgb, var(--accent) 14%, transparent); border-radius: 3px; }
-.answer-foot { display: flex; gap: 14px; flex-wrap: wrap; margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--line); font-size: 13px; color: var(--muted); }
-.k { display: inline-flex; align-items: center; gap: 6px; }
-.sw { width: 10px; height: 2px; display: inline-block; border-bottom: 2px dotted var(--accent); }
-.sw.miss { border-bottom-color: var(--warn); }
-.empty { color: var(--muted); }
+h1 { font-family: var(--display); font-weight: 600; font-size: clamp(24px, 3.4vw, 34px); line-height: 1.18; letter-spacing: -.02em; margin: 0 0 24px; }
+h2 { font-family: var(--display); font-size: 18px; font-weight: 600; margin: 0; letter-spacing: -.01em; }
 
-/* session strip (signature) */
-.strip-head { display: flex; align-items: baseline; justify-content: space-between; margin: 34px 0 10px; gap: 12px; flex-wrap: wrap; }
-.strip-head h2, .steps-head h2 { font-family: var(--display); font-size: 18px; font-weight: 600; margin: 0; letter-spacing: -.01em; }
+/* answer: headline + cards */
+.headline { font-family: var(--display); font-size: 20px; line-height: 1.4; font-weight: 500; letter-spacing: -.01em; margin: 0 0 16px; }
+.figures { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 18px; }
+.fig { background: var(--mist); border-radius: 10px; padding: 10px 14px; min-width: 120px; }
+.fig b { display: block; font-family: var(--display); font-size: 22px; font-weight: 600; letter-spacing: -.01em; font-variant-numeric: tabular-nums; }
+.fig span { font-size: 12.5px; color: var(--muted); }
+.cards { display: grid; grid-template-columns: 1fr; gap: 12px; }
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 14px 16px 12px; display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.card.wide { grid-column: 1 / -1; }
+.card.hypothesis { border-style: dashed; background: color-mix(in srgb, var(--mist) 55%, var(--surface)); }
+.card-head { display: flex; align-items: center; gap: 8px; }
+.card-title { font-family: var(--display); font-weight: 600; font-size: 15.5px; }
+.tag { font-size: 11px; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); border: 1px solid var(--line); border-radius: 999px; padding: 1px 8px; }
+.support { margin-left: auto; font-size: 12px; color: var(--muted); display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; }
+.meter { width: 38px; height: 5px; border-radius: 3px; background: var(--mist); overflow: hidden; display: inline-block; }
+.meter i { display: block; height: 100%; background: linear-gradient(90deg, var(--brand-a), var(--brand-b)); }
+.card-body { font-size: 14.5px; color: var(--ink-2); }
+.sup-toggle { border: 0; background: none; cursor: pointer; padding: 0; }
+.sup-toggle:hover { color: var(--ink); }
+.claims { list-style: none; margin: 4px 0 0; padding: 10px 0 0; border-top: 1px solid var(--line); display: grid; gap: 6px; font-size: 13px; color: var(--ink-2); }
+.claims li { display: grid; grid-template-columns: 104px 1fr; gap: 10px; align-items: start; }
+.claims li.claims-note { display: block; font-size: 12px; color: var(--muted); padding-top: 4px; }
+.cp { font-size: 11.5px; font-weight: 500; border-radius: 999px; text-align: center; padding: 1px 0; background: var(--mist); color: var(--muted); }
+.cp.ok { color: var(--ok); background: color-mix(in srgb, var(--ok) 12%, transparent); }
+.cp.mid { color: var(--accent); background: color-mix(in srgb, var(--accent) 12%, transparent); }
+.cp.low { color: var(--warn); background: color-mix(in srgb, var(--warn) 12%, transparent); }
+.card-body p { margin: 0 0 6px; } .card-body p:last-child { margin: 0; }
+.tl { list-style: none; margin: 2px 0 0; padding: 0; }
+.tl li { position: relative; padding: 0 0 10px 22px; }
+.tl li::before { content: ""; position: absolute; left: 5px; top: 8px; width: 7px; height: 7px; border-radius: 50%; background: var(--accent); }
+.tl li::after { content: ""; position: absolute; left: 8px; top: 18px; bottom: 0; width: 1px; background: var(--line); }
+.tl li:last-child::after { display: none; }
+.tl .when { font-family: var(--mono); font-size: 12.5px; color: var(--ink); display: block; }
+.card-foot { display: flex; gap: 6px; flex-wrap: wrap; margin-top: auto; }
+.num { border-bottom: 1.5px dotted var(--accent); cursor: pointer; font-variant-numeric: tabular-nums; color: var(--ink); }
+.num.miss { border-bottom-color: var(--warn); }
+.num:hover { background: color-mix(in srgb, var(--accent) 14%, transparent); border-radius: 3px; }
+.answer-foot { display: flex; gap: 16px; flex-wrap: wrap; margin-top: 12px; font-size: 13px; color: var(--muted); align-items: center; }
+.k { display: inline-flex; align-items: center; gap: 6px; }
+.sw { width: 12px; border-bottom: 2px dotted var(--accent); display: inline-block; }
+.sw.miss { border-bottom-color: var(--warn); }
+.empty-box { border: 1px dashed var(--line); border-radius: var(--radius); padding: 18px; color: var(--muted); }
+
+/* Jev chips */
+.jev { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; border: 1px solid var(--line); border-radius: 999px; padding: 2px 9px 2px 4px; background: var(--surface); cursor: help; }
+.jev .p { font-family: var(--mono); font-size: 11px; color: #fff; background: linear-gradient(135deg, var(--brand-a), var(--brand-b)); border-radius: 999px; padding: 1px 6px; }
+.jev .p.low { background: var(--tool); color: var(--ink); }
+.section-head { display: flex; align-items: baseline; justify-content: space-between; margin: 36px 0 12px; gap: 12px; flex-wrap: wrap; }
+.sub { font-size: 13px; color: var(--muted); }
+.jev-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 10px; }
+.jcard { border: 1px solid var(--line); border-radius: var(--radius); padding: 12px 14px; background: var(--surface); }
+.jcard .tpl { font-family: var(--mono); font-size: 12.5px; color: var(--ink); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; margin-bottom: 8px; }
+.bars { display: grid; grid-template-columns: 92px 1fr 36px; gap: 4px 8px; align-items: center; font-size: 12px; color: var(--muted); }
+.bar { height: 6px; border-radius: 3px; background: var(--mist); overflow: hidden; }
+.bar i { display: block; height: 100%; background: linear-gradient(90deg, var(--brand-a), var(--brand-b)); }
+.bars .v { font-family: var(--mono); color: var(--ink-2); text-align: right; }
+.jmeta { margin-top: 8px; font-size: 12.5px; color: var(--ink-2); }
+
+/* session strip */
 .totals { display: flex; gap: 18px; font-size: 13px; color: var(--muted); flex-wrap: wrap; }
 .totals b { color: var(--ink); font-weight: 600; font-variant-numeric: tabular-nums; }
 .strip { position: relative; height: 34px; border-radius: 8px; background: var(--mist); overflow: hidden; }
@@ -70,7 +115,6 @@ h1 { font-family: var(--display); font-weight: 600; font-size: clamp(24px, 3.4vw
 .dot { width: 9px; height: 9px; border-radius: 3px; display: inline-block; margin-right: 6px; vertical-align: -1px; }
 
 /* steps */
-.steps-head { display: flex; align-items: center; justify-content: space-between; margin: 34px 0 10px; }
 .btn { border: 1px solid var(--line); background: var(--surface); border-radius: 8px; padding: 6px 12px; cursor: pointer; font-size: 13.5px; font-weight: 500; }
 .btn.primary { background: var(--ink); color: var(--bg); border-color: var(--ink); }
 .btn:disabled { opacity: .55; cursor: default; }
@@ -81,14 +125,14 @@ h1 { font-family: var(--display); font-weight: 600; font-size: clamp(24px, 3.4vw
 .row { display: grid; grid-template-columns: 52px minmax(120px, 170px) 1fr auto auto; gap: 12px; align-items: center; padding: 11px 16px; cursor: pointer; width: 100%; text-align: left; background: none; border: 0; }
 .row:hover { background: var(--mist); }
 .t { color: var(--muted); font-size: 12.5px; font-variant-numeric: tabular-nums; }
-.tool { font-family: var(--mono); font-size: 13px; color: var(--ink); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tool { font-family: var(--mono); font-size: 13px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .find { color: var(--ink-2); font-size: 14px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .ms { color: var(--muted); font-size: 12.5px; font-variant-numeric: tabular-nums; text-align: right; min-width: 64px; }
-.badge { font-size: 12px; padding: 2px 8px; border-radius: 999px; border: 1px solid var(--line); color: var(--muted); min-width: 66px; text-align: center; }
+.badge { font-size: 12px; padding: 2px 9px; border-radius: 999px; border: 1px solid var(--line); color: var(--muted); min-width: 78px; text-align: center; white-space: nowrap; }
 .badge.idle { color: var(--accent); border-color: transparent; }
 .row:hover .badge.idle { border-color: var(--line); }
 .badge.match { color: var(--ok); border-color: color-mix(in srgb, var(--ok) 40%, transparent); }
-.badge.changed, .badge.err { color: var(--warn); border-color: color-mix(in srgb, var(--warn) 45%, transparent); }
+.badge.changed, .badge.error { color: var(--warn); border-color: color-mix(in srgb, var(--warn) 45%, transparent); }
 .detail { display: none; padding: 4px 16px 18px 80px; }
 .step.open .detail { display: block; }
 .dl { display: grid; grid-template-columns: 110px 1fr; gap: 6px 14px; font-size: 13.5px; margin: 6px 0 12px; }
@@ -99,15 +143,26 @@ h1 { font-family: var(--display); font-weight: 600; font-size: clamp(24px, 3.4vw
 table { border-collapse: collapse; width: 100%; font-size: 12.5px; }
 th, td { text-align: left; padding: 6px 10px; border-top: 1px solid var(--line); white-space: nowrap; max-width: 320px; overflow: hidden; text-overflow: ellipsis; }
 th { border-top: 0; color: var(--muted); font-weight: 500; background: var(--mist); }
+td.diff { color: var(--warn); font-weight: 600; }
+td.same { color: var(--ok); }
 details.sql summary { cursor: pointer; color: var(--accent); font-size: 13px; list-style: none; }
 details.sql summary::-webkit-details-marker { display: none; }
-pre { font-family: var(--mono); font-size: 12px; background: var(--mist); border-radius: 8px; padding: 10px 12px; white-space: pre-wrap; overflow-wrap: anywhere; margin: 8px 0 0; color: var(--ink-2); }
+pre { font-family: var(--mono); font-size: 12px; background: var(--mist); border-radius: 8px; padding: 10px 12px; white-space: pre-wrap; overflow-wrap: anywhere; margin: 8px 0 0; color: var(--ink-2); max-height: 220px; overflow: auto; }
+.verify-box { margin-top: 14px; border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px; background: var(--mist); }
+.verify-box.match { border-color: color-mix(in srgb, var(--ok) 40%, var(--line)); }
+.verify-box.changed { border-color: color-mix(in srgb, var(--warn) 50%, var(--line)); }
+.vb-head { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; font-size: 13.5px; }
+.vb-head b { font-family: var(--display); font-size: 15px; }
+.vb-stats { display: flex; gap: 14px; flex-wrap: wrap; font-size: 12.5px; color: var(--muted); margin: 6px 0 4px; }
+.vb-stats b { color: var(--ink); font-variant-numeric: tabular-nums; }
+.verify-box table { background: var(--surface); }
 .verify-line { display: flex; gap: 10px; align-items: center; margin-top: 12px; font-size: 13px; color: var(--muted); flex-wrap: wrap; }
 .note { font-size: 12.5px; color: var(--muted); margin-top: 40px; line-height: 1.6; }
-.note code { font-family: var(--mono); font-size: 12px; }
-@media (max-width: 640px) {
+.note code { font-size: 12px; }
+@media (max-width: 720px) {
+  .cards { grid-template-columns: 1fr; }
   .row { grid-template-columns: 1fr auto; gap: 4px 10px; }
-  .t, .find { display: none; }
+  .t, .find, .ms { display: none; }
   .detail { padding-left: 16px; }
   .dl { grid-template-columns: 1fr; }
 }
@@ -129,16 +184,19 @@ pre { font-family: var(--mono); font-size: 12px; background: var(--mist); border
   <div class="eyebrow">Question</div>
   <h1 id="q">Waiting for the first tool call…</h1>
 
-  <section class="answer" id="answer-box">
-    <div id="answer" class="empty">The answer appears here when Claude calls <code>session_report</code>. Steps below fill in as tools run.</div>
-    <div class="answer-foot" id="answer-foot" hidden>
-      <span class="k"><span class="sw"></span><span id="n-ok"></span></span>
-      <span class="k"><span class="sw miss"></span><span id="n-miss"></span></span>
-      <span>Click a number to see the step it came from.</span>
-    </div>
+  <section id="answer">
+    <div class="empty-box">The answer appears here when Claude calls <code>session_report</code>. The steps below fill in as tools run.</div>
   </section>
 
-  <div class="strip-head">
+  <section id="jev-section" hidden>
+    <div class="section-head">
+      <h2>What Jev judged</h2>
+      <span class="sub">Stored judgments of the kinds of messages in this session · computed once in SereneDB, not by Claude</span>
+    </div>
+    <div class="jev-grid" id="jev"></div>
+  </section>
+
+  <div class="section-head">
     <h2>Session</h2>
     <div class="totals" id="totals"></div>
   </div>
@@ -149,15 +207,16 @@ pre { font-family: var(--mono); font-size: 12px; background: var(--mist); border
     <span><i class="dot" style="background:var(--mist);border:1px solid var(--line)"></i>Claude thinking between calls</span>
   </div>
 
-  <div class="steps-head">
+  <div class="section-head">
     <h2>Steps</h2>
-    <button class="btn primary" id="verify-all">Verify all numbers</button>
+    <button class="btn primary" id="verify-all">Verify all steps</button>
   </div>
   <div class="steps" id="steps"></div>
 
-  <p class="note">Every step is a fixed, parameterised query over your logs in SereneDB; nothing on this page is written by a
-  model except the answer. <b>Verify</b> re-runs that step's recorded SQL against the database with a read-only role and
-  compares the result with what Claude saw. Session file: <code id="sid"></code></p>
+  <p class="note">Every step is a fixed, parameterised query over your logs in SereneDB; nothing on this page is written by
+  a model except the answer. <b>Verify</b> runs the step again with the same arguments on a read-only connection and
+  shows what it compared with what Claude saw. Jev scores are calibrated probabilities from TypeSafe's Jev, computed in
+  SereneDB. Session file: <code id="sid"></code></p>
 </div>
 
 <script>
@@ -165,12 +224,10 @@ const $ = s => document.querySelector(s);
 const parts = location.pathname.split("/").filter(Boolean);
 const SID = parts[0] === "s" && parts[1] ? parts[1] : "latest";
 const LIVE = SID === "latest";
-let data = null, verified = {}, openStep = null, lastSig = "";
+const QS = new URLSearchParams(location.search);
+let data = null, verified = {}, openStep = null, lastSig = "", support = null, openSup = null;
 
-// theme toggle (remembered per browser)
-try { const t = new URLSearchParams(location.search).get("theme") || localStorage.getItem("sdb-theme");
-      if (t) document.documentElement.dataset.theme = t; } catch (e) {}
-const OPEN = new URLSearchParams(location.search).get("open");   // ?open=<step> opens a step (shareable link)
+try { const t = QS.get("theme") || localStorage.getItem("sdb-theme"); if (t) document.documentElement.dataset.theme = t; } catch (e) {}
 $("#theme").onclick = () => {
   const dark = matchMedia("(prefers-color-scheme: dark)").matches;
   const cur = document.documentElement.dataset.theme || (dark ? "dark" : "light");
@@ -182,53 +239,156 @@ $("#theme").onclick = () => {
 const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({"&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;"}[c]));
 const fmt = n => typeof n === "number" ? n.toLocaleString("en-US") : n;
 const ms = v => v == null ? "" : v >= 1000 ? (v / 1000).toFixed(1) + " s" : Math.round(v) + " ms";
+const pct = v => v == null ? "–" : Math.round(v * 100) + "%";
 
-// one plain line per step: what it found
 function finding(c) {
   if (c.error) return "Error: " + c.error;
   const r = c.result || {}, row = (r.rows || [])[0] || {};
   const tot = r.total_matches ?? r.total_lines;
-  if (c.tool === "get_context" && r.anchor) {
-    const b = (r.before || []).length, a = (r.after || []).length;
-    return `${b} lines before, ${a} after the anchor` + (r.nearest_before_window && !b ? " · nearest earlier line further back" : "");
-  }
+  if (c.tool === "get_context") return `${fmt(r.before_total ?? 0)} lines before, ${fmt(r.after_total ?? 0)} after the anchor`;
   if (r.reading) return `Reading: ${r.reading}`;
+  if (row.entity) return `Top: ${row.entity}` + (row.lines != null ? ` · ${fmt(row.lines)} lines` : "") + (tot > 1 ? ` · ${fmt(tot)} values` : "");
   if (row.template) return `Top: ${row.template}` + (row.bursts != null ? ` · ${fmt(row.bursts)} bursts` : "");
-  if (tot != null) return `${fmt(tot)} ${c.tool.includes("pattern") ? "patterns" : "matches"}` + (row.ts ? ` · first ${String(row.ts).slice(0, 16)}` : "");
+  if (tot != null) return `${fmt(tot)} ${tot === 1 ? "match" : "matches"}` + (r.distinct_nodes != null ? ` on ${fmt(r.distinct_nodes)} nodes` : "") + (r.first_ts ? ` · first ${String(r.first_ts).slice(0, 16)}` : "");
   return (r.scope || "").split(";")[0];
 }
 
-// tiny markdown: paragraphs, bullets, **bold**, `code`, ### headings; numbers marked via sentinels
-function renderAnswer(text, nums) {
+// numbers → spans, inside one piece of text that starts at `offset` of the full answer
+function marked(text, offset) {
+  const nums = (data.numbers || []).filter(n => n.start >= offset && n.end <= offset + text.length);
   let s = "", last = 0;
-  nums.forEach((n, i) => { s += text.slice(last, n.start) + `\u0001${i}\u0002`; last = n.end; });
+  nums.forEach((n, i) => { s += text.slice(last, n.start - offset) + `\u0001${data.numbers.indexOf(n)}\u0002`; last = n.end - offset; });
   s += text.slice(last);
-  const inline = t => esc(t).replace(/\*\*(.+?)\*\*/g, "<b>$1</b>").replace(/`([^`]+)`/g, "<code>$1</code>")
+  return esc(s).replace(/\*\*(.+?)\*\*/g, "<b>$1</b>").replace(/`([^`]+)`/g, "<code>$1</code>")
     .replace(/\u0001(\d+)\u0002/g, (_, i) => {
-      const n = nums[+i];
-      return `<span class="num${n.step == null ? " miss" : ""}" data-step="${n.step ?? ""}" tabindex="0" title="${n.step == null ? "Not found in any tool result" : "From step " + (n.step + 1)}">${esc(n.text)}</span>`;
+      const n = data.numbers[+i];
+      return `<span class="num${n.step == null ? " miss" : ""}" data-step="${n.step ?? ""}" tabindex="0" title="${n.step == null ? "Not found in any tool result" : "From step " + (n.step + 1) + " — click to open"}">${esc(n.text)}</span>`;
     });
-  return text ? s.split(/\n{2,}/).map(block => {
-    const lines = block.split("\n");
-    if (lines.every(l => /^\s*[-*•]\s+/.test(l))) return "<ul>" + lines.map(l => "<li>" + inline(l.replace(/^\s*[-*•]\s+/, "")) + "</li>").join("") + "</ul>";
-    if (/^#{1,4}\s/.test(lines[0])) return "<h3>" + inline(lines[0].replace(/^#+\s/, "")) + "</h3>" + (lines.length > 1 ? "<p>" + inline(lines.slice(1).join(" ")) + "</p>" : "");
-    return "<p>" + inline(lines.join(" ")) + "</p>";
-  }).join("") : "";
+}
+
+// a section body → paragraphs or a mini timeline (numbered steps "1. 05:12 to 05:14: …")
+function body(sec) {
+  const text = sec.body, off = sec.start + (data.report.answer.slice(sec.start).indexOf(text));
+  let items = [...text.matchAll(/(?:^|\s)(\d+)\.\s+([\s\S]*?)(?=\s\d+\.\s|$)/g)];
+  if (items.length < 2) items = [...text.matchAll(/(?:^|\s)([-•])\s+(?=\S)([\s\S]*?)(?=\s[-•]\s+(?=\S)|$)/g)];
+  if (sec.kind === "steps" && items.length >= 2) {
+    const lead = text.slice(0, items[0].index).trim();
+    return (lead ? `<p>${marked(lead, off)}</p>` : "") + `<ol class="tl">` + items.map(m => {
+      const itOff = off + m.index + m[0].indexOf(m[2]);
+      const w = m[2].match(/^((?:\d{2}:\d{2}(?::\d{2}(?:\.\d+)?)?)(?:\s*(?:to|-|–)\s*\d{2}:\d{2}(?::\d{2}(?:\.\d+)?)?)?):?\s/)
+             || m[2].match(/^([^:]{4,40}?):\s/);       // "05:31:18 root ran…" / "05:12:38 to 05:12:48:" → stamp
+      if (w && /\d/.test(w[1])) return `<li><span class="when">${esc(w[1])}</span>${marked(m[2].slice(w[0].length), itOff + w[0].length)}</li>`;
+      return `<li>${marked(m[2], itOff)}</li>`;
+    }).join("") + `</ol>`;
+  }
+  return text.split(/\n{2,}/).map(p => `<p>${marked(p, off + text.indexOf(p))}</p>`).join("");
+}
+
+// pattern ids mentioned in a text → Jev chips
+function jevChips(text) {
+  const ids = [...new Set([...text.matchAll(/pattern\s+(\d{1,7})/gi)].map(m => +m[1]))].filter(i => data.jev[i]);
+  return ids.map(i => { const j = data.jev[i];
+    return `<span class="jev" title="Jev: p_fault ${j.p_fault}, p_dump ${j.p_dump}${j.cause ? ", cause " + j.cause + " (" + j.cause_confidence + ")" : ""}${j.owner_hint ? ", owner hint " + j.owner_hint + " (" + j.owner_confidence + ")" : ""}"><span class="p${j.p_problem < .5 ? " low" : ""}">${pct(j.p_problem)}</span>pattern ${i} · ${esc(j.kind)}</span>`;
+  }).join("");
+}
+
+function figures(text, offset) {
+  // up to 3 distinct traced numbers of the headline, each labelled by the words after it ("1,008 lines", "504 I/O nodes")
+  const seen = new Set();
+  return (data.numbers || []).filter(n => n.step != null && n.start >= offset && n.end <= offset + text.length)
+    .filter(n => !seen.has(n.text) && seen.add(n.text)).slice(0, 3).map(n => {
+      const after = data.report.answer.slice(n.end, n.end + 40).match(/^\s*([A-Za-z/][A-Za-z/ -]{1,22}?)(?=[,.;:()]|\s(?:on|in|to|from|and|all|that|with)\b|$)/);
+      return after ? `<div class="fig"><b>${esc(n.text)}</b><span>${esc(after[1].trim())}</span></div>` : "";
+    }).join("");
+}
+
+function renderAnswer() {
+  const rep = data.report || {};
+  if (!rep.answer) return;
+  const secs = data.sections.map(x => ({...x}));
+  let html = "", hText = "", hOff = 0;
+  if (secs[0] && !secs[0].title) {               // untitled lead = the headline
+    hText = secs[0].body; hOff = secs[0].start; secs.shift();
+  } else if (secs[0]) {                          // else: first sentence of the first card, moved out of it
+    const cut = (secs[0].body.match(/^[\s\S]+?[.!?](?=\s|$)/) || [""])[0];
+    if (cut && cut.length < secs[0].body.length) {
+      hText = cut; hOff = secs[0].start + data.report.answer.slice(secs[0].start).indexOf(cut);
+      secs[0].body = secs[0].body.slice(cut.length).trim();
+    }
+  }
+  if (hText) {
+    const first = (hText.match(/^[\s\S]+?[.!?](?=\s|$)/) || [hText])[0];
+    html += `<p class="headline">${marked(first, hOff)}</p>`;
+    const rest = hText.slice(first.length).trim();
+    const figs = figures(rest || hText, rest ? hOff + hText.indexOf(rest) : hOff) || figures(secs[0] ? secs[0].body : "", secs[0] ? secs[0].start + data.report.answer.slice(secs[0].start).indexOf(secs[0].body) : 0);
+    if (figs) html += `<div class="figures">${figs}</div>`;
+    if (rest) secs.unshift({title: "In short", body: rest, start: hOff + hText.indexOf(rest), kind: "fact", i: -1});
+  }
+  html += `<div class="cards">` + secs.map(sec => {
+    const i = data.sections.findIndex(x => x.title === sec.title), sup = support ? support[i] : undefined;
+    return `<article class="card ${sec.kind}">
+      <div class="card-head"><span class="card-title">${esc(sec.title || "Answer")}</span>
+        ${sec.kind === "hypothesis" ? `<span class="tag">Hypothesis</span>` : ""}
+        ${sup && sup.total ? `<button class="support sup-toggle" data-k="${i}" aria-expanded="${openSup === i}" title="Jev checked each sentence of this card against the tool result that best matches it">Jev check · ${sup.supported} stated${sup.inferred ? ` · ${sup.inferred} inferred` : ""}${sup.total - sup.supported - sup.inferred ? ` · ${sup.total - sup.supported - sup.inferred} not in results` : ""} ${openSup === i ? "▴" : "▾"}</button>`
+          : support === null || i < 0 ? "" : support === undefined ? `<span class="support">Jev checking…</span>` : ""}
+      </div>
+      <div class="card-body">${body(sec)}</div>
+      ${sup && sup.total && openSup === i ? `<ul class="claims">${sup.claims.map(c => {
+          const k = c.p == null ? ["", "–"] : c.p >= .5 ? ["ok", "Stated"] : c.p >= .2 ? ["mid", "Inferred"] : ["low", "Not in results"];
+          return `<li><span class="cp ${k[0]}" title="Jev probability the tool results support it: ${c.p == null ? "n/a" : c.p}">${k[1]}</span>${esc(c.text)}</li>`; }).join("")}
+          <li class="claims-note">Stated = the tool results say it · Inferred = it follows from them but is not written there · Not in results = Jev found no support in the matching step (it may come from a step's rows not kept, or be Claude's own reading). Hover for the probability.</li></ul>` : ""}
+      ${jevChips(sec.body) ? `<div class="card-foot">${jevChips(sec.body)}</div>` : ""}
+    </article>`;
+  }).join("") + `</div>`;
+  const ok = (data.numbers || []).filter(n => n.step != null).length, miss = (data.numbers || []).length - ok;
+  html += `<div class="answer-foot"><span class="k"><span class="sw"></span>${ok} number${ok === 1 ? "" : "s"} traced to a tool result</span>
+    <span class="k"><span class="sw miss"></span>${miss} not found</span><span>Click a number to open the step it came from.</span></div>`;
+  $("#answer").innerHTML = html;
+}
+
+function renderJev() {
+  const js = Object.values(data.jev || {}).sort((a, b) => b.p_problem - a.p_problem).slice(0, 6);
+  $("#jev-section").hidden = !js.length;
+  const bar = (label, v) => `<span>${label}</span><span class="bar"><i style="width:${Math.round((v ?? 0) * 100)}%"></i></span><span class="v">${v == null ? "–" : v.toFixed(2)}</span>`;
+  $("#jev").innerHTML = js.map(j => `<div class="jcard">
+    <div class="tpl" title="${esc(j.template)}">${esc(j.template)}</div>
+    <div class="bars">${bar("real problem", j.p_problem)}${bar("fault", j.p_fault)}${bar("diagnostic dump", j.p_dump)}${j.p_threat != null ? bar("security threat", j.p_threat) : ""}</div>
+    <div class="jmeta">${esc(j.kind)} (${j.kind_confidence})${j.cause ? ` · cause: ${esc(j.cause)} (${j.cause_confidence})` : ""}${j.owner_hint ? ` · owner hint: ${esc(j.owner_hint)} (${j.owner_confidence})` : ""}</div>
+  </div>`).join("");
 }
 
 function table(rows) {
   if (!rows || !rows.length) return "";
   const cols = Object.keys(rows[0]).filter(k => !["dataset", "body_cut", "entities"].includes(k)).slice(0, 7);
+  const more = rows.length > 8 ? rows.length - 8 : 0; rows = rows.slice(0, 8);
   return `<div class="tbl-wrap"><table><thead><tr>${cols.map(c => `<th>${esc(c)}</th>`).join("")}</tr></thead><tbody>` +
-    rows.map(r => `<tr>${cols.map(c => `<td title="${esc(typeof r[c] === "object" ? JSON.stringify(r[c]) : r[c])}">${esc(typeof r[c] === "object" ? JSON.stringify(r[c]) : fmt(r[c]))}</td>`).join("")}</tr>`).join("") +
-    "</tbody></table></div>";
+    rows.map(r => `<tr>${cols.map(c => { const v = typeof r[c] === "object" ? JSON.stringify(r[c]) : r[c]; return `<td title="${esc(v)}">${esc(fmt(v))}</td>`; }).join("")}</tr>`).join("") +
+    "</tbody></table></div>" + (more ? `<div class="sub" style="margin:-6px 0 10px">+ ${more} more rows Claude saw</div>` : "");
 }
 
 function badge(i) {
   const v = verified[i];
   if (!v) return `<span class="badge idle">Verify</span>`;
   if (v === "busy") return `<span class="badge">checking…</span>`;
-  return `<span class="badge ${v.status === "match" ? "match" : v.status === "changed" ? "changed" : ""}">${v.status === "match" ? "✓ verified" : esc(v.status)}</span>`;
+  return `<span class="badge ${v.status}">${v.status === "match" ? "✓ verified" : esc(v.status)}</span>`;
+}
+
+function verifyBox(i) {
+  const v = verified[i];
+  if (!v || v === "busy") return `<div class="verify-line"><button class="btn verify" data-i="${i}" ${v === "busy" ? "disabled" : ""}>${v === "busy" ? "Running again…" : "Verify"}</button>
+    <span>Runs this step again with the same arguments and compares the result with what Claude saw.</span></div>`;
+  const rows = (v.compared || []);
+  return `<div class="verify-box ${v.status}">
+    <div class="vb-head"><b>${v.status === "match" ? "✓ Same result" : v.status === "changed" ? "Result changed" : esc(v.status)}</b><span>${esc(v.detail || "")}</span>
+      <button class="btn verify" data-i="${i}" style="margin-left:auto">Run again</button></div>
+    <div class="vb-stats"><span>Ran again <b>${esc((v.ran_at || "").replace("T", " "))}</b></span>
+      <span>as <b>${esc(v.role || "")}</b></span>
+      <span>then <b>${ms(v.recorded_ms)}</b> · now <b>${ms(v.ms)}</b></span></div>
+    ${rows.length ? `<div class="tbl-wrap"><table><thead><tr><th>Compared</th><th>Claude saw</th><th>Ran again</th><th></th></tr></thead><tbody>` +
+      rows.map(c => `<tr><td>${esc(c.what)}</td><td>${esc(fmt(c.recorded))}</td><td class="${c.same ? "" : "diff"}">${esc(fmt(c.rerun))}</td><td class="${c.same ? "same" : "diff"}">${c.same ? "✓" : "≠"}</td></tr>`).join("") +
+      `</tbody></table></div>` : ""}
+    ${v.sql ? `<details class="sql"><summary>Query that ran again</summary><pre>${esc(v.sql)}</pre></details>` : ""}
+  </div>`;
 }
 
 function render() {
@@ -237,14 +397,7 @@ function render() {
   if (data.dataset) { $("#ds").hidden = false; $("#ds").textContent = data.dataset; }
   $("#live").hidden = !LIVE;
   $("#q").textContent = rep.question || (calls.length ? "Session in progress" : "Waiting for the first tool call…");
-  if (rep.answer) {
-    $("#answer").className = ""; $("#answer").innerHTML = renderAnswer(rep.answer, data.numbers || []);
-    const ok = (data.numbers || []).filter(n => n.step != null).length, miss = (data.numbers || []).length - ok;
-    $("#answer-foot").hidden = false;
-    $("#n-ok").textContent = `${ok} number${ok === 1 ? "" : "s"} found in a tool result`;
-    $("#n-miss").textContent = `${miss} not found`;
-  }
-  // totals + strip
+  renderAnswer(); renderJev();
   const t0 = calls.length ? new Date(calls[0].ts) - calls[0].wall_ms : 0;
   const tEnd = calls.length ? Math.max(...calls.map(c => +new Date(c.ts))) : 0;
   const span = Math.max(1, tEnd - t0);
@@ -258,11 +411,10 @@ function render() {
     const dbw = Math.min(100, ((c.result || {}).elapsed_ms || 0) / Math.max(1, c.wall_ms) * 100);
     return `<div class="seg${openStep === i ? " on" : ""}" role="listitem" data-i="${i}" title="${esc(c.tool)} · ${ms(c.wall_ms)}" style="left:${left}%;width:${w}%"><i style="width:${dbw}%"></i></div>`;
   }).join("");
-  // steps
   $("#steps").innerHTML = calls.map((c, i) => {
     const r = c.result || {}, offs = ((+new Date(c.ts) - c.wall_ms - t0) / 1000).toFixed(1);
     const args = Object.entries(c.args || {}).map(([k, v]) => `<span class="arg">${esc(k)}=${esc(typeof v === "object" ? JSON.stringify(v) : v)}</span>`).join("");
-    const v = verified[i] && verified[i] !== "busy" ? verified[i] : null;
+    const pids = [...new Set((r.rows || []).map(x => x.pattern_id).concat([c.args?.pattern_id]).filter(x => data.jev[x]))].slice(0, 3);
     return `<div class="step${openStep === i ? " open on" : ""}" id="step-${i}">
       <button class="row" data-i="${i}" aria-expanded="${openStep === i}">
         <span class="t">+${offs}s</span><span class="tool">${esc(c.tool)}</span><span class="find">${esc(finding(c))}</span>
@@ -272,34 +424,35 @@ function render() {
         <dl class="dl">
           ${args ? `<dt>Asked</dt><dd class="args">${args}</dd>` : ""}
           ${r.scope ? `<dt>Scope</dt><dd>${esc(r.scope)}</dd>` : ""}
-          ${(r.total_matches ?? r.total_lines) != null ? `<dt>Total</dt><dd>${fmt(r.total_matches ?? r.total_lines)}${r.truncated ? ` · showing ${r.rows_returned}` : ""}</dd>` : ""}
+          ${(r.total_matches ?? r.total_lines) != null ? `<dt>Total</dt><dd>${fmt(r.total_matches ?? r.total_lines)}${r.truncated ? ` · showing ${r.rows_returned ?? (r.rows || []).length}` : ""}</dd>` : ""}
           <dt>Time</dt><dd>${ms(r.elapsed_ms)} in SereneDB · ${ms(c.wall_ms)} total</dd>
+          ${pids.length ? `<dt>Jev</dt><dd class="args">${pids.map(p => jevChips("pattern " + p)).join("")}</dd>` : ""}
           ${(r.hints || []).length ? `<dt>Hint</dt><dd>${esc(r.hints[0])}</dd>` : ""}
         </dl>
         ${table(r.rows)}
         ${(r.sql || []).length ? `<details class="sql"><summary>SQL (${r.sql.length})</summary>${r.sql.map(q => `<pre>${esc(q)}</pre>`).join("")}</details>` : ""}
-        <div class="verify-line"><button class="btn verify" data-i="${i}" ${verified[i] === "busy" ? "disabled" : ""}>Verify</button>
-          <span>${v ? esc(v.detail || "") + (v.ms != null ? ` · re-ran in ${ms(v.ms)}` : "") : "Re-run this step's query and compare with what Claude saw."}</span></div>
+        ${verifyBox(i)}
       </div></div>`;
-  }).join("") || `<div class="row" style="cursor:default"><span></span><span class="find empty">No tool calls yet. Ask Claude a question about your logs.</span></div>`;
+  }).join("") || `<div class="row" style="cursor:default"><span></span><span class="find">No tool calls yet. Ask Claude a question about your logs.</span></div>`;
 }
 
-function focusStep(i) {
-  openStep = openStep === i ? null : i; render();
-  if (openStep != null) $("#step-" + i).scrollIntoView({behavior: "smooth", block: "nearest"});
+function focusStep(i, keep) {
+  openStep = keep ? i : (openStep === i ? null : i); render();
+  if (openStep != null) $("#step-" + i).scrollIntoView({behavior: "smooth", block: "center"});
 }
 document.addEventListener("click", e => {
-  const num = e.target.closest(".num"); if (num && num.dataset.step !== "") { openStep = null; focusStep(+num.dataset.step); return; }
+  const num = e.target.closest(".num"); if (num && num.dataset.step !== "") return focusStep(+num.dataset.step, true);
+  const st = e.target.closest(".sup-toggle"); if (st) { openSup = openSup === +st.dataset.k ? null : +st.dataset.k; return renderAnswer(); }
   const seg = e.target.closest(".seg"); if (seg) return focusStep(+seg.dataset.i);
   const vb = e.target.closest(".verify"); if (vb) return verifyStep(+vb.dataset.i);
-  const ib = e.target.closest(".badge.idle"); if (ib) { e.stopPropagation(); return verifyStep(+ib.closest(".row").dataset.i); }
+  const ib = e.target.closest(".badge.idle"); if (ib) { const i = +ib.closest(".row").dataset.i; openStep = i; return verifyStep(i); }
   const row = e.target.closest(".row[data-i]"); if (row) return focusStep(+row.dataset.i);
 });
 document.addEventListener("keydown", e => { const n = e.target.closest(".num"); if (n && e.key === "Enter") n.click(); });
 
 async function verifyStep(i) {
   verified[i] = "busy"; render();
-  try { verified[i] = await (await fetch(`/verify/${SID}/${i}`)).json(); if (verified[i].error) verified[i] = {status: "error", detail: verified[i].error}; }
+  try { const v = await (await fetch(`/verify/${SID}/${i}`)).json(); verified[i] = v.error ? {status: "error", detail: v.error} : v; }
   catch (e) { verified[i] = {status: "error", detail: "The report server stopped (the Claude session ended)."}; }
   render();
 }
@@ -308,17 +461,24 @@ $("#verify-all").onclick = async () => {
   for (let i = 0; i < data.calls.length; i++) await verifyStep(i);
   $("#verify-all").disabled = false;
   const ok = Object.values(verified).filter(v => v.status === "match").length;
-  $("#verify-all").textContent = `Verified ${ok} of ${data.calls.length}`;
+  $("#verify-all").textContent = `${ok} of ${data.calls.length} steps give the same result`;
 };
+
+async function loadSupport() {
+  if (!data.sections || !data.sections.length || support !== null) return;
+  support = undefined; renderAnswer();
+  try { const s = await (await fetch(`/support/${SID}`)).json(); support = s.some(v => v && v.total) ? s : []; } catch (e) { support = []; }
+  renderAnswer();
+}
 
 async function load() {
   try {
     const d = await (await fetch(`/api/${SID}`)).json();
     const sig = d.calls.length + "|" + JSON.stringify(d.report || {});
-    if (sig !== lastSig) { data = d; lastSig = sig; render(); }
+    if (sig !== lastSig) { data = d; lastSig = sig; support = null; render(); loadSupport(); }
   } catch (e) { if (!data) $("#q").textContent = "The report server is not running. Ask Claude for the session report again."; }
 }
-load().then(() => { if (OPEN != null && data) { focusStep(+OPEN); if (new URLSearchParams(location.search).has("verify")) verifyStep(+OPEN); } });
+load().then(() => { if (QS.get("open") != null && data) { focusStep(+QS.get("open"), true); if (QS.has("verify")) verifyStep(+QS.get("open")); } });
 if (LIVE) setInterval(load, 2000);
 </script>
 </body>

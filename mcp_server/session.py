@@ -25,7 +25,7 @@ SESSION = datetime.now().strftime("%Y%m%d-%H%M%S-") + uuid.uuid4().hex[:4]
 _lock = threading.Lock()
 _verify_lock = threading.Lock()  # verify swaps core's connection: one at a time
 _server: Optional[ThreadingHTTPServer] = None
-ROWS_KEPT = 8
+ROWS_KEPT = 50   # = the tools' own row cap: the session file holds what the client saw
 
 
 def _path(session: str) -> Path:
@@ -41,22 +41,22 @@ def _write(rec: dict) -> None:
 
 
 def _short(env: dict) -> dict:
-    """What the page needs from a tool result: never the full rows (they can be large)."""
-    keep = {k: env.get(k) for k in ("tool", "scope", "total_matches", "total_lines", "truncated", "truncation",
-                                    "elapsed_ms", "evidence_id", "hints", "reading", "reading_rule", "period")
-            if env.get(k) is not None}
-    for k, v in env.items():  # every top-level scalar (e.g. spread's nodes / top_node_share / entropy_norm)
-        if k not in keep and isinstance(v, (int, float, str, bool)) and k not in ("evidence_id",) and len(str(v)) < 400:
-            keep[k] = v
-    keep["sql"] = env.get("sql") or []
+    """What the client saw, capped: every field of the result (nested objects such as pattern_history's `pattern`
+    included), lists cut to ROWS_KEPT items, long strings cut. The page shows a few rows; Jev support and the number
+    check read all of it."""
+    def cap(v, depth=0):
+        if isinstance(v, list):
+            return [cap(x, depth + 1) for x in v[:ROWS_KEPT]]
+        if isinstance(v, dict):
+            return {k: cap(x, depth + 1) for k, x in v.items()} if depth < 4 else str(v)[:300]
+        if isinstance(v, str) and len(v) > 2000:
+            return v[:2000] + "…"
+        return v
+    keep = {k: cap(v) for k, v in env.items() if k != "session_report"}
     rows = env.get("rows") if isinstance(env.get("rows"), list) else env.get("items") or []
-    keep["rows"] = rows[:ROWS_KEPT]
+    keep["rows"] = cap(rows)
     keep["rows_returned"] = len(rows)
-    for k in ("anchor", "before", "after", "nearest_before_window", "nearest_after_window", "overall", "team_rollup",
-              "excluded_by_filter"):
-        if env.get(k) is not None:
-            v = env[k]
-            keep[k] = v[:ROWS_KEPT] if isinstance(v, list) else v
+    keep["sql"] = env.get("sql") or []
     return keep
 
 
@@ -116,6 +116,8 @@ def numbers_check(answer: str, calls: list[dict]) -> list[dict]:
         per_step.append((nums, " ".join(texts)))
     out = []
     masked = CALENDAR.sub(lambda m: " " * len(m.group()), DATE.sub(lambda m: " " * len(m.group()), answer))
+    masked = re.sub(r"\d+\.\d+\.\d+\.\d+(?::\d+)?|\b[A-Za-z]+\d*[-_:][\w:.-]*\d[\w:.-]*|\b\d{2}:\d{2}(?::\d{2}(?:\.\d+)?)?",
+                    lambda m: " " * len(m.group()), masked)   # IPs, ids (R77-M0-NC-I:J18-U11), clock times
     for m in NUM.finditer(masked):
         tok = m.group()
         try:
@@ -127,6 +129,119 @@ def numbers_check(answer: str, calls: list[dict]) -> list[dict]:
             continue
         step = next((i for i, (nums, txt) in enumerate(per_step) if _matches(tok, nums) or tok in txt), None)
         out.append({"start": m.start(), "end": m.end(), "text": tok, "step": step})
+    return out
+
+
+# ---------------------------------------------------------------- answer → cards
+
+SECTION = re.compile(r"(?m)^(?:#{1,4}\s*|\*\*)?([A-Z][A-Za-z ,'/()-]{2,48}?)(?:\*\*)?\s*:(?:\*\*)?\s+")
+HYPO = re.compile(r"\b(hypothes|reading|likely|possible cause|suggests|may have|might)\w*", re.I)
+
+
+def sections(answer: str) -> list[dict]:
+    """Split an answer into cards at 'Label:' starts of lines / paragraphs ('What failed:', '**Where it started:**',
+    '### Next steps'). The text before the first label is the headline. kind = 'hypothesis' when the label says so
+    (Reading, Hypothesis, Likely cause …), 'steps' when it holds a numbered list, else 'fact'."""
+    text = answer.strip()
+    marks = [m for m in SECTION.finditer(text) if m.start() == 0 or text[m.start() - 1] == "\n"]
+    out, pos = [], 0
+    if not marks or marks[0].start() > 0:
+        head = text[:marks[0].start() if marks else len(text)].strip()
+        if head:
+            out.append({"title": None, "body": head, "start": 0})
+    for i, m in enumerate(marks):
+        end = marks[i + 1].start() if i + 1 < len(marks) else len(text)
+        body = text[m.end():end].strip()
+        title = m.group(1).strip()
+        out.append({"title": title, "body": body, "start": m.end()})
+    for sct in out:
+        t = (sct["title"] or "").lower()
+        n_items = max(len(re.findall(r"(?:^|\s)\d\.\s", sct["body"])), len(re.findall(r"(?:^|\s)[-•]\s+(?=\S)", sct["body"])))
+        sct["kind"] = ("hypothesis" if HYPO.search(t) or "cause" in t and "root" not in t or t.startswith("conclusion")
+                       else "steps" if n_items >= 2 else "fact")
+    return out
+
+
+# ---------------------------------------------------------------- Jev: stored judgments of the patterns a session touched
+
+def jev_patterns(calls: list[dict]) -> dict:
+    """{pattern_id: stored Jev judgment + traits} for every pattern id in the session's results / args (computed once
+    per pattern at load time by Jev in SereneDB: p_fault, p_dump, p_problem, kind, cause, owner hint, threat)."""
+    ids = set()
+    for c in calls:
+        for v in [c.get("args", {}).get("pattern_id")] + [r.get("pattern_id") for r in (c.get("result") or {}).get("rows") or []
+                                                          if isinstance(r, dict)]:
+            if isinstance(v, int):
+                ids.add(v)
+    if not ids:
+        return {}
+    import core
+    ds = os.environ.get("LOGS_DATASET")
+    rows = core.query(
+        "SELECT j.pattern_id, p.template, round(j.p_problem, 2) AS p_problem, round(j.p_fault, 2) AS p_fault, "
+        "round(j.p_dump, 2) AS p_dump, j.kind, round(j.kind_confidence, 2) AS kind_confidence, t.cause, "
+        "round(t.cause_confidence, 2) AS cause_confidence, round(t.p_threat, 2) AS p_threat, t.owner_hint, "
+        "round(t.owner_confidence, 2) AS owner_confidence "
+        "FROM pattern_judgments j JOIN patterns p USING (dataset, pattern_id) "
+        "LEFT JOIN pattern_traits t USING (dataset, pattern_id) "
+        f"WHERE j.pattern_id IN ({', '.join(str(i) for i in sorted(ids))})" + (" AND j.dataset = %(d)s" if ds else ""),
+        {"d": ds} if ds else None)
+    return {r["pattern_id"]: {k: core.plain(v) for k, v in r.items()} for r in rows}
+
+
+_support_cache: dict = {}
+
+
+SENT = re.compile(r"(?<=[.!?])\s+(?=[A-Z0-9\"(])")
+
+
+def claims(section: dict) -> list[str]:
+    """A section's checkable claims: its sentences (numbered steps split first), short fragments dropped."""
+    body = re.sub(r"(?:^|\s)\d\.\s", "\n", section["body"])
+    out = []
+    for part in body.split("\n"):
+        out += [x.strip() for x in SENT.split(part) if len(x.strip()) > 25]
+    return out
+
+
+def jev_section_support(session: str, secs: list[dict], calls: list[dict]) -> list:
+    """Jev (calibrated, in SereneDB): per answer section, each sentence's probability that the tool results its numbers
+    come from support it (all steps when it has no traced number). One SQL call for the whole answer, cached.
+    Returns per section {claims: [{text, p}], supported (p >= .5), total, min}."""
+    import hashlib
+    import sys
+    key = hashlib.sha1((session + json.dumps([x["body"] for x in secs])).encode()).hexdigest()
+    if key in _support_cache:
+        return _support_cache[key]
+    sys.path.insert(0, str(ROOT))
+    from agent.support import jev_support
+    noise = ("session_report", "hints", "truncation", "sql", "evidence_id", "elapsed_ms", "rows_returned")
+    ledger = {f"s{i}": {"tool": c["tool"], "asked": c.get("args", {}),
+                        **{k: v for k, v in c["result"].items() if k not in noise}}
+              for i, c in enumerate(calls) if c.get("result")}
+    texts = {k: json.dumps(v, default=str) for k, v in ledger.items()}
+    facts, owner = [], []
+    for k, x in enumerate(secs):
+        for cl in claims(x):
+            # every step whose result contains one of the claim's numbers, times or ids (not just the first match)
+            # whole tokens: IPs, ids (R73-M1, blk_…), times, numbers (1,008 → 1008), and quoted / capitalised words
+            toks = set(re.findall(r"\d+\.\d+\.\d+\.\d+|[A-Za-z]+[_-][\w:.-]+|\d{2}:\d{2}(?::\d{2})?|\d[\d,]*(?:\.\d+)?", cl))
+            toks = {t.replace(",", "") if re.fullmatch(r"[\d,.]+", t) else t for t in toks}
+            toks = {t for t in toks if len(t) >= 2 and not (t.isdigit() and 1990 <= int(t) <= 2035)}
+            score = {sid: sum(t in txt for t in toks) for sid, txt in texts.items()}
+            # the best 2 steps only: more evidence gets cut to the size limit and dilutes the one that settles it
+            ids = [sid for sid, n in sorted(score.items(), key=lambda kv: -kv[1]) if n > 0][:2]
+            facts.append({"statement": cl, "evidence_ids": ids or list(ledger)})
+            owner.append(k)
+    ps = jev_support({"facts": facts}, ledger)
+    out = []
+    for k in range(len(secs)):
+        cs = [{"text": f["statement"], "p": p} for f, p, o in zip(facts, ps, owner) if o == k]
+        got = [c["p"] for c in cs if c["p"] is not None]
+        out.append({"claims": cs, "supported": sum(p >= .5 for p in got), "inferred": sum(.2 <= p < .5 for p in got),
+                    "total": len(got), "min": min(got) if got else None} if cs else None)
+    if any(o and o["total"] for o in out):
+        _support_cache[key] = out
     return out
 
 
@@ -153,24 +268,33 @@ def verify(session: str, step: int) -> dict:
     with _verify_lock, _readonly():
         fresh = fn(**c.get("args", {}))
     ms = round((time.perf_counter() - t0) * 1000, 1)
-    checks, ok = [], True
-    for k in ("total_matches", "total_lines"):
+    compared, ok = [], True     # [{what, recorded, rerun, same}]: the page shows this table
+    for k in ("total_matches", "total_lines", "distinct_nodes", "first_ts", "last_ts", "nodes", "top_node_share"):
         if rec.get(k) is not None:
             same = str(fresh.get(k)) == str(rec.get(k))
             ok &= same
-            checks.append(f"{k.replace('_', ' ')} {fresh.get(k)}" + ("" if same else f" (was {rec.get(k)})"))
+            compared.append({"what": k.replace("_", " "), "recorded": rec.get(k), "rerun": fresh.get(k), "same": same})
     new_rows = fresh.get("rows") if isinstance(fresh.get("rows"), list) else fresh.get("items") or []
     old_rows = rec.get("rows") or []
     key = next((k for k in ROW_KEYS if old_rows and k in old_rows[0] and new_rows and k in new_rows[0]), None)
+    # a second column worth comparing per row: the first numeric one both sides have (lines, bursts, n, …)
+    val = next((k for k in (old_rows[0] if old_rows else {}) if k != key and isinstance(old_rows[0].get(k), (int, float))
+                and new_rows and k in new_rows[0]), None)
     if key:
-        a, b = [str(r.get(key)) for r in old_rows], [str(r.get(key)) for r in new_rows[:len(old_rows)]]
-        same = a == b
-        ok &= same
-        checks.append(f"first {len(a)} rows by {key} {'identical' if same else 'differ'}")
-    if not checks:
-        checks.append("re-ran without error (nothing countable recorded)")
-    return {"step": step, "status": "match" if ok else "changed", "detail": "; ".join(checks), "ms": ms,
-            "recorded_ms": rec.get("elapsed_ms"), "sql": (fresh.get("sql") or [""])[0][:2000]}
+        for i, r in enumerate(old_rows):
+            n = new_rows[i] if i < len(new_rows) else {}
+            rv = f"{r.get(key)}" + (f" · {val} {r.get(val)}" if val else "")
+            nv = f"{n.get(key)}" + (f" · {val} {n.get(val)}" if val else "") if n else "(missing)"
+            same = rv == nv
+            ok &= same
+            compared.append({"what": f"row {i + 1}", "recorded": rv, "rerun": nv, "same": same})
+    n_same = sum(c["same"] for c in compared)
+    detail = (f"{n_same} of {len(compared)} values identical" if compared
+              else "re-ran without error (nothing countable recorded)")
+    return {"step": step, "status": "match" if ok else "changed", "detail": detail, "ms": ms,
+            "recorded_ms": rec.get("elapsed_ms"), "compared": compared, "key": key,
+            "sql": (fresh.get("sql") or [""])[0][:3000], "ran_at": datetime.now().isoformat(timespec="seconds"),
+            "role": "logs_manager (read-only)"}
 
 
 class _readonly:
@@ -218,7 +342,19 @@ class _Handler(BaseHTTPRequestHandler):
                 data = load(sid)
                 ans = (data.get("report") or {}).get("answer") or ""
                 data["numbers"] = numbers_check(ans, data["calls"]) if ans else []
+                data["sections"] = sections(ans) if ans else []
+                try:
+                    data["jev"] = jev_patterns(data["calls"])
+                except Exception:  # noqa: BLE001
+                    data["jev"] = {}
                 return self._send(200, json.dumps(data, default=str).encode(), "application/json")
+            if parts[0] == "support" and len(parts) == 2:   # Jev section support (one SQL call, cached)
+                sid = SESSION if parts[1] == "latest" else parts[1]
+                data = load(sid)
+                ans = (data.get("report") or {}).get("answer") or ""
+                secs = sections(ans) if ans else []
+                return self._send(200, json.dumps(jev_section_support(sid, secs, data["calls"]) if secs else []).encode(),
+                                  "application/json")
             if parts[0] == "verify" and len(parts) == 3:
                 sid = SESSION if parts[1] == "latest" else parts[1]
                 return self._send(200, json.dumps(verify(sid, int(parts[2])), default=str).encode(), "application/json")
