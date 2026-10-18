@@ -1,0 +1,67 @@
+id: D-X07
+role: lead
+dataset: healthapp
+question: "How often did the HealthApp cloud data sync fail between 2017-12-23 and 2018-01-04, does it keep recurring or was it a one-off, and which team owns it?"
+answer_summary: "The cloud sync failed on every attempt in the log: 792 'sendSyncFailedBroadcast' lines (HiH_HiBroadcastUtil), each directly after 'ifCanSync not! no cloud version' (HiH_HiSyncControl), against 792 'startSync' attempts, so the failure rate is 100% and the cause logged is a missing cloud version, not a transient network error. It is chronic, not a one-off: 116 bursts (recurrences >30 min apart) spread over every day of the data (2017-12-23 22:19 to 2018-01-03 09:12), 2 to 15 bursts and 4 to 159 lines per day, with no improving trend. Note the log only covers 2017-12-23 22:15 to 2018-01-03 09:59 and comes from a single app process (pid 30002312), so it is one device/install, not a fleet. Owner is mobile-health (assigned via the dataset's default '*' ownership row, not a component-specific owner). First thing to look at: why the app reports no cloud version (account/cloud-version configuration or the version check in HiH_HiSyncControl), since every sync is blocked before it starts."
+findings:
+  - fact: "792 sendSyncFailedBroadcast lines in the period; all lines of this message in the dataset fall in it (first 2017-12-23 22:19:58.428, last 2018-01-03 09:12:06.063)."
+    sql: "SELECT count(*), min(ts), max(ts) FROM logs WHERE dataset='healthapp' AND body @@ ts_phrase('sendSyncFailedBroadcast') AND ts >= '2017-12-23' AND ts < '2018-01-04'"
+    result: "792 | 2017-12-23 22:19:58.428 | 2018-01-03 09:12:06.063"
+    importance: must
+  - fact: "Every sync attempt fails: 792 startSync attempts, 792 'ifCanSync not! no cloud version', 792 sendSyncFailedBroadcast; the line before 785 of 792 failure broadcasts is the 'no cloud version' check (the rest are interleaved lines from the same burst)."
+    sql: "SELECT count(*) FILTER (WHERE body ILIKE 'startSync hiSyncOption%'), count(*) FILTER (WHERE body = 'ifCanSync not! no cloud version'), count(*) FILTER (WHERE body = 'needAutoSync autoSyncSwitch is open') FROM logs WHERE dataset='healthapp'"
+    result: "792 | 792 | 792 (and preceding-line check: 'ifCanSync not! no cloud version' 785 of 792)"
+    importance: must
+  - fact: "Recurring, not a one-off: 116 bursts (gaps >30 min) in the period; 67 episodes if gaps >1 h; longest quiet gap 12h27m; median gap between lines 0.13 s (lines come in clusters)."
+    sql: "WITH t AS (SELECT ts, lag(ts) OVER (ORDER BY ts) AS pv FROM logs WHERE dataset='healthapp' AND body @@ ts_phrase('sendSyncFailedBroadcast')) SELECT count(*) FILTER (WHERE pv IS NULL OR ts-pv > interval '30 minutes'), count(*) FILTER (WHERE pv IS NULL OR ts-pv > interval '1 hour'), max(ts-pv) FROM t"
+    result: "116 | 67 | 12:26:56.928"
+    importance: must
+  - fact: "Present every day of the data, no clear downward trend: lines/day 4 (12-23, partial), 125, 100, 47, 50, 49, 40, 81, 74, 50, 159 (01-02), 13 (01-03, partial); bursts/day 2,11,11,12,10,10,7,9,12,15,13,4. Active in 138 of 240 hours of data."
+    sql: "SELECT date_trunc('day',ts), count(*) FROM logs WHERE dataset='healthapp' AND body @@ ts_phrase('sendSyncFailedBroadcast') GROUP BY 1 ORDER BY 1"
+    result: "12 days, every day non-zero; peak 159 on 2018-01-02"
+    importance: should
+  - fact: "Owner is mobile-health (component HiH_HiBroadcastUtil, pattern 800044); healthapp has only a default '*' ownership row so every module maps to mobile-health."
+    sql: "SELECT p.pattern_id, p.component, o.team FROM patterns p JOIN ownership o ON o.dataset=p.dataset AND o.component=p.component WHERE p.dataset='healthapp' AND p.template='sendSyncFailedBroadcast'"
+    result: "800044 | HiH_HiBroadcastUtil | mobile-health"
+    importance: must
+  - fact: "Scope: the whole dataset is one app process (request_id 30002312) and has no host/severity, so this is one install/device, not a fleet-wide measurement."
+    sql: "SELECT count(DISTINCT request_id) FROM logs WHERE dataset='healthapp'"
+    result: "1 (30002312, all 792 failures)"
+    importance: should
+  - fact: "Data window ends 2018-01-03 09:59:00, so the question's end date 2018-01-04 extends past the data; the period effectively equals the whole dataset."
+    sql: "SELECT min(ts), max(ts), count(*) FROM logs WHERE dataset='healthapp'"
+    result: "2017-12-23 22:15:29.606 | 2018-01-03 09:59:00.095 | 253395"
+    importance: nice
+must_conclude:
+  - "792 failure lines, but lines are not incidents: about 116 recurrences (bursts) over the period"
+  - "Chronic / recurring daily, not a one-off; no sign of it stopping by the end of the data"
+  - "Cause logged: 'ifCanSync not! no cloud version' precedes each failure; every sync attempt (792/792) fails"
+  - "Owner: mobile-health (default ownership row)"
+traps:
+  - "Reporting 792 as the number of sync failures/incidents without distinguishing lines from bursts/attempts"
+  - "Counting needAutoSync / startSync / ifCanSync / sendSyncFailedBroadcast together and reporting ~3,168 failures (they are 4 lines per single attempt)"
+  - "Treating it as a network/server outage; the log says the client has no cloud version, a precondition check, not a transport error"
+  - "Claiming fleet-wide impact or many users: it is one process on one device"
+  - "Confusing with the unrelated local DB write failures (bulkSaveDetailHiHealthData fail ERR_DATA_INSERT 212, saveOneDetailData fail), which are not cloud sync"
+  - "Expecting data on 2018-01-03 afternoon / 2018-01-04: the log ends 2018-01-03 09:59"
+not_established:
+  - "Why there is no cloud version (account not logged in, cloud service disabled, app build config): the logs do not say"
+  - "Any user/customer impact, data loss in the cloud, or cost"
+  - "Whether this happens on other devices or users (single process only)"
+  - "Whether a sync ever succeeded before 2017-12-23 or after 2018-01-03"
+  - "No log levels exist, so severity cannot be assessed from the logs"
+labels_used: "None: healthapp has no Loghub labels in the labels table."
+golden_check:
+  - fact: "sendSyncFailedBroadcast lines in the period"
+    golden_value: "792"
+    my_value: "792"
+    agrees: true
+  - fact: "bursts of 'sendSyncFailedBroadcast' in the period"
+    golden_value: "116"
+    my_value: "116 (bursts table; also reproduced from raw lines with a >30 min gap rule)"
+    agrees: true
+  - fact: "owner of that pattern"
+    golden_value: "mobile-health"
+    my_value: "mobile-health"
+    agrees: true
+notes: "All findings confirmed on raw logs rows. Failure rate 100% computed as 792 failure broadcasts / 792 startSync attempts (each attempt logs needAutoSync -> startSync -> ifCanSync not! no cloud version -> sendSyncFailedBroadcast). Ownership is a default '*' mapping, worth flagging as low-specificity."

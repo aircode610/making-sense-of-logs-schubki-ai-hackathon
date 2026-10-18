@@ -1,0 +1,57 @@
+id: D-M05
+role: manager
+dataset: bgl
+question: "What can't the logs tell us about the problems we saw in November 2005 (2005-11-01 to 2005-11-29)?"
+answer_summary: "The logs show what failed, where, when and how often: in Nov 2005 BGL logged 629,116 lines from 35,896 nodes, 27,952 of them labelled alerts in four main families: CIOD socket errors to I/O host 172.16.96.116 (17,178 lines, 1,024 nodes, 11 days from 17 to 29 Nov, owned by hpc-workloads/APP), rts kernel terminations with tree-network receive errors (10,240 lines on 3,584 nodes, 5 bursts on 8-16 Nov, node-platform/KERNEL), Lustre mount failures (230 lines, 160 nodes, 17 and 21 Nov), and a small long tail. What the logs cannot tell us: any money or cost, any downtime or SLA breach (the logs record events, not when service was unavailable), which customers, users or jobs were affected or what that meant for the business, the root cause (e.g. why the I/O host connections were severed), whether any repair was done, and whether these line counts are incidents (one fault on a 512/1024-node partition gives 512-2,048 lines). The manager decision should rest on the measured recurrence, spread and ownership. Business impact needs other sources: job scheduler and accounting, ticketing or incident records, and user reports."
+findings:
+  - fact: "Scope of the window: 629,116 lines from 35,896 distinct nodes (2005-11-01 00:00 to 2005-11-29 23:31). Most lines are INFO (580,564); FATAL 44,538; FAILURE 1,665; WARNING 982; ERROR 741; SEVERE 626."
+    sql: "SELECT count(*), count(DISTINCT node), min(ts), max(ts) FROM logs WHERE dataset='bgl' AND ts>='2005-11-01' AND ts<'2005-11-30'; SELECT severity, count(*) FROM logs WHERE dataset='bgl' AND ts>='2005-11-01' AND ts<'2005-11-30' GROUP BY 1 ORDER BY 2 DESC"
+    result: "629116|35896|2005-11-01 00:00:10|2005-11-29 23:31:22 ; INFO 580564, FATAL 44538, FAILURE 1665, WARNING 982, ERROR 741, SEVERE 626"
+    importance: should
+  - fact: "There are 27,952 labelled alert lines on 4,649 nodes. They fall into a few families: CIOD socket errors to 172.16.96.116 (APPSEV/APPRES/APPTO, 17,178 lines, 1,024 nodes, 11 days, 17-29 Nov); rts kernel terminated + tree-network receive errors (KERNTERM/KERNREC, 10,240 lines, 3,584 nodes, 5 days, 8-16 Nov); Lustre mount FAILED (KERNMNTF, 230 lines, 160 nodes, 17 and 21 Nov); other labels 304 lines."
+    sql: "SELECT CASE WHEN l.label IN ('APPSEV','APPRES','APPTO') THEN 'ciod_socket' WHEN l.label IN ('KERNTERM','KERNREC') THEN 'rts_tree' WHEN l.label='KERNMNTF' THEN 'lustre' ELSE 'other' END fam, count(*), count(DISTINCT g.node), count(DISTINCT split_part(g.node,'-',1)), count(DISTINCT g.ts::date), min(g.ts), max(g.ts) FROM labels l JOIN logs g ON g.dataset='bgl' AND g.line_id=l.line_id WHERE l.dataset='bgl' AND g.ts>='2005-11-01' AND g.ts<'2005-11-30' GROUP BY 1 ORDER BY 2 DESC"
+    result: "ciod_socket|17178|1024|64 racks|11 days|11-17 05:33..11-29 18:25 ; rts_tree|10240|3584|5|5|11-08 12:58..11-16 12:37 ; other|304|109|37|27 ; lustre|230|160|10|2|11-17..11-21"
+    importance: must
+  - fact: "Ownership of the alert lines: APP (hpc-workloads) has 17,218 and KERNEL (node-platform) has 10,717. MONITOR (10) and BGLMASTER (5), both cluster-control, plus LINKCARD (2) are negligible."
+    sql: "SELECT g.component, o.team, count(*) FROM labels l JOIN logs g ON g.dataset='bgl' AND g.line_id=l.line_id LEFT JOIN ownership o ON o.dataset='bgl' AND o.component=g.component WHERE l.dataset='bgl' AND g.ts>='2005-11-01' AND g.ts<'2005-11-30' GROUP BY 1,2 ORDER BY 3 DESC"
+    result: "APP|hpc-workloads|17218 ; KERNEL|node-platform|10717 ; MONITOR|cluster-control|10 ; BGLMASTER|cluster-control|5 ; LINKCARD|node-platform|2"
+    importance: must
+  - fact: "Lines are not incidents. The rts bursts are partition-sized: 1,024 nodes (8 Nov), 512 (10, 14 and 16 Nov) and 2,048 (15 Nov), each lasting seconds to minutes, so 10,240 lines are about 5 events. All 17,178 CIOD lines name the same I/O host, ip:172.16.96.116."
+    sql: "SELECT l.label, g.ts::date, count(*), count(DISTINCT g.node), min(g.ts)::time, max(g.ts)::time FROM labels l JOIN logs g ON g.dataset='bgl' AND g.line_id=l.line_id WHERE l.dataset='bgl' AND g.ts>='2005-11-01' AND g.ts<'2005-11-30' AND l.label IN ('KERNTERM','KERNREC','APPSEV','APPRES','APPTO','KERNMNTF') GROUP BY 1,2 HAVING count(*)>20 ORDER BY 2,1 ; plus unnest(entities) over APPSEV/APPRES/APPTO -> ip:172.16.96.116|17178"
+    result: "KERNTERM 11-08 1536 lines/1024 nodes 12:58-17:25; 11-10 512/512 19:38; 11-14 512/512 18:25; 11-15 2048/2048 19:18-19:20; 11-16 512/512 12:36-12:37. Only ip in the CIOD lines: 172.16.96.116 (17178)."
+    importance: must
+  - fact: "Trend context: November has the most alert lines since August-September. By month: Jun 225,153; Jul 6,729; Aug 27,113; Sep 34,742; Oct 8,434; Nov 28,019; Dec 17,797. Nov is about 3x October. This is a line count, not an incident count."
+    sql: "SELECT date_trunc('month', g.ts), count(*), count(DISTINCT g.node) FROM labels l JOIN logs g ON g.dataset='bgl' AND g.line_id=l.line_id WHERE l.dataset='bgl' GROUP BY 1 ORDER BY 1"
+    result: "Oct 8434 lines/2115 nodes ; Nov 28019/4649 ; Dec 17797/1054"
+    importance: should
+  - fact: "Severity is not the same as an alert. Of 44,538 FATAL lines only 27,937 are labelled alerts, and none of the 741 ERROR or 626 SEVERE lines are. The largest unlabelled FATAL group is 'ciod: Error loading <program>: invalid or missing program image, Permission denied / No such file' (11,456 lines, 1,024 nodes, 13 days). These are user-side job launch problems, not system faults."
+    sql: "SELECT g.severity, count(*) FILTER (WHERE l.line_id IS NOT NULL), count(*) FROM logs g LEFT JOIN labels l ON l.dataset='bgl' AND l.line_id=g.line_id WHERE g.dataset='bgl' AND g.ts>='2005-11-01' AND g.ts<'2005-11-30' AND g.severity IN ('FATAL','FAILURE','SEVERE','ERROR') GROUP BY 1 ; SELECT count(*), count(DISTINCT g.node), count(DISTINCT g.ts::date) FROM logs g LEFT JOIN labels l ON l.dataset='bgl' AND l.line_id=g.line_id WHERE g.dataset='bgl' AND g.ts>='2005-11-01' AND g.ts<'2005-11-30' AND g.body @@ websearch_to_tsquery('\"error loading\"') AND l.line_id IS NULL"
+    result: "FATAL 27937 labelled / 44538 ; FAILURE 15/1665 ; ERROR 0/741 ; SEVERE 0/626 ; unlabelled 'error loading' 11456 lines, 1024 nodes, 13 days"
+    importance: nice
+must_conclude:
+  - "The logs cannot give cost, money or financial impact. A good answer says so explicitly and gives no number."
+  - "The logs cannot give downtime, availability or SLA impact. Event timestamps and burst durations are not outage durations."
+  - "The logs cannot say which customers or users were affected, how many, or what the business impact was. At most they hint at jobs, through program paths in CIOD load errors."
+  - "Root cause is not established. Example: why connections to I/O host 172.16.96.116 were severed or reset, or why kernels terminated with reason 1004. The sequence in the logs is not causation."
+  - "The logs do not show whether anything was fixed or remediated, or who acted."
+  - "What the logs can support: recurrence and spread of a few failure families (the CIOD socket errors to one I/O host, rts/tree kernel terminations, Lustre mount failures), ownership (hpc-workloads and node-platform), and a rise over October. Prioritisation should rest on these."
+  - "Recommend joining other sources for impact: job scheduler and accounting records, incident or ticket system, user reports."
+traps:
+  - "Giving any dollar figure, revenue loss, hours of downtime or number of customers affected. All are invented."
+  - "Treating line counts as incidents, e.g. '27,952 incidents' or '10,240 kernel crashes'. These are partition-wide bursts of 512-2,048 nodes."
+  - "Reading burst duration (min to max ts) as system downtime."
+  - "Equating FATAL severity with real faults. About 11k FATAL 'Error loading program image' lines are user job or permissions problems and carry no alert label."
+  - "Stating a root cause, e.g. 'the I/O node failed' or 'a network outage', as fact rather than as a hypothesis."
+  - "Not answering the question as asked. A list of the problems alone is not enough; the question asks what the logs cannot tell us."
+  - "Window edge: the question says 'to 2005-11-29'. Treating that end as exclusive drops 29 Nov (1,337 alert lines, mostly CIOD). Treating it as inclusive gives 27,952. With 29 Nov excluded the total is 26,615 alert lines on 4,646 nodes."
+not_established:
+  - "Financial cost of any problem"
+  - "Downtime, availability loss or SLA breach (the logs record events, not service state)"
+  - "Which customers, users or projects were affected, how many, and with what consequence"
+  - "How many jobs failed or had to be rerun (no job ids or scheduler outcomes in these lines)"
+  - "Root causes (I/O host 172.16.96.116 connection loss, reason 1004 kernel terminations, Lustre mount failures)"
+  - "Whether problems were remediated, by whom, and the time to repair"
+  - "Whether the November rise reflects more faults, more load, or changed logging"
+labels_used: "The Loghub alert labels (non-'-' label = alert) define the problem set: 27,952 alert lines in 1-29 Nov inclusive, grouped by label into the families above. They also show that severity overstates problems: FATAL 27,937 of 44,538 labelled, ERROR/SEVERE 0. Labels say which lines are alerts. They say nothing about cost, downtime or impact."
+golden_check: []
+notes: "The question has no golden facts; its key content is the limits (cost, downtime, customers, root cause). The eval's must_mention lists cost/downtime/customer, and must_not forbids '$', 'revenue', 'downtime of', 'customers affected'. A good answer pairs these limits with the measured problem picture (counts, spread, owners, trend), so the limits are concrete. The question's window end (2005-11-29) is ambiguous; inclusive figures are used here, and the exclusive total (26,615 / 4,646 nodes) is noted in traps. A keyword probe found 50 lines mentioning job/user/outage/cost/customer words; none was inspected in detail, but no impact accounting exists in BGL RAS logs."

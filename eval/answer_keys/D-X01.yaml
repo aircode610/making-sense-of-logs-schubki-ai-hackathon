@@ -1,0 +1,70 @@
+id: D-X01
+role: engineer
+dataset: linux
+question: "The Linux server combo rebooted around noon on 2005-12-06. What happened on it that morning (2005-12-06 00:00 to 12:30), and what happened right before and after the reboot?"
+answer_summary: "From 00:00 to 12:02:46 on 2005-12-06, combo was under continuous memory exhaustion. The kernel logged 397 'Out of Memory: Killed process' lines, between 15 and 52 every hour. The OOM killer mostly picked httpd (301) and python (72), and also sendmail (15), mrtg (7), updatedb (1) and diskcheck (1). It was accompanied by 5 'httpd: page allocation failure' kernel call traces (00:27 and 05:01) and one 'VM: killing process httpd'. The last OOM kill was at 12:02:46 (diskcheck). Then the log is silent for about 17 minutes. At 12:20:03 gdm logs 'Master rebooting...', at 12:20:08 'shutting down for system reboot', and at 12:20:14 init switches to runlevel 6. That is an orderly shutdown, not a crash or panic. Services stopped until 12:21:26 (a few stops 'failed': mysqld, named, xfs, messagebus, portmap, sm-client). The kernel booted at 12:22:57 (2.6.5-1.358, only ~126 MB of RAM and 256 MB of swap), services were up by ~12:24:35 (telnet bind failed, mdmpd failed), and no OOM kill was logged again until 2005-12-08 19:15. This is the tail of a recurring problem: OOM kills ran daily from 2005-11-15, with 816-1162 per day on Dec 3-5, so the reboot cleared the pressure temporarily but did not fix it."
+findings:
+  - fact: "397 OOM-kill lines on 2005-12-06 between 00:00 and the shutdown, first at 00:00:16, last at 12:02:46."
+    sql: "SELECT count(*), min(ts), max(ts) FROM logs WHERE dataset='linux' AND body LIKE 'Out of Memory: Killed process%' AND ts >= '2005-12-06' AND ts < '2005-12-06 12:20'"
+    result: "397 | 2005-12-06 00:00:16 | 2005-12-06 12:02:46"
+    importance: must
+  - fact: "Victims of the OOM killer: httpd 301, python 72, sendmail 15, mrtg 7, updatedb 1 (05:01:33), diskcheck 1 (12:02:46, the last one)."
+    sql: "SELECT regexp_extract(body,'Killed process [0-9]+ \\(([^)]+)\\)',1) p, count(*) FROM logs WHERE dataset='linux' AND ts>='2005-12-06' AND ts<'2005-12-06 12:20' AND body LIKE '%Killed process%' GROUP BY 1 ORDER BY 2 DESC"
+    result: "httpd 301, python 72, sendmail 15, mrtg 7, updatedb 1, diskcheck 1"
+    importance: must
+  - fact: "The kills were continuous all morning, not one spike: 15-52 per hour from hour 00 to hour 12 (00:29, 01:30, 02:52, 03:25, 04:32, 05:31, 06:31, 07:27, 08:15, 09:28, 10:42, 11:39, 12:16). They came with 5 'httpd: page allocation failure' call traces (00:27, 05:01) and 1 'VM: killing process httpd' (00:27:35). There was no kernel panic."
+    sql: "SELECT strftime(ts,'%H') h, count(*) FROM logs WHERE dataset='linux' AND body LIKE 'Out of Memory: Killed process%' AND ts>='2005-12-06' AND ts<'2005-12-07' GROUP BY 1 ORDER BY 1; SELECT count(*) FILTER (WHERE body ILIKE '%panic%'), count(*) FILTER (WHERE body LIKE '%page allocation failure%'), count(*) FILTER (WHERE body LIKE 'VM: killing process%') FROM logs WHERE dataset='linux' AND ts>='2005-12-06' AND ts<'2005-12-06 12:20'"
+    result: "hourly 29/30/52/25/32/31/31/27/15/28/42/39/16; panic 0, page allocation failure 5, VM killing 1"
+    importance: should
+  - fact: "Just before the reboot, the last OOM kill was at 12:02:46. No lines at all were logged from 12:02:47 to 12:20:00. Then gdm logged 'Master rebooting...' (12:20:03), shutdown logged 'shutting down for system reboot' (12:20:08) and init logged 'Switching to runlevel: 6' (12:20:14). This was a deliberate, orderly reboot."
+    sql: "SELECT line_id, ts, component, body FROM logs WHERE dataset='linux' AND ts>='2005-12-06 12:02:20' AND ts<'2005-12-06 12:20:20' ORDER BY ts, line_id LIMIT 40; SELECT count(*) FROM logs WHERE dataset='linux' AND ts>='2005-12-06 12:02:47' AND ts<'2005-12-06 12:20:00'"
+    result: "21051 12:02:46 kernel OOM diskcheck; 21054 12:20:03 gdm Master rebooting...; 21055 12:20:08 shutdown shutting down for system reboot; 21058 12:20:14 init Switching to runlevel: 6; gap count 0"
+    importance: must
+  - fact: "Shutdown ran from 12:20 to 12:21:26 (httpd shutdown succeeded 12:20:37; 'failed' stops for messagebus, xfs, jserver, mysqld, sm-client, named, rpc.statd, portmap; klogd stopped 12:21:26). The kernel booted at 12:22:57 (Linux 2.6.5-1.358, 126MB LOWMEM, 'Memory: 125312k/129720k available', 262072k swap on /dev/hda3). Services were back by ~12:24:35, with 'Service telnet failed to start' (bind failed) and 'mdmpd failed'."
+    sql: "SELECT line_id, ts, component, left(body,110) FROM logs WHERE dataset='linux' AND ts>='2005-12-06 12:20:45' AND ts<'2005-12-06 12:23:00' AND component NOT IN ('udev') ORDER BY ts, line_id LIMIT 50; SELECT ts, component, left(body,140) FROM logs WHERE dataset='linux' AND ts>='2005-12-06 12:22:57' AND ts<'2005-12-06 12:25' AND (body ILIKE '%memory%' OR body ILIKE '%swap%' OR body ILIKE '%fail%') ORDER BY ts LIMIT 30"
+    result: "as stated; boot at 12:22:57 'syslogd 1.4.1: restart' and kernel 'Linux version 2.6.5-1.358'"
+    importance: should
+  - fact: "After the reboot, no OOM kill was logged until 2005-12-08 19:15:15, about 2.3 days later (56 lines on Dec 8, 19 on Dec 9, the last 2005-12-09 04:58:54)."
+    sql: "SELECT min(ts) FROM logs WHERE dataset='linux' AND body LIKE 'Out of Memory: Killed process%' AND ts>='2005-12-06 12:20'; SELECT count(*) FROM logs WHERE dataset='linux' AND ts>='2005-12-06 12:24:40' AND ts<'2005-12-08 19:15:15' AND body LIKE '%Out of Memory%'"
+    result: "2005-12-08 19:15:15; 0"
+    importance: should
+  - fact: "This was a recurring condition, not a one-morning event. 10,404 OOM-kill lines were logged between 2005-11-15 and 2005-12-09, peaking at 1750 on Nov 21 and at 960/1162/816 on Dec 3/4/5. The 2005-12-06 morning was lower (397) than the three days before it."
+    sql: "SELECT strftime(ts,'%Y-%m-%d') d, count(*) FROM logs WHERE dataset='linux' AND body LIKE 'Out of Memory: Killed process%' GROUP BY 1 ORDER BY 1"
+    result: "11-15 88 ... 11-21 1750 ... 12-03 960, 12-04 1162, 12-05 816, 12-06 397, 12-08 56, 12-09 19"
+    importance: should
+  - fact: "The 2005-12-06 reboot is one of 4 logged reboots (2005-09-28, 2005-10-25, 2005-12-06 12:20:08, 2006-01-26). Owner: linux-ops (the default * row; the dataset has no per-program owners)."
+    sql: "SELECT ts, body FROM logs WHERE dataset='linux' AND component='shutdown' ORDER BY ts"
+    result: "2005-09-28 09:08:28, 2005-10-25 10:06:02, 2005-12-06 12:20:08, 2006-01-26 12:19:56"
+    importance: nice
+must_conclude:
+  - "The morning was dominated by kernel OOM kills (397 lines), mainly of httpd (301) and python (72)."
+  - "The last OOM kill was at 12:02:46, and the reboot was an orderly shutdown at 12:20:08 (runlevel 6, gdm 'Master rebooting...'), not a crash or panic."
+  - "The host came back at about 12:22:57 to 12:24:35, and the OOM kills stopped until 2005-12-08 19:15."
+  - "This was memory exhaustion on a small host (~126 MB RAM) that had been recurring since 2005-11-15, so the reboot was only temporary relief."
+traps:
+  - "Counting 397 lines as 397 incidents. These are kill events of one continuous memory-pressure episode."
+  - "Calling the reboot a kernel crash or panic. There is no panic line, and shutdown, init runlevel 6 and gdm show a deliberate reboot."
+  - "Concluding that the OOM directly caused the reboot. There are 17 silent minutes between the last kill and the shutdown, and who triggered the reboot is not logged."
+  - "Treating the morning as new or unusual. Dec 3-5 had more OOM kills, and the condition started on Nov 15."
+  - "Reading the kernel boot lines at 12:22:57 (BIOS-e820, 'failed' registrations, cdrom open failed) as faults. That is normal boot noise."
+  - "Timestamps assume year 2005 (syslog has no year), and line order on boot is not strictly time-sorted (sysctl lines at 12:22:54 have higher line_ids than syslogd restart at 12:22:57)."
+not_established:
+  - "Who or what initiated the reboot (an operator or a script). The logs show only gdm 'Master rebooting...' and shutdown."
+  - "Why httpd and python consumed the memory (traffic, a leak, a runaway script). There are no per-process memory figures, request rates or httpd access logs."
+  - "Any downtime or user impact beyond the ~2.5 minutes between the shutdown and the boot lines (12:20:08 to 12:22:57) and the service start times."
+  - "What happened during the silent 12:02:47-12:20:00 window."
+labels_used: "None. The linux dataset has no Loghub labels."
+golden_check:
+  - fact: "Out of Memory kill lines on 2005-12-06 before the shutdown (00:00-12:20)"
+    golden_value: "397"
+    my_value: "397"
+    agrees: true
+  - fact: "last Out of Memory kill before the reboot"
+    golden_value: "2005-12-06 12:02"
+    my_value: "2005-12-06 12:02 (12:02:46)"
+    agrees: true
+  - fact: "shutdown for reboot logged"
+    golden_value: "2005-12-06 12:20"
+    my_value: "2005-12-06 12:20 (12:20:08)"
+    agrees: true
+notes: "The ts_phrase and LIKE 'Out of Memory: Killed process%' queries return the same count (397). Single host (combo). Severity is NULL in this dataset, so do not filter by level. Owner linux-ops comes from the default * ownership row."

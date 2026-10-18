@@ -1,0 +1,68 @@
+id: D-X08
+role: manager
+dataset: healthapp
+question: "For the health app between 2017-12-23 and 2018-01-04, how many of our users were affected by the data sync failures, what is the business impact, and what can't these logs tell us?"
+answer_summary: "The premise that this log can count affected users is false: the whole HealthApp log (253,395 lines, 2017-12-23 22:15 to 2018-01-03 09:59, i.e. the entire dataset) comes from ONE app process (pid 30002312) on ONE phone, so at most one user/device is visible and no user population can be derived. On that device every cloud sync attempt failed: 792 'startSync' attempts, each immediately followed by 'ifCanSync not! no cloud version' and 'sendSyncFailedBroadcast' (792 of each, ~116 bursts, every day of the window, no sync success line at all), i.e. a systematic configuration/version condition, not intermittent outages. Separately, local writes partially failed (212 'ERR_DATA_INSERT' bulk-insert failures, 288 per-record save failures, 212 'uploadStaticsToDB failed'), while step counting itself kept running. Business impact (money, users, churn, data loss on the server side, downtime) cannot be established from these logs; the owner is the mobile-health team (default * owner). Decision: treat it as a likely systematic 'no cloud version' sync blocker to be reproduced and checked against server-side/fleet telemetry before sizing impact."
+findings:
+  - fact: "The entire log is one app process on one device: 1 distinct process id in the window (pid 30002312 carries 253,394 of 253,395 lines; 1 line has an empty pid). The window covers the whole dataset (first 2017-12-23 22:15:29, last 2018-01-03 09:59:00)."
+    sql: "SELECT count(DISTINCT request_id) FROM logs WHERE dataset='healthapp' AND ts >= '2017-12-23' AND ts < '2018-01-04'; SELECT request_id, count(*) FROM logs WHERE dataset='healthapp' GROUP BY 1; SELECT count(*), min(ts), max(ts) FROM logs WHERE dataset='healthapp'"
+    result: "1; 30002312=253394, (null)=1; 253395 | 2017-12-23 22:15:29.606 | 2018-01-03 09:59:00.095"
+    importance: must
+  - fact: "Every cloud sync attempt failed: 792 startSync attempts, 792 'ifCanSync not! no cloud version', 792 'sendSyncFailedBroadcast'; zero success lines. The failure is the immediate next step after the privacy checks (e.g. lines 745-755 at 2017-12-23 22:19:58.419-.428)."
+    sql: "SELECT component, left(regexp_replace(body,'[0-9]+','N','g'),110) t, count(*) FROM logs WHERE dataset='healthapp' AND component LIKE 'HiH%' GROUP BY 1,2 ORDER BY 3 DESC; SELECT count(*) FROM logs WHERE dataset='healthapp' AND component LIKE 'HiH%' AND (body ILIKE '%success%' OR body ILIKE '%syncSuccess%')"
+    result: "startSync=792, ifCanSync not! no cloud version=792, sendSyncFailedBroadcast=792; success lines=0"
+    importance: must
+  - fact: "Sync failures occur on every day of the window, first 2017-12-23 22:19:58, last 2018-01-03 09:12:06; ~116 bursts (>30 min apart) across 359 distinct minutes; per day 4,125,100,47,50,49,40,81,74,50,159,13. No improving or worsening trend; volume tracks app activity (day totals of all lines move similarly)."
+    sql: "SELECT date_trunc('day',ts) d, count(*) FILTER (WHERE body LIKE 'sendSyncFailedBroadcast%'), count(*) FROM logs WHERE dataset='healthapp' GROUP BY 1 ORDER BY 1; WITH f AS (SELECT ts, lag(ts) OVER (ORDER BY ts) p FROM logs WHERE dataset='healthapp' AND body LIKE 'sendSyncFailedBroadcast%') SELECT count(*) FILTER (WHERE p IS NULL OR ts-p > interval '30 minutes') FROM f"
+    result: "daily: 12-23 4, 12-24 125, 12-25 100, 12-26 47, 12-27 50, 12-28 49, 12-29 40, 12-30 81, 12-31 74, 01-01 50, 01-02 159, 01-03 13; bursts=116"
+    importance: must
+  - fact: "Local health-data writes also partially failed: 212 'bulkSaveDetailHiHealthData fail errorCode = 4, ERR_DATA_INSERT', 288 'saveOneDetailData fail' (mostly type 40005=208, 40003=75), 212 'uploadStaticsToDB failed'. Step counting (Step_* modules, ~240k lines) kept running throughout."
+    sql: "SELECT component, left(regexp_replace(body,'[0-9]+','N','g'),110) t, count(*) FROM logs WHERE dataset='healthapp' AND (body ILIKE '%fail%' OR body ILIKE '%error%') GROUP BY 1,2 ORDER BY 3 DESC; SELECT regexp_extract(body,'type = ([0-9]+)',1), count(*) FROM logs WHERE dataset='healthapp' AND body LIKE 'saveHealthDetailData() saveOneDetailData fail%' GROUP BY 1"
+    result: "sendSyncFailedBroadcast 792; saveOneDetailData fail 288 (40005:208, 40003:75, 40004:4, 40002:1); ERR_DATA_INSERT 212; uploadStaticsToDB failed 212; FAILED_SCREEN_OFF block report 185; FAILED_ERROR_DATA 10"
+    importance: should
+  - fact: "There is no log level in this dataset (severity NULL on all lines), so 'failures' are identified by message text only; no user/account id is logged (only 'getStringHuid() who is com.huawei.health', 68 lines, no value)."
+    sql: "SELECT count(*) FROM logs WHERE dataset='healthapp' AND severity IS NOT NULL AND ts >= '2017-12-23' AND ts < '2018-01-04'; SELECT DISTINCT component, left(regexp_replace(body,'[0-9]+','N','g'),120) FROM logs WHERE dataset='healthapp' AND (body ILIKE '%huid%' OR body ILIKE '%account%')"
+    result: "0; only HiH_HiHealthBinder 'getStringHuid() who is com.huawei.health'"
+    importance: should
+  - fact: "The device rebooted 4 times in the window (BOOT_COMPLETED at 12-24 15:32, 12-26 08:00, 12-29 22:38, 12-31 10:06); sync failures persisted across reboots, so a restart does not clear the condition."
+    sql: "SELECT ts, body FROM logs WHERE dataset='healthapp' AND component='Step_StaticReceiver' ORDER BY ts"
+    result: "4 BOOT_COMPLETED lines"
+    importance: nice
+  - fact: "Owner: no module-specific owner; the default '*' row assigns all healthapp modules to team mobile-health."
+    sql: "grep -i healthapp data/ownership.csv"
+    result: "healthapp,*,mobile-health,Default owner"
+    importance: should
+must_conclude:
+  - "Number of affected users cannot be determined: the log is a single process on a single device (1 distinct process id), so at most one user is visible; it is not a fleet sample."
+  - "On that device all 792 sync attempts failed with 'no cloud version' (no success at all), across every day of the window: a persistent/systematic condition, not sporadic incidents."
+  - "792 is a count of attempts/log lines, not incidents or users (about 116 bursts)."
+  - "Business impact (money, churn, customers, downtime) is not in the logs; owner is mobile-health."
+  - "Next step: reproduce / check server-side sync telemetry and the cloud-version precondition; get fleet-level data to size impact."
+traps:
+  - "Reporting 792 (or 253k lines) as number of affected users or incidents."
+  - "Treating pid/request_id as a user id or extrapolating to a user base."
+  - "Inventing revenue, downtime or customer counts."
+  - "Calling it an outage: there is no server-side evidence; the client says 'no cloud version' (likely a precondition/config state such as cloud sync not provisioned), and the cause is not established."
+  - "Searching by severity=ERROR finds nothing (no levels in this dataset)."
+  - "Confusing local DB insert failures (ERR_DATA_INSERT, 212) with the cloud sync failures (792)."
+not_established:
+  - "How many users/devices exist or are affected beyond this one device."
+  - "Whether health data was actually lost (server side) or merely not uploaded; whether data synced later outside the window."
+  - "The root cause of 'no cloud version' (server, account state, app version, configuration)."
+  - "Whether the user noticed (UI effect of the failed-sync broadcast), any money, churn, support tickets or downtime."
+  - "App version, OS version, network state."
+labels_used: "None: the labels table has 0 rows for healthapp (no Loghub ground truth for this dataset)."
+golden_check:
+  - fact: "distinct app process ids in the period"
+    golden_value: "1"
+    my_value: "1"
+    agrees: true
+  - fact: "lines carrying a log level"
+    golden_value: "0"
+    my_value: "0"
+    agrees: true
+  - fact: "device boots seen by the app (BOOT_COMPLETED)"
+    golden_value: "4"
+    my_value: "4"
+    agrees: true
+notes: "Window 2017-12-23..2018-01-04 equals the whole dataset. The sync flow is startSync -> needAutoSync open -> data/user privacy open -> 'ifCanSync not! no cloud version' -> sendSyncFailedBroadcast, all within ~10 ms, 792 times with 1:1:1 counts. Bursts computed with a 30-min gap rule on sendSyncFailedBroadcast lines."

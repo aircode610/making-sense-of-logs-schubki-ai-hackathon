@@ -569,3 +569,552 @@
   required_tools:
   - priority_table
   expected_first_tool: priority_table
+# Plan 013: 25 more questions (D-X01..X25) covering every dataset and new cases (false premise, timelines, baseline, periodicity, new pattern, latency).
+- id: D-X01
+  role: engineer
+  pattern: E1
+  dataset: linux
+  topic: oom-dec
+  question: The Linux server combo rebooted around noon on 2005-12-06. What happened on it that morning (2005-12-06 00:00 to 12:30), and what happened right before and after the reboot?
+  golden:
+  - fact: Out of Memory kill lines on 2005-12-06 before the shutdown (00:00-12:20)
+    sql: SELECT count(*) FROM logs WHERE dataset='linux' AND body @@ ts_phrase('out of memory killed process') AND ts >= '2005-12-06' AND ts < '2005-12-06 12:20'
+    value: 397
+  - fact: last Out of Memory kill before the reboot
+    match: date
+    sql: SELECT strftime(max(ts), '%Y-%m-%d %H:%M') FROM logs WHERE dataset='linux' AND body @@ ts_phrase('out of memory killed process') AND ts >= '2005-12-06' AND ts < '2005-12-06 12:20'
+    value: 2005-12-06 12:02
+  - fact: shutdown for reboot logged
+    match: date
+    sql: SELECT strftime(min(ts), '%Y-%m-%d %H:%M') FROM logs WHERE dataset='linux' AND component='shutdown' AND ts >= '2005-12-06' AND ts < '2005-12-07'
+    value: 2005-12-06 12:20
+  must_mention:
+  - Out of Memory
+  - httpd
+  required_tools: []
+- id: D-X02
+  role: engineer
+  pattern: X
+  dataset: linux
+  topic: oom-nov
+  question: Server combo kept kernel-panicking and rebooting in the second half of November 2005 (2005-11-15 to 2005-12-01). When did the panics happen and what triggered them?
+  golden:
+  - fact: lines containing 'panic' in the window
+    sql: SELECT count(*) FROM logs WHERE dataset='linux' AND body @@ websearch_to_tsquery('panic') AND ts >= '2005-11-15' AND ts < '2005-12-01'
+    value: 0
+  - fact: boot banners ('Linux version') in the window, i.e. reboots
+    sql: SELECT count(*) FROM logs WHERE dataset='linux' AND body @@ ts_phrase('linux version') AND ts >= '2005-11-15' AND ts < '2005-12-01'
+    value: 0
+  - fact: Out of Memory kill lines in the window
+    sql: SELECT count(*) FROM logs WHERE dataset='linux' AND body @@ ts_phrase('out of memory killed process') AND ts >= '2005-11-15' AND ts < '2005-12-01'
+    value: 6709
+  must_mention:
+  - Out of Memory
+  required_tools: []
+- id: D-X03
+  role: lead
+  pattern: L1
+  dataset: linux
+  question: On the Linux server combo, logrotate keeps reporting 'ALERT exited abnormally' in December 2005 (2005-12-01 to 2006-01-01). How often does it recur, does it follow a schedule, and which team
+    owns it?
+  golden:
+  - fact: bursts of the logrotate 'ALERT exited abnormally' pattern started in December 2005
+    sql: SELECT count(*) FROM bursts b JOIN patterns p USING (dataset, pattern_id) WHERE b.dataset='linux' AND p.component='logrotate' AND p.template LIKE 'ALERT exited abnormally%' AND b.start_ts >= '2005-12-01'
+      AND b.start_ts < '2006-01-01'
+    value: 31
+  - fact: of those lines, how many were logged in the 04:00 hour
+    sql: SELECT count(*) FROM logs WHERE dataset='linux' AND component='logrotate' AND body @@ ts_phrase('alert exited abnormally') AND ts >= '2005-12-01' AND ts < '2006-01-01' AND hour(ts) = 4
+    value: 31
+  - fact: owner of the logrotate component
+    match: text
+    sql: SELECT team FROM ownership WHERE dataset='linux' AND component='logrotate'
+    value: linux-ops
+  must_mention:
+  - linux-ops
+  - '04:'
+  required_tools: []
+- id: D-X04
+  role: manager
+  pattern: M5
+  dataset: linux
+  topic: oom-nov
+  question: Our Linux server combo had memory trouble in November and December 2005 (2005-11-01 to 2006-01-01). Is this a long-standing issue or something new, how big was it, and what can't the logs tell
+    us about its impact?
+  golden:
+  - fact: Out of Memory kill lines before 2005-11-15 (whole dataset)
+    sql: SELECT count(*) FROM logs WHERE dataset='linux' AND body @@ ts_phrase('out of memory killed process') AND ts < '2005-11-15'
+    value: 0
+  - fact: first Out of Memory kill
+    match: date
+    sql: SELECT strftime(min(ts), '%Y-%m-%d %H:%M') FROM logs WHERE dataset='linux' AND body @@ ts_phrase('out of memory killed process') AND ts >= '2005-11-01' AND ts < '2006-01-01'
+    value: 2005-11-15 04:30
+  - fact: Out of Memory kill lines in the period
+    sql: SELECT count(*) FROM logs WHERE dataset='linux' AND body @@ ts_phrase('out of memory killed process') AND ts >= '2005-11-01' AND ts < '2006-01-01'
+    value: 10404
+  must_mention:
+  - Out of Memory
+  - httpd
+  must_not:
+  - $
+  - revenue
+  - downtime of
+  - customers affected
+  required_tools: []
+- id: D-X05
+  role: engineer
+  pattern: E1
+  dataset: healthapp
+  question: The health app crashed on the phone on 2017-12-29 around 22:30. What exception did it log, and what happened just before and after the crash (2017-12-29 22:00 to 2017-12-30 00:00)?
+  golden:
+  - fact: crash / exception / fatal / ANR / killed lines on 2017-12-29 22:00-24:00 (none)
+    sql: SELECT count(*) FROM logs WHERE dataset='healthapp' AND body @@ websearch_to_tsquery('crash OR exception OR fatal OR anr OR killed OR died') AND ts >= '2017-12-29 22:00' AND ts < '2017-12-30 00:00'
+    value: 0
+  - fact: last line before the silent gap
+    match: date
+    sql: SELECT strftime(max(ts), '%Y-%m-%d %H:%M') FROM logs WHERE dataset='healthapp' AND ts >= '2017-12-29 20:00' AND ts < '2017-12-29 22:38'
+    value: 2017-12-29 22:27
+  - fact: BOOT_COMPLETED received (device boot, app restarts)
+    match: date
+    sql: SELECT strftime(min(ts), '%Y-%m-%d %H:%M') FROM logs WHERE dataset='healthapp' AND body @@ websearch_to_tsquery('android.intent.action.BOOT_COMPLETED') AND ts >= '2017-12-29 22:00' AND ts < '2017-12-30
+      00:00'
+    value: 2017-12-29 22:38
+  must_mention:
+  - BOOT_COMPLETED
+  required_tools: []
+- id: D-X06
+  role: engineer
+  pattern: E5
+  dataset: healthapp
+  question: On 2018-01-02 the health app logged ERR_DATA_INSERT errors when saving health data. When did they start that day, and is the 2018-01-02 volume unusual compared with the previous 7 days (2017-12-26
+    to 2018-01-02)?
+  golden:
+  - fact: ERR_DATA_INSERT lines on 2018-01-02
+    sql: SELECT count(*) FROM logs WHERE dataset='healthapp' AND body @@ ts_phrase('ERR_DATA_INSERT') AND ts >= '2018-01-02' AND ts < '2018-01-03'
+    value: 51
+  - fact: first ERR_DATA_INSERT on 2018-01-02
+    match: date
+    sql: SELECT strftime(min(ts), '%Y-%m-%d %H:%M') FROM logs WHERE dataset='healthapp' AND body @@ ts_phrase('ERR_DATA_INSERT') AND ts >= '2018-01-02' AND ts < '2018-01-03'
+    value: 2018-01-02 08:11
+  - fact: ERR_DATA_INSERT lines in the 7-day baseline 2017-12-26 to 2018-01-02
+    sql: SELECT count(*) FROM logs WHERE dataset='healthapp' AND body @@ ts_phrase('ERR_DATA_INSERT') AND ts >= '2017-12-26' AND ts < '2018-01-02'
+    value: 97
+  must_mention:
+  - ERR_DATA_INSERT
+  required_tools: []
+  topic: healthapp-insert-fail
+- id: D-X07
+  role: lead
+  pattern: L1
+  dataset: healthapp
+  question: How often did the HealthApp cloud data sync fail between 2017-12-23 and 2018-01-04, does it keep recurring or was it a one-off, and which team owns it?
+  golden:
+  - fact: sendSyncFailedBroadcast lines in the period
+    sql: SELECT count(*) FROM logs WHERE dataset='healthapp' AND body @@ ts_phrase('sendSyncFailedBroadcast') AND ts >= '2017-12-23' AND ts < '2018-01-04'
+    value: 792
+  - fact: bursts of 'sendSyncFailedBroadcast' in the period
+    sql: SELECT count(*) FROM bursts b JOIN patterns p USING (dataset, pattern_id) WHERE b.dataset='healthapp' AND p.template='sendSyncFailedBroadcast' AND b.start_ts >= '2017-12-23' AND b.start_ts < '2018-01-04'
+    value: 116
+  - fact: owner of that pattern
+    match: text
+    sql: SELECT o.team FROM patterns p JOIN ownership o ON o.dataset=p.dataset AND o.component=p.component WHERE p.dataset='healthapp' AND p.template='sendSyncFailedBroadcast'
+    value: mobile-health
+  must_mention:
+  - mobile-health
+  - no cloud version
+  required_tools: []
+  topic: healthapp-sync
+- id: D-X08
+  role: manager
+  pattern: M5
+  dataset: healthapp
+  question: For the health app between 2017-12-23 and 2018-01-04, how many of our users were affected by the data sync failures, what is the business impact, and what can't these logs tell us?
+  golden:
+  - fact: distinct app process ids in the period (the whole log is one process on one phone)
+    sql: SELECT count(DISTINCT request_id) FROM logs WHERE dataset='healthapp' AND ts >= '2017-12-23' AND ts < '2018-01-04'
+    value: 1
+  - fact: lines carrying a log level (none)
+    sql: SELECT count(*) FROM logs WHERE dataset='healthapp' AND severity IS NOT NULL AND ts >= '2017-12-23' AND ts < '2018-01-04'
+    value: 0
+  - fact: device boots seen by the app (BOOT_COMPLETED, Step_StaticReceiver)
+    sql: SELECT count(*) FROM logs WHERE dataset='healthapp' AND component='Step_StaticReceiver' AND body @@ websearch_to_tsquery('android.intent.action.BOOT_COMPLETED') AND ts >= '2017-12-23' AND ts <
+      '2018-01-04'
+    value: 4
+  must_mention:
+  - mobile-health
+  must_not:
+  - $
+  - revenue
+  - downtime of
+  - customers affected
+  required_tools: []
+  topic: healthapp-sync
+- id: D-X09
+  role: engineer
+  pattern: E3
+  dataset: ssh
+  question: What happened on SSH connection sshd-16980 on 2017-12-15, step by step? Was it an attack or a real user?
+  golden:
+  - fact: lines of sshd-16980 on 2017-12-15
+    sql: SELECT count(*) FROM logs WHERE dataset='ssh' AND request_id='sshd-16980' AND ts >= '2017-12-15' AND ts < '2017-12-16'
+    value: 6
+  - fact: failed password lines before the login
+    sql: SELECT count(*) FROM logs WHERE dataset='ssh' AND request_id='sshd-16980' AND ts >= '2017-12-15' AND ts < '2017-12-16' AND body @@ ts_phrase('failed password')
+    value: 2
+  - fact: session closed (last line of the session)
+    match: date
+    sql: SELECT strftime(max(ts), '%Y-%m-%d %H:%M') FROM logs WHERE dataset='ssh' AND request_id='sshd-16980' AND ts >= '2017-12-15' AND ts < '2017-12-16'
+    value: 2017-12-15 18:40
+  must_mention:
+  - zachary
+  - 218.17.80.182
+  required_tools: []
+- id: D-X10
+  role: lead
+  pattern: L2
+  dataset: ssh
+  question: How did the 'POSSIBLE BREAK-IN ATTEMPT' warnings on the SSH server trend week over week from 2017-12-11 to 2018-01-08, which team owns them, and what drove any change?
+  golden:
+  - fact: break-in attempt lines in the week of 2018-01-01
+    sql: SELECT count(*) FROM logs WHERE dataset='ssh' AND ts >= '2018-01-01' AND ts < '2018-01-08' AND body @@ ts_phrase('possible break-in attempt')
+    value: 14881
+  - fact: break-in attempt lines in the week of 2017-12-25
+    sql: SELECT count(*) FROM logs WHERE dataset='ssh' AND ts >= '2017-12-25' AND ts < '2018-01-01' AND body @@ ts_phrase('possible break-in attempt')
+    value: 1813
+  - fact: top IP behind the break-in attempt lines in the week of 2018-01-01
+    match: text
+    sql: SELECT replace(e, 'ip:', '') FROM (SELECT unnest(entities) e FROM logs WHERE dataset='ssh' AND ts >= '2018-01-01' AND ts < '2018-01-08' AND body @@ ts_phrase('possible break-in attempt')) WHERE
+      e LIKE 'ip:%' GROUP BY 1 ORDER BY count(*) DESC LIMIT 1
+    value: 183.192.189.131
+  must_mention:
+  - security-ops
+  - 183.192.189.131
+  required_tools: []
+- id: D-X11
+  role: manager
+  pattern: M5
+  dataset: ssh
+  question: Attackers got root access to our SSH server in the first week of January 2018 (2018-01-01 to 2018-01-08). How bad is it, and what should we do first?
+  golden:
+  - fact: successful root password logins in the whole SSH log
+    sql: SELECT count(*) FROM logs WHERE dataset='ssh' AND body @@ ts_phrase('accepted password for root')
+    value: 0
+  - fact: root sessions opened in the whole SSH log
+    sql: SELECT count(*) FROM logs WHERE dataset='ssh' AND body @@ ts_phrase('session opened for user root')
+    value: 0
+  - fact: accepted (non-root) password logins in the week
+    sql: SELECT count(*) FROM logs WHERE dataset='ssh' AND ts >= '2018-01-01' AND ts < '2018-01-08' AND body @@ ts_phrase('accepted password')
+    value: 94
+  must_mention:
+  - root
+  must_not:
+  - $
+  - revenue
+  - downtime of
+  - customers affected
+  required_tools: []
+- id: D-X12
+  role: engineer
+  pattern: E5
+  dataset: apache
+  question: The Apache web server logged a lot of errors on 2006-01-08. Is that unusual compared with the previous 7 days, what were the errors and who sent the requests?
+  golden:
+  - fact: ERROR lines on 2006-01-08
+    sql: SELECT count(*) FROM logs WHERE dataset='apache' AND severity='ERROR' AND ts >= '2006-01-08' AND ts < '2006-01-09'
+    value: 965
+  - fact: ERROR lines in the previous 7 days
+    sql: SELECT count(*) FROM logs WHERE dataset='apache' AND severity='ERROR' AND ts >= '2006-01-01' AND ts < '2006-01-08'
+    value: 156
+  - fact: top client IP in the ERROR lines of 2006-01-08
+    match: text
+    sql: SELECT replace(e, 'ip:', '') FROM (SELECT unnest(entities) e FROM logs WHERE dataset='apache' AND ts >= '2006-01-08' AND ts < '2006-01-09' AND severity='ERROR') WHERE e LIKE 'ip:%' GROUP BY 1 ORDER
+      BY count(*) DESC LIMIT 1
+    value: 193.19.219.217
+  must_mention:
+  - File does not exist
+  - 193.19.219.217
+  required_tools: []
+- id: D-X13
+  role: lead
+  pattern: X
+  dataset: apache
+  question: The Apache web server keeps logging 'Graceful restart requested'. Does it happen on a schedule, how often, and which team owns it? Is it a problem?
+  golden:
+  - fact: graceful restart lines in the whole log
+    sql: SELECT count(*) FROM logs WHERE dataset='apache' AND body @@ ts_phrase('graceful restart requested')
+    value: 37
+  - fact: graceful restarts on a Sunday
+    sql: SELECT count(*) FROM logs WHERE dataset='apache' AND body @@ ts_phrase('graceful restart requested') AND dayofweek(ts) = 0
+    value: 33
+  - fact: graceful restarts in the 04:00 hour
+    sql: SELECT count(*) FROM logs WHERE dataset='apache' AND body @@ ts_phrase('graceful restart requested') AND hour(ts) = 4
+    value: 37
+  must_mention:
+  - Sunday
+  - web-platform
+  required_tools: []
+- id: D-X14
+  role: manager
+  pattern: L5
+  dataset: apache
+  question: Did any new kinds of errors appear on the Apache web server in November 2005 (2005-11-01 to 2005-12-01)? Do they need attention, and whose area are they?
+  golden:
+  - fact: first uri must start with line (first ever)
+    match: date
+    sql: SELECT strftime(min(ts), '%Y-%m-%d %H:%M') FROM logs WHERE dataset='apache' AND body @@ ts_phrase('uri must start with')
+    value: 2005-11-29 06:09
+  - fact: uri must start with lines in November 2005 (= whole log)
+    sql: SELECT count(*) FROM logs WHERE dataset='apache' AND ts >= '2005-11-01' AND ts < '2005-12-01' AND body @@ ts_phrase('uri must start with')
+    value: 27
+  - fact: Invalid URI in request lines in November 2005
+    sql: SELECT count(*) FROM logs WHERE dataset='apache' AND ts >= '2005-11-01' AND ts < '2005-12-01' AND body @@ ts_phrase('invalid uri in request')
+    value: 27
+  must_mention:
+  - URI
+  - web-platform
+  must_not:
+  - $
+  - revenue
+  - downtime of
+  - customers affected
+  required_tools: []
+- id: D-X15
+  role: engineer
+  pattern: E3
+  dataset: hdfs
+  question: HDFS block blk_-5057834626410636236 was flagged as anomalous on 2008-11-10. Walk me through its life step by step. What went wrong, when, and on which datanodes?
+  golden:
+  - fact: log lines of the block
+    sql: SELECT count(*) FROM logs WHERE dataset='hdfs' AND request_id='blk_-5057834626410636236'
+    value: 34
+  - fact: first line time (allocation)
+    match: date
+    sql: SELECT strftime(min(ts), '%Y-%m-%d %H:%M') FROM logs WHERE dataset='hdfs' AND request_id='blk_-5057834626410636236'
+    value: 2008-11-10 10:39
+  - fact: time the pending replication timed out
+    match: date
+    sql: SELECT strftime(min(ts), '%Y-%m-%d %H:%M') FROM logs WHERE dataset='hdfs' AND request_id='blk_-5057834626410636236' AND body @@ ts_phrase('PendingReplicationMonitor timed out')
+    value: 2008-11-10 10:49
+  must_mention:
+  - blk_-5057834626410636236
+  - timed out
+  required_tools: []
+- id: D-X16
+  role: lead
+  pattern: L2
+  dataset: hdfs
+  question: Between 2008-11-10 00:00 and 2008-11-11 12:00, how often did HDFS pending replications time out, how many blocks did it hit, when did it start, does it recur on a schedule, and which team owns
+    it?
+  golden:
+  - fact: bursts of PendingReplicationMonitor timeouts in the period
+    sql: SELECT count(*) FROM bursts b JOIN patterns p USING (dataset, pattern_id) WHERE b.dataset='hdfs' AND p.template LIKE 'PendingReplicationMonitor timed out%' AND b.start_ts >= '2008-11-10' AND b.start_ts
+      < '2008-11-11 12:00'
+    value: 7
+  - fact: distinct blocks that timed out
+    sql: SELECT count(DISTINCT request_id) FROM logs WHERE dataset='hdfs' AND ts >= '2008-11-10' AND ts < '2008-11-11 12:00' AND body @@ ts_phrase('PendingReplicationMonitor timed out')
+    value: 46
+  - fact: owner team
+    match: text
+    sql: SELECT o.team FROM patterns p JOIN ownership o ON o.dataset=p.dataset AND o.component=p.component WHERE p.dataset='hdfs' AND p.template LIKE 'PendingReplicationMonitor timed out%'
+    value: storage-platform
+  must_mention:
+  - storage-platform
+  - PendingReplicationMonitor
+  required_tools: []
+- id: D-X17
+  role: manager
+  pattern: M3
+  dataset: hdfs
+  question: Our HDFS cluster logged hundreds of thousands of warnings between 2008-11-09 and 2008-11-11 12:00. Did we lose or corrupt data, is this one bad machine or the whole fleet, and what should we
+    prioritise?
+  golden:
+  - fact: lines mentioning corrupt / checksum / missing / lost
+    sql: SELECT count(*) FROM logs WHERE dataset='hdfs' AND ts >= '2008-11-09' AND ts < '2008-11-11 12:00' AND body @@ websearch_to_tsquery('corrupt OR checksum OR missing OR lost')
+    value: 0
+  - fact: '''Got exception while serving'' warning lines'
+    sql: SELECT count(*) FROM logs WHERE dataset='hdfs' AND ts >= '2008-11-09' AND ts < '2008-11-11 12:00' AND body @@ ts_phrase('got exception while serving')
+    value: 356207
+  - fact: datanodes reporting Got exception while serving
+    sql: SELECT count(DISTINCT regexp_extract(body, '^([0-9.]+):', 1)) FROM logs WHERE dataset='hdfs' AND ts >= '2008-11-09' AND ts < '2008-11-11 12:00' AND body @@ ts_phrase('got exception while serving')
+    value: 202
+  must_mention:
+  - serving
+  must_not:
+  - $
+  - revenue
+  - downtime of
+  - customers affected
+  required_tools: []
+- id: D-X18
+  role: engineer
+  pattern: E1
+  dataset: zookeeper
+  question: From 2015-08-24 the Zookeeper node kept logging 'Cannot open channel ... at election address'. When did it start, which peers could it not reach, what happened just before, and when (if ever)
+    did it rejoin a quorum before 2015-08-26?
+  golden:
+  - fact: election-channel failure lines 2015-08-24..26
+    sql: SELECT count(*) FROM logs WHERE dataset='zookeeper' AND ts >= '2015-08-24' AND ts < '2015-08-26' AND body @@ ts_phrase('cannot open channel') AND body @@ ts_phrase('election address')
+    value: 2417
+  - fact: first failure
+    match: date
+    sql: SELECT strftime(min(ts), '%Y-%m-%d %H:%M') FROM logs WHERE dataset='zookeeper' AND ts >= '2015-08-24' AND ts < '2015-08-26' AND body @@ ts_phrase('cannot open channel')
+    value: 2015-08-24 15:26
+  - fact: first LEADING / FOLLOWING state after it
+    match: date
+    sql: SELECT strftime(min(ts), '%Y-%m-%d %H:%M') FROM logs WHERE dataset='zookeeper' AND ts >= '2015-08-24' AND ts < '2015-08-26' AND component='QuorumPeer' AND body IN ('LEADING','FOLLOWING')
+    value: 2015-08-25 11:14
+  must_mention:
+  - 10.10.34.12
+  - 10.10.34.13
+  required_tools: []
+- id: D-X19
+  role: lead
+  pattern: L2
+  dataset: zookeeper
+  question: Is the election-address channel failure we saw on 2015-08-24/25 in Zookeeper something new or has it happened before since 2015-07-29? How does this episode compare with earlier ones, and which
+    team owns it?
+  golden:
+  - fact: earlier bursts before 2015-08-24
+    sql: SELECT count(*) FROM bursts b JOIN patterns p USING (dataset, pattern_id) WHERE b.dataset='zookeeper' AND p.template LIKE 'Cannot open channel to % at election address%' AND b.start_ts >= '2015-07-29'
+      AND b.start_ts < '2015-08-24'
+    value: 7
+  - fact: earlier lines before 2015-08-24
+    sql: SELECT count(*) FROM logs WHERE dataset='zookeeper' AND ts >= '2015-07-29' AND ts < '2015-08-24' AND body @@ ts_phrase('cannot open channel') AND body @@ ts_phrase('election address')
+    value: 167
+  - fact: owner team
+    match: text
+    sql: SELECT o.team FROM patterns p JOIN ownership o ON o.dataset=p.dataset AND o.component=p.component WHERE p.dataset='zookeeper' AND p.template LIKE 'Cannot open channel to % at election address%'
+    value: coordination-platform
+  must_mention:
+  - coordination-platform
+  required_tools: []
+- id: D-X20
+  role: manager
+  pattern: M3
+  dataset: zookeeper
+  question: I was told Zookeeper had disk and snapshot problems between 2015-07-29 and 2015-08-26. How serious were the storage-persistence team's issues, and should their fixes come first?
+  golden:
+  - fact: WARN/ERROR lines from storage-persistence components
+    sql: SELECT count(*) FROM logs WHERE dataset='zookeeper' AND ts >= '2015-07-29' AND ts < '2015-08-26' AND component IN (SELECT component FROM ownership WHERE dataset='zookeeper' AND team='storage-persistence')
+      AND severity IN ('WARN','ERROR')
+    value: 0
+  - fact: all lines from storage-persistence components
+    sql: SELECT count(*) FROM logs WHERE dataset='zookeeper' AND ts >= '2015-07-29' AND ts < '2015-08-26' AND component IN (SELECT component FROM ownership WHERE dataset='zookeeper' AND team='storage-persistence')
+    value: 284
+  - fact: lines mentioning disk / fsync / corrupt / no space
+    sql: SELECT count(*) FROM logs WHERE dataset='zookeeper' AND ts >= '2015-07-29' AND ts < '2015-08-26' AND body @@ websearch_to_tsquery('disk OR fsync OR corrupt OR "no space"')
+    value: 0
+  must_mention:
+  - storage-persistence
+  must_not:
+  - $
+  - revenue
+  - downtime of
+  - customers affected
+  required_tools: []
+- id: D-X21
+  role: engineer
+  pattern: E3
+  dataset: otel
+  question: Checkout trace 559cdb671a24df91566226b0d22afa4f (OpenTelemetry demo, 2025-09-23 00:16) failed. Walk me through it step by step across the services. Which service failed first and with what error?
+  golden:
+  - fact: log lines in the trace
+    sql: SELECT count(*) FROM logs WHERE dataset='otel' AND request_id='559cdb671a24df91566226b0d22afa4f'
+    value: 13
+  - fact: service of the first error-level line in the trace
+    match: text
+    sql: SELECT component FROM logs WHERE dataset='otel' AND request_id='559cdb671a24df91566226b0d22afa4f' AND severity IN ('ERROR','FATAL') ORDER BY ts, line_id LIMIT 1
+    value: payment
+  - fact: time of the first error in the trace
+    match: date
+    sql: SELECT strftime(min(ts), '%Y-%m-%d %H:%M') FROM logs WHERE dataset='otel' AND request_id='559cdb671a24df91566226b0d22afa4f' AND severity IN ('ERROR','FATAL')
+    value: 2025-09-23 00:16
+  must_mention:
+  - Visa cache full
+  - payment
+  required_tools: []
+- id: D-X22
+  role: manager
+  pattern: M1
+  dataset: otel
+  question: In the sampled webshop logs from 2025-09-23 00:00 to 00:30, are failed card payments a one-off blip or an ongoing problem, and which team should own the fix?
+  golden:
+  - fact: payment 'Visa cache full' lines in the window
+    sql: SELECT count(*) FROM logs WHERE dataset='otel' AND component='payment' AND body @@ websearch_to_tsquery('"Visa cache full"') AND ts >= '2025-09-23 00:00' AND ts < '2025-09-23 00:30'
+    value: 11253
+  - fact: minutes of the window with at least one 'Visa cache full' line
+    sql: SELECT count(DISTINCT strftime(ts, '%H:%M')) FROM logs WHERE dataset='otel' AND component='payment' AND body @@ websearch_to_tsquery('"Visa cache full"') AND ts >= '2025-09-23 00:00' AND ts < '2025-09-23
+      00:30'
+    value: 30
+  must_mention:
+  - payments-team
+  - Visa cache full
+  must_not:
+  - $
+  - revenue
+  - downtime of
+  - customers affected
+  required_tools: []
+- id: D-X23
+  role: engineer
+  pattern: E4
+  dataset: openstack
+  question: Which nova-api endpoint has the slowest HTTP request times between 2017-05-14 and 2017-05-18, and how does it compare with a typical request?
+  golden:
+  - fact: median request time of POST /v2/<tenant>/servers, seconds
+    sql: SELECT round(median(duration_ms) / 1000, 2) FROM logs WHERE dataset='openstack' AND status IS NOT NULL AND body LIKE '%"POST /v2/%/servers HTTP%' AND ts >= '2017-05-14' AND ts < '2017-05-18'
+    value: 0.5
+  - fact: median request time of all nova-api requests, seconds
+    sql: SELECT round(median(duration_ms) / 1000, 2) FROM logs WHERE dataset='openstack' AND status IS NOT NULL AND ts >= '2017-05-14' AND ts < '2017-05-18'
+    value: 0.26
+  - fact: POST /v2/<tenant>/servers requests
+    sql: SELECT count(*) FROM logs WHERE dataset='openstack' AND status IS NOT NULL AND body LIKE '%"POST /v2/%/servers HTTP%' AND ts >= '2017-05-14' AND ts < '2017-05-18'
+    value: 2065
+  must_mention:
+  - POST
+  - /servers
+  required_tools: []
+- id: D-X24
+  role: lead
+  pattern: L1
+  dataset: openstack
+  question: nova-compute logged ERROR lines between 2017-05-16 and 2017-05-18. What is the recurring error, how many times did it occur, over what period, and which team owns it?
+  golden:
+  - fact: qemu-img 'Could not open' ERROR lines (one per occurrence)
+    sql: SELECT count(*) FROM logs WHERE dataset='openstack' AND component='nova-compute' AND severity='ERROR' AND body @@ websearch_to_tsquery('qemu-img "Could not open"') AND ts >= '2017-05-16' AND ts
+      < '2017-05-18'
+    value: 8
+  - fact: first occurrence
+    match: date
+    sql: SELECT strftime(min(ts), '%Y-%m-%d %H:%M') FROM logs WHERE dataset='openstack' AND component='nova-compute' AND severity='ERROR' AND body @@ websearch_to_tsquery('qemu-img "Could not open"') AND
+      ts >= '2017-05-16' AND ts < '2017-05-18'
+    value: 2017-05-16 03:19
+  - fact: last occurrence
+    match: date
+    sql: SELECT strftime(max(ts), '%Y-%m-%d %H:%M') FROM logs WHERE dataset='openstack' AND component='nova-compute' AND severity='ERROR' AND body @@ websearch_to_tsquery('qemu-img "Could not open"') AND
+      ts >= '2017-05-16' AND ts < '2017-05-18'
+    value: 2017-05-17 05:24
+  must_mention:
+  - qemu-img
+  - cloud-compute
+  required_tools: []
+- id: D-X25
+  role: engineer
+  pattern: X
+  dataset: bgl
+  question: Midplane R52-M0 had a kernel panic on 2005-10-12 around 14:00 (13:00 to 15:00). What caused it and which node went down first?
+  golden:
+  - fact: lines from midplane R52-M0 in the window
+    sql: SELECT count(*) FROM logs WHERE dataset='bgl' AND location @@ ts_tokenize('R52/R52-M0', 'keyword') AND ts >= '2005-10-12 13:00' AND ts < '2005-10-12 15:00'
+    value: 0
+  - fact: kernel panic lines anywhere on BGL in the window
+    sql: SELECT count(*) FROM logs WHERE dataset='bgl' AND body @@ websearch_to_tsquery('"kernel panic"') AND ts >= '2005-10-12 13:00' AND ts < '2005-10-12 15:00'
+    value: 0
+  - fact: time of the machine check interrupt on R52-M1 (what actually happened)
+    match: date
+    sql: SELECT strftime(min(ts), '%Y-%m-%d %H:%M') FROM logs WHERE dataset='bgl' AND location @@ ts_tokenize('R52/R52-M1', 'keyword') AND body @@ websearch_to_tsquery('"machine check interrupt"') AND ts
+      >= '2005-10-12 13:00' AND ts < '2005-10-12 15:00'
+    value: 2005-10-12 14:02
+  must_mention:
+  - R52-M1
+  - machine check
+  required_tools: []

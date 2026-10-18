@@ -1,0 +1,60 @@
+id: D-E10
+role: engineer
+dataset: hdfs
+question: "What happened to HDFS block blk_-1608999687919862906, step by step?"
+answer_summary: "Nothing failed. blk_-1608999687919862906 has a normal, healthy life cycle across 269 INFO lines (no WARN or error) from 2008-11-09 20:35:18 to 21:38:40. It is the job.jar of job_200811092030_0001 (91,178 bytes). The NameNode allocated it at 20:35:18. A 3-node write pipeline (10.250.10.6, 10.251.111.209, 10.250.14.224) committed it at 20:35:19. The NameNode then ran a replication chain (4 'ask ... to replicate' commands) that brought it to 10 replicas by 20:35:32, the high replication HDFS gives job files. From 20:35:23 to 20:36:26 the 10 datanodes served it 203 times to 203 distinct clients, which are the tasks fetching the job jar. At 21:38:09 the NameNode added it to the invalidSet of all 10 datanodes, and 10 'Deleting block' lines follow until 21:38:40. That is routine cleanup after the job, not a fault. The Loghub ground truth labels this block Normal."
+findings:
+  - fact: "Golden numbers: 269 lines for the block, from 2008-11-09 20:35:18 to 21:38:40, across 6 components, every one at INFO."
+    sql: "SELECT count(*), min(ts), max(ts), count(DISTINCT component) FROM logs WHERE dataset='hdfs' AND request_id='blk_-1608999687919862906'"
+    result: "269 | 2008-11-09 20:35:18 | 2008-11-09 21:38:40 | 6"
+    importance: must
+  - fact: "Lines by phase. Allocation and write pipeline: allocateBlock (1), Receiving block (10), PacketResponder Received (3) / terminating (3), DataXceiver Received (7), addStoredBlock (10). Replication: 'ask X to replicate' (4), 'Starting thread to transfer' (4), Transmitted (4). Reads: Served block (203). Deletion: NameSystem.delete invalidSet (10), FSDataset 'Deleting block' (10)."
+    sql: "SELECT component, regexp_replace(regexp_replace(body,'\\d+\\.\\d+\\.\\d+\\.\\d+(:\\d+)?','IP','g'),'blk_-?\\d+','BLK','g') t, count(*), min(ts), max(ts) FROM logs WHERE dataset='hdfs' AND request_id='blk_-1608999687919862906' GROUP BY 1,2 ORDER BY 4"
+    result: "allocateBlock 1 @20:35:18; Receiving 10 (20:35:18-20:35:32); addStoredBlock 10 (20:35:19-20:35:32); ask to replicate 3+1 (20:35:21-20:35:30); Served block 203 (20:35:23-20:36:26); NameSystem.delete invalidSet 10 @21:38:09; Deleting block 10 (21:38:10-21:38:40)"
+    importance: must
+  - fact: "Creation: line 2 at 20:35:18 is 'NameSystem.allocateBlock: /mnt/hadoop/mapred/system/job_200811092030_0001/job.jar'. Three PacketResponders report 'Received block ... of size 91178' at 20:35:19 (from 10.250.10.6, 10.250.19.102, 10.250.14.224). addStoredBlock adds 10.250.10.6, 10.251.111.209 and 10.250.14.224."
+    sql: "SELECT line_id, ts, component, body FROM logs WHERE dataset='hdfs' AND request_id='blk_-1608999687919862906' AND body NOT LIKE '%Served block%' ORDER BY line_id LIMIT 80"
+    result: "2|20:35:18|dfs.FSNamesystem|BLOCK* NameSystem.allocateBlock: /mnt/hadoop/mapred/system/job_200811092030_0001/job.jar. blk_-1608999687919862906 ; 11-13|20:35:19|addStoredBlock 10.250.10.6, 10.251.111.209, 10.250.14.224 size 91178"
+    importance: must
+  - fact: "Replication to 10 replicas. The NameNode asks 10.250.14.224 to replicate to 10.251.215.16 and 10.251.71.193 (20:35:21), then 10.251.215.16 to 10.251.74.79 and 10.251.107.19 (20:35:24), then 10.251.107.19 to 10.251.31.5 and 10.251.71.240 (20:35:27), then 10.251.31.5 to 10.251.90.64 (20:35:30). The last addStoredBlock (10.251.90.64) lands at 20:35:32. Each transfer has a matching Transmitted and Received line."
+    sql: "same query as above (lines 25-554)"
+    result: "31|20:35:21|BLOCK* ask 10.250.14.224:50010 to replicate ... to 10.251.215.16:50010 10.251.71.193:50010; 61|20:35:24|ask 10.251.215.16 -> 10.251.74.79 10.251.107.19; 118|20:35:27|ask 10.251.107.19 -> 10.251.31.5 10.251.71.240; 271|20:35:30|ask 10.251.31.5 -> 10.251.90.64; 554|20:35:32|addStoredBlock 10.251.90.64"
+    importance: should
+  - fact: "Reads: 203 'Served block' lines from 20:35:23 to 20:36:26, served by all 10 replica datanodes (10.250.10.6: 28 lines, down to 10.251.31.5: 12) to 203 distinct client IPs. This is the job's tasks downloading job.jar, and it makes up 75% of the block's lines."
+    sql: "SELECT count(*), count(DISTINCT split_part(body,':',1)), count(DISTINCT regexp_extract(body,'to /([\\d.]+)',1)), min(ts), max(ts) FROM logs WHERE dataset='hdfs' AND request_id='blk_-1608999687919862906' AND body LIKE '%Served block%'"
+    result: "203 | 10 | 203 | 2008-11-09 20:35:23 | 2008-11-09 20:36:26"
+    importance: should
+  - fact: "Deletion: at 21:38:09 there are 10 'NameSystem.delete: ... is added to invalidSet' lines, one for each of the 10 replica datanodes. Then 10 FSDataset 'Deleting block ... file /mnt/hadoop/dfs/data/current/blk_-1608999687919862906' lines run from 21:38:10 to 21:38:40. The deletion is part of a dataset-wide cleanup: 3,967 NameSystem.delete lines in the 21:38 minute."
+    sql: "SELECT count(*) FROM logs WHERE dataset='hdfs' AND ts >= '2008-11-09 21:38' AND ts < '2008-11-09 21:39' AND body LIKE '%NameSystem.delete%'"
+    result: "3967"
+    importance: should
+  - fact: "There are no WARN lines and no exception, error, failed or interrupted lines for this block. The block is not in the anomaly labels."
+    sql: "SELECT count(*) FROM logs WHERE dataset='hdfs' AND request_id='blk_-1608999687919862906' AND (severity<>'INFO' OR body @@ websearch_to_tsquery('exception OR error OR failed OR interrupted')); SELECT count(*) FROM labels WHERE dataset='hdfs' AND label='blk_-1608999687919862906'"
+    result: "0 ; 0 (labels holds 16,838 anomalous block ids, and this one is not among them)"
+    importance: must
+must_conclude:
+  - "The block is healthy and normal: no failure, warning or anomaly."
+  - "Life cycle in order: allocated as job.jar of job_200811092030_0001, written through a 3-node pipeline, replicated to 10 datanodes, served 203 times to tasks, then invalidated and deleted on all 10 replicas about 1 hour later (21:38)."
+  - "Cite the 269 lines and the time span 20:35:18 to 21:38:40, with concrete lines (allocateBlock, addStoredBlock, ask to replicate, NameSystem.delete, Deleting block)."
+traps:
+  - "Reading the deletion (NameSystem.delete / invalidSet / Deleting block) as data loss or a failure. It is routine cleanup after the job, done together with thousands of other blocks."
+  - "Reading the 'ask ... to replicate' commands as under-replication or a fault. They raise the job file to its higher replication target, and every transfer succeeds."
+  - "Presenting 269 lines, or the 203 'Served block' lines, as incidents or errors. They are normal reads."
+  - "Counting 3 replicas: the block ends up with 10."
+  - "Being confused that line 1 ('Receiving block') comes before allocateBlock (line 2) in the same second. That is log interleaving, not an anomaly."
+not_established:
+  - "Why the block was deleted. The logs show the NameNode invalidating it, but not the job-completion or cleanup decision behind it."
+  - "Which hosts the 203 reading clients are, and which tasks they belong to, beyond their IPs."
+  - "The configured replication factor. 10 is what the logs show; the logs do not state the setting."
+  - "The datanode behind each 'Deleting block' line. FSDataset lines carry no node IP, and the dataset has no node column."
+labels_used: "The labels table, for hdfs, holds the ids of anomalous blocks (16,838 rows, label = block id). blk_-1608999687919862906 is not among them, so Loghub labels it Normal. This matches the finding that nothing failed."
+golden_check:
+  - fact: "log lines of the block"
+    golden_value: "269"
+    my_value: "269"
+    agrees: true
+  - fact: "first line time"
+    golden_value: "2008-11-09 20:35"
+    my_value: "2008-11-09 20:35:18"
+    agrees: true
+notes: "The question says 'what happened', which presumes an incident, but this block is normal. A good answer tells the full life cycle and explicitly says that nothing went wrong. Ownership per data/ownership.csv: dfs.FSNamesystem belongs to namenode-platform; dfs.DataNode, DataXceiver and PacketResponder belong to datanode-ops; FSDataset and DataTransfer fall to the hdfs default, storage-platform. Ownership is optional for an engineer answer."

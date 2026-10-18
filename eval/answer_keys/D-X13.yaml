@@ -1,0 +1,65 @@
+id: D-X13
+role: lead
+dataset: apache
+question: "The Apache web server keeps logging 'Graceful restart requested'. Does it happen on a schedule, how often, and which team owns it? Is it a problem?"
+answer_summary: "Yes, it is a schedule: all 37 'Graceful restart requested, doing restart' lines (NOTICE, component httpd) fall in the 04:00 hour, 33 of them on a Sunday, and 28 of the 36 gaps between restarts are exactly 7 days, i.e. a weekly Sunday ~04:02-04:20 job (typical of logrotate/cron reloading httpd), running from 2005-06-12 to 2006-01-22. The 4 non-Sunday ones (Fri 06-17, Sat 06-25, Mon 06-27, Sat 2006-01-07) are also at 04:0x. Owner: component httpd maps to team web-platform. It is routine maintenance, not a fault: each restart is a NOTICE followed seconds later by 'resuming normal operations' (45 startups in total, the extra 8 being unscheduled daytime restarts). What a lead should look at: (1) the weekly restarts stop after 2006-01-22 although the log runs to 2006-02-28 (5 Sundays without one) - check whether the rotation/cron job was removed or broke; (2) every startup emits a block of mod_jk2 JNI config ERRORs (env.createBean2 'Factory error creating channel.jni', 45 startups) that are noise from a JNI channel config (app-integration's connector); (3) the unscheduled restarts on 2005-09-28, 10-25, 12-06 and 2006-01-26 needed SIGTERMs for children that did not exit (168 WARN lines)."
+findings:
+  - fact: "37 graceful-restart lines in the whole log, all NOTICE from component httpd, first 2005-06-12 04:04:15, last 2006-01-22 04:10:56"
+    sql: "SELECT component, severity, count(*), min(ts), max(ts) FROM logs WHERE dataset='apache' AND body @@ ts_phrase('graceful restart requested') GROUP BY 1,2"
+    result: "httpd|NOTICE|37|2005-06-12 04:04:15|2006-01-22 04:10:56"
+    importance: must
+  - fact: "Weekly schedule: all 37 at hour 04 (04:02-04:20), 33 on Sunday (dayofweek 0); gaps between consecutive restarts: 28x 7 days, 3x 6 d, 1x 5 d, 1x 2 d, 3x 1 d"
+    sql: "WITH g AS (SELECT ts, lag(ts) OVER (ORDER BY ts) p FROM logs WHERE dataset='apache' AND body @@ ts_phrase('graceful restart requested')) SELECT round(extract(epoch FROM ts-p)/86400) d, count(*) FROM g WHERE p IS NOT NULL GROUP BY 1 ORDER BY 1"
+    result: "1|3, 2|1, 5|1, 6|3, 7|28 (hour(ts)=4: 37; dayofweek(ts)=0: 33)"
+    importance: must
+  - fact: "Owner: component httpd -> team web-platform (ownership table; apache default row * is also web-platform; mod_jk/mod_jk2/jk2_init() -> app-integration)"
+    sql: "SELECT component, team FROM ownership WHERE dataset='apache'"
+    result: "httpd|web-platform (Digest, LDAP, suEXEC, mod_python, mod_security also web-platform; jk2_init(), mod_jk, mod_jk2 app-integration)"
+    importance: must
+  - fact: "Not a fault: each restart is followed within seconds by 'configured -- resuming normal operations' (e.g. 2006-01-22 04:10:56 restart -> 04:11:03 resuming); 45 'resuming normal operations' lines = 37 scheduled + 8 other starts (2005-06-09, 06-10, 07-27, 09-19, 09-28, 10-25, 12-06, 2006-01-26)"
+    sql: "SELECT ts, dayofweek(ts) FROM logs WHERE dataset='apache' AND body ILIKE '%resuming normal operations%' ORDER BY ts LIMIT 60"
+    result: "45 rows; 37 pair with the 04:0x restarts, 8 at other times"
+    importance: must
+  - fact: "The weekly restarts stop after 2006-01-22 although logging continues to 2006-02-28 (15,904 lines after 2006-01-22 05:00); no restart on Sundays 01-29, 02-05, 02-12, 02-19, 02-26"
+    sql: "SELECT min(ts), max(ts), count(*) FROM logs WHERE dataset='apache' AND ts > '2006-01-22 05:00'"
+    result: "2006-01-22 07:35:42|2006-02-28 03:49:01|15904 (and 0 restart lines after 2006-01-22)"
+    importance: should
+  - fact: "Each startup (45) logs a block of mod_jk2 JNI config errors: env.createBean2(): Factory error creating channel.jni / vm / worker.jni (180 lines, tagged component httpd by the loader)"
+    sql: "SELECT count(*), count(DISTINCT date_trunc('minute',ts)) FROM logs WHERE dataset='apache' AND body ILIKE '%Factory error creating channel.jni%'"
+    result: "45|45 (180 'Factory error creating' lines in total)"
+    importance: should
+  - fact: "All 168 WARN lines are 'child process N still did not exit, sending a SIGTERM', on the unscheduled restart days 2005-09-28, 10-25, 12-06 and 2006-01-26 (none at the Sunday 04:00 restarts)"
+    sql: "SELECT date_trunc('month',ts), count(*) FROM logs WHERE dataset='apache' AND severity='WARN' GROUP BY 1 ORDER BY 1"
+    result: "2005-09|39, 2005-10|36, 2005-12|33, 2006-01|60 (total 168 = count of 'still did not exit')"
+    importance: nice
+must_conclude:
+  - "It is periodic: weekly, Sunday around 04:00 (all 37 in the 04:00 hour, 33 on Sunday, 28 gaps of exactly 7 days)."
+  - "37 graceful restarts over 2005-06-12 to 2006-01-22 (37 lines = 37 restarts here, one line each)."
+  - "Owner is web-platform (component httpd)."
+  - "It is routine scheduled maintenance (NOTICE, server resumes normal operations), not a problem by itself."
+traps:
+  - "Calling the restart lines errors or incidents: they are NOTICE-level and each is followed by a successful 'resuming normal operations'."
+  - "Assigning ownership to app-integration because mod_jk2 'Shutting down' lines (1,336) accompany each restart; the restart message itself is httpd -> web-platform."
+  - "Saying 'every Sunday for the whole log': 4 restarts are on other weekdays and there are none after 2006-01-22 even though the log runs to 2006-02-28."
+  - "Counting the 45 'resuming normal operations' or the 1,336 mod_jk2 shutdown lines as restarts."
+  - "Treating the ERROR lines at startup (Factory error creating channel.jni) as caused by the schedule being broken; they occur at every startup, scheduled or not."
+not_established:
+  - "What triggers the restart (logrotate, cron, a deploy script): the error log only shows the request, not the sender."
+  - "Why the weekly restarts stopped after 2006-01-22 (job removed, rotation moved, or a different log file)."
+  - "Whether any client requests failed during the few seconds of restart (no access log)."
+  - "Any downtime or customer impact."
+labels_used: "None; the apache dataset has no Loghub labels."
+golden_check:
+  - fact: "graceful restart lines in the whole log"
+    golden_value: "37"
+    my_value: "37"
+    agrees: true
+  - fact: "graceful restarts on a Sunday"
+    golden_value: "33"
+    my_value: "33"
+    agrees: true
+  - fact: "graceful restarts in the 04:00 hour"
+    golden_value: "37"
+    my_value: "37"
+    agrees: true
+notes: "dayofweek(ts)=0 is Sunday (2005-06-12 was a Sunday). Restart times range 04:02:13-04:20:26. The 8 non-04:00 startups are full restarts (not 'graceful'), some needing SIGTERM for stuck children; those are the only WARN lines in the dataset. The startup JNI errors are attributed to component httpd by the loader regex (lowercase 'env.' prefix), though semantically they belong to the mod_jk2 connector (app-integration)."

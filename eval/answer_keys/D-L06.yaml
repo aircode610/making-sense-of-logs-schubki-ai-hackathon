@@ -1,0 +1,67 @@
+id: D-L06
+role: lead
+dataset: bgl
+question: "Which recurring problems got worse in October 2005 (2005-10-01 to 2005-11-01) compared with September, and who owns them?"
+answer_summary: "Counted in bursts (recurrences split by more than 30 min of quiet), the recurring problem that grew most in October 2005 is the KERNEL FATAL 'Kill job <N> timed out. Block freed.' It had 44 bursts / 47 lines in October, against 25 bursts / 26 lines in September proper (29 bursts in the equal-length previous period 2005-08-31..2005-10-01). It peaked in the week of 17 Oct (20 lines). Its owner is node-platform (KERNEL component). Smaller rises, also in KERNEL and so also node-platform, came from the machine-check register-dump family (e.g. 'instruction address' 52->58 bursts, 'L3 major internal error' 4->10 bursts, 9->10 lines) and the HARDWARE service actions (PrepareForService 10->17, EndServiceAction 14->20). At team level, node-platform's problem bursts rose 1,958->2,140 while cluster-control (125->98) and hpc-workloads (106->43) fell. The large line-count jumps in October are not recurring problems: they are one-off storms (APP 'ciod: Error loading ...' bursts of 1,024-5,120 lines, a new 1,024-node tree-network receive error on 28 Oct). Lustre mount failures actually fell sharply (23,641 -> 1,667 lines). A lead should have node-platform investigate the Kill-job timeouts first, and should treat the line-volume spikes as separate one-off events."
+findings:
+  - fact: "'Kill job <N> timed out. Block freed.' (pattern 261, KERNEL, FATAL) had the largest burst growth: 44 bursts in Oct 2005 vs 25 in Sep 2005 (29 in the equal-length previous period starting 2005-08-31). Lines: 47 vs 26."
+    sql: "SELECT p.pattern_id, p.component, p.severity, count(*) FILTER (WHERE b.start_ts>='2005-10-01') oct_b, count(*) FILTER (WHERE b.start_ts<'2005-10-01') sep_b, sum(b.lines) FILTER (WHERE b.start_ts>='2005-10-01') oct_l, sum(b.lines) FILTER (WHERE b.start_ts<'2005-10-01') sep_l, left(p.template,70) FROM bursts b JOIN patterns p USING (dataset,pattern_id) WHERE b.dataset='bgl' AND b.start_ts>='2005-09-01' AND b.start_ts<'2005-11-01' AND p.problem_lines>0 GROUP BY ALL ORDER BY oct_b - sep_b DESC LIMIT 25"
+    result: "261|KERNEL|FATAL|44|25|47|26|Kill job <N> timed out. Block freed.  (next: 48 problem state 49|41, 45 wait state 50|43, 237 HARDWARE PrepareForService 17|10, 164 EndServiceAction 20|14, 93 L3 major internal error 10|4 ...)"
+    importance: must
+  - fact: "Confirmed on raw logs: the Kill-job message had 26 lines on 13 days in Sep and 47 lines on 16 days in Oct. The lines carry no node or location; they come from component KERNEL at level FATAL."
+    sql: "SELECT date_trunc('month',ts) m, count(*) lines, count(DISTINCT date_trunc('day',ts)) days, count(DISTINCT node) nodes, min(component), min(severity) FROM logs WHERE dataset='bgl' AND pattern_id=261 AND ts>='2005-08-01' AND ts<'2005-12-01' GROUP BY 1 ORDER BY 1"
+    result: "Aug 64 lines/11 days; Sep 26/13; Oct 47/16; Nov 51/18; nodes=0 in every month; KERNEL; FATAL"
+    importance: must
+  - fact: "Ownership: KERNEL and HARDWARE belong to node-platform (data/ownership.csv). So the Kill-job timeouts, the machine-check dump lines and the service-action warnings all sit with node-platform."
+    sql: "SELECT component, team FROM ownership WHERE dataset='bgl' AND component IN ('KERNEL','HARDWARE')"
+    result: "KERNEL|node-platform ; HARDWARE|node-platform"
+    importance: must
+  - fact: "Team roll-up of problem-pattern bursts, Oct vs Sep: node-platform 2,140 vs 1,958 (up); cluster-control 98 vs 125 (down); hpc-workloads 43 vs 106 (down). Lines move the other way for node-platform (6,522 vs 30,247) because the September Lustre storm drops out."
+    sql: "SELECT o.team, count(*) FILTER (WHERE b.start_ts>='2005-10-01') oct_b, count(*) FILTER (WHERE b.start_ts<'2005-10-01') sep_b, sum(b.lines) FILTER (WHERE b.start_ts>='2005-10-01') oct_l, sum(b.lines) FILTER (WHERE b.start_ts<'2005-10-01') sep_l FROM bursts b JOIN patterns p USING (dataset,pattern_id) LEFT JOIN ownership o ON o.dataset='bgl' AND o.component=p.component WHERE b.dataset='bgl' AND b.start_ts>='2005-09-01' AND b.start_ts<'2005-11-01' AND p.problem_lines>0 GROUP BY 1 ORDER BY 2 DESC"
+    result: "node-platform|2140|1958|6522|30247 ; cluster-control|98|125|4101|78973 ; hpc-workloads|43|106|36295|52757"
+    importance: should
+  - fact: "Kill-job is a long-running recurring pattern, not new: 215 bursts from 2005-06-21 to 2006-01-03, active in 29 weeks. Monthly bursts: Jun 13, Jul 48, Aug 20, Sep 25, Oct 44, Nov 37, Dec 27. So October is a rebound from a quieter Aug/Sep, still below July, and the pattern stayed elevated in November. Its weekly peak was 2005-10-17 (20 lines)."
+    sql: "SELECT date_trunc('month',start_ts), count(*), sum(lines) FROM bursts WHERE dataset='bgl' AND pattern_id=261 GROUP BY 1 ORDER BY 1"
+    result: "Jun 13|15; Jul 48|73; Aug 20|64; Sep 25|26; Oct 44|47; Nov 37|51; Dec 27|29; Jan 1|1   (weekly Oct: 6,7,20,10)"
+    importance: should
+  - fact: "Smaller recurring growth in node-platform hardware faults, confirmed by labels on raw rows: 'L3 major internal error' machine checks (pattern 93) 9 lines/9 nodes in Sep -> 10 lines/8 nodes in Oct (bursts 4 -> 10). The KERNMC label total was flat (62 -> 65 lines)."
+    sql: "SELECT pattern_id, date_trunc('month',ts), count(*), count(DISTINCT node) FROM logs WHERE dataset='bgl' AND pattern_id IN (32,93) AND ts>='2005-09-01' AND ts<'2005-11-01' GROUP BY 1,2 ORDER BY 1,2"
+    result: "32 (instruction address): Sep 61 lines/60 nodes, Oct 63/55 ; 93: Sep 9/9, Oct 10/8"
+    importance: nice
+  - fact: "October's large line-volume increases come from one-off storms, not recurring problems. APP 'ciod: Error loading ...' patterns had a single burst each of 1,024-5,120 lines (hpc-workloads). 'Error receiving packet on tree network' (pattern 806, KERNREC) is a new pattern, first seen 2005-10-28 13:00, with 1,024 lines on 1,024 nodes in one 20-second burst. 'Microloader Assertion' (467) produced 17 lines on 2005-10-10 plus 1 on 10-19, after 0 in Sep."
+    sql: "SELECT pattern_id, component, lines, nodes, bursts, first_ts, last_ts FROM patterns WHERE dataset='bgl' AND pattern_id IN (467,806); plus the burst-growth query ordered by oct_l - sep_l"
+    result: "806|KERNEL|6144|4608|8|2005-10-28 13:00:07|2005-11-16 ; 467|KERNEL|1504|961|5|2005-08-03|2005-10-19 ; top line growth: 746 APP ciod Error loading 1 burst 5120 lines, 766/757/794 1 burst 2048 lines each"
+    importance: should
+  - fact: "Lustre mount failures did NOT get worse overall. All 'Lustre mount FAILED' lines fell from 23,641 (Sep) to 1,667 (Oct). One template variant (464, 'block_id : location') rose from 136 to 1,667 lines (2 -> 3 bursts), but the dominant September variant (609, 23,468 lines in 40 bursts) disappeared. Labels agree: KERNMNTF 23,641 -> 1,667."
+    sql: "SELECT date_trunc('month',ts), count(*) lines, count(DISTINCT node) FROM logs WHERE dataset='bgl' AND body @@ websearch_to_tsquery('\"Lustre mount FAILED\"') AND ts>='2005-09-01' AND ts<'2005-11-01' GROUP BY 1 ORDER BY 1"
+    result: "Sep 23641 lines/1024 nodes ; Oct 1667/979"
+    importance: should
+must_conclude:
+  - "The top grower by recurrence is the KERNEL FATAL 'Kill job <N> timed out. Block freed.': about 44 bursts in Oct vs 25 in Sep (29 in the equal-length previous period). Its owner is node-platform."
+  - "node-platform (KERNEL/HARDWARE) owns the problems that got worse. cluster-control and hpc-workloads had fewer problem bursts in October."
+  - "Growth is reported in bursts/recurrences, separately from line counts. The line spikes are one-off storms or new events, not recurring problems getting worse."
+  - "Recommend node-platform investigate the Kill-job timeouts first (why jobs fail to die within the timeout / block-free path), and track whether the elevated rate continues (it stayed at 37 bursts in Nov)."
+traps:
+  - "Ranking by line count: this would put one-off APP 'ciod: Error loading' storms (1 burst, 1,024-5,120 lines, hpc-workloads) or the new 28-Oct tree-network error (1,024 lines in 20 s) at the top as 'recurring problems that got worse'."
+  - "Saying Lustre mount failures got worse because one template (464) rose from 136 to 1,667 lines. The whole Lustre family fell from 23,641 to 1,667."
+  - "Treating the ~20 KERNEL machine-check register-dump templates (instruction address, tlb error, i-cache parity ...) as ~20 separate worsening problems. They are lines of the same machine-check dumps, and each rose by only ~5-7 bursts."
+  - "Calling the Kill-job timeout new. It has recurred since June 2005, and July had more bursts (48) than October."
+  - "Attributing Kill-job to a specific node or rack. Its lines carry no node/location."
+  - "Assigning Kill-job to hpc-workloads because it is about jobs. The component is KERNEL, so the owner is node-platform per the ownership table."
+  - "Saying node-platform's problems decreased by looking at lines (30,247 -> 6,522). In bursts they rose."
+not_established:
+  - "Why jobs time out on kill (root cause). It could be hung compute nodes, CIOD, or the scheduler; the logs do not say."
+  - "Which nodes/blocks were affected by Kill-job timeouts: the lines have no location."
+  - "Impact on users, jobs lost, downtime or cost."
+  - "Whether the October rise is significant or ordinary month-to-month variation. Jul 48, Aug 20, Sep 25, Oct 44 bursts suggests high variance."
+labels_used: "Loghub BGL alert labels per line. The Kill-job lines carry NO alert label (73 lines in Sep+Oct, all unlabelled), so the ground-truth alert set does not count the top grower as an alert; it rests on its FATAL level and the recurrence data. Labels confirmed the other findings. KERNMNTF (Lustre mount) fell 23,641 -> 1,667. APPSEV fell 9,248 -> 4,511. KERNMC was flat (62 -> 65). New in Oct: KERNREC 1,024 (single 28-Oct burst), KERNMICRO 17 (10-Oct burst on R44 I/O nodes), MMCS 1, KERNBIT 1, KERNRTSA 2, KERNFLOAT 2."
+golden_check:
+  - fact: "bursts of 'Kill job <N> timed out. Block freed.' in October 2005"
+    golden_value: "44"
+    my_value: "44"
+    agrees: true
+  - fact: "same pattern's bursts in the previous equal-length period (2005-08-31 to 2005-10-01)"
+    golden_value: "29"
+    my_value: "29 (25 if September is taken strictly as 2005-09-01..2005-10-01)"
+    agrees: true
+notes: "Both '29' (equal-length previous period, used by top_patterns) and '25' (calendar September) are correct, depending on the window. Accept either if the window is stated. The counts are small (tens of lines), so 'got worse' is a modest absolute change. The burst growth query used p.problem_lines>0 (severity-based), not the stored Jev filter. Kill-job is the top grower either way; with the Jev filter, the register-dump or HARDWARE service-action patterns may drop out. Monthly burst counts split bursts by start_ts."

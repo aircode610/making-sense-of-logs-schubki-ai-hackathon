@@ -1,0 +1,63 @@
+id: D-X05
+role: engineer
+dataset: healthapp
+question: "The health app crashed on the phone on 2017-12-29 around 22:30. What exception did it log, and what happened just before and after the crash (2017-12-29 22:00 to 2017-12-30 00:00)?"
+answer_summary: "The premise is false: the app logged no exception, crash, fatal or ANR line anywhere in 22:00-24:00 (and the whole healthapp dataset contains no 'exception', 'crash' or 'fatal' text at all). What the logs show is a silent gap followed by a device boot. The last line before the gap is a routine TIME_TICK at 22:27:00.111 (line 138265); the step counter last updated at 22:20:23 (SCREEN_ON, 4698 steps). Nothing is logged for about 11 minutes, then at 22:38:02.977 Step_StaticReceiver receives android.intent.action.BOOT_COMPLETED (line 138266), and the daemon re-initialises: SystemClock.elapsedRealtime() = 103065 ms, so the phone had been up for only about 103 s (booted around 22:36:20). After the restart the app restored the same step count (restartStep=4698, 'restart but same day'), logged a few benign init messages (FAILED_ERROR_DATA x2, compareMidWareCacheAndLocalCache onFailed) and resumed normal TIME_TICK logging until 23:59. So this is a phone reboot or power-off (cause not logged), not an app crash with an exception."
+findings:
+  - fact: "No crash / exception / fatal / ANR / killed / died lines in 2017-12-29 22:00-24:00; the full dataset contains no 'exception', 'crash' or 'fatal' substring at all."
+    sql: "SELECT count(*) FROM logs WHERE dataset='healthapp' AND body @@ websearch_to_tsquery('crash OR exception OR fatal OR anr OR killed OR died') AND ts >= '2017-12-29 22:00' AND ts < '2017-12-30 00:00'; SELECT count(*) FROM logs WHERE dataset='healthapp' AND (body ILIKE '%exception%' OR body ILIKE '%crash%' OR body ILIKE '%fatal%')"
+    result: "0 and 0"
+    importance: must
+  - fact: "Last line before the gap: 22:27:00.111 Step_LSC 'processHandleBroadcastAction action:android.intent.action.TIME_TICK' (line_id 138265); preceded by minute TIME_TICKs from 22:21 and a SCREEN_ON + step report (4698 steps) at 22:20:23. Nothing abnormal before the gap."
+    sql: "SELECT line_id, ts, component, left(body,160) FROM logs WHERE dataset='healthapp' AND ts >= '2017-12-29 22:20' AND ts < '2017-12-29 22:39' ORDER BY ts, line_id LIMIT 60"
+    result: "...138259-138265 TIME_TICK each minute 22:21:00-22:27:00; next line 138266 at 22:38:02.977"
+    importance: must
+  - fact: "At 22:38:02.977 Step_StaticReceiver logs 'onReceive action: android.intent.action.BOOT_COMPLETED' (line_id 138266): the device booted, and the app daemon re-initialised (init, registerDynamicBroadcastReceiver, initStepCounter, bind ret true)."
+    sql: "SELECT line_id, ts FROM logs WHERE dataset='healthapp' AND body LIKE '%BOOT_COMPLETED%' ORDER BY ts LIMIT 20"
+    result: "5 boots in dataset: 2017-12-24 15:32:58, 12-26 08:00:03, 12-29 22:38:02.977 (line 138266), 12-31 10:06:33, 2018-01-02 19:36:57"
+    importance: must
+  - fact: "SystemClock.elapsedRealtime() = 103065 ms at 22:38:03.122, i.e. the phone had been running about 103 s, so it booted around 22:36:20: a whole-device restart, not just an app process restart."
+    sql: "SELECT ts, body FROM logs WHERE dataset='healthapp' AND (body LIKE 'getDeviceShutDownBoolean%' OR body LIKE 'SystemClock.elapsedRealtime%') ORDER BY ts LIMIT 20"
+    result: "2017-12-29 22:38:03.122 | SystemClock.elapsedRealtime(): 103065"
+    importance: should
+  - fact: "Silent gap of 11 min 2.9 s (22:27:00.111 -> 22:38:02.977). Gaps alone are not unusual in this log (the same day has quiet gaps up to 1h56m overnight); what marks this one is the BOOT_COMPLETED right after it."
+    sql: "WITH g AS (SELECT ts, ts - lag(ts) OVER (ORDER BY ts, line_id) d FROM logs WHERE dataset='healthapp' AND ts >= '2017-12-29 00:00' AND ts < '2017-12-30 00:00') SELECT ts, d FROM g ORDER BY d DESC NULLS LAST LIMIT 6"
+    result: "largest gaps 01:56:08 (ends 04:58), 01:52:26, 01:31:10 ...; the 22:27-22:38 gap is smaller"
+    importance: should
+  - fact: "After the reboot the app recovered state and resumed normally: 'updateBasicRestartStepsInfo restart but same day', restartStep=4698 (same as before the gap); 574 lines 22:38:02-23:59:00 incl. 56 TIME_TICKs. The only failure-looking lines are 3 init messages at 22:38:03 (Step_ReportController FAILED_ERROR_DATA x2, Step_LSC 'compareMidWareCacheAndLocalCache onFailed')."
+    sql: "SELECT ts, component, left(body,140) FROM logs WHERE dataset='healthapp' AND ts >= '2017-12-29 22:00' AND ts < '2017-12-30 00:00' AND (body ILIKE '%exception%' OR body ILIKE '%crash%' OR body ILIKE '%fatal%' OR body ILIKE '%error%' OR body ILIKE '%fail%') LIMIT 10"
+    result: "3 rows, all 22:38:03.09-22:38:03.16 (FAILED_ERROR_DATA, FAILED_ERROR_DATA, compareMidWareCacheAndLocalCache onFailed)"
+    importance: should
+  - fact: "The request_id (pid) is the constant 30002312 for every line (253,394 of 253,395) including after the boot, so the pid cannot be used to detect a process restart in this dataset."
+    sql: "SELECT request_id, count(*) FROM logs WHERE dataset='healthapp' GROUP BY 1 ORDER BY 2 DESC LIMIT 5"
+    result: "30002312 | 253394; NULL | 1"
+    importance: nice
+must_conclude:
+  - "No exception (or crash/fatal/ANR) was logged; the 'crash with an exception' premise is not supported by the logs."
+  - "Last line before the silence is a TIME_TICK at 22:27:00; logs resume at 22:38:02.977 with android.intent.action.BOOT_COMPLETED: the phone rebooted."
+  - "After the boot the app re-initialised, restored the step count (4698) and resumed normal logging."
+traps:
+  - "Inventing an exception name or stack trace: there is none in the logs."
+  - "Treating FAILED_ERROR_DATA / 'onFailed' at 22:38:03 as the crash: they come after the boot, during re-initialisation, and recur on other boots."
+  - "Calling it an app crash: BOOT_COMPLETED and elapsedRealtime ~103 s show a device restart."
+  - "Using the pid (request_id) to look for a restart: it never changes."
+  - "No severity column in this dataset (severity NULL), so filtering on ERROR returns nothing."
+not_established:
+  - "Why the phone restarted or powered off (user reboot, battery, OS crash): nothing is logged about the cause. shutDown=false / shutDownTime=0 is logged on every boot, so it does not tell us whether the shutdown was clean."
+  - "What happened between 22:27:00 and ~22:36:20: the app logged nothing."
+  - "Any user impact beyond the gap; step data appears preserved (4698 before and after)."
+labels_used: "None: healthapp has no Loghub labels in the labels table."
+golden_check:
+  - fact: "crash / exception / fatal / ANR / killed lines on 2017-12-29 22:00-24:00"
+    golden_value: "0"
+    my_value: "0"
+    agrees: true
+  - fact: "last line before the silent gap"
+    golden_value: "2017-12-29 22:27"
+    my_value: "2017-12-29 22:27:00.111"
+    agrees: true
+  - fact: "BOOT_COMPLETED received"
+    golden_value: "2017-12-29 22:38"
+    my_value: "2017-12-29 22:38:02.977"
+    agrees: true
+notes: "Owner: mobile-health (only a '*' default row for healthapp in ownership). Single component family, no host, no severity. The device-boot reading rests on BOOT_COMPLETED plus elapsedRealtime=103065 ms; this is direct log evidence, not inference from the gap alone."

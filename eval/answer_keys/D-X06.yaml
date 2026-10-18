@@ -1,0 +1,66 @@
+id: D-X06
+role: engineer
+dataset: healthapp
+question: "On 2018-01-02 the health app logged ERR_DATA_INSERT errors when saving health data. When did they start that day, and is the 2018-01-02 volume unusual compared with the previous 7 days (2017-12-26 to 2018-01-02)?"
+answer_summary: "On 2018-01-02 there are 51 ERR_DATA_INSERT lines, all the same HiH_HiHealthBinder message (insertHiHealthData() bulkSaveDetailHiHealthData fail errorCode = 4) from app process 30002312. The first is at 08:11:53.395 (line 215430), after 14 error-free insert calls since midnight, and the last at 22:33:41; the 08h and 22h hours have the most. The 7 baseline days (2017-12-26 to 2018-01-01) have 97 lines, about 13.9 a day with a maximum of 25, so 51 is about 3.7 times the daily mean and the highest day in the dataset. It is not new, though: the error appears on every day from 2017-12-23. Most of the jump follows more save activity: 153 insert calls against about 52 a day in the baseline, and the busiest log day (40,934 lines). The failure share rose only from 27% to 33%, so this is a recurring failure that grew with load, not a new outage."
+findings:
+  - fact: "51 ERR_DATA_INSERT lines on 2018-01-02, the first at 08:11:53.395 (line_id 215430) and the last at 22:33:41.576"
+    sql: "SELECT count(*), min(ts), max(ts) FROM logs WHERE dataset='healthapp' AND body LIKE '%ERR_DATA_INSERT%' AND ts >= '2018-01-02' AND ts < '2018-01-03'"
+    result: "51 | 2018-01-02 08:11:53.395 | 2018-01-02 22:33:41.576"
+    importance: must
+  - fact: "Baseline 2017-12-26..2018-01-01 has 97 lines (12, 13, 11, 10, 25, 21, 5 per day): mean 13.9 a day, max 25. 2018-01-02 has 51, about 3.7 times the mean and 2 times the max, and the highest day in the dataset (the next highest is 32 on 2017-12-24)"
+    sql: "SELECT strftime(date_trunc('day',ts),'%Y-%m-%d') d, count(*) FROM logs WHERE dataset='healthapp' AND body LIKE '%ERR_DATA_INSERT%' GROUP BY 1 ORDER BY 1"
+    result: "12-23:1, 12-24:32, 12-25:28, 12-26:12, 12-27:13, 12-28:11, 12-29:10, 12-30:25, 12-31:21, 01-01:5, 01-02:51, 01-03:3"
+    importance: must
+  - fact: "This is a recurring error, not a new one: it occurs on every day of the dataset from 2017-12-23. All 212 lines have the same text, component HiH_HiHealthBinder and process 30002312"
+    sql: "SELECT component, request_id, body, count(*) FROM logs WHERE dataset='healthapp' AND body LIKE '%ERR_DATA_INSERT%' GROUP BY 1,2,3"
+    result: "HiH_HiHealthBinder | 30002312 | insertHiHealthData() bulkSaveDetailHiHealthData fail errorCode = 4,errorMessage = ERR_DATA_INSERT | 212"
+    importance: must
+  - fact: "Normalised by save activity, the rise is modest: insert calls (insertHiHealthData() end) were 153 on 01-02 against 362 in the 7 baseline days (about 52 a day). The failure share was 33% against 27%. Total log lines on 01-02 were 40,934 (the busiest day), against 13-36k on the other full days"
+    sql: "SELECT strftime(date_trunc('day',ts),'%Y-%m-%d') d, sum(CASE WHEN body LIKE 'insertHiHealthData() end totalTime%' THEN 1 ELSE 0 END) ins_end, sum(CASE WHEN body LIKE '%ERR_DATA_INSERT%' THEN 1 ELSE 0 END) err FROM logs WHERE dataset='healthapp' AND component LIKE 'HiH%' GROUP BY 1 ORDER BY 1"
+    result: "01-02: 153 inserts / 51 err; baseline 12-26..01-01: 40/12, 49/13, 46/11, 38/10, 76/25, 73/21, 40/5 = 362/97"
+    importance: should
+  - fact: "Failure sequence at the first occurrence: a step-counter flush (Step_LSC uploadStaticsToDB) calls insertHiHealthData. saveStatData writes types 40002-40004, saveHealthDetailData then logs 'saveOneDetailData fail ... type = 40005', bulkSave returns errorCode 4 ERR_DATA_INSERT, and Step_LSC logs 'uploadStaticsToDB failed message=true'"
+    sql: "SELECT line_id, ts, component, body FROM logs WHERE dataset='healthapp' AND ts BETWEEN '2018-01-02 08:11:50' AND '2018-01-02 08:11:54' ORDER BY ts, line_id LIMIT 40"
+    result: "215425 saveOneDetailData fail type=40005; 215430 ERR_DATA_INSERT; 215433 Step_LSC uploadStaticsToDB failed message=true"
+    importance: should
+  - fact: "On 01-02 the per-record failures are mostly type 40005 (50) and 40003 (18), all for the day bucket hiHealthData=1514822400000"
+    sql: "SELECT body, count(*) FROM logs WHERE dataset='healthapp' AND body LIKE '%saveOneDetailData fail%' AND ts>='2018-01-02' AND ts<'2018-01-03' GROUP BY 1 ORDER BY 2 DESC"
+    result: "type 40005: 50, type 40003: 18, type 40004: 1"
+    importance: nice
+  - fact: "Hourly profile on 01-02: 08h 9, 11h 3, 12h 4, 14h 8, 15h 4, 16h 1, 17h 2, 18h 2, 19h 3, 20h 1, 21h 4, 22h 10. Errors are spread through the day, with no single storm"
+    sql: "SELECT extract(hour from ts) h, count(*) FROM logs WHERE dataset='healthapp' AND body LIKE '%ERR_DATA_INSERT%' AND ts>='2018-01-02' AND ts<'2018-01-03' GROUP BY 1 ORDER BY 1"
+    result: "8:9, 11:3, 12:4, 14:8, 15:4, 16:1, 17:2, 18:2, 19:3, 20:1, 21:4, 22:10"
+    importance: nice
+must_conclude:
+  - "The first ERR_DATA_INSERT on 2018-01-02 is at 08:11 (08:11:53.395)."
+  - "51 lines on 2018-01-02 against 97 in the 7 previous days (about 14 a day, max 25): unusually high in absolute terms, about 3.7 times the daily mean."
+  - "The error is recurring (present every day since 2017-12-23), not new on 2018-01-02."
+  - "The counts are lines (failed insert calls), not incidents."
+traps:
+  - "Calling the error new or a fresh outage: it appears on every day of the dataset."
+  - "Ignoring the activity baseline: 01-02 is also the busiest day for inserts and log volume, so most of the increase tracks load. The failure share rose only from about 27% to 33%."
+  - "Counting the baseline window including 01-02 (the question's 'to 2018-01-02' is exclusive; including it would give 148)."
+  - "Adding the companion lines (saveOneDetailData fail: 69, uploadStaticsToDB failed: 51) to the ERR_DATA_INSERT count."
+  - "Dates in the raw file are not zero-padded; the parsed ts is correct (the day runs 00:00:36 to 23:59:00)."
+  - "No severity or host in this dataset: 'errors' are identified by message text, not level."
+not_established:
+  - "The root cause of errorCode 4 (the logs show which record type failed, mostly 40005/40003, not why the DB insert failed)."
+  - "Whether any user-visible data was lost: the step data may be retried on later flushes; the logs do not show it."
+  - "Why save activity was higher on 2018-01-02."
+  - "Any user or customer impact; there is a single device/process (30002312)."
+labels_used: "None: healthapp has no Loghub labels."
+golden_check:
+  - fact: "ERR_DATA_INSERT lines on 2018-01-02"
+    golden_value: "51"
+    my_value: "51 (both ts_phrase and LIKE)"
+    agrees: true
+  - fact: "first ERR_DATA_INSERT on 2018-01-02"
+    golden_value: "2018-01-02 08:11"
+    my_value: "2018-01-02 08:11:53.395"
+    agrees: true
+  - fact: "ERR_DATA_INSERT lines in the 7-day baseline 2017-12-26 to 2018-01-02"
+    golden_value: "97"
+    my_value: "97"
+    agrees: true
+notes: "Owner: team mobile-health (from the healthapp '*' default row in data/ownership.csv). The dataset spans 2017-12-23 22:15 to 2018-01-03 09:59, so 12-23 and 01-03 are partial days. All ERR_DATA_INSERT lines come from one process, so 'spread' across devices is not meaningful."

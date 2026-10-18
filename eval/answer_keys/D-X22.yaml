@@ -1,0 +1,58 @@
+id: D-X22
+role: manager
+dataset: otel
+question: "In the sampled webshop logs from 2025-09-23 00:00 to 00:30, are failed card payments a one-off blip or an ongoing problem, and which team should own the fix?"
+answer_summary: "Ongoing, not a blip. The payment service logged 11,253 ERROR lines 'Visa cache full: cannot add new item.' in the window, present in all 30 sampled minutes (every minute holds 318-441 such lines, flat from start to end: 5,469 in the first 15 min vs 5,784 in the second), spread over 45 payment pods on 24 nodes. The failure propagates to the shop frontend, which logs 91,362 ERROR lines 'failed to charge card ... Visa cache full' (several lines per failure, so this is not a count of failed checkouts). Only 111 Visa transactions completed vs 3,235 Mastercard, consistent with Visa charges being the ones failing. Owner: payments-team (ownership row otel/payment); frontend (web-frontend) only surfaces the error. The logs do not show cost, revenue, customer count or downtime, and the dataset is a 0.1 s-per-minute sample, so lines are not incidents or a full count."
+findings:
+  - fact: "Payment service logged 11,253 'Visa cache full: cannot add new item.' lines, all severity ERROR, all from component payment; it is the only payment error message besides ~12.7k empty trace-context JSON error lines."
+    sql: "SELECT component, severity, count(*) FROM logs WHERE dataset='otel' AND body @@ websearch_to_tsquery('\"Visa cache full\"') GROUP BY 1,2"
+    result: "payment|ERROR|11253 ; frontend|ERROR|91362"
+    importance: must
+  - fact: "The error appears in every one of the 30 sampled minutes at a steady 318-441 lines/minute, with no start or end in the window (first 00:00:00, last 00:29:00.099); first half 5,469 vs second half 5,784 lines: persistent and flat, not a blip and not clearly growing."
+    sql: "SELECT strftime(ts,'%H:%M') m, count(*) FILTER (WHERE body LIKE 'Visa cache full%') FROM logs WHERE dataset='otel' AND component='payment' AND ts >= '2025-09-23 00:00' AND ts < '2025-09-23 00:30' GROUP BY 1 ORDER BY 1"
+    result: "30 rows, min 318 (00:29), max 441 (00:24); 00:00-00:14 sum 5469, 00:15-00:29 sum 5784"
+    importance: must
+  - fact: "Owner of component payment is payments-team (frontend = web-frontend, checkout = checkout-team)."
+    sql: "SELECT * FROM ownership WHERE dataset='otel' AND component IN ('payment','frontend','checkout')"
+    result: "otel|payment|payments-team|Payment service ; otel|frontend|web-frontend ; otel|checkout|checkout-team"
+    importance: must
+  - fact: "Fleet-wide within payment: the error comes from 45 of 69 payment pods (locations) on 24 nodes; top pod 1,349 lines (~12%), so not a single bad pod."
+    sql: "SELECT count(*), count(DISTINCT location), count(DISTINCT node) FROM logs WHERE dataset='otel' AND component='payment' AND body LIKE 'Visa cache full%'"
+    result: "11253|45|24 (69 distinct payment locations overall; top location payment-86748d5c74-llx8w 1349)"
+    importance: should
+  - fact: "Customer-facing propagation: frontend logs 91,362 ERROR lines 'failed to charge card: could not charge the card: rpc error ... Visa cache full' (gRPC 13 INTERNAL), repeated in ~6-7 line variants per failure, so the line count overstates failures."
+    sql: "SELECT component, severity, count(*) FROM logs WHERE dataset='otel' AND body @@ websearch_to_tsquery('\"failed to charge card\"') GROUP BY 1,2"
+    result: "frontend|ERROR|91362 (top variants ~26k, ~13k x5)"
+    importance: should
+  - fact: "Visa-specific: completed transactions logging cardType show 111 visa vs 3,235 mastercard; charge requests ~30.2k lines (14,164 plain + 16,016 JSON) vs ~6.3k 'Transaction complete' lines."
+    sql: "SELECT count(*) FILTER (WHERE body LIKE '%\"cardType\":\"visa\"%') visa, count(*) FILTER (WHERE body LIKE '%\"cardType\":\"mastercard\"%') mc FROM logs WHERE dataset='otel' AND component='payment' AND body LIKE '%Transaction complete%'"
+    result: "111|3235"
+    importance: nice
+must_conclude:
+  - "Ongoing / persistent problem, not a one-off: 'Visa cache full' errors in all 30 sampled minutes at a steady rate."
+  - "Root error is in the payment service ('Visa cache full: cannot add new item.'), affecting Visa card charges."
+  - "Owner of the fix: payments-team (frontend/web-frontend only reports the downstream failure)."
+  - "Counts are log lines in a sampled slice, not incidents, failed orders or customers."
+traps:
+  - "Assigning ownership to web-frontend because the frontend has ~8x more error lines (91,362) than payment; those are downstream echoes of the payment error."
+  - "Presenting 11,253 or 91,362 lines as the number of failed payments or affected customers."
+  - "Ignoring that the dataset is 0.1 s of each minute (sampled), so absolute totals are not the full traffic and scaling up would be speculation."
+  - "Calling it 'worsening' from small minute-to-minute variance; first vs second half is roughly flat (+6%)."
+  - "Inventing revenue loss, downtime or customer impact."
+  - "Counting the ~12.7k payment ERROR lines that are bare JSON trace-context records as additional distinct failures."
+not_established:
+  - "Revenue, money lost, number of affected customers or orders, downtime."
+  - "When the problem started (it is already present at 00:00:00, the first sampled instant) or whether it continued after 00:30."
+  - "The root cause of the cache filling (e.g., a capacity limit, leak or deliberate fault injection such as an OTel demo feature flag); logs only show the symptom."
+  - "Exact failure rate per payment attempt (request/complete lines come in duplicated plain and JSON forms, and sampling cuts requests mid-flow)."
+labels_used: "None; the otel dataset has no Loghub labels. Ownership from the ownership table (data/ownership.csv)."
+golden_check:
+  - fact: "payment 'Visa cache full' lines in the window"
+    golden_value: "11253"
+    my_value: "11253"
+    agrees: true
+  - fact: "minutes of the window with at least one 'Visa cache full' line"
+    golden_value: "30"
+    my_value: "30"
+    agrees: true
+notes: "Dataset spans exactly 00:00:00-00:29:00.1 (0.1 s sampled per minute), so the question window equals the whole dataset. Payment severities overall: ERROR 23,984, INFO 35,286, TRACE 2,161, FATAL 235 (FATAL lines are mislabelled MongoDB alert-task info messages, not payment failures). Frontend is the largest error source in the dataset (176,880 ERROR/FATAL lines) mostly due to this propagated error."

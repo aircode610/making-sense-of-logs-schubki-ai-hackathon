@@ -1,0 +1,69 @@
+id: D-X15
+role: engineer
+dataset: hdfs
+question: "HDFS block blk_-5057834626410636236 was flagged as anomalous on 2008-11-10. Walk me through its life step by step. What went wrong, when, and on which datanodes?"
+answer_summary: "The block is labelled Anomaly in the Loghub ground truth and has 34 log lines, all on 2008-11-10 between 10:39:34 and 21:05:04. It was allocated at 10:39:34 for /user/root/rand/_temporary/_task_200811101024_0001_m_000180_0/part-00180 and written through a 3-node pipeline (all three PacketResponders finished by 10:40:00, size 67108864). But the namenode recorded only one replica, on 10.251.199.245, at 10:40:00. At 10:44:19 the namenode asked 10.251.199.245 to replicate the block to 10.250.17.225 and 10.251.67.225. Neither target ever reported the block, and at 10:49:36 the WARN 'PendingReplicationMonitor timed out block' fired, 5 min 17 s after the request. This is the earliest of only 47 such lines in the whole dataset. Recovery: at 10:49:41 the block was re-replicated from 10.251.199.245 to 10.251.43.115, which succeeded at 10:50:22. A replica had also appeared on 10.251.199.225 at 10:46:06, and 10.251.123.33 reported late at 10:57:46, after which an excess replica was deleted at 10:57:50. Later, at 12:48, 10.251.199.225 and 10.251.43.115 logged 'Got exception while serving' to clients (43.115 then served the block successfully at 12:48:59), scanner verification succeeded at 16:49 and 16:54, and the block was deleted normally at 21:01–21:05 from 10.251.199.225, 10.251.199.245 and 10.251.43.115."
+findings:
+  - fact: "The pending replication of the block timed out at 2008-11-10 10:49:36 (WARN, dfs.PendingReplicationBlocks$PendingReplicationMonitor). This came after the namenode at 10:44:19 had asked 10.251.199.245:50010 to replicate it to 10.250.17.225:50010 and 10.251.67.225:50010."
+    sql: "SELECT line_id, ts, severity, component, body FROM logs WHERE dataset='hdfs' AND request_id='blk_-5057834626410636236' AND (body @@ websearch_to_tsquery('\"PendingReplicationMonitor timed out\"') OR body LIKE '%to replicate%') ORDER BY ts"
+    result: "2617241|10:44:19|INFO|BLOCK* ask 10.251.199.245:50010 to replicate ... to datanode(s) 10.250.17.225:50010 10.251.67.225:50010; 2663876|10:49:36|WARN|PendingReplicationMonitor timed out block blk_-5057834626410636236; 2664542|10:49:41|BLOCK* ask 10.251.199.245:50010 to replicate ... to datanode(s) 10.251.43.115:50010"
+    importance: must
+  - fact: "Neither replication target (10.250.17.225 or 10.251.67.225) ever logged an addStoredBlock or a receive for this block. They appear only in the two 10:44:19 request/transfer lines. Both nodes were otherwise active at the time (10.251.67.225 appears on 380 lines between 10:40 and 11:00), so the failure is specific to this transfer and not a dead node."
+    sql: "SELECT count(*) FROM logs WHERE dataset='hdfs' AND request_id='blk_-5057834626410636236' AND (body LIKE '%10.250.17.225%' OR body LIKE '%10.251.67.225%'); SELECT count(*) FROM logs WHERE dataset='hdfs' AND ts >= '2008-11-10 10:40' AND ts < '2008-11-10 11:00' AND body LIKE '%10.251.67.225:50010%'"
+    result: "2 ; 380"
+    importance: must
+  - fact: "Life of the block: 34 lines, all on 2008-11-10, first 10:39:34 (allocateBlock, part-00180 of task 200811101024_0001_m_000180_0), last 21:05:04 (Deleting block). 3 of the lines are WARN."
+    sql: "SELECT count(*), min(ts), max(ts), count(*) FILTER (WHERE severity='WARN') FROM logs WHERE dataset='hdfs' AND request_id='blk_-5057834626410636236'"
+    result: "34|2008-11-10 10:39:34|2008-11-10 21:05:04|3"
+    importance: must
+  - fact: "Initial write: the 3-node pipeline completed at 10:39:59–10:40:00 (PacketResponders 0, 1 and 2 terminating; Received block of size 67108864 from 10.251.199.245 twice and from 10.251.123.33). The namenode recorded only 10.251.199.245 (addStoredBlock 10:40:00), so the block was under-replicated."
+    sql: "SELECT ts, body FROM logs WHERE dataset='hdfs' AND request_id='blk_-5057834626410636236' AND ts < '2008-11-10 10:44' ORDER BY ts, line_id LIMIT 20"
+    result: "10:39:34 allocateBlock; 3x Receiving (dest 10.251.199.245 x2, 10.251.123.33); 10:39:59-10:40:00 3x PacketResponder terminating + Received block size 67108864; 10:40:00 addStoredBlock 10.251.199.245:50010"
+    importance: should
+  - fact: "Recovery and late reports: a replica on 10.251.199.225 was added at 10:46:06. Re-replication to 10.251.43.115 succeeded at 10:50:22 (addStoredBlock + Transmitted block). 10.251.123.33 reported at 10:57:46, and an excess replica was deleted at 10:57:50 (Deleting block .../subdir0/...)."
+    sql: "SELECT ts, body FROM logs WHERE dataset='hdfs' AND request_id='blk_-5057834626410636236' AND ts >= '2008-11-10 10:45' AND ts < '2008-11-10 11:00' ORDER BY ts, line_id LIMIT 20"
+    result: "10:46:06 addStoredBlock 10.251.199.225; 10:49:41 transfer to 10.251.43.115; 10:50:22 addStoredBlock 10.251.43.115 + Transmitted; 10:57:46 addStoredBlock 10.251.123.33; 10:57:50 Deleting block"
+    importance: should
+  - fact: "PendingReplicationMonitor timeouts are rare and strongly tied to the labels. There are 47 lines on 46 blocks in the whole dataset, all 46 labelled Anomaly. This block's timeout (10:49:36) is the earliest; the next ones come at 21:24:35."
+    sql: "SELECT count(DISTINCT l.request_id), count(DISTINCT lb.label) FROM logs l LEFT JOIN labels lb ON lb.dataset='hdfs' AND lb.label=l.request_id WHERE l.dataset='hdfs' AND l.body @@ websearch_to_tsquery('\"PendingReplicationMonitor timed out\"'); SELECT ts, request_id FROM logs WHERE dataset='hdfs' AND body @@ websearch_to_tsquery('\"PendingReplicationMonitor timed out\"') ORDER BY ts LIMIT 3"
+    result: "46|46 ; 10:49:36 blk_-5057834626410636236, 21:24:35 blk_-2610256770731596149, 21:24:35 blk_-6538891058531862642"
+    importance: should
+  - fact: "The 12:48 'Got exception while serving' WARNs (10.251.199.225 to 10.250.9.207 at 12:48:28; 10.251.43.115 to 10.250.14.143 at 12:48:47) are background noise. There are 356,207 such lines in the dataset, and in the 12:00–13:00 hour 10,557 blocks had one, of which only 375 are labelled anomalous. 10.251.43.115 served the block successfully at 12:48:59."
+    sql: "WITH b AS (SELECT DISTINCT request_id FROM logs WHERE dataset='hdfs' AND ts >= '2008-11-10 12:00' AND ts < '2008-11-10 13:00' AND body @@ websearch_to_tsquery('\"Got exception while serving\"')) SELECT count(*), count(lb.label) FROM b LEFT JOIN labels lb ON lb.dataset='hdfs' AND lb.label=b.request_id"
+    result: "10557|375 (dataset total of such lines: 356207)"
+    importance: should
+  - fact: "End of life: DataBlockScanner verification succeeded at 16:49:12 and 16:54:24. At 21:01:40 the block was added to the invalidSet of 10.251.199.225, 10.251.199.245 and 10.251.43.115, and three Deleting block lines followed at 21:03:54, 21:04:56 and 21:05:04 (a normal file delete)."
+    sql: "SELECT ts, body FROM logs WHERE dataset='hdfs' AND request_id='blk_-5057834626410636236' AND ts >= '2008-11-10 13:00' ORDER BY ts, line_id LIMIT 20"
+    result: "2x Verification succeeded; 3x NameSystem.delete invalidSet; 3x Deleting block"
+    importance: nice
+must_conclude:
+  - "The anomaly is a failed re-replication: the namenode asked 10.251.199.245 to copy the block to 10.250.17.225 and 10.251.67.225 at 10:44:19, neither target ever reported it, and PendingReplicationMonitor timed out the block at 10:49:36 (WARN)."
+  - "It started as under-replication right after the write: only 10.251.199.245 was registered at 10:40:00, although a 3-node pipeline completed."
+  - "It recovered: re-replicated to 10.251.43.115 by 10:50:22 (plus 10.251.199.225 at 10:46:06), with no data loss shown. Verification succeeded later and the block was deleted normally at about 21:01–21:05."
+  - "The block has 34 lines, all on 2008-11-10, from 10:39:34 to 21:05:04."
+traps:
+  - "Treating the 12:48 'Got exception while serving' WARNs as the anomaly: they are extremely common (356k lines, about 10.5k blocks in that hour, mostly normal), and one of those nodes then served the block successfully."
+  - "Treating the 10:57:50 'Deleting block' or the 21:0x deletes as data loss: the first is an excess-replica cleanup after 10.251.123.33 reported late, and the later ones are a normal file delete (invalidSet)."
+  - "Blaming 10.251.199.245: it is the healthy source replica. The failure is on the transfer to the two target nodes, which were otherwise active."
+  - "The node column is NULL in hdfs. Datanode identities must be read from the message bodies (IP:50010)."
+  - "34 lines are not 34 problems: only 1 line (the timeout) is the failure signal, and 3 lines are WARN."
+not_established:
+  - "Why the transfer to 10.250.17.225 / 10.251.67.225 failed. Those nodes log nothing for this block, and the source logs no transfer error."
+  - "Which datanode logged each line (no node field), and so the exact identity of the third member of the initial pipeline. 10.251.199.225 reporting at 10:46:06 may be that member reporting late, but the logs don't prove it."
+  - "Why the namenode received only one addStoredBlock at write time (block reports for 10.251.123.33 arrived 18 minutes late)."
+  - "Any client or job impact. The map task's outcome is not in these logs."
+labels_used: "labels(dataset='hdfs', label=block id) marks Anomaly blocks from anomaly_label.csv. blk_-5057834626410636236 is present (line_id 5532), so it is anomalous. All 46 blocks with a PendingReplicationMonitor timeout are labelled; 375 of the 10,557 blocks with a serving exception in 12:00–13:00 are labelled."
+golden_check:
+  - fact: "log lines of the block"
+    golden_value: "34"
+    my_value: "34"
+    agrees: true
+  - fact: "first line time (allocation)"
+    golden_value: "2008-11-10 10:39"
+    my_value: "2008-11-10 10:39 (10:39:34)"
+    agrees: true
+  - fact: "time the pending replication timed out"
+    golden_value: "2008-11-10 10:49"
+    my_value: "2008-11-10 10:49 (10:49:36)"
+    agrees: true
+notes: "The timeout is 5 min 17 s after the 10:44:19 replication request, consistent with HDFS's default 5-minute pending-replication timeout. The full 34-line timeline was read directly from logs ordered by ts, line_id."

@@ -1,0 +1,64 @@
+id: D-X25
+role: engineer
+dataset: bgl
+question: "Midplane R52-M0 had a kernel panic on 2005-10-12 around 14:00 (13:00 to 15:00). What caused it and which node went down first?"
+answer_summary: "The premise is false. R52-M0 logged nothing between 13:00 and 15:00 (its first line that day is 15:20:28, an INFO torus wire warning), and no line anywhere on BGL in the window says \"kernel panic\". What actually happened was on the neighbouring midplane R52-M1: one compute node, R52-M1-N9-C:J04-U11, took a FATAL KERNEL \"machine check interrupt\" at 14:02:13. Its register dump shows \"d-cache flush parity error...1\" (a hardware data-cache parity fault), and it ended with \"rts panic! - stopping execution\" at 14:03:26. It was the only node to fail: 46 FATAL lines, all from that one node, and Loghub labels exactly 2 of them (KERNMC on the interrupt, KERNRTSP on the rts panic). Other lines in the window are INFO-level corrected DDR errors on other racks. They are routine and unrelated."
+findings:
+  - fact: "Midplane R52-M0 logged no lines in 13:00-15:00 on 2005-10-12, and its first line that day is at 15:20:28 (INFO torus x- wire warning). The premise about R52-M0 is false."
+    sql: "SELECT count(*), min(ts), max(ts) FROM logs WHERE dataset='bgl' AND node LIKE 'R52-M0%' AND ts >= '2005-10-12' AND ts < '2005-10-13'"
+    result: "30 lines that day, first 2005-10-12 15:20:28.517 (critical input interrupt ... warning for torus x- wire, INFO), last 18:24:14; 0 lines in 13:00-15:00"
+    importance: must
+  - fact: "No 'kernel panic' line exists anywhere on BGL in the window."
+    sql: "SELECT count(*) FROM logs WHERE dataset='bgl' AND body @@ websearch_to_tsquery('\"kernel panic\"') AND ts >= '2005-10-12 13:00' AND ts < '2005-10-12 15:00'"
+    result: "0"
+    importance: must
+  - fact: "The real failure was on R52-M1. Node R52-M1-N9-C:J04-U11 logged a FATAL KERNEL 'machine check interrupt' at 14:02:13.71 (line_id 3572608). It was the first and only failing node."
+    sql: "SELECT line_id, ts, node, component, severity, body FROM logs WHERE dataset='bgl' AND node LIKE 'R52-M1%' AND ts >= '2005-10-12 13:00' AND ts < '2005-10-12 15:00' ORDER BY ts LIMIT 50"
+    result: "46 rows, all node R52-M1-N9-C:J04-U11, KERNEL, FATAL, from 14:02:13.712 (machine check interrupt) to 14:03:26.118 (rts panic! - stopping execution)"
+    importance: must
+  - fact: "Cause indicated by the dump: the machine check status register is 0x81000000 with 'd-cache flush parity error........1'. All other error flags are 0 (instruction/data plb, tlb, i-cache parity, d-cache search parity, imprecise). This points to a data-cache parity hardware fault on that compute card."
+    sql: "SELECT ts, body FROM logs WHERE dataset='bgl' AND node='R52-M1-N9-C:J04-U11' AND ts >= '2005-10-12 14:02' AND ts < '2005-10-12 14:03' ORDER BY ts LIMIT 20"
+    result: "machine check status register: 0x81000000; summary...1; d-cache flush parity error........1; all other error bits 0"
+    importance: must
+  - fact: "The episode ended with 'rts panic! - stopping execution' at 14:03:26 on the same node. This is an rts panic after the machine check, not a 'kernel panic'. Loghub labels the event as 2 alert lines (KERNMC + KERNRTSP), not 46 incidents."
+    sql: "SELECT l.label, count(*), min(g.ts), max(g.ts), count(DISTINCT g.node) FROM labels l JOIN logs g ON g.dataset='bgl' AND g.line_id=l.line_id WHERE l.dataset='bgl' AND g.ts >= '2005-10-12 13:00' AND g.ts < '2005-10-12 15:00' GROUP BY 1"
+    result: "KERNMC|1|14:02:13.712|1 node; KERNRTSP|1|14:03:26.118|1 node"
+    importance: should
+  - fact: "Whole window: 69 lines on 7 nodes. The other 23 lines are INFO corrected DDR / torus errors on R06-M1, R10-M0, R30-M0, R35-M0, R40-M0 and R67-M0 at 13:45 and 14:02. They are routine noise, not part of the failure. The machine check is the only one on BGL that day."
+    sql: "SELECT count(*), count(DISTINCT node), min(ts), max(ts) FROM logs WHERE dataset='bgl' AND body @@ websearch_to_tsquery('\"machine check interrupt\"') AND ts >= '2005-10-12' AND ts < '2005-10-13'"
+    result: "1 line, 1 node, 14:02:13.712 (window total: 69 lines / 7 nodes; R52-M1 46 FATAL, rest INFO)"
+    importance: should
+  - fact: "Before and after: R52-M1 was quiet from 09:56 (INFO tree/torus wire warnings on other node cards) to 14:02. The failed node logged nothing more that day. The next R52-M1 lines are an INFO wire warning at 16:05 and, at 18:10, ciod 'Error loading ... vnm.rts: invalid or missing program image' FATALs on I/O nodes, a separate job-load issue."
+    sql: "SELECT ts, node, severity, left(body,100) FROM logs WHERE dataset='bgl' AND node LIKE 'R52-M1%' AND ts > '2005-10-12 14:03:27' AND ts < '2005-10-14' ORDER BY ts LIMIT 10"
+    result: "16:05:33 R52-M1-NF-C:J02-U11 INFO tree B0 wire warning; 18:10:57+ R52-M1-N*-I:J18 FATAL ciod Error loading vnm.rts"
+    importance: nice
+must_conclude:
+  - "The premise is wrong: R52-M0 logged nothing in 13:00-15:00 and no 'kernel panic' line exists in the window."
+  - "The actual event was on R52-M1: a machine check interrupt at 14:02:13 on node R52-M1-N9-C:J04-U11, ending in 'rts panic! - stopping execution' at 14:03:26."
+  - "A single node failed (first and only): R52-M1-N9-C:J04-U11. Owner is the node-platform team (KERNEL component)."
+  - "The likely cause is a d-cache flush parity error (hardware data-cache parity) shown in the machine check register dump."
+traps:
+  - "Accepting the premise and reporting a 'kernel panic' on R52-M0, or picking a node on R52-M0."
+  - "Counting the 46 FATAL lines as 46 failures or many nodes. They are one register dump from one node (Loghub labels 2 lines)."
+  - "Calling the 'rts panic' a kernel panic without noting that the wording differs."
+  - "Blaming the INFO corrected DDR errors on R67-M0 / R40-M0 / R35-M0 (same minute, other racks) as the cause."
+  - "Linking the 18:10 ciod 'Error loading vnm.rts' FATALs on R52-M1 I/O nodes to this event. They are a separate job-load problem."
+not_established:
+  - "Whether the parity error came from a permanently failing cache or a transient (soft) error. That node has lines on only 3 days (2005-08-28, 2005-10-12, 2005-12-01)."
+  - "Which job was running or affected, and whether it was restarted. No job id is in these lines."
+  - "Any impact on users, downtime or repair action."
+labels_used: "Loghub BGL labels: in the window exactly 2 labelled alert lines, KERNMC (line 3572608, machine check interrupt) and KERNRTSP (line 3572664, rts panic), both on R52-M1-N9-C:J04-U11. No labels on R52-M0."
+golden_check:
+  - fact: "lines from midplane R52-M0 in the window"
+    golden_value: "0"
+    my_value: "0"
+    agrees: true
+  - fact: "kernel panic lines anywhere on BGL in the window"
+    golden_value: "0"
+    my_value: "0"
+    agrees: true
+  - fact: "time of the machine check interrupt on R52-M1"
+    golden_value: "2005-10-12 14:02"
+    my_value: "2005-10-12 14:02 (14:02:13.712)"
+    agrees: true
+notes: "False-premise question: the midplane and the wording are both wrong. BGL does contain 18 'kernel panic' lines elsewhere in the dataset (none in this window) and 3,983 'rts panic' lines, so an agent may find a 'kernel panic' at another time and wrongly match it. Owner from data/ownership.csv: bgl KERNEL -> node-platform."

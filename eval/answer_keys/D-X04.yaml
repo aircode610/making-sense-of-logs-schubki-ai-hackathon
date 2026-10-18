@@ -1,0 +1,67 @@
+id: D-X04
+role: manager
+dataset: linux
+question: "Our Linux server combo had memory trouble in November and December 2005 (2005-11-01 to 2006-01-01). Is this a long-standing issue or something new, how big was it, and what can't the logs tell us about its impact?"
+answer_summary: "This is new, not long-standing. The server's log runs from 2005-06-09 to 2006-02-28, and its first 'Out of Memory: Killed process' line is on 2005-11-15 04:30. Before that date there are none. After 2005-12-09 04:58 there are none either, so it was a roughly 3.5-week episode on one host. Over that time the kernel logged 10,404 OOM-kill lines on 24 days, peaking at 1,750 on 2005-11-21. These lines group into about 133 bursts (a new burst after 30 minutes of quiet). That is a count of kill events and bursts, not of incidents. httpd processes were the main victim (8,903 kills, 86%), followed by python (1,153), sendmail (230) and mrtg (50); 88 'page allocation failure' lines appeared alongside. The episode included a reboot on 2005-12-06 12:20, and the trouble stopped after 2005-12-09. The logs do not show the root cause, how much of the website or mail service users lost, or any cost, so the owner (linux-ops, the default owner) should establish the cause, for example httpd/python memory growth or traffic, before it recurs."
+findings:
+  - fact: "Nothing like this happened before mid-November. There are 0 OOM-kill lines in the whole dataset before 2005-11-15 (data starts 2005-06-09), and 0 again from 2006-01 onward. Monthly OOM lines were: Jun to Oct 0, Nov 6,709, Dec 3,695, Jan 0, Feb 0."
+    sql: "SELECT strftime(ts,'%Y-%m') m, count(*), sum(CASE WHEN body ILIKE '%out of memory%' THEN 1 ELSE 0 END) FROM logs WHERE dataset='linux' GROUP BY 1 ORDER BY 1"
+    result: "2005-06|1605|0; 07|1659|0; 08|1208|0; 09|1829|0; 10|1540|0; 11|9315|6709; 12|4750|3695; 2006-01|2439|0; 2006-02|1222|0"
+    importance: must
+  - fact: "Size and timing: 10,404 'Out of Memory: Killed process' lines (all from kernel), first 2005-11-15 04:30:29, last 2005-12-09 04:58:54"
+    sql: "SELECT count(*), min(ts), max(ts) FROM logs WHERE dataset='linux' AND body ILIKE '%out of memory%'"
+    result: "10404|2005-11-15 04:30:29|2005-12-09 04:58:54"
+    importance: must
+  - fact: "Victims: httpd 8,903 (86%), python 1,153, sendmail 230, mrtg 50, mysqld 25, updatedb 12, sshd 11, and a few others. 9,144 distinct PIDs were killed."
+    sql: "SELECT regexp_extract(body,'Killed process \\d+ \\((.*)\\)',1) p, count(*) FROM logs WHERE dataset='linux' AND body ILIKE '%out of memory%' GROUP BY 1 ORDER BY 2 DESC"
+    result: "httpd|8903, python|1153, sendmail|230, mrtg|50, mysqld|25, updatedb|12, sshd|11, ld-linux.so.2|7, named|2, others 1 each"
+    importance: must
+  - fact: "Recurrence: OOM lines occur on 24 days, peaking at 1,750 on 2005-11-21 and 1,162 on 2005-12-04. They group into 133 bursts (30-minute quiet gap), not 10,404 incidents."
+    sql: "WITH o AS (SELECT ts, lag(ts) OVER (ORDER BY ts) p FROM logs WHERE dataset='linux' AND body ILIKE '%out of memory%') SELECT sum(CASE WHEN p IS NULL OR ts - p > INTERVAL 30 MINUTE THEN 1 ELSE 0 END), count(*) FROM o"
+    result: "133|10404 (per-day counts: 11-15 88 ... 11-21 1750 ... 12-04 1162, 12-06 397, 12-08 56, 12-09 19)"
+    importance: must
+  - fact: "Kernel memory distress went with the episode: 88 'page allocation failure' lines (httpd/sendmail), from 2005-11-21 to 2005-12-06, plus swap-path call traces"
+    sql: "SELECT strftime(min(ts),'%Y-%m-%d %H:%M'),strftime(max(ts),'%Y-%m-%d %H:%M'),count(*) FROM logs WHERE dataset='linux' AND body ILIKE '%page allocation failure%'"
+    result: "2005-11-21 12:41|2005-12-06 05:01|88"
+    importance: should
+  - fact: "A system reboot on 2005-12-06 at 12:20 followed OOM kills at 12:02 (of httpd, sendmail, mrtg and diskcheck). Kills resumed briefly on 12-08 and 12-09 and then stopped for good."
+    sql: "SELECT ts, component, left(body,80) FROM logs WHERE dataset='linux' AND ts>='2005-12-06 12:02' AND ts<'2005-12-06 12:23' ORDER BY ts LIMIT 12"
+    result: "12:02:46 Killed process 9864 (diskcheck); 12:20:03 gdm Master rebooting; 12:20:08 shutdown 'shutting down for system reboot'; 12:22:57 Linux version ... (boot)"
+    importance: should
+  - fact: "Owner: the linux dataset has only a default ownership row, so linux-ops owns it"
+    sql: "grep linux data/ownership.csv"
+    result: "linux,*,linux-ops,Default owner: all programs of the Linux server"
+    importance: nice
+must_conclude:
+  - "It is new: zero OOM kills from June to mid-November 2005. The first is 2005-11-15 04:30 and the last 2005-12-09, so it is a bounded episode of about 3.5 weeks and not an ongoing one."
+  - "Size: 10,404 OOM-kill lines in the period (about 133 bursts on 24 days). These are lines and kill events, not incidents."
+  - "httpd is the dominant victim (8,903), followed by python (1,153)"
+  - "The logs give no root cause, user, service or availability impact, cost or downtime figure"
+traps:
+  - "Reporting 10,404 as 10,404 incidents or outages. These are individual process kills, and the same burst kills many httpd children."
+  - "Calling it long-standing or ongoing. It did not exist before 2005-11-15 and stopped after 2005-12-09 (the period ends 2006-01-01, but December activity ends on the 9th)."
+  - "Assuming the dates are exact. Syslog has no year, and the loader assumes Jun-Dec = 2005."
+  - "Treating the weekly '1.4.1: restart.' lines (syslogd restarts during log rotation, Sundays about 04:0x) as reboots. Only the 'Linux version' boot lines (e.g. 2005-12-06 12:22) are reboots."
+  - "Inventing money, downtime or customer numbers"
+  - "Treating httpd as the cause. It is the process the OOM killer chose, and the logs do not show what consumed the memory."
+not_established:
+  - "Root cause: what consumed the memory (leak, traffic spike or attack, python job). The logs only show which process was killed."
+  - "Whether users saw website or mail outages, or for how long; httpd and sendmail kills suggest degradation, but impact is not logged"
+  - "Whether the 2005-12-06 reboot was a manual fix, and what change ended the episode after 2005-12-09"
+  - "Any cost, revenue, SLA or customer impact"
+  - "Exact year of the timestamps (assumed by the loader)"
+labels_used: "None. Loghub Linux has no labels, and there are no rows in labels for dataset='linux'."
+golden_check:
+  - fact: "OOM kill lines before 2005-11-15 (whole dataset)"
+    golden_value: "0"
+    my_value: "0"
+    agrees: true
+  - fact: "first Out of Memory kill"
+    golden_value: "2005-11-15 04:30"
+    my_value: "2005-11-15 04:30"
+    agrees: true
+  - fact: "OOM kill lines in the period"
+    golden_value: "10404"
+    my_value: "10404 (same with ILIKE '%out of memory%' over the whole dataset, so all lines fall inside the period)"
+    agrees: true
+notes: "Bursts were computed with a 30-minute gap over all OOM lines. python kills ran from 2005-11-17 to 2005-12-06 (19 days). The period holds 14,065 lines in total, of which OOM lines are 74%. A syslog restart line on 2005-12-09 09:43 has no matching 'Linux version' boot line, so a second reboot is not established."

@@ -1,0 +1,93 @@
+id: D-M04
+role: manager
+dataset: bgl
+question: If we can fix only one thing based on August 2005 (2005-08-01 to 2005-09-01), which one and why?
+answer_summary: 'Fix the compute-node kernel terminations (''rts: kernel terminated for reason N'', KERNEL, FATAL, owned by node-platform). The pattern was new in August (first seen 2005-08-13 21:27), and
+  from then on it recurred in 13 bursts over 8 days (13-23 Aug). It hit 2,666 distinct nodes across all 64 racks / 128 midplanes, so it was fleet-wide, not one bad node. Its 11,349 lines are 42% of all
+  labelled alert lines that month (27,113, Loghub label KERNTERM). It is also the top item of the computed priority ranking for the period. A nearly identical bad-message-header family (rts: bad message
+  header, patterns 563-566) appeared on the same days and is likely the same problem. The logs do not show why kernels terminated, and they say nothing about cost, downtime or users affected. The decision
+  is therefore based on recurrence, spread, novelty and alert share.'
+findings:
+- fact: '''rts: kernel terminated for reason N'' (pattern 562, KERNEL, FATAL) is the largest labelled alert category in August 2005: 11,349 lines on 2,666 distinct nodes over 8 days, about 42% of the month''s
+    27,113 alert lines. Next come APPSEV (7,808), KERNMNTF (3,783) and KERNMICRO (1,486).'
+  sql: SELECT b.label, count(*) n, count(DISTINCT l.node) nodes, count(DISTINCT l.ts::date) days FROM logs l JOIN labels b ON b.dataset='bgl' AND b.line_id=l.line_id WHERE l.dataset='bgl' AND l.ts>='2005-08-01'
+    AND l.ts<'2005-09-01' GROUP BY 1 ORDER BY n DESC
+  result: KERNTERM|11349|2666|8; APPSEV|7808|1024|12; KERNMNTF|3783|1024|4; KERNMICRO|1486|957|3; APPUNAV|1024|1024|1; KERNMNT|720|406|5; KERNRTSP|581|566|14; ... KERNPAN|10|10|3; total 27113 alert lines
+  importance: must
+- fact: 'It is new: the pattern''s first line in the whole dataset is 2005-08-13 21:27:41. It had 0 bursts in July. In August it had 13 bursts (gap > 30 min) on 13, 14, 15-16, 17-18, 21 and 23 Aug. It went
+    quiet after 23 Aug, then came back in Sep (1,087 lines), Oct (1,031 lines) and Nov (5,120 lines).'
+  sql: 'SELECT date_trunc(''month'', ts)::date m, count(*) n, count(DISTINCT node) nodes, count(DISTINCT ts::date) days FROM logs WHERE dataset=''bgl'' AND pattern_id=562 GROUP BY 1 ORDER BY 1  -- plus:
+    SELECT first_ts FROM public.patterns WHERE dataset=''bgl'' AND pattern_id=562; bursts table for 562'
+  result: '2005-08|11349|2666|8; 2005-09|1087|1087|2; 2005-10|1031|1025|2; 2005-11|5120|3584|5; first_ts 2005-08-13 21:27:41.205; 13 bursts with start in Aug (#1 08-13 21:27 ... #13 08-23 21:33, 2896 lines/1188
+    nodes)'
+  importance: must
+- fact: 'Fleet-wide, not one node: in August it touched all 64 racks and all 128 midplanes that logged that month, 2,666 distinct nodes, at most 23 lines on any one node. The daily peak was 17 Aug, with
+    3,967 lines on 1,415 nodes.'
+  sql: SELECT count(DISTINCT substr(node,1,3)) racks, count(DISTINCT substr(node,1,6)) midplanes, count(DISTINCT node) nodes, max(c) FROM (SELECT node, count(*) OVER (PARTITION BY node) c FROM logs WHERE
+    dataset='bgl' AND pattern_id=562 AND ts>='2005-08-01' AND ts<'2005-09-01') x
+  result: '64|128|2666|23 (daily: 08-13 768/611, 08-15 2050/1102, 08-16 739/738, 08-17 3967/1415, 08-18 913/780, 08-23 2896/1188)'
+  importance: must
+- fact: 'Owner: component KERNEL belongs to team node-platform (compute-node kernel). The stored judgment rates the pattern a real fault (p_problem 0.91, kind ''system software failure'').'
+  sql: SELECT * FROM ownership WHERE dataset='bgl' AND component='KERNEL'; SELECT p_problem, kind FROM public.pattern_judgments WHERE dataset='bgl' AND pattern_id=562
+  result: bgl,KERNEL,node-platform; p_problem 0.912, kind system software failure
+  importance: must
+- fact: 'Companion family: ''rts: bad message header ...'' (patterns 563/564/565/566, KERNEL FATAL) was also new in August, with 0 July bursts. It fired on the same days, 13-23 Aug, so it is likely the
+    same kernel/RTS problem. This is a hypothesis drawn from co-timing, not proof.'
+  sql: SELECT pattern_id, string_agg(DISTINCT ts::date::varchar, ',') FROM logs WHERE dataset='bgl' AND pattern_id IN (563,564,565,566) AND ts>='2005-08-01' AND ts<'2005-09-01' GROUP BY 1
+  result: 563 days 13,14,15,16,17,18,21,23 Aug (619 lines); 565 13-18,23 Aug (238); 564 (103); 566 (59)
+  importance: should
+- fact: Alternatives and why they rank lower. The node-card discovery errors (patterns 165/166, DISCOVERY, about 9.9k lines and 36-37 bursts) recur more often but also ran in July (21 bursts) and carry
+    no alert labels. The machine-check register dumps (patterns 32-47, about 40-57 bursts each) are diagnostic dumps with 0 alert labels, and they also ran in July. Lustre mount FAILED (609) is a single
+    31 Aug event (2,921 lines on 1,024 nodes). The ciod Error loading/chdir APP lines are job-specific, user-path errors.
+  sql: SELECT p.pattern_id, left(p.template,60), j.p_problem, count(*) FILTER (WHERE b.start_ts>='2005-08-01' AND b.start_ts<'2005-09-01') aug, count(*) FILTER (WHERE b.start_ts>='2005-07-01' AND b.start_ts<'2005-08-01')
+    jul FROM bursts b JOIN public.patterns p USING (dataset,pattern_id) JOIN public.pattern_judgments j USING (dataset,pattern_id) WHERE b.dataset='bgl' AND b.start_ts>='2005-07-01' AND b.start_ts<'2005-09-01'
+    AND j.p_problem>=0.5 GROUP BY 1,2,3 ORDER BY aug DESC LIMIT 15
+  result: '165 node card not fully functional 37 aug/21 jul; 166 36/21; 33 machine check interrupt 26/21; 69 rts panic 24/31; ... 562 kernel terminated 13/0; 478 ciod LOAD_MESSAGE link severed 13/0. Label
+    coverage in Aug: pattern 32/34/35/44 0 labelled lines; 562 11349/11349 labelled'
+  importance: should
+- fact: 'Trap: by raw line volume the month is dominated by other patterns. ciod ''Error loading ... allreduce.rts'' has 20,480 lines in one 40-minute job burst on 12 Aug. idoproxydb ASSERT (MMCS) has 19,320
+    lines in 30 minutes on 3 Aug, with no node. INFO KERNEL ddr corrected errors are 250k+ lines. These are single storms or benign corrected errors, not the thing to fix.'
+  sql: SELECT l.pattern_id, t.template, l.severity, count(*) n, count(DISTINCT l.node), min(l.ts), max(l.ts) FROM logs l JOIN pattern_templates t ON t.dataset='bgl' AND t.pattern_id=l.pattern_id WHERE l.dataset='bgl'
+    AND l.ts>='2005-08-01' AND l.ts<'2005-09-01' AND l.severity IN ('FATAL','FAILURE','SEVERE','ERROR') GROUP BY 1,2,3 ORDER BY n DESC LIMIT 5
+  result: 556 ciod Error loading allreduce.rts|FATAL|20480|1024|08-12 23:20..23:58; 465 idoproxydb ASSERT|ERROR|19320|0|08-03 15:48..16:18; 562 kernel terminated|FATAL|11349|2666|08-13..08-23
+  importance: should
+- fact: '''kernel panic'' (pattern 576) is small: 10 lines on 10 nodes in 5 bursts in August (15, 19 and 23 Aug), labelled KERNPAN. It is a real but minor item, not the top one.'
+  sql: SELECT count(*), count(DISTINCT node) FROM logs WHERE dataset='bgl' AND pattern_id=576 AND ts>='2005-08-01' AND ts<'2005-09-01'
+  result: '10|10 (bursts: 08-15 x2, 08-19, 08-23 x2)'
+  importance: nice
+must_conclude:
+- 'Recommend the compute-node kernel terminations (''rts: kernel terminated for reason N'', KERNEL / node-platform) as the one thing to fix.'
+- 'Justify it with measured facts: new in August (first seen 13 Aug), recurring (13 bursts over 8 days), fleet-wide (2,666 nodes, all 64 racks), and the largest alert category (about 42% of alert lines).'
+- Name the owner team node-platform as accountable, and propose a root-cause investigation (reason codes 1001-1004, what changed around 13 Aug).
+- State that cost, downtime and customer impact are not in the logs; do not quantify them.
+- Distinguish lines from incidents (bursts / distinct nodes, not 11,349 'incidents').
+traps:
+- Picking the ciod 'Error loading allreduce.rts' or idoproxydb ASSERT because they have the most lines (single storms of 20k / 19k lines in under an hour).
+- Picking corrected DDR / CE errors (INFO, most lines and bursts) — they are corrected, informational.
+- Picking the machine-check register dump lines (patterns 32-47) because of high burst counts. They are diagnostic dump lines, carry 0 alert labels and were already present in July.
+- Calling 11,349 lines 11,349 incidents, or calling it one node's problem.
+- Picking 'kernel panic' because it sounds most severe (only 10 lines in August).
+- 'Picking Lustre mount FAILED: one event at month end (31 Aug).'
+- Inventing dollar cost, downtime hours or users affected.
+- Asserting a root cause (e.g. a software upgrade on 13 Aug) as fact.
+not_established:
+- Why kernels terminated. The reason codes 1001-1004 are not explained in the logs.
+- Whether the termination is a cause or a consequence of the job / ciod failures around it.
+- 'Any business impact: cost, downtime, lost jobs or users affected.'
+- Whether a fix would also remove the Sep-Nov recurrences (likely the same pattern, not verified causally).
+labels_used: 'The labels confirm the choice. Every August line of pattern 562 is labelled KERNTERM (11,349 of 11,349), the largest alert category of the month (27,113 alert lines in total). The labels also
+  bound the alternatives: the machine-check dump patterns have 0 labelled lines, and kernel panic (KERNPAN) has only 10.'
+golden_check:
+- fact: kernel panic bursts in August 2005
+  golden_value: '5'
+  my_value: '5 (bursts table; raw logs: 10 lines on 10 nodes on 15, 19, 23 Aug, grouped into 5 >30-min-gap bursts)'
+  agrees: true
+- fact: priority_table top 1 for 2005-08-01..2005-09-01
+  golden_value: kernel terminated
+  my_value: 'rts: kernel terminated for reason N (independent check: largest alert label, new, fleet-wide, p_problem 0.91). priority_table itself was not run (off-limits).'
+  agrees: true
+notes: 'The question is open-ended, but the best-supported answer is the kernel terminations. The node-card DISCOVERY errors (165/166) are a defensible runner-up because they have the most problem bursts.
+  They are chronic, though (also in July), and unlabelled, so they should not win. A good answer may name the bad-message-header family as part of the same item. The ownership table is fictional (data/ownership.csv).
+  The second golden fact is a tool-output check: I verified the substance independently and did not call priority_table.'
+judging: 'The golden top item comes from a tool under test (priority_table); it agrees with the key but is not required by name. Full credit = the new, fleet-wide ''rts: kernel terminated'' problem (node-platform)
+  as the one thing to fix; node-card DISCOVERY errors are an acceptable justified runner-up, not the top.'

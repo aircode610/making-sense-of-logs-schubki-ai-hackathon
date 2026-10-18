@@ -1,0 +1,62 @@
+id: D-X09
+role: engineer
+dataset: ssh
+question: "What happened on SSH connection sshd-16980 on 2017-12-15, step by step? Was it an attack or a real user?"
+answer_summary: "On 2017-12-15, sshd-16980 is one session of 6 lines from 218.17.80.182 for user zachary. At 10:38:55 PAM logged an authentication failure. Two 'Failed password for zachary' lines followed at 10:38:57 and 10:39:03, then 'Accepted password' at 10:39:04 (port 60110) and the session opened in the same second. The session closed at 18:40:58, about 8 h 02 min later. This looks like a real user who mistyped the password, not an attack. The same IP and user log in on 7 days (Dec 11-21). On each of those days the pattern is the same: at most 1-2 failures, then success, then a session lasting hours. The IP never tries any other username. Brute-force connections on this host look different: they target root or invalid users from many IPs and are cut off with 'Too many authentication failures' or a preauth disconnect."
+findings:
+  - fact: "On 2017-12-15, sshd-16980 has 6 lines: auth failure 10:38:55, Failed password 10:38:57, Failed password 10:39:03, Accepted password 10:39:04 (port 60110), session opened 10:39:04, session closed 18:40:58 (all user zachary from 218.17.80.182)"
+    sql: "SELECT line_id, ts, body FROM logs WHERE dataset='ssh' AND request_id='sshd-16980' AND ts >= '2017-12-15' AND ts < '2017-12-16' ORDER BY ts, line_id"
+    result: "line_ids 131633-131637 and 139432; 6 rows as described"
+    importance: must
+  - fact: "The login succeeded after 2 failed passwords, and the session lasted about 8 h 02 min (10:39:04 to 18:40:58)"
+    sql: "SELECT count(*) FROM logs WHERE dataset='ssh' AND request_id='sshd-16980' AND ts >= '2017-12-15' AND ts < '2017-12-16' AND body @@ ts_phrase('failed password')"
+    result: "2"
+    importance: must
+  - fact: "Over the dataset, 218.17.80.182 appears in 20 lines across 7 connections (Dec 11, 12, 13, 14, 15, 19, 21). It is always user zachary, and every connection ends with 'Accepted password'. Each one has at most 2 failed attempts before the login."
+    sql: "SELECT ts, request_id, body FROM logs WHERE dataset='ssh' AND body @@ websearch_to_tsquery('\"218.17.80.182\"') ORDER BY ts LIMIT 40"
+    result: "20 lines, 7 distinct request_ids, first 2017-12-11 16:48:51, last 2017-12-21 14:07:31; 7 Accepted, 7 Failed lines for zachary in total"
+    importance: must
+  - fact: "zachary has 7 session-opened lines and 7 session-closed lines, each session lasting hours (e.g. Dec 11 16:48 to 19:48, Dec 21 14:07 to 23:26). This is a regular working pattern."
+    sql: "SELECT ts, request_id FROM logs WHERE dataset='ssh' AND body LIKE '%session closed for user zachary%' ORDER BY ts LIMIT 20"
+    result: "7 closes: 12-11 19:48:37, 12-12 20:42:02, 12-13 13:06:39, 12-14 21:49:46, 12-15 18:40:58, 12-19 18:00:24, 12-21 23:26:10"
+    importance: should
+  - fact: "PID reuse: request_id sshd-16980 holds 21 lines on 5 different days. The other sessions are unrelated root brute-force attempts from other IPs (2017-12-10 183.62.140.253, 2017-12-12 183.238.178.195, 2017-12-30 139.219.191.138, 2018-01-04 59.63.188.30 with 'Too many authentication failures'). Only the Dec 15 session is the one asked about."
+    sql: "SELECT line_id, ts, body FROM logs WHERE dataset='ssh' AND request_id='sshd-16980' ORDER BY ts, line_id LIMIT 60"
+    result: "21 rows across 5 dates; only the 2017-12-15 rows involve zachary/218.17.80.182"
+    importance: must
+  - fact: "Baseline: the host is dominated by attacks, with 197,587 'Failed password' lines and only 182 'Accepted password' lines in total. A connection that succeeds after 2 failures and stays open for hours is the opposite of the brute-force profile."
+    sql: "SELECT count(*) FROM logs WHERE dataset='ssh' AND body @@ websearch_to_tsquery('\"failed password\"')"
+    result: "197587 (accepted password: 182)"
+    importance: nice
+  - fact: "No other zachary activity: every line that mentions zachary either comes from 218.17.80.182 or is a session open/close line"
+    sql: "SELECT count(*) FROM logs WHERE dataset='ssh' AND body @@ websearch_to_tsquery('zachary') AND body NOT LIKE '%218.17.80.182%' AND body NOT LIKE '%session % for user zachary%'"
+    result: "0"
+    importance: nice
+must_conclude:
+  - "The Dec 15 session (6 lines): 2 failed passwords, then Accepted password for zachary from 218.17.80.182 at 10:39:04, session opened, closed at 18:40."
+  - "Most likely a legitimate user (zachary) who mistyped the password; not an attack (labelled as an inference)"
+  - "Evidence: the same IP and user log in successfully on 7 days with 1-2 typos each time, the sessions last hours, and no other usernames are tried"
+traps:
+  - "sshd-16980 is a reused PID: without the date filter the agent mixes in root brute-force sessions from 4 other IPs (21 lines over 5 days) and may wrongly call it an attack"
+  - "Calling it an attack only because 'Failed password' and 'authentication failure' lines appear"
+  - "Counting the PAM 'authentication failure' line as a third failed password (there are 2 Failed password lines)"
+  - "A failed-then-accepted login could in principle mean credential guessing that succeeded. The repeated daily pattern from one IP and one user argues against that, but it is an inference."
+not_established:
+  - "The logs do not show what zachary did during the session (no command or audit log)"
+  - "The logs cannot prove the person behind 218.17.80.182 is the real owner of the account; a compromised password would look the same"
+  - "The logs do not show whether 218.17.80.182 is a known or corporate address (no geo or asset data); the dataset has no labels"
+labels_used: "None; the ssh dataset has no rows in labels (count 0)."
+golden_check:
+  - fact: "lines of sshd-16980 on 2017-12-15"
+    golden_value: "6"
+    my_value: "6"
+    agrees: true
+  - fact: "failed password lines before the login"
+    golden_value: "2"
+    my_value: "2"
+    agrees: true
+  - fact: "session closed (last line of the session)"
+    golden_value: "2017-12-15 18:40"
+    my_value: "2017-12-15 18:40"
+    agrees: true
+notes: "The 18:40:58 close line is on the same day, so the date filter keeps it (session 10:39:04 to 18:40:58). Brute-force sessions from other days share the PID. The 'real user' verdict is a reasoned hypothesis based on the 7-day recurring pattern, not a label."

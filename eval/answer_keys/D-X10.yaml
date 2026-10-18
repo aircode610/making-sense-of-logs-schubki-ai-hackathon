@@ -1,0 +1,69 @@
+id: D-X10
+role: lead
+dataset: ssh
+question: "How did the 'POSSIBLE BREAK-IN ATTEMPT' warnings on the SSH server trend week over week from 2017-12-11 to 2018-01-08, which team owns them, and what drove any change?"
+answer_summary: "On host LabSZ (sshd, owned by security-ops), 'POSSIBLE BREAK-IN ATTEMPT' lines per Monday-start week were 1,291 (Dec 11), 1,313 (Dec 18), 1,813 (Dec 25) and 14,881 (Jan 1), 19,298 lines over the four weeks. That is flat for two weeks, then about 8x in the last week. The Jan 1 jump comes from a few source IPs. 183.192.189.131 alone produced 8,670 lines, all on 2018-01-03 between 00:57 and 12:36 (58% of the week). 218.65.30.30 produced 4,192 lines on Jan 1-2, and 183.192.189.133 produced 613 lines on Jan 2. Almost all of these are the 'reverse mapping checking getaddrinfo ... failed' variant, which means the client's reverse DNS failed. It does not prove a successful intrusion. The same IPs sent root password-guessing traffic, and no 'Accepted' login from them appears. The Dec 25 week is not comparable, because logging has a gap from Dec 23 10:20 to Dec 29 17:24 (only 9 lines on Dec 26), so that week holds about 2.3 days of data. These counts are lines, not attacks or incidents. Security-ops should block or rate-limit the 183.192.189.0/24 and 218.65.30.0/24 sources first."
+findings:
+  - fact: "Weekly POSSIBLE BREAK-IN ATTEMPT lines (Monday weeks): 12-11 1291, 12-18 1313, 12-25 1813, 01-01 14881 (total 19298 for 12-11..01-08). The partial week 12-04 (only Sunday 12-10) has 108 and is outside the asked window."
+    sql: "SELECT date_trunc('week',ts) w, count(*) FROM logs WHERE dataset='ssh' AND body @@ ts_phrase('possible break-in attempt') GROUP BY 1 ORDER BY 1"
+    result: "2017-12-04|108; 2017-12-11|1291; 2017-12-18|1313; 2017-12-25|1813; 2018-01-01|14881 (a LIKE '%POSSIBLE BREAK-IN ATTEMPT%' cross-check gives identical counts)"
+    importance: must
+  - fact: "Owner: component sshd on dataset ssh is owned by security-ops (also the dataset default row)."
+    sql: "SELECT * FROM ownership WHERE dataset='ssh'"
+    result: "ssh|sshd|security-ops|sshd: authentication, sessions, break-in attempts"
+    importance: must
+  - fact: "Top source IPs in the week of 2018-01-01: 183.192.189.131 8670, 218.65.30.30 4192, 183.192.189.133 613, 218.65.30.123 151, of 96 distinct IPs. The top two give 12862 of 14881 lines (86%)."
+    sql: "SELECT replace(e,'ip:','') ip, count(*) c FROM (SELECT unnest(entities) e FROM logs WHERE dataset='ssh' AND ts>='2018-01-01' AND ts<'2018-01-08' AND body @@ ts_phrase('possible break-in attempt')) t WHERE e LIKE 'ip:%' GROUP BY 1 ORDER BY c DESC LIMIT 4"
+    result: "183.192.189.131|8670; 218.65.30.30|4192; 183.192.189.133|613; 218.65.30.123|151"
+    importance: must
+  - fact: "Daily view: the spike is one day with one source. On 2018-01-03 there were 8724 break-in lines, 8670 of them from 183.192.189.131 between 00:57:50 and 12:36:42 (8206 distinct sshd pids). On Jan 1-2, 218.65.30.30 gave 2052 and 2140 lines. On Jan 4-7 the count fell back to 104-389 per day."
+    sql: "SELECT date_trunc('day',ts)::date d, count(*), count(*) FILTER (WHERE body LIKE '%[183.192.189.131]%') a, count(*) FILTER (WHERE body LIKE '%[218.65.30.30]%') b FROM logs WHERE dataset='ssh' AND ts>='2017-12-25' AND body @@ ts_phrase('possible break-in attempt') GROUP BY 1 ORDER BY 1"
+    result: "12-29 142; 12-30 269; 12-31 1402; 01-01 2149 (b=2052); 01-02 2889 (b=2140); 01-03 8724 (a=8670); 01-04 355; 01-05 271; 01-06 389; 01-07 104"
+    importance: must
+  - fact: "Logging gap: no lines between 2017-12-23 10:20:41 and 2017-12-29 17:24:29, except 9 lines on 2017-12-26 10:55-13:31. The 12-25 week therefore covers about 2.3 days, and its 1813 lines are not comparable to the full weeks."
+    sql: "SELECT date_trunc('day',ts)::date d, count(*) FROM logs WHERE dataset='ssh' AND ts>='2017-12-18' AND ts<'2017-12-30' GROUP BY 1 ORDER BY 1"
+    result: "12-23|2769; 12-26|9; 12-29|1327 (max ts before 12-24 = 12-23 10:20:41; first ts after 12-28 = 12-29 17:24:29)"
+    importance: should
+  - fact: "Nearly all lines are the 'reverse mapping checking getaddrinfo ... failed' variant (14871 of 14881 in the last week). The 'address ... maps to ... but this does not map back' variant was 92 / 388 / 7 / 10 per week."
+    sql: "SELECT date_trunc('week',ts), CASE WHEN body LIKE '%reverse mapping%' THEN 'revmap' WHEN body LIKE '%does not map back%' THEN 'nomapback' END k, count(*) FROM logs WHERE dataset='ssh' AND body @@ ts_phrase('possible break-in attempt') GROUP BY 1,2 ORDER BY 1,2"
+    result: "12-11 revmap 1199 / nomapback 92; 12-18 925/388; 12-25 1806/7; 01-01 14871/10"
+    importance: should
+  - fact: "The driving sources also sent password-guessing traffic, and none of them logged in successfully. Lines from 183.192.189.13x or 218.65.30.x include 15314 'Failed password' and 0 'Accepted'. 183.192.189.131 appears in 35020 lines in total (2017-12-11 17:27 to 2018-01-03 12:36), mostly root auth failures. It was already the #2 break-in IP in the 12-11 week (85 lines)."
+    sql: "SELECT count(*) FILTER (WHERE body LIKE 'Accepted%') acc, count(*) FILTER (WHERE body LIKE 'Failed password%') fp FROM logs WHERE dataset='ssh' AND (body LIKE '%183.192.189.13%' OR body LIKE '%218.65.30.%')"
+    result: "acc=0, fp=15314"
+    importance: should
+  - fact: "Overall log volume also jumped in the Jan 1 week (352870 of 655147 lines), so break-in lines rose together with a general brute-force surge and were not an isolated signal."
+    sql: "SELECT date_trunc('week',ts), count(*) FROM logs WHERE dataset='ssh' GROUP BY 1 ORDER BY 1"
+    result: "12-04 39382; 12-11 172003; 12-18 33988; 12-25 56904; 01-01 352870"
+    importance: nice
+must_conclude:
+  - "Flat at about 1.3k lines/week for Dec 11 and Dec 18, then about 14.9k in the Jan 1 week (roughly 8x higher)."
+  - "Owned by security-ops (sshd on LabSZ)."
+  - "The jump is driven by a few source IPs, mainly 183.192.189.131 (8670 lines, all on 2018-01-03) and 218.65.30.30 (4192 lines, Jan 1-2)."
+  - "Counts are log lines, not incidents or attacks. The warning means reverse DNS failed, not that a login succeeded. None of the driver IPs logged in successfully."
+traps:
+  - "Treating 14881 lines as 14881 break-ins or incidents. They are DNS-mismatch warnings, mostly from 2 sources."
+  - "Reading the Dec 25 week (1813) as a real rise. It contains only about 2.3 days of logs because of the Dec 23-29 gap."
+  - "Including the partial week of 2017-12-04 (108 lines, Sunday 12-10 only) as a full week."
+  - "Claiming the host was compromised. The logs show no Accepted login from the driving IPs."
+  - "Calling this a sustained trend. The Jan 1 week is dominated by a burst of about 12 hours on Jan 3, and Jan 4-7 returns to 104-389 lines per day."
+not_established:
+  - "Whether any attack succeeded beyond what sshd logged, and the attackers' identity or intent. Geolocation of the IPs is not in the logs."
+  - "Why logging stopped from 2017-12-23 to 2017-12-29 (outage, rotation or export gap)."
+  - "Any business impact, downtime or cost."
+  - "Whether the 'POSSIBLE BREAK-IN' warnings themselves reflect malicious intent. They only report a reverse-DNS mismatch."
+labels_used: "None. The ssh dataset has no Loghub labels."
+golden_check:
+  - fact: "break-in attempt lines in the week of 2018-01-01"
+    golden_value: "14881"
+    my_value: "14881"
+    agrees: true
+  - fact: "break-in attempt lines in the week of 2017-12-25"
+    golden_value: "1813"
+    my_value: "1813"
+    agrees: true
+  - fact: "top IP behind the break-in attempt lines in the week of 2018-01-01"
+    golden_value: "183.192.189.131"
+    my_value: "183.192.189.131 (8670 lines)"
+    agrees: true
+notes: "Weeks start Monday (date_trunc('week')). The data ends 2018-01-07 17:22, so the last week is almost complete. ts_phrase and LIKE counts match exactly. The golden facts omit the Dec 23-29 logging gap, which makes the Dec 25 week a partial week."

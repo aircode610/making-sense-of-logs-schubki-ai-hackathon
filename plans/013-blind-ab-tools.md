@@ -42,6 +42,11 @@ where the only difference is the MCP toolset, compared by a blind judge that inv
   (not our MCP tools, not past agent answers / bench results). Output `eval/answer_keys/<id>.yaml`: findings each with
   its SQL + result, what a good answer for the role must conclude, traps, what the logs don't establish, golden-fact
   discrepancies. Human spot-check, then frozen; the compare step grades against the key (replaces per-run investigation).
+- **25 more dev questions (requested by Amirali 2026-10-18):** every dataset ≥ 3 questions (linux 4, healthapp 4,
+  ssh/hdfs/zookeeper/apache 3, otel/openstack 2, bgl 1) and new cases (false premise, one connection / trace timeline,
+  rate vs baseline, periodicity, new pattern, latency, spread over components). Stage 1: one writer agent per dataset
+  drafts question + golden SQL → `eval/new_questions/<dataset>.yaml`; I merge into `dev_questions.yaml` and run
+  `build_golden.py`. Stage 2: fresh context-free agents build their answer keys (same prompt as the first 25).
 - **Questions:** the 25 dev questions (20 BGL / OpenStack + 5 new datasets); arms run interleaved per question.
 
 ## 4. How we check it
@@ -55,7 +60,8 @@ judge investigations against our golden facts. Held-out untouched.
 - Cost: ~25 × (2 agent runs + 1 investigation + 2 comparisons) ≈ 1-2 h wall clock with 4 in parallel.
 
 ## 6. Steps
-- [ ] Answer keys: 25 parallel context-free agents → `eval/answer_keys/`, human spot-check, freeze
+- [x] Answer keys: 25 parallel context-free agents → `eval/answer_keys/`, human spot-check, freeze
+- [x] 25 more questions (writers per dataset) + their answer keys (50 keys, all golden facts agree; judgement calls settled + frozen, H27)
 - [ ] Neutral recipes + `role_tools` parameter; diff of rendered prompts = empty
 - [ ] `sql` judge tool (read-only), investigate + compare agents, blinding + leak scan
 - [ ] Smoke on 2 questions, read transcripts

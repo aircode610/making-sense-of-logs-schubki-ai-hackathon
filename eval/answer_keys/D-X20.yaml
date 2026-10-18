@@ -1,0 +1,66 @@
+id: D-X20
+role: manager
+dataset: zookeeper
+question: "I was told Zookeeper had disk and snapshot problems between 2015-07-29 and 2015-08-26. How serious were the storage-persistence team's issues, and should their fixes come first?"
+answer_summary: "The premise is not supported by the logs. Over the whole dataset (2015-07-29 to 2015-08-25, which the asked window fully covers), the storage-persistence components (FileTxnLog, FileTxnSnapLog, FileSnap, DatadirCleanupManager, SyncRequestProcessor) logged 284 lines, all INFO and zero WARN/ERROR; they are routine snapshotting, snapshot reads, new log files and startup/shutdown messages, and no line mentions disk, fsync, corruption or space. The real problem volume sits with coordination-platform (44,809 WARN + 590 ERROR lines, mostly quorum peer connection breaks and LearnerHandler shutdowns) and to a lesser degree client-connectivity (3,698 WARN + 27 ERROR). Storage-persistence fixes should therefore not come first; priority belongs to coordination-platform's quorum connectivity issues. Lines are not incidents, and the logs say nothing about cost, downtime or customer impact."
+findings:
+  - fact: "storage-persistence components logged 284 lines in the dataset, all INFO; zero WARN or ERROR"
+    sql: "SELECT component, severity, count(*) FROM logs WHERE dataset='zookeeper' AND component IN (SELECT component FROM ownership WHERE dataset='zookeeper' AND team='storage-persistence') GROUP BY 1,2 ORDER BY 3 DESC"
+    result: "DatadirCleanupManager INFO 108; FileTxnSnapLog INFO 65; FileSnap INFO 60; SyncRequestProcessor INFO 26; FileTxnLog INFO 25 (total 284, no WARN/ERROR)"
+    importance: must
+  - fact: "No line in the dataset mentions disk, fsync, corrupt or no space; every line containing 'snap' is INFO"
+    sql: "SELECT count(*) FROM logs WHERE dataset='zookeeper' AND body @@ websearch_to_tsquery('disk OR fsync OR corrupt OR \"no space\"'); SELECT severity, count(*) FROM logs WHERE dataset='zookeeper' AND body ILIKE '%snap%' GROUP BY 1"
+    result: "0 lines; snap lines: INFO 228 only"
+    importance: must
+  - fact: "Storage-persistence messages are routine: 'Snapshotting ... to /var/lib/zookeeper/version-2/snapshot.N' (65), 'Reading snapshot' (60), 'Creating new log file' (25), autopurge config/'Purge task is not scheduled' (36 each x3), SyncRequestProcessor 'Shutting down'/'exited!' (13 each, i.e. process restarts)"
+    sql: "SELECT component, left(regexp_replace(body,'[0-9a-fx]{4,}','N','g'),110) b, count(*), min(ts), max(ts) FROM logs WHERE dataset='zookeeper' AND component IN (SELECT component FROM ownership WHERE dataset='zookeeper' AND team='storage-persistence') GROUP BY 1,2 ORDER BY 3 DESC LIMIT 30"
+    result: "FileTxnSnapLog Snapshotting 62+3; FileSnap Reading snapshot 58+2; DatadirCleanupManager 3 config msgs x36; FileTxnLog Creating new log file 25; SyncRequestProcessor Shutting down 13 / exited 13"
+    importance: should
+  - fact: "Problem-level lines belong to other teams: coordination-platform 44,809 WARN + 590 ERROR; client-connectivity 3,698 WARN + 27 ERROR; storage-persistence 0"
+    sql: "SELECT o.team, l.severity, count(*) FROM logs l LEFT JOIN ownership o ON o.dataset='zookeeper' AND o.component=l.component WHERE l.dataset='zookeeper' GROUP BY 1,2 ORDER BY 1,2"
+    result: "client-connectivity ERROR 27 / INFO 11335 / WARN 3698; coordination-platform ERROR 590 / INFO 13637 / WARN 44809; storage-persistence INFO 284"
+    importance: must
+  - fact: "Dominant WARN/ERROR messages are quorum peer connection churn (QuorumCnxManager Send/RecvWorker ~10.4k each of 4 templates, 'Cannot open channel ... election address' 2,584) and LearnerHandler 'Unexpected exception causing shutdown while sock still open' ERROR 590"
+    sql: "SELECT component, severity, left(regexp_replace(body,'[0-9]+','N','g'),100), count(*) FROM logs WHERE dataset='zookeeper' AND severity IN ('WARN','ERROR') GROUP BY 1,2,3 ORDER BY 4 DESC LIMIT 12"
+    result: "RecvWorker 'Interrupting SendWorker' 10390; SendWorker 'Send worker leaving thread' 10390; RecvWorker 'Connection broken for id N' 10388; SendWorker 'Interrupted while waiting' 10386; 'Cannot open channel' 2584; LearnerHandler ERROR 590"
+    importance: should
+  - fact: "The only IOException lines are client-connectivity (NIOServerCnxn 'ZooKeeperServer not running' 159, 'Connection reset by peer'), not storage"
+    sql: "SELECT severity, component, left(body,140), count(*) FROM logs WHERE dataset='zookeeper' AND (body ILIKE '%disk%' OR body ILIKE '%fsync%' OR body ILIKE '%corrupt%' OR body ILIKE '%space%' OR body ILIKE '%IOException%') GROUP BY 1,2,3 ORDER BY 4 DESC LIMIT 10"
+    result: "all WARN NIOServerCnxn; 159 'ZooKeeperServer not running', rest 'Connection reset by peer'"
+    importance: nice
+  - fact: "Autopurge is disabled (autopurge.purgeInterval set to 0, 'Purge task is not scheduled') at each of the 36 startups; a configuration observation, not a logged failure"
+    sql: "SELECT component, count(*) FROM logs WHERE dataset='zookeeper' AND (body ILIKE 'Starting quorum peer%' OR body ILIKE 'Reading configuration from%') GROUP BY 1"
+    result: "QuorumPeerMain 36, QuorumPeerConfig 36 (matches 36 x 'Purge task is not scheduled')"
+    importance: nice
+must_conclude:
+  - "The premise is false/unsupported: storage-persistence had 0 WARN/ERROR lines (284 INFO only) and no disk/fsync/corruption/space messages"
+  - "Snapshot lines are routine INFO activity, not problems"
+  - "Storage-persistence fixes should not come first; coordination-platform (quorum connection breaks, LearnerHandler errors) carries the problem volume"
+  - "No money, downtime or customer impact can be stated from these logs"
+traps:
+  - "Treating the 'Snapshotting' / 'Reading snapshot' INFO lines as snapshot problems because the question says so"
+  - "Treating 'SyncRequestProcessor exited!' / 'Shutting down' as storage failures; they accompany process restarts"
+  - "Counting the NIOServerCnxn java.io.IOException lines as disk I/O errors; they are client socket closes"
+  - "Reading 'Purge task is not scheduled' as a fault and claiming disk fill-up; no space errors are logged"
+  - "Presenting WARN line counts (e.g. 44,809) as incident counts"
+  - "Inventing cost/downtime/customer impact for a manager answer"
+not_established:
+  - "Disk usage or whether the data directory grew dangerously with autopurge off (no disk-space metrics or errors logged)"
+  - "Root cause of the 36 restarts (operator restarts vs crashes)"
+  - "Any business impact: cost, downtime, affected customers"
+  - "Whether other ensemble members (only one member's log) had storage issues"
+labels_used: "None: the labels table has 0 rows for zookeeper (Loghub provides no labels for this dataset)."
+golden_check:
+  - fact: "WARN/ERROR lines from storage-persistence components"
+    golden_value: "0"
+    my_value: "0"
+    agrees: true
+  - fact: "all lines from storage-persistence components"
+    golden_value: "284"
+    my_value: "284"
+    agrees: true
+  - fact: "lines mentioning disk / fsync / corrupt / no space"
+    golden_value: "0"
+    my_value: "0"
+    agrees: true
+notes: "The asked window 2015-07-29..2015-08-26 covers the entire dataset (first 2015-07-29 17:41, last 2015-08-25 11:26), so whole-dataset counts equal window counts. Ownership: storage-persistence = FileTxnLog, FileTxnSnapLog, FileSnap, DatadirCleanupManager, SyncRequestProcessor. Storage activity occurs on 9 days, clustered around restarts."
