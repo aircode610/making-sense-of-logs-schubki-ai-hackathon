@@ -14,4 +14,4 @@ if [ "${1:-}" = "--skip-checks" ]; then skip=1; shift; fi
 [ "$skip" = 1 ] && exit 0
 "${PY[@]}" bench/check_counts.py
 "${PY[@]}" bench/check_patterns.py
-"${PY[@]}" bench/check_tools.py
+LOGS_DATASET="*" "${PY[@]}" bench/check_tools.py

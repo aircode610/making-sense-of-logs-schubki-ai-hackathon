@@ -19,15 +19,16 @@ import remote
 import search
 import semantic
 import session
+import setup
 import terms
 import timeline
 import workspace
 
-from core import field_guide, pinned
+from core import active, field_guide, need_dataset, single
 
 INSTRUCTIONS = """Log investigation tools over SereneDB (full-text, inverted indexes, SQL analytics, AI functions).
 
-Field guide: the loaded datasets (each has its own time span: "now" = its last line) and what to pass for each filter:
+{setup}Field guide: the loaded datasets (each has its own time span: "now" = its last line) and what to pass for each filter:
 {guide}
 
 How to investigate (dig until the evidence answers the question, then stop):
@@ -56,13 +57,23 @@ Finish every answer the same way: after writing your answer, call session_report
 question and your final answer, then end your reply with the link it returns ("See every step and verify each number:
 <url>"). The page shows the session's tool calls and re-runs their queries to verify each number."""
 
-if pinned():  # one user's own logs (plan 014): no choosing between datasets
-    INSTRUCTIONS = INSTRUCTIONS.replace(
+SETUP = """Setup and datasets (plan 016): the tools work on ONE dataset at a time, the active one; there is no
+dataset parameter. setup_status shows the database, the loaded datasets and the active one. Nothing loaded →
+load_logs(source='bgl') and load_logs(source='openstack') (the base corpus: BGL for search and trends, OpenStack for
+counts and latency) or load_logs(source='<path to the user's log file>'); a finished load becomes the active dataset.
+use_dataset(name) switches (e.g. whole-corpus counts: one call per dataset, reported together).
+
+"""
+if single():  # the shipped mode (plan 016): one active dataset, switchable at run time
+    INSTRUCTIONS = INSTRUCTIONS.replace("{setup}", SETUP).replace(
         "Field guide: the loaded datasets (each has its own time span: \"now\" = its last line) and what to pass for each filter:",
-        "This server holds ONE log dataset (every tool works on it; there is no dataset parameter). Field guide: its time "
-        "span (\"now\" = its last line) and what to pass for each filter:").replace(
-        "describe_corpus says what each dataset is", "describe_corpus says what the dataset is")
-mcp = FastMCP("logs", log_level="WARNING", instructions=INSTRUCTIONS.format(guide=field_guide()))
+        "Field guide of the active dataset at start (its time span: \"now\" = its last line; use_dataset / load_logs "
+        "return the guide of a new one) and what to pass for each filter:").replace(
+        "describe_corpus says what each dataset is", "describe_corpus says what the active dataset is")
+else:
+    INSTRUCTIONS = INSTRUCTIONS.replace("{setup}", "")
+mcp = FastMCP("logs", log_level="WARNING",
+              instructions=INSTRUCTIONS.format(guide=field_guide() or "(nothing loaded yet: see setup_status)"))
 
 READ_ONLY = {"readOnlyHint": True, "destructiveHint": False, "idempotentHint": True, "openWorldHint": False}
 
@@ -71,6 +82,10 @@ REMOTE = {**READ_ONLY, "openWorldHint": True}
 
 # (function, title, annotations): every tool is a fixed, parameterized query; the LLM fills typed fields only.
 SPEC = [
+    (setup.setup_status, "Setup and loaded datasets", READ_ONLY),
+    (setup.load_logs, "Load logs (base corpus or a file)", WRITES),
+    (setup.use_dataset, "Switch the active dataset", {**WRITES, "readOnlyHint": False}),
+    (setup.remove_dataset, "Remove a dataset", {**WRITES, "destructiveHint": True, "idempotentHint": False}),
     (discover.describe_corpus, "What is loaded", READ_ONLY),
     (discover.list_values, "Valid filter values", READ_ONLY),
     (discover.suggest_terms, "Spelling suggestions", READ_ONLY),
@@ -115,19 +130,20 @@ SPEC = [
     (remote.remote_search, "Remote data: search", REMOTE),
     (remote.remote_index, "Remote data: build an index", {**REMOTE, "readOnlyHint": False}),
 ]
-PINNED_SKIP = {"remote_describe", "remote_count_by", "remote_search", "remote_index"}  # other data than the user's
+SINGLE_SKIP = {"remote_describe", "remote_count_by", "remote_search", "remote_index"}  # other data than the user's
+SETUP_TOOLS = {"setup_status", "load_logs", "use_dataset", "remove_dataset"}
 
 
 def pin(fn):
-    """Pinned server (LOGS_DATASET, plan 014): the same tool without its `dataset` parameter, always called with the
-    pinned dataset. Description text that tells the model to pick a dataset is left as is (harmless: one choice)."""
+    """Single-dataset server (plan 014 / 016): the same tool without its `dataset` parameter, called with the ACTIVE
+    dataset at call time (it changes with load_logs / use_dataset)."""
     sig = inspect.signature(fn, eval_str=True)
     if "dataset" not in sig.parameters:
         return fn
 
     @functools.wraps(fn)
     def wrapper(*args, **kwargs):
-        kwargs["dataset"] = pinned()
+        kwargs["dataset"] = need_dataset()
         return fn(*args, **kwargs)
     wrapper.__signature__ = sig.replace(parameters=[p for n, p in sig.parameters.items() if n != "dataset"])
     del wrapper.__wrapped__                     # FastMCP must read __signature__, not the original
@@ -135,7 +151,10 @@ def pin(fn):
     return wrapper
 
 
-SPEC = [(pin(fn) if pinned() else fn, t, a) for fn, t, a in SPEC if not (pinned() and fn.__name__ in PINNED_SKIP)]
+if single():
+    SPEC = [(pin(fn), t, a) for fn, t, a in SPEC if fn.__name__ not in SINGLE_SKIP]
+else:  # multi-dataset server (LOGS_DATASET='*'): loading / switching are CLI work there
+    SPEC = [(fn, t, a) for fn, t, a in SPEC if fn.__name__ not in SETUP_TOOLS - {"setup_status"}]
 # Plan 015: every tool call is recorded for the session report; session_report itself is not recorded.
 SPEC = [(session.record(fn), t, a) for fn, t, a in SPEC] + [(session.session_report, "Show the session report", READ_ONLY)]
 TOOLS = {fn.__name__: fn for fn, _, _ in SPEC}

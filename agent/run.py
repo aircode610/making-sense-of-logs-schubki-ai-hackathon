@@ -31,8 +31,10 @@ from langsmith.run_helpers import get_current_run_tree
 from agent.card import render
 from agent.graph import build_baseline, build_graph, parse_envelope
 
+# Multi-dataset server (LOGS_DATASET='*': every tool takes `dataset`; plan 016 made single-dataset the default)
 MCP = {"logs": {"transport": "stdio", "command": str(ROOT / ".venv/bin/python"),
-                "args": [str(ROOT / "mcp_server/server.py")], "cwd": str(ROOT)}}
+                "args": [str(ROOT / "mcp_server/server.py")], "cwd": str(ROOT),
+                "env": {**os.environ, "LOGS_DATASET": "*"}}}
 
 
 def mcp_config(dataset: str | None = None) -> dict:

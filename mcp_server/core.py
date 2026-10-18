@@ -8,7 +8,6 @@ import json
 import os
 import time
 from datetime import datetime
-from functools import lru_cache
 from typing import Annotated, Literal, Optional
 
 import psycopg
@@ -62,21 +61,81 @@ def execute(sql: str, params: Optional[dict] = None) -> None:
 # ---------------------------------------------------------------- dataset registry (plan 011: nothing dataset-specific
 # in tool code; names, components, severities and teams come from the loaded data, so a new dataset needs no change here)
 
+# Plan 016: the server works on ONE dataset at a time (the user's own logs), chosen at run time: LOGS_DATASET (or the
+# first loaded dataset) at start, then load_logs / use_dataset switch it. Tools have no `dataset` parameter; the
+# wrapper in server.py passes the active one. LOGS_DATASET='*' = the multi-dataset server (every tool takes `dataset`;
+# kept for the eval harness / comparisons, plan 011-013).
+_active: Optional[str] = None
+_reg_cache: Optional[dict] = None
+
+
+def single() -> bool:
+    """True = one active dataset, no `dataset` parameter (the shipped mode); False = LOGS_DATASET='*'."""
+    return os.environ.get("LOGS_DATASET") != "*"
+
+
+def active() -> Optional[str]:
+    """The dataset every tool works on (None = nothing loaded yet: tools ask to load first)."""
+    global _active
+    if not single():
+        return None
+    if _active is None:
+        loaded = _registry_all_cached()
+        want = os.environ.get("LOGS_DATASET")
+        _active = want if want in loaded else next(iter(loaded), None)
+    return _active
+
+
+def set_active(dataset: Optional[str]) -> None:
+    global _active
+    _active = dataset
+
+
 def pinned() -> Optional[str]:
-    """LOGS_DATASET=<name> pins the server to one dataset (plan 014): the real use case is one user's own logs, so the
-    model never chooses a dataset. Tools lose their `dataset` parameter and every query is filtered to it."""
-    return os.environ.get("LOGS_DATASET") or None
+    """Plan 014 name, kept for callers: the active dataset in single-dataset mode."""
+    return active()
 
 
-@lru_cache(maxsize=1)
+def refresh() -> None:
+    """Re-read the dataset registry (after load_logs / remove_dataset); keeps the active dataset if it still exists."""
+    global _reg_cache, _active
+    _reg_cache = None
+    if _active is not None and _active not in _registry_all_cached():
+        _active = None
+
+
+def _registry_all_cached() -> dict:
+    global _reg_cache
+    if _reg_cache is None:
+        try:
+            _reg_cache = _registry_all()
+        except psycopg.errors.UndefinedTable:  # an empty database: no schema yet (load_logs creates it)
+            _reg_cache = {}
+    return _reg_cache
+
+
 def registry() -> dict:
-    """The loaded datasets (only the pinned one when LOGS_DATASET is set)."""
-    reg = _registry_all()
-    if pinned():
-        if pinned() not in reg:
-            raise ValueError(f"LOGS_DATASET={pinned()!r} is not loaded; loaded: {', '.join(reg)}")
-        return {pinned(): reg[pinned()]}
+    """The loaded datasets; in single-dataset mode only the active one ({} before anything is loaded)."""
+    reg = _registry_all_cached()
+    if single():
+        a = active()
+        return {a: reg[a]} if a in reg else {}
     return reg
+
+
+def loaded_datasets() -> dict:
+    """Every loaded dataset (for setup_status / use_dataset), whatever the mode."""
+    return _registry_all_cached()
+
+
+def need_dataset() -> str:
+    """The active dataset, or a clear error telling the client how to get one."""
+    a = active()
+    if a is None:
+        names = ", ".join(_registry_all_cached()) or "none"
+        raise ValueError("No dataset is loaded yet. Call load_logs(source='bgl') and load_logs(source='openstack') for the "
+                         "base corpus, or load_logs(source='/path/to/your.log'); loaded: " + names)
+    return a
 
 
 def _registry_all() -> dict:
@@ -220,7 +279,9 @@ def check_dataset(dataset: Optional[str]) -> Optional[str]:
 # per concept, written once and reused by every tool, with the per-dataset meaning and real example values from the
 # registry, so the model knows what to pass for the dataset it is working on.
 
-DatasetName = Literal[dataset_names()]  # JSON-schema enum of the datasets loaded when the server started
+# JSON-schema enum of the datasets loaded at start (multi-dataset mode only; in the shipped single-dataset mode the
+# parameter is removed from every tool and the datasets can change while the server runs)
+DatasetName = str if single() else Literal[dataset_names()]
 _DS_HELP = "Dataset (log source); see the field guide."
 Dataset = Annotated[DatasetName, Field(description=_DS_HELP)]
 DatasetOpt = Annotated[Optional[DatasetName], Field(description=_DS_HELP + " Omit to cover all datasets.")]
