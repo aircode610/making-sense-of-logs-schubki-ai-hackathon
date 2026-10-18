@@ -1,7 +1,9 @@
 # Dev question set (plan 009). Written by Claude after seeing the data, so for development only; the honest test is the
 # human-written private question set (see docs, same format). BGL questions use the tune part only (< 2005-12-05).
 # golden[].sql is the hand-written reference query; eval/build_golden.py runs it once and stores `value`.
-# match: number (default) | date (YYYY-MM-DD HH:MM prefix) | text. must_mention: strings the answer must contain.
+# match: number (default) | date (YYYY-MM-DD HH:MM prefix) | text | order (E6, plan 010: hand-picked phrases of the
+#   computed top items, in rank order; `tool` + `args` = the call build_golden.py re-runs to verify them).
+# must_mention: strings the answer must contain; must_not: strings it must not contain outside its unknowns.
 # topic: questions sharing a topic are the same subject asked by different roles (E4 role distinctness).
 
 - id: D-E01
@@ -194,6 +196,10 @@
   - fact: bursts of 'machine check interrupt' started in October 2005
     sql: SELECT count(*) FROM bursts b JOIN patterns p USING (dataset, pattern_id) WHERE b.dataset='bgl' AND p.template='machine check interrupt' AND b.start_ts >= '2005-10-01' AND b.start_ts < '2005-11-01'
     value: 34
+  - fact: distinct nodes with 'machine check interrupt' in October 2005
+    sql: SELECT count(DISTINCT l.node) FROM logs l JOIN patterns p ON p.dataset=l.dataset AND p.pattern_id=l.pattern_id WHERE l.dataset='bgl' AND p.template='machine check interrupt' AND l.ts >= '2005-10-01'
+      AND l.ts < '2005-11-01'
+    value: 34
   must_mention:
   - node-platform
   required_tools:
@@ -261,9 +267,14 @@
   dataset: bgl
   question: Which recurring problems got worse in October 2005 (2005-10-01 to 2005-11-01) compared with September, and who owns them?
   golden:
-  - fact: bursts of 'machine check interrupt' in October 2005
-    sql: SELECT count(*) FROM bursts b JOIN patterns p USING (dataset, pattern_id) WHERE b.dataset='bgl' AND p.template='machine check interrupt' AND b.start_ts >= '2005-10-01' AND b.start_ts < '2005-11-01'
-    value: 34
+  - fact: bursts of 'Kill job <N> timed out. Block freed.' in October 2005 (largest growth)
+    sql: SELECT count(*) FROM bursts b JOIN patterns p USING (dataset, pattern_id) WHERE b.dataset='bgl' AND p.template='Kill job <N> timed out. Block freed.' AND b.start_ts >= '2005-10-01' AND b.start_ts
+      < '2005-11-01'
+    value: 44
+  - fact: same pattern's bursts in the previous period of equal length (2005-08-31 to 2005-10-01)
+    sql: SELECT count(*) FROM bursts b JOIN patterns p USING (dataset, pattern_id) WHERE b.dataset='bgl' AND p.template='Kill job <N> timed out. Block freed.' AND b.start_ts >= '2005-08-31' AND b.start_ts
+      < '2005-10-01'
+    value: 29
   must_mention:
   - node-platform
   required_tools:
@@ -284,6 +295,17 @@
     sql: 'SELECT count(DISTINCT l.node) FROM logs l JOIN patterns p ON p.dataset=l.dataset AND p.pattern_id=l.pattern_id WHERE l.dataset=''bgl'' AND p.template=''ciod: Error reading message prefix on CioStream
       socket to <N>, Link has been severed'' AND l.ts >= ''2005-11-01'' AND l.ts < ''2005-11-29'''
     value: 1024
+  - fact: priority_table top 3 for 2005-11-01..2005-11-29, in computed order
+    match: order
+    tool: priority_table
+    args:
+      dataset: bgl
+      start: '2005-11-01'
+      end: '2005-11-29'
+    value:
+    - Link has been severed
+    - kernel terminated
+    - rts panic
   must_mention:
   - hpc-workloads
   must_not:
@@ -304,6 +326,17 @@
   - fact: bursts of 'machine check interrupt' in October 2005
     sql: SELECT count(*) FROM bursts b JOIN patterns p USING (dataset, pattern_id) WHERE b.dataset='bgl' AND p.template='machine check interrupt' AND b.start_ts >= '2005-10-01' AND b.start_ts < '2005-11-01'
     value: 34
+  - fact: priority_table top 3 for 2005-10-01..2005-11-01, in computed order
+    match: order
+    tool: priority_table
+    args:
+      dataset: bgl
+      start: '2005-10-01'
+      end: '2005-11-01'
+    value:
+    - DDR
+    - EDRAM
+    - major internal error
   must_mention:
   - node-platform
   must_not:
@@ -323,6 +356,22 @@
   - fact: BGL log lines owned by node-platform in September 2005
     sql: SELECT count(*) FROM logs l JOIN ownership o ON o.dataset=l.dataset AND o.component=l.component WHERE l.dataset='bgl' AND o.team='node-platform' AND l.ts >= '2005-09-01' AND l.ts < '2005-10-01'
     value: 83298
+  - fact: bursts of node-platform problem patterns (Jev filter) in September 2005
+    sql: SELECT count(*) FROM bursts b JOIN patterns p ON p.dataset=b.dataset AND p.pattern_id=b.pattern_id JOIN ownership o ON o.dataset=p.dataset AND o.component=p.component JOIN pattern_judgments j ON
+      j.dataset=p.dataset AND j.pattern_id=p.pattern_id WHERE b.dataset='bgl' AND o.team='node-platform' AND b.start_ts >= '2005-09-01' AND b.start_ts < '2005-10-01' AND j.p_fault * (1 - j.p_dump) >= 0.5
+      AND p.pattern_id IN (SELECT DISTINCT pattern_id FROM logs WHERE dataset='bgl' AND ts >= '2005-09-01' AND ts < '2005-10-01' AND severity IN ('FATAL','FAILURE','SEVERE','ERROR','CRITICAL'))
+    value: 268
+  - fact: priority_table top 3 for 2005-09-01..2005-10-01, in computed order
+    match: order
+    tool: priority_table
+    args:
+      dataset: bgl
+      start: '2005-09-01'
+      end: '2005-10-01'
+    value:
+    - Lustre
+    - rts panic
+    - Link has
   must_mention:
   - node-platform
   must_not:
@@ -342,6 +391,15 @@
   - fact: kernel panic bursts in August 2005
     sql: SELECT count(*) FROM bursts b JOIN patterns p USING (dataset, pattern_id) WHERE b.dataset='bgl' AND p.template='kernel panic' AND b.start_ts >= '2005-08-01' AND b.start_ts < '2005-09-01'
     value: 5
+  - fact: priority_table top 1 for 2005-08-01..2005-09-01, in computed order
+    match: order
+    tool: priority_table
+    args:
+      dataset: bgl
+      start: '2005-08-01'
+      end: '2005-09-01'
+    value:
+    - kernel terminated
   must_not:
   - $
   - revenue
@@ -377,6 +435,9 @@
   - fact: FATAL lines in November 2005 (to 11-29)
     sql: SELECT count(*) FROM logs WHERE dataset='bgl' AND severity='FATAL' AND ts >= '2005-11-01' AND ts < '2005-11-29'
     value: 42801
+  - fact: FATAL lines in September 2005
+    sql: SELECT count(*) FROM logs WHERE dataset='bgl' AND severity='FATAL' AND ts >= '2005-09-01' AND ts < '2005-10-01'
+    value: 81844
   must_not:
   - $
   - revenue

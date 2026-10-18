@@ -2,7 +2,8 @@
 output; sees the question, the role's rubric and the run's evidence (SQL + results); never told which system wrote the
 answer. Every score comes with written reasons (stored as LangSmith feedback comments).
 
-- claim_support: each sentence → supported / unsupported / not a factual claim, against that run's evidence (E2c, E3)
+- claim_support: each sentence → supported / unsupported / not a factual claim, against that run's evidence (E2c, E3);
+  the judge sees every tool result in full, exactly what the composer saw (plan 010)
 - rubric: role-specific 1-5 scales with anchors (Q) + causes stated as fact + invented impact (E3, E5)
 - pairwise: which answer serves the role better; asked in both orders, only consistent wins count (Q)
 """
@@ -75,7 +76,7 @@ async def claim_support(question: str, role: str, answer: str, ledger: dict) -> 
            "and its results) the system gathered. Split the answer into its factual sentences or clauses and judge each. "
            "Be strict with numbers: a number is supported only if the same value appears in the evidence (a rounded or "
            "derived value is unsupported). Do not use outside knowledge.")
-    msg = f"Role: {role}\nQuestion: {question}\n\nEVIDENCE (JSON):\n{ledger_json(ledger, max_rows=8)}\n\nANSWER:\n{answer}"
+    msg = f"Role: {role}\nQuestion: {question}\n\nEVIDENCE (JSON):\n{ledger_json(ledger)}\n\nANSWER:\n{answer}"
     r = await _model().with_structured_output(ClaimReport, method="json_schema").ainvoke([SystemMessage(sys), HumanMessage(msg)])
     sup = sum(c.verdict == "supported" for c in r.claims)
     uns = [c for c in r.claims if c.verdict == "unsupported"]

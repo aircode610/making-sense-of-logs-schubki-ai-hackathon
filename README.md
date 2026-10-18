@@ -97,29 +97,30 @@ Each `gather_<role>` is a prebuilt ReAct agent (LangChain `create_agent`, the su
   (question, git sha, route + Jev probabilities, evidence ids, numbers verified, confidence, revisions, latency).
 
 ## Evaluation (ours vs the reference ReAct agent with the same tools)
-`.venv/bin/python -m eval.run_eval` runs both systems on 18 dev questions (6 per role) as LangSmith experiments, with
-deterministic metrics (golden facts from hand-checked SQL, numbers found in the evidence, tool use, forbidden claims,
-cost) and an Opus judge (claim support against the evidence, role rubric, pairwise in both orders). Details: `docs/EVAL.md`;
-latest report: `eval/results/20261017-174933.md`.
+`.venv/bin/python -m eval.run_eval` runs both systems on 20 dev questions (8 engineer, 6 lead, 6 manager) as LangSmith
+experiments, with deterministic metrics (golden facts from hand-checked SQL incl. the manager's computed ranking order,
+numbers found in the evidence, tool use, forbidden claims, cost) and an Opus judge (claim support against the full
+evidence, role rubric, pairwise in both orders). A failed run scores 0. Details and the noise floor: `docs/EVAL.md`;
+latest reports: ours ×3 `eval/results/20261018-025819.md`, baseline (re-judged) `eval/results/20261018-023346.md`.
 
-| Metric (18 dev questions, 6 per role) | ours | baseline |
+| Metric (dev questions; ours = mean of 3 runs) | ours | baseline |
 |---|---|---|
-| E1 golden facts in the answer | **0.79** | 0.59 |
-| E2a numbers found in the run's own tool results | **0.99** | 0.85 |
+| E1 golden facts in the answer (± 0.05 run-to-run) | **0.85** | 0.69 |
+| E2a numbers found in the run's own tool results | **1.00** | 0.85 |
 | E2b numbers found in the result the fact cites (ours) | **1.00** | — |
-| E2c claims supported by the evidence (judge) | **0.89** | 0.59 |
-| E3 causes stated as fact, per answer (judge) ↓ | **0.11** | 0.39 |
+| E2c claims supported by the evidence (judge) | **0.96** | 0.71 |
+| E3 causes stated as fact, per answer (judge) ↓ | **0.07** | 0.39 |
 | E3 states what the logs cannot establish | **1.00** | 0.11 |
-| E5 invented money / downtime / impact (regex + judge) | 0 | 0 |
+| E5 invented money / downtime / impact (regex + judge + must_not) | 0 | 0 |
 | E7 required tools called | **1.00** | 0.83 |
-| Q rubric mean 1-5 (judge) | **4.53** | 3.91 |
-| Q role fit 1-5 (judge) | **4.83** | 4.17 |
-| Q next-step specificity 1-5 (judge) | **4.28** | 2.56 |
-| Q pairwise, both orders, consistent wins | **10** | 4 (4 inconsistent) |
+| Q rubric mean 1-5 (judge) | **4.54** | 3.96 |
+| Q role fit 1-5 (judge) | **4.83** | 4.11 |
+| Q next-step specificity 1-5 (judge) | **4.35** | 2.61 |
+| Q pairwise, both orders, consistent wins | **14** | 2 (2 inconsistent) |
 | E4 evidence overlap between roles on the same topic ↓ | **0.02** | 0.04 |
-| E4 tool overlap between roles on the same topic ↓ | 0.39 | **0.28** |
-| E8 seconds per answer ↓ | 34 | **13** |
-| E8 input / output tokens ↓ | 54k / 4.8k | **33k / 1.6k** |
+| E4 tool overlap between roles on the same topic ↓ | 0.31 | **0.28** |
+| E8 seconds per answer (of which inside tools) ↓ | 34 (0.3) | **13** (0.2) |
+| E8 input / output tokens ↓ | 65k / 4.9k | **33k / 1.6k** |
 
 Dev questions were written by us after seeing the data; a separate human-written private question set exists (its
 runner prints aggregates only).

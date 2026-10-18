@@ -2,7 +2,7 @@
 
 One run = {question (yaml entry), kind, role, text, card?, check?, ledger, tools_used, elapsed_s, tokens_in, tokens_out}.
 `text` is the answer as a reader sees it (our card rendered without the computed-confidence line and evidence appendix;
-the baseline's free text), so E1 / E2a / E5 compare like with like.
+the baseline's free text), so E1 / E2a / E5 compare like with like. A run that errored scores 0 on every quality metric (`failed_run`, plan 010).
 """
 import re
 
@@ -24,13 +24,22 @@ def _numbers(text: str) -> set[float]:
     return {_to_float(m.group())[0] for m in NUM.finditer(DATE.sub(" ", text))}
 
 
-def golden_hits(q: dict, text: str) -> tuple[int, int, list[str]]:
-    """E1: how many golden facts appear in the answer (numbers exactly, dates as 'YYYY-MM-DD HH:MM' text)."""
+def in_order(phrases: list[str], text: str) -> bool:
+    """Every phrase present (case-insensitive) and their first occurrences in the given order."""
+    pos = [text.lower().find(p.lower()) for p in phrases]
+    return -1 not in pos and pos == sorted(pos)
+
+
+def golden_hits(q: dict, text: str, ranked_text: str | None = None) -> tuple[int, int, list[str]]:
+    """E1: how many golden facts appear in the answer (numbers exactly, dates as 'YYYY-MM-DD HH:MM' text, ranking
+    order as phrases in order: E6, checked on the ranked section when the answer has one)."""
     nums, flat, miss = _numbers(text), text.replace("T", " "), []
     hits = 0
     for g in q.get("golden", []):
         v = g["value"]
-        if g.get("match") == "date":
+        if g.get("match") == "order":
+            ok = in_order(v, ranked_text or text)
+        elif g.get("match") == "date":
             ok = str(v) in flat
         elif g.get("match") == "text":
             ok = str(v).lower() in text.lower()
@@ -51,15 +60,24 @@ def ledger_grounding(text: str, ledger: dict) -> tuple[int, int, list[str]]:
     return n - len(bad), n, bad
 
 
+def _claims_text(run: dict) -> str:
+    """The answer without the parts that say what the logs do NOT show (our card's unknowns; baseline: such lines)."""
+    if run.get("card"):
+        return answer_text_from_card({**run["card"], "unknowns": []})
+    return "\n".join(l for l in run["text"].splitlines()
+                     if not re.search(r"not (?:in|available|captured|recorded|established)|unknown|can(?:no|')t (?:tell|show|establish)", l, re.I))
+
+
 def forbidden_claims(run: dict) -> list[str]:
     """E5: invented money / downtime / customer impact outside the 'unknowns' (our card) or outside lines that say the
     logs do not contain it (baseline free text)."""
-    if run.get("card"):
-        text = answer_text_from_card({**run["card"], "unknowns": []})
-    else:
-        text = "\n".join(l for l in run["text"].splitlines()
-                         if not re.search(r"not (?:in|available|captured|recorded|established)|unknown|can(?:no|')t (?:tell|show|establish)", l, re.I))
-    return sorted({m.group() for m in FORBIDDEN.finditer(text)})
+    return sorted({m.group() for m in FORBIDDEN.finditer(_claims_text(run))})
+
+
+def must_not_hits(q: dict, run: dict) -> list[str]:
+    """E5: the question's must_not terms found in the answer, same exclusion of 'not in the logs' parts."""
+    text = _claims_text(run).lower()
+    return [t for t in q.get("must_not", []) if t.lower() in text]
 
 
 def mentions(q: dict, text: str) -> tuple[int, int]:
@@ -85,9 +103,31 @@ def tool_selection(q: dict, run: dict) -> dict:
             "tool_calls": len(used)}
 
 
+def tool_seconds(ledger: dict) -> float:
+    """Seconds spent inside the tools (server-side `elapsed_ms` of every distinct result: DB + Python, no transport)."""
+    return round(sum(ev.get("elapsed_ms") or 0 for ev in ledger.values()) / 1000, 2)
+
+
+def failed_run(q: dict, kind: str, error: str) -> dict:
+    """A run that errored or returned no answer: 0 on every quality metric, so a change that breaks questions can
+    never raise a mean by dropping them."""
+    return {"id": q["id"], "role": q["role"], "kind": kind, "error": error,
+            "E1_correct": 0.0 if q.get("golden") else None, "E1_missed": ["(run failed)"],
+            "E2a_ledger_grounded": 0.0, "E2a_numbers": 0, "E2a_unverified": [],
+            "E2b_citation_grounded": 0.0 if kind == "ours" else None,
+            "E3_separation": {"facts": False, "hypotheses_labelled": False, "unknowns": False},
+            "E5_forbidden": [], "E5_must_not": [], "mentions": 0.0 if q.get("must_mention") else None,
+            "E7_required_tools": False, "E7_first_tool": False, "E8_tool_calls": 0, "E8_elapsed_s": None,
+            "E8_tool_s": None, "E8_other_s": None, "E8_tokens_in": None, "E8_tokens_out": None,
+            "judge": {k: {"score": 0.0, "comment": "run failed"} for k in
+                      ("E2c_claim_support", "Q_rubric_mean", "Q_role_fit", "Q_next_step")}}
+
+
 def score_run(q: dict, run: dict) -> dict:
     text = run["text"]
-    gh, gn, gmiss = golden_hits(q, text)
+    card = run.get("card") or {}
+    ranked = "\n".join(f"{r['problem']} {r['basis']}" for r in card.get("ranked", [])) or None
+    gh, gn, gmiss = golden_hits(q, text, ranked)
     lv, ln, lbad = ledger_grounding(text, run.get("ledger", {}))
     mh, mn = mentions(q, text)
     sel = tool_selection(q, run)
@@ -97,10 +137,12 @@ def score_run(q: dict, run: dict) -> dict:
         "E2a_ledger_grounded": lv / ln if ln else 1.0, "E2a_numbers": ln, "E2a_unverified": lbad,
         "E2b_citation_grounded": (run["check"]["numbers_verified"] / run["check"]["numbers_total"]
                                   if run.get("check") and run["check"]["numbers_total"] else None),
-        "E3_separation": separation(run), "E5_forbidden": forbidden_claims(run),
+        "E3_separation": separation(run), "E5_forbidden": forbidden_claims(run), "E5_must_not": must_not_hits(q, run),
         "mentions": mh / mn if mn else None,
         "E7_required_tools": sel["required_called"], "E7_first_tool": sel["first_tool_ok"],
         "E8_tool_calls": sel["tool_calls"], "E8_elapsed_s": run.get("elapsed_s"),
+        "E8_tool_s": tool_seconds(run.get("ledger", {})),
+        "E8_other_s": round(run["elapsed_s"] - tool_seconds(run.get("ledger", {})), 1) if run.get("elapsed_s") else None,
         "E8_tokens_in": run.get("tokens_in"), "E8_tokens_out": run.get("tokens_out"),
     }
     return out
