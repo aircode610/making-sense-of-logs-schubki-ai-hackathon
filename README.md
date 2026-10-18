@@ -57,8 +57,10 @@ receiver: `.venv/bin/python scripts/otlp_replay.py <dataset> 2000`.
 After the setup and load above, add the server to Claude Code **pinned to one dataset** (as a user would point it at
 their own logs; the tools then take no dataset argument and see nothing else):
 ```bash
-claude mcp add logs -e LOGS_DATASET=bgl -- "$PWD/.venv/bin/python" "$PWD/mcp_server/server.py"
+# run this line FROM THE REPO FOLDER ($PWD must be the repo); -s user makes it work from any folder
+claude mcp add -s user serene-bgl -e LOGS_DATASET=bgl -- "$PWD/.venv/bin/python" "$PWD/mcp_server/server.py"
 claude                    # then ask, e.g.: "Is 'rts panic' one bad node or fleet-wide in October 2005, and who owns it?"
+claude mcp remove -s user serene-bgl   # when done
 ```
 Datasets: `bgl`, `openstack`, `zookeeper`, `apache`, `ssh`, `hdfs`, `linux`, `healthapp`, `otel` (whichever you loaded).
 At the end Claude gives a link to the **session report** (or ask *"show me the session report"*): a local page with the
