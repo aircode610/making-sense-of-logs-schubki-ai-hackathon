@@ -39,9 +39,9 @@ def round_sql(x, nd):  # SQL round(): half away from zero (Python's round() is h
     return float(Decimal(repr(x)).quantize(Decimal(1).scaleb(-nd), rounding=ROUND_HALF_UP))
 
 
-judg = {r["pattern_id"]: r for r in query("SELECT pattern_id, p_fault, p_dump FROM pattern_judgments WHERE dataset='bgl'", {})}
-p_problem = {p: judg[p]["p_fault"] * (1 - judg[p]["p_dump"]) for p in judg}
-# default problem filter 'jev' (H18): problem-severity lines AND p_fault × (1 − p_dump) >= 0.5
+judg = {r["pattern_id"]: r for r in query("SELECT pattern_id, p_fault, p_dump, p_threat FROM pattern_judgments WHERE dataset='bgl'", {})}
+p_problem = {p: max(judg[p]["p_fault"] * (1 - judg[p]["p_dump"]), judg[p]["p_threat"] or 0) for p in judg}
+# default problem filter 'jev' (H18, plan 011): problem-severity lines AND max(p_fault × (1 − p_dump), p_threat) >= 0.5
 cands = sorted(p for p in lines if problem.get(p, 0) > 0 and p_problem[p] >= 0.5)
 n_weeks = 5  # 2005-11-01 (Tue) → 2005-11-28 (Mon) touches the calendar weeks of Oct 31, Nov 7, 14, 21, 28
 

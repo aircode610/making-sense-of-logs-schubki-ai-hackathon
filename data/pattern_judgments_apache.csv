@@ -1,0 +1,55 @@
+dataset,component,template,pattern_id,p_fault,p_dump,p_corrected,kind,kind_confidence
+apache,LDAP,LDAP: Built with OpenLDAP LDAP SDK,300001,0.02,0.16,0.01,not a problem,1
+apache,LDAP,LDAP: SSL support unavailable,300002,0.39,0.11,0.02,not a problem,0.91
+apache,suEXEC,suEXEC mechanism enabled (wrapper: <PATH>),300003,0.02,0.06,0.01,not a problem,1
+apache,Digest,Digest: done,300004,0.02,0.12,0.05,not a problem,1
+apache,Digest,Digest: generating secret for digest authentication ...,300005,0.02,0.08,0.01,not a problem,1
+apache,httpd,config.update(): Can't create channel.jni:jni,300006,0.9,0.11,0.02,job or application failure,0.81
+apache,httpd,config.update(): Can't create vm:,300007,0.89,0.11,0.02,job or application failure,0.75
+apache,httpd,config.update(): Can't create worker.jni:onShutdown,300008,0.9,0.12,0.02,job or application failure,0.87
+apache,httpd,config.update(): Can't create worker.jni:onStartup,300009,0.92,0.1,0.02,job or application failure,0.92
+apache,httpd,"env.createBean2(): Factory error creating channel.jni:jni ( channel.jni, jni)",300010,0.89,0.09,0.02,job or application failure,0.96
+apache,httpd,"env.createBean2(): Factory error creating vm: ( vm, )",300011,0.87,0.13,0.02,job or application failure,0.95
+apache,httpd,"env.createBean2(): Factory error creating worker.jni:onShutdown ( worker.jni, onShutdown)",300012,0.88,0.12,0.02,job or application failure,0.95
+apache,httpd,"env.createBean2(): Factory error creating worker.jni:onStartup ( worker.jni, onStartup)",300013,0.9,0.1,0.02,job or application failure,0.97
+apache,mod_python,mod_python: Creating <N> session mutexes based on <N> max processes and <N> max threads.,300014,0.02,0.05,0.01,not a problem,1
+apache,httpd,Apache/<N> (Fedora) configured -- resuming normal operations,300015,0.08,0.05,0.54,not a problem,1
+apache,jk2_init(),jk2_init() Found child <N> in scoreboard slot <N>,300016,0.03,0.07,0.03,not a problem,1
+apache,mod_security,mod_security/<N>dev2 configured,300017,0.02,0.2,0.03,not a problem,1
+apache,httpd,workerEnv.init() ok <PATH>,300018,0.02,0.1,0.05,not a problem,1
+apache,mod_jk,mod_jk child init <N> <N>,300019,0.27,0.15,0.05,job or application failure,0.31
+apache,httpd,[client <IP>] Directory index forbidden by rule: <PATH>,300020,0.12,0.06,0.02,not a problem,0.44
+apache,httpd,[client <IP>] File does not exist: <PATH>,300021,0.27,0.05,0.02,network or I/O failure,0.45
+apache,jk2_init(),jk2_init() Can't find child <N> in scoreboard,300022,0.83,0.05,0.02,job or application failure,0.44
+apache,mod_jk,mod_jk child init <N> -<N>,300023,0.47,0.12,0.06,job or application failure,0.64
+apache,httpd,[client <IP>] Invalid method in request get <PATH>%<N>e/.%<N>e<PATH>?/c+dir,300024,0.16,0.07,0.02,job or application failure,0.34
+apache,httpd,[client <IP>] Invalid method in request get <PATH>%<N>c..<PATH>?/c+dir,300025,0.15,0.06,0.02,job or application failure,0.34
+apache,httpd,[client <IP>] File does not exist: <PATH>%<N>c%<N>c..,300026,0.29,0.06,0.02,network or I/O failure,0.26
+apache,httpd,[client <IP>] Invalid method in request get <PATH>%e0%<N>%af../..%e0%<N>%af../..%e0%<N>%af..<PATH>?/c+dir,300027,0.17,0.07,0.02,job or application failure,0.33
+apache,httpd,[client <IP>] File does not exist: <PATH>%<N>c..,300028,0.28,0.07,0.02,job or application failure,0.34
+apache,httpd,[client <IP>] File does not exist: <PATH>\xc0\xaf..,300029,0.33,0.06,0.02,job or application failure,0.31
+apache,httpd,[client <IP>] File does not exist: <PATH>\xc1\x1c..,300030,0.33,0.05,0.02,network or I/O failure,0.41
+apache,httpd,[client <IP>] File does not exist: <PATH>\xc1\x9c..,300031,0.3,0.07,0.02,job or application failure,0.36
+apache,httpd,[client <IP>] File does not exist: <PATH>%<N>f..,300032,0.27,0.07,0.02,job or application failure,0.27
+apache,httpd,[client <IP>] script not found or unable to stat: <PATH>,300033,0.71,0.05,0.02,job or application failure,0.61
+apache,mod_jk2,mod_jk2 Shutting down,300034,0.07,0.06,0.02,not a problem,0.97
+apache,httpd,[client <IP>] Invalid method in request get <PATH>%c0%af../..%c0%af../..%c0%af..<PATH>?/c+dir,300035,0.14,0.07,0.02,job or application failure,0.4
+apache,httpd,[client <IP>] Invalid method in request get <PATH>?/c+dir,300036,0.18,0.06,0.02,job or application failure,0.45
+apache,httpd,"Graceful restart requested, doing restart",300037,0.02,0.04,0.03,not a problem,1
+apache,httpd,[client <IP>] request failed: URI too long (longer than <N>),300038,0.48,0.05,0.02,job or application failure,0.76
+apache,httpd,[client <IP>] Invalid method in request get <PATH>%c1%<N>c..<PATH>?/c+dir,300039,0.15,0.07,0.02,job or application failure,0.41
+apache,mod_jk,mod_jk child workerEnv in error state <N>,300040,0.82,0.1,0.03,job or application failure,0.68
+apache,httpd,[client <IP>] request failed: error reading the headers,300041,0.74,0.05,0.02,network or I/O failure,0.85
+apache,httpd,script not found or unable to stat,300042,0.82,0.09,0.02,job or application failure,0.68
+apache,httpd,[client <IP>] attempt to invoke directory as script: <PATH>,300043,0.17,0.06,0.02,job or application failure,0.47
+apache,httpd,[client <IP>] Attempt to serve directory: <PATH>,300044,0.13,0.05,0.02,not a problem,0.47
+apache,httpd,"child process <N> still did not exit, sending a SIGTERM",300045,0.54,0.05,0.12,job or application failure,0.97
+apache,mod_jk,script not found or unable to stat,300046,0.81,0.08,0.02,network or I/O failure,0.47
+apache,jk2_init(),script not found or unable to stat,300047,0.52,0.11,0.02,network or I/O failure,0.36
+apache,mod_jk2,script not found or unable to stat,300048,0.63,0.08,0.02,network or I/O failure,0.49
+apache,httpd,[client <IP>] File does not exist: <PATH>~mana_,300049,0.25,0.06,0.02,network or I/O failure,0.35
+apache,mod_security,"[client <IP>] mod_security: Access denied with code <N>. Error reading POST data, error_code=<N> [hostname ""<IP>""] [uri ""/xmlrpc.php""]",300050,0.51,0.08,0.02,network or I/O failure,0.65
+apache,httpd,uriMap.mapUri() uri must start with /,300051,0.54,0.11,0.02,job or application failure,0.91
+apache,httpd,[client <IP>] Invalid URI in request GET HTTP/<N>,300052,0.16,0.07,0.02,job or application failure,0.54
+apache,httpd,[client <IP>] client sent HTTP/<N> request without hostname (see RFC2<N> section <N>): /,300053,0.14,0.05,0.02,job or application failure,0.24
+apache,httpd,[client <IP>] File does not exist: <PATH>~ipcom,300054,0.25,0.06,0.02,network or I/O failure,0.31

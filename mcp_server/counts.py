@@ -5,16 +5,16 @@ from typing import Annotated, Literal, Optional
 
 from pydantic import Field
 
-from core import MAX_ROWS, envelope, filters_sql, query, render
+from core import MAX_ROWS, DatasetOpt, all_teams, envelope, filters_sql, query, render, vocab_text
 
 TREND_ROWS = 500  # a time series is long by nature; still capped and flagged
 GROUPS = {"dataset": "logs.dataset", "team": "coalesce(o.team, 'unowned')", "component": "logs.component",
-          "severity": "logs.severity", "node": "logs.node"}
+          "severity": "logs.severity", "node": "logs.node", "location": "logs.location"}
 # Ownership (dataset, component → team) joined only when a team grouping / filter needs it; aliased so columns don't clash.
 JOIN = "LEFT JOIN (SELECT dataset AS od, component AS oc, team FROM ownership) o ON o.od = logs.dataset AND o.oc = logs.component"
 
-Dataset = Annotated[Optional[Literal["bgl", "openstack"]], Field(description="Restrict to one dataset; omit for both.")]
-GroupBy = Literal["dataset", "team", "component", "severity", "node"]
+Dataset = DatasetOpt
+GroupBy = Literal["dataset", "team", "component", "severity", "node", "location"]
 
 
 def _where(f: dict, query_text, status, team) -> tuple[str, dict, bool]:
@@ -34,20 +34,20 @@ def _where(f: dict, query_text, status, team) -> tuple[str, dict, bool]:
 
 
 def count_by(
-    group_by: Annotated[GroupBy, Field(description="Group the counts by dataset, owning team, component, severity or node.")],
+    group_by: Annotated[GroupBy, Field(description="Group the counts by dataset, owning team, component, severity, node "
+                                                   "or full location path.")],
     dataset: Dataset = None,
     start: Annotated[Optional[datetime], Field(description="Inclusive start time, e.g. '2005-11-02 00:00'.")] = None,
     end: Annotated[Optional[datetime], Field(description="Exclusive end time.")] = None,
     team: Annotated[Optional[str], Field(
-        description="Owning team (data/ownership.csv): node-platform, hpc-workloads, cluster-control, cloud-api, "
-                    "cloud-compute; 'unowned' for unmapped components.")] = None,
+        description="Owning team (ownership table): " + all_teams() + " ('unowned' = unmapped component).")] = None,
     component: Annotated[Optional[str], Field(description="Exact component, e.g. KERNEL, nova-api.")] = None,
     severity: Annotated[Optional[str], Field(description="Exact severity, e.g. FATAL, ERROR.")] = None,
     node: Annotated[Optional[str], Field(description="Exact node / host.")] = None,
     status: Annotated[Optional[int], Field(description="OpenStack HTTP status, e.g. 500.")] = None,
     query_text: Annotated[Optional[str], Field(
         description='Full-text filter on the message (web-search syntax: words, "phrase", a OR b, -word). '
-                    'Letters only: numbers / hex / ids are not searchable.')] = None,
+                    'Numbers and dotted ids are whole tokens (`503`, `10.0.0.7`).')] = None,
     limit: Annotated[int, Field(ge=1, le=MAX_ROWS, description=f"Groups to return, largest first (max {MAX_ROWS}).")] = 20,
 ) -> dict:
     """Exact number of log LINES per group (dataset / team / component / severity / node) over the whole corpus.
@@ -76,7 +76,7 @@ def trend(
     bucket: Annotated[Optional[Literal["hour", "day", "week"]], Field(
         description="Time bucket. Omit to choose by the data's span (> 60 days: week, > 3 days: day, else hour); "
                     "weeks start on Monday. The bucket used is returned.")] = None,
-    group_by: Annotated[Optional[GroupBy], Field(description="Optional: one series per dataset / team / component / severity / node.")] = None,
+    group_by: Annotated[Optional[GroupBy], Field(description="Optional: one series per dataset / team / component / severity / node / location.")] = None,
     dataset: Dataset = None,
     start: Annotated[Optional[datetime], Field(description="Inclusive start time.")] = None,
     end: Annotated[Optional[datetime], Field(description="Exclusive end time.")] = None,

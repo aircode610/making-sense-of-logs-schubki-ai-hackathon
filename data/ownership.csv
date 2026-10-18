@@ -12,3 +12,20 @@ bgl,SERV_NET,cluster-control,Service network
 openstack,nova-api,cloud-api,Nova REST API (request handling and latency)
 openstack,nova-scheduler,cloud-compute,Nova scheduler (host selection)
 openstack,nova-compute,cloud-compute,Nova compute agent (VM lifecycle on hosts)
+zookeeper,*,coordination-platform,"ZooKeeper quorum: leader election, peer connections, ensemble state (default for unlisted classes)"
+zookeeper,NIOServerCnxn,client-connectivity,Client socket connections and sessions
+zookeeper,NIOServerCnxnFactory,client-connectivity,Accepts client socket connections
+zookeeper,ZooKeeperServer,client-connectivity,"Client session establishment, expiry and request handling"
+zookeeper,SessionTrackerImpl,client-connectivity,Session timeout tracking
+zookeeper,PrepRequestProcessor,client-connectivity,Client request pipeline (prepare)
+zookeeper,FinalRequestProcessor,client-connectivity,Client request pipeline (final)
+zookeeper,FileTxnLog,storage-persistence,Transaction log on disk
+zookeeper,FileTxnSnapLog,storage-persistence,Transaction log and snapshots on disk
+zookeeper,FileSnap,storage-persistence,Snapshots on disk
+zookeeper,DatadirCleanupManager,storage-persistence,Purge of old snapshots and logs
+zookeeper,SyncRequestProcessor,storage-persistence,Flushes transactions to disk
+apache,*,web-platform,"Apache httpd core: requests, files, CGI, child processes (default)"
+apache,mod_jk,app-integration,Tomcat connector (mod_jk)
+apache,mod_jk2,app-integration,Tomcat connector (mod_jk2)
+apache,jk2_init(),app-integration,Tomcat connector child initialisation
+ssh,*,security-ops,"sshd: authentication, sessions, break-in attempts"

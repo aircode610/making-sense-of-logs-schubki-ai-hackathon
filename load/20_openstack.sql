@@ -51,10 +51,10 @@ CREATE TEMP TABLE os_pat AS
 SELECT component, template, (100000 + row_number() OVER (ORDER BY first_ts, component, template))::INTEGER AS pattern_id
 FROM (SELECT component, template, min(ts) AS first_ts FROM os_stage GROUP BY 1, 2);
 
-INSERT INTO logs (dataset, line_id, ts, component, severity, request_id, instance_id, tenant_id, status, latency_ms, body,
-                  pattern_id)
+INSERT INTO logs (dataset, line_id, ts, component, severity, request_id, instance_id, tenant_id, status, latency_ms,
+                  entities, body, pattern_id)
 SELECT 'openstack', s.line_id, s.ts, s.component, s.severity, s.request_id, s.instance_id, s.tenant_id, s.status,
-       s.latency_ms, s.body, p.pattern_id
+       s.latency_ms, extract_entities(s.body), s.body, p.pattern_id
 FROM os_stage s JOIN os_pat p ON p.component = s.component AND p.template = s.template
 ORDER BY s.ts, s.line_id;
 
@@ -68,8 +68,10 @@ FROM read_csv('/data/raw/openstack/anomaly_labels.txt', columns = {'line': 'VARC
 WHERE line ~ '^[0-9a-f]{8}-';
 -- NOTE: label.line_id for openstack is the label row number, label text is the instance id.
 
+INSERT INTO datasets VALUES ('openstack', 'OpenStack nova logs (cloud VM lifecycle and API)',
+    'Loghub OpenStack: nova-api / nova-compute / nova-scheduler logs of a small cloud, 2017-05-16 to 2017-05-17, with request ids, tenant ids, VM instance ids, HTTP status and request latency inline. Some VMs had injected anomalies (labels for evaluation only).',
+    NULL, 'request_id, instance_id, tenant_id', 100000);
+
 DROP TABLE os_stage;
 DROP TABLE os_pat;
-
-DROP TABLE IF EXISTS ownership;
-CREATE TABLE ownership AS SELECT * FROM read_csv('/data/ownership.csv');
+-- ownership: load/94_ownership.sql (generic, all datasets).

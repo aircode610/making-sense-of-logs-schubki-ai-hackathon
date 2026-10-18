@@ -38,14 +38,26 @@ g, _ = groups(group_by="component", dataset="openstack")
 check("openstack component", g, {"nova-compute": 104086, "nova-api": 102868, "nova-scheduler": 866})
 g, _ = groups(group_by="severity", dataset="openstack")
 check("openstack severity", g, {"INFO": 204506, "WARNING": 3118, "ERROR": 194, "CRITICAL": 2})
-g, r = groups(group_by="team")
+BASE = ("bgl", "openstack")  # reference counts exist for the base corpus; extra datasets are checked in check_tools.py
+
+
+def base_only(g: dict) -> dict:
+    """Teams of the base corpus only (extra datasets bring their own teams)."""
+    merged = {}
+    for ds in BASE:
+        for k, v in groups(**{**g, "dataset": ds})[0].items():
+            merged[k] = merged.get(k, 0) + v
+    return dict(sorted(merged.items(), key=lambda kv: -kv[1]))
+
+
+g = base_only({"group_by": "team"})
 check("team (both datasets)", g, {"node-platform": 4331285, "hpc-workloads": 228536, "cluster-control": 188142,
                                   "cloud-compute": 104952, "cloud-api": 102868})
 g, _ = groups(group_by="dataset", query_text="parity")
 check("fts parity", g, {"bgl": 121498})
 g, _ = groups(group_by="dataset", query_text='"cache parity error"')
 check("fts phrase", g, {"bgl": 106220})
-g, _ = groups(group_by="team", severity="ERROR")
+g = base_only({"group_by": "team", "severity": "ERROR"})
 check("team where severity=ERROR", g, {"cluster-control": 112355, "cloud-compute": 192, "cloud-api": 2})
 g, _ = groups(group_by="dataset", status=200)
 check("status=200 present only in openstack", list(g), ["openstack"])

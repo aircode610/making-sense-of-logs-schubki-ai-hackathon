@@ -11,7 +11,7 @@ from typing import Annotated, Literal, Optional
 
 from pydantic import Field
 
-from core import MAX_ROWS, envelope, query, render
+from core import MAX_ROWS, DatasetName, check_dataset, envelope, query, render
 
 # Value in seconds: HTTP request time, or the number in a "Took <N> seconds ..." message.
 VALUE = ("coalesce(latency_ms / 1000.0, "
@@ -22,8 +22,9 @@ CANDIDATES = ("SELECT pattern_id FROM patterns WHERE dataset = %(d)s "
 
 
 def value_outliers(
-    dataset: Annotated[Literal["bgl", "openstack"], Field(
-        description="Dataset. Durations exist in OpenStack (spawn / build / destroy times, HTTP request times).")],
+    dataset: Annotated[DatasetName, Field(
+        description="Dataset. Needs durations in the messages: request latency or 'Took N seconds' lines "
+                    "(OpenStack spawn / build / destroy and HTTP request times).")],
     pattern_id: Annotated[Optional[int], Field(description="Only this pattern (from top_patterns / search_logs).")] = None,
     instance_id: Annotated[Optional[str], Field(description="Only lines of this OpenStack VM.")] = None,
     start: Annotated[Optional[datetime], Field(description="Flag lines from this time (baseline stays the whole dataset).")] = None,
@@ -42,6 +43,7 @@ def value_outliers(
     distinct VMs among them. A flag says "unusually slow", not why.
     """
     t0 = time.perf_counter()
+    check_dataset(dataset)
     params = {"d": dataset, "k": k, "x": min_excess_s}
     where = ""
     for col, v in (("pattern_id", pattern_id), ("instance_id", instance_id)):

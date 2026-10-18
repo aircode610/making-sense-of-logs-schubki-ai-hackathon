@@ -4,7 +4,7 @@
 
 Each distinct call (tool + params) found in the runs' evidence ledgers is sent through the MCP server's own tool
 layer (FastMCP: same validation as the agent), and its result compared with the recorded one, ignoring what may
-legitimately differ between backends (sql text, evidence_id, elapsed_ms). identical = same result in the same row
+legitimately differ between backends or versions (sql text, evidence_id, elapsed_ms, the echoed params). identical = same result in the same row
 order; same rows = equal after sorting rows (ties ordered differently); different = anything else (listed).
 A new backend (or a rewritten query) should be 100 % identical-or-same-rows before an end-to-end eval is worth running.
 """
@@ -22,7 +22,7 @@ sys.path.insert(0, str(ROOT / "mcp_server"))
 from eval.run_eval import load_runs  # noqa: E402
 from server import mcp  # noqa: E402
 
-VOLATILE = {"sql", "evidence_id", "elapsed_ms"}
+VOLATILE = {"sql", "evidence_id", "elapsed_ms", "params"}  # params = the echoed input (new optional keys appear)
 
 
 def _canon(env: dict, sort_rows: bool) -> str:

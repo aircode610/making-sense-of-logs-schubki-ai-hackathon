@@ -1,0 +1,107 @@
+dataset,component,template,pattern_id,p_threat,cause,cause_confidence,actionable,role,owner_hint,owner_confidence
+openstack,nova-api,"<IP> ""GET /v<N>/servers/detail HTTP/<N>"" status: 200 len: <N> time: <N>",100001,0.02,not a failure,1.0,0.94,routine,cloud-api,1.0
+openstack,nova-api,"<IP> ""GET /v<N>/servers/<UUID> HTTP/<N>"" status: 200 len: <N> time: <N>",100002,0.02,not a failure,1.0,1.02,routine,cloud-api,1.0
+openstack,nova-compute,[instance: <UUID>] Creating image,100003,0.01,not a failure,1.0,1.0,routine,cloud-compute,1.0
+openstack,nova-compute,[instance: <UUID>] VM Stopped (Lifecycle Event),100004,0.02,not a failure,1.0,1.29,routine,cloud-compute,1.0
+openstack,nova-compute,"While synchronizing instance power states, found <N> instances in the database and <N> instances on the hypervisor.",100005,0.02,software or service,0.44,1.56,consequence,cloud-compute,1.0
+openstack,nova-compute,[instance: <UUID>] VM Started (Lifecycle Event),100006,0.01,not a failure,1.0,0.74,routine,cloud-compute,1.0
+openstack,nova-compute,[instance: <UUID>] VM Paused (Lifecycle Event),100007,0.02,not a failure,1.0,1.38,routine,cloud-compute,1.0
+openstack,nova-compute,[instance: <UUID>] During sync_power_state the instance has a pending task (spawning). Skip.,100008,0.01,not a failure,1.0,0.89,routine,cloud-compute,1.0
+openstack,nova-compute,image <UUID> at (/var/lib/nova/instances/_base/<HEX>): checking,100009,0.02,not a failure,1.0,1.78,routine,cloud-compute,1.0
+openstack,nova-compute,"image <UUID> at (/var/lib/nova/instances/_base/<HEX>): in use: on this node <N> local, <N> on other nodes sharing this instance storage",100010,0.01,not a failure,0.99,1.69,routine,cloud-compute,1.0
+openstack,nova-compute,Active base files: /var/lib/nova/instances/_base/<HEX>,100011,0.01,not a failure,1.0,1.76,routine,cloud-compute,1.0
+openstack,nova-api,Creating event network-vif-plugged:<UUID> for instance <UUID>,100012,0.02,not a failure,0.91,0.56,routine,cloud-api,0.42
+openstack,nova-api,"<IP> ""POST /v<N>/os-server-external-events HTTP/<N>"" status: 200 len: <N> time: <N>",100013,0.02,not a failure,1.0,1.15,routine,cloud-api,0.96
+openstack,nova-compute,[instance: <UUID>] VM Resumed (Lifecycle Event),100014,0.01,not a failure,1.0,0.96,routine,cloud-compute,1.0
+openstack,nova-compute,[instance: <UUID>] Instance spawned successfully.,100015,0.01,not a failure,1.0,0.59,routine,cloud-compute,1.0
+openstack,nova-compute,[instance: <UUID>] Took <N> seconds to spawn the instance on the hypervisor.,100016,0.01,not a failure,1.0,1.27,routine,cloud-compute,1.0
+openstack,nova-compute,[instance: <UUID>] Took <N> seconds to build instance.,100017,0.01,not a failure,1.0,1.01,routine,cloud-compute,1.0
+openstack,nova-api,"<IP> ""GET /openstack/<N>/meta_data.json HTTP/<N>"" status: 200 len: <N> time: <N>",100018,0.03,not a failure,1.0,1.09,routine,cloud-api,1.0
+openstack,nova-api,"<IP> ""GET /openstack/<N> HTTP/<N>"" status: 200 len: <N> time: <N>",100019,0.02,not a failure,1.0,0.97,routine,cloud-api,1.0
+openstack,nova-api,"<IP> ""DELETE /v<N>/servers/<UUID> HTTP/<N>"" status: 204 len: <N> time: <N>",100020,0.03,not a failure,1.0,1.09,routine,cloud-api,0.98
+openstack,nova-api,"<IP> ""GET /openstack/<N>/vendor_data.json HTTP/<N>"" status: 200 len: <N> time: <N>",100021,0.02,not a failure,1.0,1.1,routine,cloud-api,1.0
+openstack,nova-compute,[instance: <UUID>] Terminating instance,100022,0.02,not a failure,0.97,1.09,routine,cloud-compute,1.0
+openstack,nova-api,"<IP> ""GET /openstack/<N>/user_data HTTP/<N>"" status: 404 len: <N> time: <N>",100023,0.16,not a failure,0.71,1.48,routine,cloud-api,0.98
+openstack,nova-compute,[instance: <UUID>] Instance destroyed successfully.,100024,0.02,not a failure,1.0,0.54,routine,cloud-compute,1.0
+openstack,nova-compute,[instance: <UUID>] Deleting instance files /var/lib/nova/instances/<UUID>_del,100025,0.02,not a failure,0.98,1.61,routine,cloud-compute,1.0
+openstack,nova-compute,[instance: <UUID>] Deletion of /var/lib/nova/instances/<UUID>_del complete,100026,0.02,not a failure,0.98,1.23,routine,cloud-compute,1.0
+openstack,nova-compute,[instance: <UUID>] Took <N> seconds to destroy the instance on the hypervisor.,100027,0.01,not a failure,1.0,1.02,routine,cloud-compute,1.0
+openstack,nova-compute,[instance: <UUID>] Took <N> seconds to deallocate network for instance.,100028,0.01,not a failure,0.99,1.14,routine,cloud-compute,1.0
+openstack,nova-api,HTTP exception thrown: No instances found for any event,100029,0.03,not a failure,0.76,1.01,routine,cloud-api,0.56
+openstack,nova-api,"<IP> ""POST /v<N>/os-server-external-events HTTP/<N>"" status: 404 len: <N> time: <N>",100030,0.15,not a failure,0.41,1.6,routine,cloud-api,0.98
+openstack,nova-compute,Unknown base file: /var/lib/nova/instances/_base/<HEX>,100031,0.04,storage or filesystem,0.98,1.99,consequence,cloud-compute,1.0
+openstack,nova-compute,Removable base files: /var/lib/nova/instances/_base/<HEX>,100032,0.02,not a failure,0.91,1.98,routine,cloud-compute,1.0
+openstack,nova-compute,Removing base or swap file: /var/lib/nova/instances/_base/<HEX>,100033,0.01,not a failure,0.83,1.71,routine,cloud-compute,1.0
+openstack,nova-api,"<IP> ""POST /v<N>/servers HTTP/<N>"" status: 202 len: <N> time: <N>",100034,0.03,not a failure,1.0,0.92,routine,cloud-api,0.98
+openstack,nova-compute,"[instance: <UUID>] Attempting claim: memory <N> MB, disk <N> GB, vcpus <N> CPU",100035,0.01,not a failure,1.0,0.82,routine,cloud-compute,1.0
+openstack,nova-compute,"[instance: <UUID>] Total disk: <N> GB, used: <N> GB",100036,0.01,not a failure,0.98,1.31,routine,cloud-compute,1.0
+openstack,nova-compute,"[instance: <UUID>] Total memory: <N> MB, used: <N> MB",100037,0.01,not a failure,1.0,1.13,routine,cloud-compute,1.0
+openstack,nova-compute,"[instance: <UUID>] memory limit: <N> MB, free: <N> MB",100038,0.01,not a failure,1.0,1.41,routine,cloud-compute,1.0
+openstack,nova-compute,"[instance: <UUID>] Total vcpu: <N> VCPU, used: <N> VCPU",100039,0.01,not a failure,1.0,1.16,routine,cloud-compute,1.0
+openstack,nova-compute,"[instance: <UUID>] disk limit not specified, defaulting to unlimited",100040,0.01,not a failure,0.44,1.66,routine,cloud-compute,0.8
+openstack,nova-compute,"[instance: <UUID>] vcpu limit not specified, defaulting to unlimited",100041,0.01,not a failure,0.55,1.76,routine,cloud-compute,0.92
+openstack,nova-compute,[instance: <UUID>] Claim successful,100042,0.02,not a failure,1.0,0.7,routine,cloud-compute,1.0
+openstack,nova-compute,Auditing locally available compute resources for node cp-<N>.slowvm<N>.tcloud-pg<N>.utah.cloudlab.us,100043,0.02,not a failure,1.0,1.6,routine,cloud-compute,1.0
+openstack,nova-compute,"Total usable vcpus: <N>, total allocated vcpus: <N>",100044,0.01,not a failure,1.0,1.11,routine,cloud-compute,1.0
+openstack,nova-compute,Final resource view: name=cp-<N>.slowvm<N>.tcloud-pg<N>.utah.cloudlab.us phys_ram=<N>MB used_ram=<N>MB phys_disk=<N>GB used_disk=<N>GB total_vcpus=<N> used_vcpus=<N> pci_stats=[],100045,0.01,not a failure,1.0,1.53,routine,cloud-compute,1.0
+openstack,nova-compute,Compute_service record updated for cp-<N>.slowvm<N>.tcloud-pg<N>.utah.cloudlab.us:cp-<N>.slowvm<N>.tcloud-pg<N>.utah.cloudlab.us,100046,0.02,not a failure,1.0,1.77,routine,cloud-compute,1.0
+openstack,nova-scheduler,Successfully synced instances from host 'cp-<N>.slowvm<N>.tcloud-pg<N>.utah.cloudlab.us'.,100047,0.01,not a failure,1.0,1.51,routine,cloud-compute,1.0
+openstack,nova-api,"<IP> ""GET /latest/meta-data/ HTTP/<N>"" status: 200 len: <N> time: <N>",100048,0.05,not a failure,1.0,1.38,routine,cloud-api,1.0
+openstack,nova-api,"<IP> ""GET /latest/meta-data/block-device-mapping/ HTTP/<N>"" status: 200 len: <N> time: <N>",100049,0.04,not a failure,1.0,1.31,routine,cloud-api,0.98
+openstack,nova-api,"<IP> ""GET /latest/meta-data/block-device-mapping/ami HTTP/<N>"" status: 200 len: <N> time: <N>",100050,0.04,not a failure,1.0,1.34,routine,cloud-api,0.98
+openstack,nova-api,"<IP> ""GET /latest/meta-data/block-device-mapping/root HTTP/<N>"" status: 200 len: <N> time: <N>",100051,0.04,not a failure,1.0,1.28,routine,cloud-api,0.98
+openstack,nova-scheduler,The instance sync for host 'cp-<N>.slowvm<N>.tcloud-pg<N>.utah.cloudlab.us' did not match. Re-created its InstanceList.,100052,0.02,not a failure,0.75,1.98,consequence,cloud-compute,1.0
+openstack,nova-api,"<IP> ""GET /latest/meta-data/placement/ HTTP/<N>"" status: 200 len: <N> time: <N>",100053,0.03,not a failure,1.0,1.24,routine,cloud-api,0.98
+openstack,nova-api,"<IP> ""GET /latest/meta-data/placement/availability-zone HTTP/<N>"" status: 200 len: <N> time: <N>",100054,0.03,not a failure,1.0,1.1,routine,cloud-api,0.96
+openstack,nova-api,"<IP> ""GET /v<N>/servers/detail?all_tenants=True&changes-since=<N>T<N>%<N>A<N>%<N>A<N>%<N>B<N>%<N>A<N> HTTP/<N>"" status: 200 len: <N> time: <N>",100055,0.03,not a failure,1.0,1.1,routine,cloud-api,1.0
+openstack,nova-api,"<IP> ""GET /v<N>/servers/detail?all_tenants=True&changes-since=<N>T<N>%<N>A<N>%<N>A<N>%<N>B<N>%<N>A<N>&host=cp-<N>.slowvm<N>.tcloud-pg<N>.utah.cloudlab.us HTTP/<N>"" status: 200 len: <N> time: <N>",100056,0.03,not a failure,1.0,1.54,routine,cloud-api,0.96
+openstack,nova-api,"<IP> ""GET /v<N>/flavors/<N> HTTP/<N>"" status: 200 len: <N> time: <N>",100057,0.02,not a failure,1.0,1.03,routine,cloud-api,1.0
+openstack,nova-api,"<IP> ""GET /v<N>/images/<UUID> HTTP/<N>"" status: 200 len: <N> time: <N>",100058,0.02,not a failure,1.0,1.13,routine,cloud-api,1.0
+openstack,nova-compute,Base or swap file too young to remove: /var/lib/nova/instances/_base/<HEX>,100059,0.02,not a failure,0.81,1.93,routine,cloud-compute,1.0
+openstack,nova-api,"<IP> ""GET /latest/meta-data/local-ipv<N> HTTP/<N>"" status: 200 len: <N> time: <N>",100060,0.03,not a failure,1.0,1.21,routine,cloud-api,0.98
+openstack,nova-api,"<IP> ""GET /latest/meta-data/reservation-id HTTP/<N>"" status: 200 len: <N> time: <N>",100061,0.03,not a failure,1.0,1.18,routine,cloud-api,0.98
+openstack,nova-api,"<IP> ""GET /latest/meta-data/local-hostname HTTP/<N>"" status: 200 len: <N> time: <N>",100062,0.03,not a failure,1.0,1.32,routine,cloud-api,1.0
+openstack,nova-compute,"couldn't obtain the vcpu count from domain id: <UUID>, exception: Requested operation is not valid: cpu affinity is not supported",100063,0.02,software or service,0.57,1.77,root problem,cloud-compute,1.0
+openstack,nova-api,"<IP> ""GET /latest/meta-data/security-groups HTTP/<N>"" status: 200 len: <N> time: <N>",100064,0.04,not a failure,1.0,1.34,routine,cloud-api,0.98
+openstack,nova-api,"<IP> ""GET /latest/meta-data/ami-launch-index HTTP/<N>"" status: 200 len: <N> time: <N>",100065,0.03,not a failure,1.0,1.12,routine,cloud-api,0.98
+openstack,nova-api,"<IP> ""GET /latest/meta-data/public-hostname HTTP/<N>"" status: 200 len: <N> time: <N>",100066,0.03,not a failure,1.0,1.23,routine,cloud-api,0.98
+openstack,nova-compute,Running instance usage audit for host cp-<N>.slowvm<N>.tcloud-pg<N>.utah.cloudlab.us from <N> <N> to <N> <N>. <N> instances.,100067,0.02,not a failure,1.0,1.47,routine,cloud-compute,1.0
+openstack,nova-api,"<IP> ""GET /latest/meta-data/hostname HTTP/<N>"" status: 200 len: <N> time: <N>",100068,0.04,not a failure,1.0,1.3,routine,cloud-api,1.0
+openstack,nova-api,"<IP> ""GET /latest/meta-data/ami-id HTTP/<N>"" status: 200 len: <N> time: <N>",100069,0.04,not a failure,1.0,1.36,routine,cloud-api,1.0
+openstack,nova-api,"<IP> ""GET /latest/meta-data/instance-action HTTP/<N>"" status: 200 len: <N> time: <N>",100070,0.04,not a failure,1.0,1.25,routine,cloud-api,0.98
+openstack,nova-api,"<IP> ""GET /latest/meta-data/public-ipv<N> HTTP/<N>"" status: 200 len: <N> time: <N>",100071,0.03,not a failure,1.0,1.15,routine,cloud-api,0.98
+openstack,nova-api,"<IP> ""GET /latest/meta-data/ami-manifest-path HTTP/<N>"" status: 200 len: <N> time: <N>",100072,0.03,not a failure,1.0,1.32,routine,cloud-api,1.0
+openstack,nova-api,"<IP> ""GET /latest/meta-data/instance-type HTTP/<N>"" status: 200 len: <N> time: <N>",100073,0.03,not a failure,1.0,1.24,routine,cloud-api,1.0
+openstack,nova-api,"<IP> ""GET /latest/meta-data/instance-id HTTP/<N>"" status: 200 len: <N> time: <N>",100074,0.04,not a failure,1.0,1.22,routine,cloud-api,1.0
+openstack,nova-compute,[instance: <UUID>] During sync_power_state the instance has a pending task (deleting). Skip.,100075,0.01,not a failure,1.0,0.89,routine,cloud-compute,1.0
+openstack,nova-compute,,100076,0.1,software or service,0.81,0.36,root problem,cloud-compute,1.0
+openstack,nova-compute," File ""/usr/lib/python<N>/dist-packages/nova/compute/manager.py"", line <N>, in _run_image_cache_manager_pass",100077,0.02,software or service,0.84,1.57,consequence,cloud-compute,1.0
+openstack,nova-compute," File ""/usr/lib/python<N>/dist-packages/nova/virt/images.py"", line <N>, in qemu_img_info",100078,0.02,software or service,0.84,1.62,consequence,cloud-compute,1.0
+openstack,nova-compute," File ""/usr/lib/python<N>/dist-packages/nova/virt/libvirt/driver.py"", line <N>, in manage_image_cache",100079,0.02,software or service,0.86,1.69,root problem,cloud-compute,1.0
+openstack,nova-compute," File ""/usr/lib/python<N>/dist-packages/nova/virt/libvirt/imagecache.py"", line <N>, in _age_and_verify_cached_images",100080,0.02,software or service,0.86,1.8,root problem,cloud-compute,1.0
+openstack,nova-compute," File ""/usr/lib/python<N>/dist-packages/nova/virt/libvirt/imagecache.py"", line <N>, in _list_backing_images",100081,0.02,software or service,0.83,1.8,root problem,cloud-compute,1.0
+openstack,nova-compute," File ""/usr/lib/python<N>/dist-packages/nova/virt/libvirt/imagecache.py"", line <N>, in update",100082,0.02,software or service,0.87,1.78,root problem,cloud-compute,1.0
+openstack,nova-compute," File ""/usr/lib/python<N>/dist-packages/nova/virt/libvirt/utils.py"", line <N>, in get_disk_backing_file",100083,0.02,software or service,0.73,1.58,root problem,cloud-compute,1.0
+openstack,nova-compute," File ""/usr/lib/python<N>/dist-packages/oslo_service/periodic_task.py"", line <N>, in run_periodic_tasks",100084,0.02,software or service,0.89,1.41,consequence,cloud-compute,1.0
+openstack,nova-compute," backing_file = images.qemu_img_info(path, format).backing_file",100085,0.02,not a failure,0.41,0.63,routine,cloud-compute,1.0
+openstack,nova-compute, disk_path),100086,0.03,storage or filesystem,0.71,1.03,root problem,cloud-compute,1.0
+openstack,nova-compute, inuse_backing_images = self._list_backing_images(),100087,0.02,not a failure,0.39,0.27,routine,cloud-compute,1.0
+openstack,nova-compute, raise exception.InvalidDiskInfo(reason=msg),100088,0.03,storage or filesystem,0.6,0.62,root problem,cloud-compute,1.0
+openstack,nova-compute," self._age_and_verify_cached_images(context, all_instances, base_dir)",100089,0.02,software or service,0.63,0.42,routine,cloud-compute,1.0
+openstack,nova-compute," self.driver.manage_image_cache(context, filtered_instances)",100090,0.02,software or service,0.85,0.82,root problem,cloud-compute,1.0
+openstack,nova-compute," self.image_cache_manager.update(context, all_instances)",100091,0.02,software or service,0.86,0.98,root problem,cloud-compute,1.0
+openstack,nova-compute," task(self, context)",100092,0.03,software or service,0.75,0.48,root problem,cloud-compute,1.0
+openstack,nova-compute,Command: /usr/bin/python -m oslo_concurrency.prlimit --as=<HEX> --cpu=<N> -- env LC_ALL=C LANG=C qemu-img info /var/lib/nova/instances/<UUID>/disk,100093,0.03,software or service,0.42,1.86,root problem,cloud-compute,1.0
+openstack,nova-compute,Error during ComputeManager._run_image_cache_manager_pass,100094,0.02,software or service,0.89,1.18,root problem,cloud-compute,1.0
+openstack,nova-compute,Exit code: <N>,100095,0.03,software or service,0.66,0.97,consequence,cloud-compute,1.0
+openstack,nova-compute,InvalidDiskInfo: Disk info file is invalid: qemu-img failed to execute on /var/lib/nova/instances/<UUID>/disk : Unexpected error while running command.,100096,0.02,storage or filesystem,0.76,1.99,consequence,cloud-compute,1.0
+openstack,nova-compute,"Stderr: u""qemu-img: Could not open '/var/lib/nova/instances/<UUID>/disk': Could not open '/var/lib/nova/instances/<UUID>/disk': No such file or directory\n""",100097,0.02,storage or filesystem,1.0,2.0,consequence,cloud-compute,1.0
+openstack,nova-compute,Stdout: u'',100098,0.02,software or service,0.62,0.75,consequence,cloud-compute,1.0
+openstack,nova-compute,Traceback (most recent call last):,100099,0.04,software or service,0.97,0.8,root problem,cloud-compute,1.0
+openstack,nova-api,Bad response code while validating token: <N>,100100,0.23,security,0.39,1.38,consequence,cloud-api,1.0
+openstack,nova-api,"Identity response: <!DOCTYPE HTML PUBLIC ""-//IETF//DTD HTML <N>//EN"">",100101,0.09,not a failure,0.47,0.94,consequence,cloud-api,0.98
+openstack,nova-api,Unable to validate token: Failed to fetch token data from identity server,100102,0.48,security,0.86,1.86,consequence,cloud-api,1.0
+openstack,nova-api,"<IP> ""GET /v<N>/servers/detail HTTP/<N>"" status: 503 len: <N> time: <N>",100103,0.06,software or service,0.99,1.89,consequence,cloud-api,0.96
+openstack,nova-api,"<IP> ""GET /v<N>/flavors HTTP/<N>"" status: 200 len: <N> time: <N>",100104,0.02,not a failure,1.0,1.08,routine,cloud-api,1.0
+openstack,nova-api,"<IP> ""GET /v<N>/images HTTP/<N>"" status: 200 len: <N> time: <N>",100105,0.02,not a failure,1.0,0.91,routine,cloud-api,1.0
+openstack,nova-compute,[instance: <UUID>] During sync_power_state the instance has a pending task (networking). Skip.,100106,0.01,not a failure,0.98,1.24,routine,cloud-compute,1.0

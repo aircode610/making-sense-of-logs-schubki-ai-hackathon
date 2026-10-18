@@ -10,3 +10,4 @@ psycopg[binary]==3.3.6
 drain3==0.9.11
 streamlit==1.66.0
 python-dotenv==1.2.4
+pyarrow==26.0.0

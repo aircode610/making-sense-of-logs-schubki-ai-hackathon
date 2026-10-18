@@ -24,6 +24,7 @@ def verify_order(qid: str, g: dict) -> None:
 def main(path: str) -> None:
     qs = yaml.safe_load(Path(path).read_text())
     with psycopg.connect("host=localhost port=7890 user=postgres dbname=postgres", autocommit=True) as c:
+        c.execute("SET sdb_scan_split = 'never'")  # TsDict facet counts off by one with split segments (plan 011)
         for q in qs:
             for g in q.get("golden", []):
                 if g.get("match") == "order":
