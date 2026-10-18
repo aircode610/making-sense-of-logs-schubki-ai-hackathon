@@ -74,241 +74,181 @@ async function rounded(file, rx = 28) {
     }
   };
   // a row of big numbers
-  const stats = (s, items, y = 1.7, h = 2.3, fill = WHITE) => {
+  const stats = (s, items, y = 1.7, h = 2.3, fill = WHITE, size) => {
     const n = items.length, gap = 0.2, w = (9 - gap * (n - 1)) / n;
     items.forEach(([num, label, color], i) => {
       const x = 0.5 + i * (w + gap);
       card(s, x, y, w, h, fill, fill === WHITE ? LINE : undefined);
-      s.addText(num, { x: x + 0.3, y: y + 0.35, w: w - 0.5, h: 0.8, fontSize: n > 3 ? 30 : 38, bold: true, fontFace: HEAD, color: color || VIOLET, margin: 0 });
+      s.addText(num, { x: x + 0.3, y: y + 0.35, w: w - 0.5, h: 0.8, fontSize: size || (n > 3 ? 30 : 38), bold: true, fontFace: HEAD, color: color || VIOLET, margin: 0 });
       s.addText(label, { x: x + 0.3, y: y + 1.2, w: w - 0.5, h: h - 1.35, fontSize: 13, fontFace: BODY, color: INK2, margin: 0, valign: "top" });
     });
+  };
+
+  // a pipeline strip: the 5 stages, `on` highlighted (used on the stage slides)
+  const STAGES = [[fa.FaFileImport, "Load"], [fa.FaBalanceScale, "Judge"], [fa.FaSearch, "Ask"], [fa.FaComments, "Answer"], [fa.FaCheckDouble, "Verify"]];
+  const strip = async (s, on) => {
+    for (let i = 0; i < 5; i++) {
+      const x = 0.5 + i * 1.83, act = i === on;
+      s.addShape(pres.shapes.ROUNDED_RECTANGLE, { x, y: 1.32, w: 1.68, h: 0.5, rectRadius: 0.25,
+        fill: { color: act ? VIOLET : MIST }, line: { type: "none" } });
+      s.addImage({ data: await icon(STAGES[i][0], act ? WHITE : MUTED), x: x + 0.2, y: 1.44, w: 0.26, h: 0.26 });
+      s.addText(`${i + 1} · ${STAGES[i][1]}`, { x: x + 0.52, y: 1.32, w: 1.1, h: 0.5, fontSize: 12.5, bold: act, fontFace: BODY, color: act ? WHITE : INK2, margin: 0, valign: "middle" });
+    }
+  };
+  // a stage slide: strip + left "what happens" list + right big numbers
+  const stage = async (on, kicker, t, what, nums, notes) => {
+    const s = slide("Pipeline");
+    title(s, kicker, t);
+    await strip(s, on);
+    card(s, 0.5, 2.05, 4.4, 2.9, MIST);
+    s.addText(what.map((w, k) => ({ text: w, options: { bullet: { indent: 14 }, breakLine: k < what.length - 1 } })),
+      { x: 0.75, y: 2.2, w: 4.0, h: 2.65, fontSize: 13.5, fontFace: BODY, color: INK2, margin: 0, valign: "top", paraSpaceAfter: 8 });
+    nums.forEach(([n, l], k) => {
+      const h = 2.9 / nums.length - 0.12, y = 2.05 + k * (h + 0.12);
+      card(s, 5.1, y, 4.4, h, k === 0 ? PALE : WHITE, k === 0 ? undefined : LINE);
+      s.addText(n, { x: 5.35, y: y + 0.08, w: 3.95, h: h * 0.55, fontSize: nums.length > 2 ? 24 : 30, bold: true, fontFace: HEAD, color: VIOLET, margin: 0, valign: "bottom" });
+      s.addText(l, { x: 5.35, y: y + h * 0.6, w: 3.95, h: h * 0.38, fontSize: 11.5, fontFace: BODY, color: INK2, margin: 0, valign: "top" });
+    });
+    s.addNotes(notes);
+    return s;
   };
 
   // 1 · title
   let s = pres.addSlide(); s.background = { color: WHITE }; N++;
   s.addImage({ data: await gcard(3.4, 4.6), x: 6.1, y: 0.5, w: 3.4, h: 4.6 });
-  [["5 M", "log lines"], ["3", "roles"], ["2", "commands to set up"]].forEach(([n, l], i) => {
+  [["14 s", "per answer"], ["≈ 5 ¢", "per answer"], ["$0.02", "to judge 1,126 kinds of message"]].forEach(([n, l], i) => {
     s.addText(n, { x: 6.45, y: 0.95 + i * 1.35, w: 2.8, h: 0.65, fontSize: 36, bold: true, fontFace: HEAD, color: WHITE, margin: 0 });
     s.addText(l, { x: 6.45, y: 1.58 + i * 1.35, w: 2.8, h: 0.35, fontSize: 13, fontFace: BODY, color: "EDE7FF", margin: 0 });
   });
   s.addImage({ data: GRAD_SQ, x: 0.5, y: 0.65, w: 0.42, h: 0.42 });
   s.addText("SereneDB challenge · SchubKI Hackathon 2026", { x: 1.05, y: 0.67, w: 4.9, h: 0.38, fontSize: 11, fontFace: BODY, color: MUTED, margin: 0, valign: "middle" });
   s.addText("Making Sense\nof Logs", { x: 0.5, y: 1.45, w: 5.4, h: 1.5, fontSize: 40, bold: true, fontFace: HEAD, color: INK, margin: 0 });
-  s.addText("Ask your logs a question. Get the answer your role needs, with proof.", { x: 0.5, y: 3.05, w: 5.2, h: 0.8, fontSize: 16, fontFace: BODY, color: INK2, margin: 0, valign: "top" });
+  s.addText("Ask your logs a question. Get the answer your role needs, fast, cheap, and with proof.", { x: 0.5, y: 3.05, w: 5.2, h: 0.8, fontSize: 16, fontFace: BODY, color: INK2, margin: 0, valign: "top" });
   s.addText("Amirali & Konark", { x: 0.5, y: 4.55, w: 5, h: 0.3, fontSize: 12, bold: true, fontFace: BODY, color: INK, margin: 0 });
-  s.addNotes("We built an assistant that answers questions about millions of log lines for three people who need different things: the engineer who fixes, the team lead who plans, the manager who decides. Every number it says can be checked.");
+  s.addNotes("0:00 \u00b7 1 \u00b7 Title\n\"We built an assistant that answers questions about millions of log lines, for the engineer, the team lead and the manager. An answer takes 14 seconds, costs about 5 cents, and every number in it can be checked.\"");
 
   // 2 · problem
   s = slide("Problem");
-  title(s, "The problem", "Logs hold the answers. Nobody reads them.");
-  await tiles(s, [[fa.FaWrench, "Engineer", "“What failed?”"], [fa.FaUsers, "Team lead", "“What keeps coming back?”"], [fa.FaChartLine, "Manager", "“What do we fix first?”"]], 1.6, 2.05);
-  card(s, 0.5, 3.85, 9, 0.9, PALE);
-  s.addText("Millions of lines don't fit in a prompt, and an AI that guesses numbers can't be trusted.",
-    { x: 0.8, y: 3.85, w: 8.4, h: 0.9, fontSize: 15, bold: true, fontFace: BODY, color: DEEP, margin: 0, valign: "middle" });
-  s.addNotes("Three people ask about the same logs. Engineers grep for hours during an outage, team leads count in spreadsheets, managers decide by gut. And you cannot just hand the logs to an AI: they don't fit, and a model that makes up numbers is dangerous.");
+  title(s, "The problem", "Millions of lines, three people, no answers");
+  await tiles(s, [[fa.FaWrench, "Engineer", "“What failed?”"], [fa.FaUsers, "Team lead", "“What keeps coming back?”"], [fa.FaChartLine, "Manager", "“What do we fix first?”"]], 1.4, 1.75);
+  stats(s, [["4.7 M", "lines: no prompt fits"], ["855,501", "FATAL lines, 36,714 bursts"], ["86 s", "per answer on raw files"]], 3.3, 1.7, MIST);
+  s.addNotes("0:15 \u00b7 2 \u00b7 Problem\n\"Three people ask about the same logs. BGL alone is 4.7 million lines: no prompt fits that. It has 855 thousand FATAL lines, but they are only 36 thousand bursts of real recurrences, so counting lines misleads. And if you just let Claude grep the raw files, it takes 86 seconds per answer and gets things wrong.\"");
 
-  // 3 · problem in numbers
-  s = slide("Problem");
-  title(s, "The problem", "Raw logs mislead");
-  stats(s, [["855,501", "FATAL lines, but only 36,714 bursts of problems"], ["1 / 10", "real alerts in the top 10 when ranked by log level"], ["186", "wrong claims when Claude Code greps the raw files (50 questions)", WARN]]);
-  s.addNotes("Even when you can read them, raw logs mislead. BGL has 855 thousand FATAL lines, but they come from far fewer recurring problems. Rank by severity and only one of the top ten is a real alert. And when plain Claude Code greps the raw files itself, a judge found 186 wrong claims over 50 answers.");
+  // 3 · the pipeline at a glance
+  s = slide("Pipeline");
+  title(s, "The pipeline", "The database counts, the AI explains");
+  const pipe = [[fa.FaFileImport, "Load", "SereneDB parses and indexes", "72 s · 5 M lines"], [fa.FaBalanceScale, "Judge", "Jev labels each kind of message", "$0.02 · 20 s"],
+    [fa.FaSearch, "Ask", "Claude picks MCP tools", "< 0.1 s per query"], [fa.FaComments, "Answer", "written for your role", "14 s · ≈ 5 ¢"], [fa.FaCheckDouble, "Verify", "every number re-runs", "62 / 62 traced"]];
+  for (let i = 0; i < 5; i++) {
+    const [ic, h, d, n] = pipe[i], x = 0.5 + i * 1.83;
+    card(s, x, 1.55, 1.68, 3.0, i % 2 ? MIST : PALE);
+    await dot(s, ic, x + 0.22, 1.75, 0.5);
+    s.addText(h, { x: x + 0.22, y: 2.42, w: 1.35, h: 0.4, fontSize: 16, bold: true, fontFace: HEAD, color: INK, margin: 0 });
+    s.addText(d, { x: x + 0.22, y: 2.85, w: 1.35, h: 0.8, fontSize: 11, fontFace: BODY, color: INK2, margin: 0, valign: "top" });
+    s.addText(n, { x: x + 0.22, y: 3.75, w: 1.38, h: 0.65, fontSize: 13.5, bold: true, fontFace: HEAD, color: VIOLET, margin: 0, valign: "top" });
+    if (i < 4) s.addText("›", { x: x + 1.64, y: 2.75, w: 0.22, h: 0.4, fontSize: 22, bold: true, color: VIOLET, fontFace: HEAD, margin: 0, align: "center" });
+  }
+  s.addText("Setup:  docker compose up -d  ·  uv sync  ·  claude  ·  “Load the base corpus”", { x: 0.5, y: 4.7, w: 9, h: 0.3, fontSize: 12, fontFace: MONO, color: DEEP, margin: 0, align: "center" });
+  s.addNotes("0:35 \u00b7 3 \u00b7 Pipeline\n\"Our answer is a pipeline in five steps. The database does the counting, the AI only explains. Load, judge, ask, answer, verify. Setup is four commands.\"");
 
-  // 4 · solution
-  s = slide("Solution");
-  title(s, "The solution", "The database counts, the AI explains");
-  await tiles(s, [[fa.FaComments, "Ask", "in plain words"], [fa.FaDatabase, "SereneDB", "searches and counts every line"], [fa.FaBalanceScale, "Jev", "knows which messages are real faults"], [fa.FaCheckDouble, "Answer", "for your role, with proof"]],
-    1.6, 2.4, [MIST, MIST, MIST, PALE]);
-  s.addText("docker compose up -d   ·   claude   ·   “Load the base corpus”", { x: 0.5, y: 4.3, w: 9, h: 0.45, fontSize: 13, fontFace: MONO, color: DEEP, margin: 0, align: "center" });
-  s.addNotes("Our solution splits the work. You ask in plain words. SereneDB searches and counts every line. Jev already knows which kinds of messages are real faults. Claude only picks the tools and writes the answer for your role, with every number linked to its query. Setup is two commands and one sentence.");
+  // 4–8 · the five stages
+  await stage(0, "Step 1 · Load", "SereneDB loads and indexes every line",
+    ["Download from Zenodo, or any log file on disk", "Format detected from 76 known formats", "Parsed with SQL inside SereneDB: typed columns", "Masked into kinds of message; bursts by window functions", "One inverted index: full text, BM25, phrase, fuzzy"],
+    [["72 s", "clean clone → BGL + OpenStack ready (5 M lines)"], ["18 s", "4.7 M BGL lines parsed + indexed in SQL"], ["1.6 s", "a new 21 k-line file, format auto-detected"]], "0:50 \u00b7 4 \u00b7 Load\n\"Step one. Say 'Load the base corpus'. SereneDB downloads BGL and OpenStack, detects the format from 76 known ones, parses everything with SQL into typed columns, groups lines into kinds of message and builds one full-text index. 72 seconds for 5 million lines. Your own log file: under 2 seconds.\"");
+  await stage(1, "Step 2 · Judge", "Jev decides what is a real problem, once",
+    ["Typed questions, calibrated probabilities: real fault? routine dump? attack? whose?", "Asked once per kind of message, inside SereneDB with one SQL call", "Stored: answering never re-reads raw lines"],
+    [["$0.02 · 20 s", "Jev judges all 1,126 BGL kinds of message"], ["≈ 177 M tokens", "for an LLM to read BGL once (estimate), every time"], ["1 → 5", "real alerts in the manager's top 10"]], "1:15 \u00b7 5 \u00b7 Judge\n\"Step two is where it gets cheap. Jev, a small typed-judgment model, runs inside SereneDB and asks each kind of message once: is it a real fault or a routine dump? an attack? whose is it? 1,126 kinds of message in 20 seconds for 2 cents, stored. Reading BGL with a large model would be about 177 million tokens, every time. And it works: real alerts in the manager's top 10 go from 1 to 5.\"");
+  await stage(2, "Step 3 · Ask", "Claude asks focused questions through MCP",
+    ["44 tools: search, context, counts, trends, rankings, owners", "Each tool is a fixed, safe SQL query; Claude fills typed fields", "Results: the SQL, exact totals, ≤ 50 rows, truncation flag", "5 prompts (type /) and 6 resources (type @)"],
+    [["7 ms", "full-text count over 4.7 M lines (inverted index)"], ["3–39 ms", "group-bys straight from the term dictionary"], ["1.8 s", "of database time for a 20-step investigation"]], "1:45 \u00b7 6 \u00b7 Ask\n\"Step three. Claude asks focused questions through our MCP server: 44 tools, each a fixed, safe SQL query. A full-text count over 4.7 million lines takes 7 milliseconds; group-bys come straight from the index. A whole 20-step investigation spends 1.8 seconds in the database.\"");
+  await stage(3, "Step 4 · Answer", "One problem, three different answers",
+    ["Engineer: 12,996 lines on 1,024 nodes, one host → check it", "Team lead: 31 bursts, owner disputed → triage together", "Manager: rank 1 of 133 → name an owner now", "Facts, hypothesis, unknowns and a next step, every time"],
+    [["14 s", "per answer with Claude Code + our server"], ["≈ 5 ¢", "per answer (Claude Code, 50 questions)"]], "2:05 \u00b7 7 \u00b7 Answer \u2192 switch to Claude Code\nLive: run /mcp__logs__worked_investigation (topic: what deserves attention in November 2005, dataset bgl). \"One problem, three answers. The engineer gets 12,996 lines on 1,024 nodes, all pointing to one host, and the check to run. The team lead gets 31 recurrences and an owner disputed between two teams. The manager gets rank 1 of 133 and a decision. Different evidence, not different lengths.\"");
+  await stage(4, "Step 5 · Verify", "Every number traces to its query",
+    ["Session report: each number links to the step that produced it", "Verify re-runs the step read-only and compares", "Jev checks each sentence against its evidence", "Offline copy: docs/investigation/report.html"],
+    [["62 / 62", "numbers in the worked investigation traced to a query"], ["17 / 17", "steps give the same result when re-run"]], "2:50 \u00b7 8 \u00b7 Verify \u2192 show the report\nOpen the link Claude gives. Click a number: it jumps to its step. Click Verify. \"Every number traces to the query that produced it: 62 of 62. Re-running every step gives the same result. The Jev tab shows every question Jev is asked and what each answer means.\"");
 
-  // 5 · demo: one problem, three answers
-  s = slide("Solution");
-  title(s, "Demo", "One problem, three answers");
-  const roles = [["Engineer", "1,024 nodes hit by a new fault", "Next: check host 172.16.96.116"], ["Team lead", "31 bursts, owner disputed", "Next: two teams triage together"], ["Manager", "Rank 1 of 133 problems", "Next: name one owner now"]];
-  roles.forEach(([r, f, nx], i) => {
-    const x = 0.5 + i * 3.07;
-    card(s, x, 1.6, 2.87, 3.1, WHITE, LINE);
-    s.addText(r, { x: x + 0.3, y: 1.85, w: 2.3, h: 0.45, fontSize: 18, bold: true, fontFace: HEAD, color: INK, margin: 0 });
-    s.addText(f, { x: x + 0.3, y: 2.4, w: 2.3, h: 1.0, fontSize: 15, fontFace: BODY, color: INK2, margin: 0, valign: "top" });
-    card(s, x + 0.2, 3.75, 2.47, 0.75, PALE);
-    s.addText(nx, { x: x + 0.35, y: 3.75, w: 2.2, h: 0.75, fontSize: 12.5, bold: true, fontFace: BODY, color: DEEP, margin: 0, valign: "middle" });
-  });
-  s.addNotes("LIVE DEMO in Claude Code: /mcp__logs__worked_investigation, topic 'what deserves attention in November 2005'. The top problem in BGL, November 2005, is a new fault: 'Link has been severed', 12,996 lines on 1,024 nodes. The engineer gets the first burst and what happened 21 minutes before; the lead gets 31 recurrences and an owner disputed between two teams; the manager gets rank 1 of 133 and a decision. Different evidence, not different lengths. Backup: docs/investigation/report.html.");
-
-  // 6 · accurate + faster
-  s = slide("Solution");
-  title(s, "Why it's better", "More accurate and faster");
-  stats(s, [["62 / 62", "numbers traced to a query"], ["30 – 15", "wins vs plain Claude Code (blind judge, 50 questions)"], ["14 s", "per answer, vs 86 s for plain Claude Code"]]);
-  s.addNotes("More accurate: every number comes from the database. In the worked investigation, 62 of 62 numbers trace to a query, and Verify re-runs each one. On 50 questions with known answers, a blind judge preferred Claude Code with our server over plain Claude Code 30 to 15. Faster: 14 seconds per answer instead of 86.");
-
-  // 6b · the headline comparison: Claude Code with vs without our server
-  s = slide("Solution");
-  title(s, "Measured", "Claude Code, with and without our server");
-  card(s, 0.5, 1.55, 4.4, 3.4, WHITE, LINE);
-  s.addText("Seconds per answer (mean)", { x: 0.8, y: 1.7, w: 3.9, h: 0.35, fontSize: 13, bold: true, fontFace: BODY, color: INK, margin: 0 });
-  s.addChart(pres.charts.BAR, [{ name: "s", labels: ["With our MCP", "Plain Claude Code"], values: [14.3, 86.0] }],
-    { x: 0.6, y: 2.1, w: 4.2, h: 2.2, barDir: "bar", chartColors: [VIOLET], valAxisHidden: true, valGridLine: { style: "none" }, catGridLine: { style: "none" },
-      showValue: true, dataLabelFormatCode: '0 "s"', dataLabelColor: INK, dataLabelFontSize: 14, catAxisLabelColor: INK2, catAxisLabelFontSize: 12,
+  // 9 · price + performance
+  s = slide("Price & performance");
+  title(s, "Price & performance", "Faster, more correct, for about a cent more");
+  card(s, 0.5, 1.5, 4.4, 3.45, WHITE, LINE);
+  s.addText("Seconds per answer (mean, 50 questions)", { x: 0.8, y: 1.62, w: 3.9, h: 0.35, fontSize: 12.5, bold: true, fontFace: BODY, color: INK, margin: 0 });
+  s.addChart(pres.charts.BAR, [{ name: "s", labels: ["Claude Code + our MCP", "Plain Claude Code"], values: [14.3, 86.0] }],
+    { x: 0.6, y: 2.0, w: 4.2, h: 2.4, barDir: "bar", chartColors: [VIOLET], valAxisHidden: true, valGridLine: { style: "none" }, catGridLine: { style: "none" },
+      showValue: true, dataLabelFormatCode: '0 "s"', dataLabelColor: INK, dataLabelFontSize: 14, catAxisLabelColor: INK2, catAxisLabelFontSize: 11.5,
       catAxisLineShow: false, barGapWidthPct: 50, catAxisOrientation: "maxMin" });
-  s.addText("same model · same 50 questions · blind judge", { x: 0.8, y: 4.4, w: 3.9, h: 0.35, fontSize: 11, fontFace: BODY, color: MUTED, margin: 0 });
-  [["30 – 15", "wins (18 – 4 on BGL + OpenStack)"], ["116 vs 186", "wrong claims"], ["0.64 vs 0.46", "golden facts found"]].forEach(([n, l], k) => {
-    const y = 1.55 + k * 1.16;
-    card(s, 5.1, y, 4.4, 1.04, k % 2 ? MIST : PALE);
-    s.addText(n, { x: 5.4, y: y + 0.08, w: 3.9, h: 0.55, fontSize: 26, bold: true, fontFace: HEAD, color: VIOLET, margin: 0 });
-    s.addText(l, { x: 5.4, y: y + 0.62, w: 3.9, h: 0.35, fontSize: 12.5, fontFace: BODY, color: INK2, margin: 0 });
+  s.addText("same model · same questions · blind judge", { x: 0.8, y: 4.5, w: 3.9, h: 0.3, fontSize: 10.5, fontFace: BODY, color: MUTED, margin: 0 });
+  const pp = [["6× faster", "14 s vs 86 s per answer"], ["4.9 ¢ vs 3.8 ¢", "per answer: about a cent more"], ["47 vs 100", "wrong claims per dollar spent"], ["< 1 s", "of each answer is the database; the rest is AI"]];
+  pp.forEach(([n, l], k) => {
+    const y = 1.5 + k * 0.88;
+    card(s, 5.1, y, 4.4, 0.78, k % 2 ? MIST : PALE);
+    s.addText(n, { x: 5.35, y, w: 1.95, h: 0.78, fontSize: 18, bold: true, fontFace: HEAD, color: VIOLET, margin: 0, valign: "middle" });
+    s.addText(l, { x: 7.3, y, w: 2.1, h: 0.78, fontSize: 11, fontFace: BODY, color: INK2, margin: 0, valign: "middle" });
   });
-  s.addNotes("The headline test: the same Claude Code, the same model, the same 50 questions with frozen answers. One gets our MCP server; the other gets the raw log files and its own Bash, Read and Grep. A blind Opus judge preferred ours 30 to 15, and 18 to 4 on the brief's base corpus. Fewer wrong claims, 116 vs 186; more of the key facts found; and 14 seconds per answer instead of 86. On the big BGL and HDFS logs plain Claude Code needs 168 seconds on average and once timed out at 25 minutes. Honest limit: on small logs, where grep reads every line, plain Claude Code wins some engineer questions, 9 to 8.");
+  s.addNotes("3:15 \u00b7 9 \u00b7 Price & performance\n\"The main point. Same Claude Code, same model, 50 questions. With our server: 14 seconds per answer instead of 86, six times faster. It costs about one cent more, 4.9 instead of 3.8, but makes half the wrong claims per dollar. Under one second of each answer is the database; the rest is the AI writing.\"");
 
-  // 7 · fits the company
-  s = slide("Company");
-  title(s, "How it fits the company", "It plugs into routines that already exist");
-  await tiles(s, [[fa.FaBell, "On-call", "the engineer, during an incident"], [fa.FaCalendarWeek, "Weekly review", "the lead, recurring problems by team"], [fa.FaChessKing, "Monthly planning", "the manager, a computed ranking"]], 1.6, 2.1);
-  const fit = [["Their tools", "Claude Code / any MCP client"], ["Their data", "stays on their machine"], ["Their logs", "any file format"], ["Their teams", "access per team"]];
-  fit.forEach(([h, d], i) => {
-    const x = 0.5 + i * 2.3;
-    card(s, x, 3.9, 2.1, 0.85, WHITE, LINE);
-    s.addText([{ text: h, options: { bold: true, color: DEEP, breakLine: true } }, { text: d, options: { color: INK2 } }],
-      { x: x + 0.2, y: 3.9, w: 1.8, h: 0.85, fontSize: 11.5, fontFace: BODY, margin: 0, valign: "middle" });
-  });
-  s.addNotes("It fits three routines a company already has: the incident, the weekly review, the monthly planning. It uses the tools people already have, keeps logs on their own machine, reads their own log formats, and maps problems to their teams, with access per team enforced by the database itself.");
+  // 10 · results
+  s = slide("Results");
+  title(s, "Results", "Measured on 50 questions with known answers");
+  stats(s, [["30 – 15", "wins vs plain Claude Code (18 – 4 on BGL + OpenStack)"], ["116 vs 186", "wrong claims"], ["64 vs 46 %", "key facts found"]], 1.55, 1.9, WHITE, 30);
+  card(s, 0.5, 3.65, 9, 1.3, MIST);
+  s.addText([{ text: "Where it still loses: ", options: { bold: true, color: DEEP } }, { text: "engineer questions on small logs (8 – 9), where grep can read every line. All 50 answers and the judge's reasons are in the dashboard.", options: { color: INK2 } }],
+    { x: 0.8, y: 3.65, w: 8.4, h: 1.3, fontSize: 13, fontFace: BODY, margin: 0, valign: "middle" });
+  s.addNotes("3:40 \u00b7 10 \u00b7 Results\n\"Measured against frozen answer keys with a blind judge: we win 30 to 15, and 18 to 4 on the brief's data, with 116 wrong claims instead of 186. Where we still lose: engineer questions on small logs, where grep can read every line.\"");
 
-  // 8 · cheaper: Jev
-  s = slide("Cost");
-  title(s, "Cheaper than the alternatives", "Judge once, not every line");
-  card(s, 0.5, 1.6, 4.4, 3.15, WHITE, LINE);
-  s.addText("An LLM reads every line", { x: 0.85, y: 1.85, w: 3.8, h: 0.4, fontSize: 15, bold: true, fontFace: BODY, color: INK, margin: 0 });
-  s.addText("≈ 177 M tokens", { x: 0.85, y: 2.35, w: 3.8, h: 0.8, fontSize: 34, bold: true, fontFace: HEAD, color: WARN, margin: 0 });
-  s.addText("every time (estimate)", { x: 0.85, y: 3.15, w: 3.8, h: 0.4, fontSize: 13, fontFace: BODY, color: INK2, margin: 0 });
-  card(s, 5.1, 1.6, 4.4, 3.15, PALE);
-  s.addText("Jev judges 1,126 patterns", { x: 5.45, y: 1.85, w: 3.8, h: 0.4, fontSize: 15, bold: true, fontFace: BODY, color: INK, margin: 0 });
-  s.addText("$0.02 · 20 s", { x: 5.45, y: 2.35, w: 3.8, h: 0.8, fontSize: 34, bold: true, fontFace: HEAD, color: VIOLET, margin: 0 });
-  s.addText("once, reused by every answer", { x: 5.45, y: 3.15, w: 3.8, h: 0.4, fontSize: 13, fontFace: BODY, color: INK2, margin: 0 });
-  s.addText("real alerts in the top 10: 1 → 5", { x: 5.45, y: 3.85, w: 3.8, h: 0.5, fontSize: 14, bold: true, fontFace: BODY, color: DEEP, margin: 0 });
-  s.addNotes("Why it's cheaper. Reading all of BGL with a large model is around 177 million tokens, every time you ask; that is an estimate from the file size. Jev, a small model for typed judgments, runs inside SereneDB and judges each kind of message once: 1,126 patterns in 20 seconds for about two cents, stored and reused by every answer. That single step moved real alerts in the top ten from one to five. An answer with Claude Code plus our server costs about 5 cents.");
-
-  // 8b · how Jev drives decisions
-  s = slide("Cost");
-  title(s, "Jev", "How Jev helps us decide");
-  const dec = [
-    [fa.FaFilter, "Is it a real problem?", "776 → 538", "kinds of message with error lines that Jev keeps as real faults"],
-    [fa.FaSortAmountDown, "What comes first?", "1 → 5", "real alerts in the manager's top 10"],
-    [fa.FaUserShield, "Is it an attack?", "54 / 109", "SSH patterns flagged as threats, though SSH logs have no level"],
-    [fa.FaUsers, "Who owns it?", "4", "owners disputed; 1,114 inferred for new logs"],
+  // 11 · features → better results
+  s = slide("Features");
+  title(s, "Features", "Each feature fixes a way answers go wrong");
+  const feat = [
+    [fa.FaLayerGroup, "Bursts, not lines", "a storm of 12,996 lines reads as 31 recurrences"],
+    [fa.FaBalanceScale, "Jev judgments", "real alerts in the top 10: 1 → 5"],
+    [fa.FaCalculator, "Exact totals in SQL", "62 / 62 numbers traced; no rounding by the model"],
+    [fa.FaUsers, "Ownership table", "every problem has a team; 4 disputes flagged"],
+    [fa.FaSortAmountDown, "Computed priority", "the manager's ranking is SQL, not opinion"],
+    [fa.FaClipboardCheck, "Facts vs hypotheses", "unknowns stated in 100 % of answers"],
   ];
-  for (let i = 0; i < 4; i++) {
-    const [ic, h, n, l] = dec[i], x = 0.5 + (i % 2) * 4.6, y = 1.45 + Math.floor(i / 2) * 1.62;
-    card(s, x, y, 4.4, 1.5, i % 3 ? MIST : PALE);
-    await dot(s, ic, x + 0.25, y + 0.25, 0.5);
-    s.addText(h, { x: x + 0.9, y: y + 0.25, w: 3.3, h: 0.5, fontSize: 15, bold: true, fontFace: HEAD, color: INK, margin: 0, valign: "middle" });
-    s.addText(n, { x: x + 0.25, y: y + 0.85, w: 1.75, h: 0.5, fontSize: 21, bold: true, fontFace: HEAD, color: VIOLET, margin: 0, valign: "middle" });
-    s.addText(l, { x: x + 2.05, y: y + 0.82, w: 2.2, h: 0.58, fontSize: 10.5, fontFace: BODY, color: INK2, margin: 0, valign: "middle" });
-  }
-  s.addText("Probabilities, not guesses: p_problem = max(fault × (1 − dump), threat)", { x: 0.5, y: 4.72, w: 9, h: 0.25, fontSize: 11.5, bold: true, fontFace: BODY, color: DEEP, margin: 0 });
-  s.addNotes("How Jev helps us decide. Jev answers typed questions about each kind of message, with calibrated probabilities. Is it a real problem? Of 776 BGL message kinds with error-level lines, Jev keeps 538 as real faults and drops routine register dumps. What comes first? That moves real alerts in the manager's top 10 from one to five. Is it an attack? On SSH logs, which have no severity at all, Jev flags 54 of 109 patterns as security events. Who owns it? Jev checks the ownership table, flags 4 disputed owners, and inferred 1,114 owners for logs we had never seen. The full list of questions and choices is in the Jev tab of every session report.");
-
-  // 9 · loading
-  s = slide("Loading");
-  title(s, "Loading", "One sentence loads your logs");
-  const steps = [[fa.FaFileImport, "Stream"], [fa.FaSearch, "Detect format"], [fa.FaCogs, "Parse"], [fa.FaLayerGroup, "Patterns"], [fa.FaBalanceScale, "Jev judges"], [fa.FaSearchPlus, "Index"]];
-  for (let i = 0; i < steps.length; i++) {
-    const [ic, h] = steps[i], x = 0.5 + i * 1.53;
-    card(s, x, 1.6, 1.35, 1.55, i === 4 ? PALE : MIST);
-    await dot(s, ic, x + 0.4, 1.8);
-    s.addText(h, { x: x + 0.08, y: 2.5, w: 1.2, h: 0.5, fontSize: 12.5, bold: true, fontFace: HEAD, color: INK, margin: 0, align: "center", valign: "middle" });
-    if (i < steps.length - 1) s.addText("›", { x: x + 1.33, y: 2.15, w: 0.2, h: 0.4, fontSize: 20, bold: true, color: VIOLET, fontFace: HEAD, margin: 0, align: "center" });
-  }
-  stats(s, [["72 s", "base corpus, 5 M lines"], ["1.6 s", "a new 21 k-line file"], ["76", "log formats detected"]], 3.35, 1.6, MIST);
-  s.addNotes("Loading. One sentence to Claude starts it, and every step runs inside SereneDB: the file is streamed in with COPY, its format detected from 76 known formats, parsed with SQL into typed columns, reduced to kinds of message, judged once by Jev in SQL, and indexed. The base corpus is ready in 72 seconds, a new 21 thousand line file in 1.6. The expensive work happens once, so every later answer is fast and cheap.");
-
-  // 10 · performance
-  s = slide("Performance");
-  title(s, "Performance", "Built on SereneDB's search-analytics engine");
-  const perf = [["Inverted index", "7 ms", "full-text count, 4.7 M lines"], ["Term dictionary", "3–39 ms", "group-bys without scanning"], ["SQL-native load", "18 s", "4.7 M lines parsed"],
-    ["ASOF · ROLLUP · PIVOT", "< 100 ms", "timelines and rankings"], ["Remote Parquet", "2.8 s", "1 B rows on S3, in place"], ["On-demand index", "0.94 ms", "vs 281 ms scan"]];
-  perf.forEach(([f, n, l], i) => {
-    const x = 0.5 + (i % 3) * 3.07, y = 1.6 + Math.floor(i / 3) * 1.6;
-    card(s, x, y, 2.87, 1.45, i % 2 ? MIST : WHITE, i % 2 ? undefined : LINE);
-    s.addText(f, { x: x + 0.28, y: y + 0.15, w: 2.4, h: 0.35, fontSize: 12.5, bold: true, fontFace: BODY, color: INK, margin: 0 });
-    s.addText(n, { x: x + 0.28, y: y + 0.5, w: 2.4, h: 0.5, fontSize: 24, bold: true, fontFace: HEAD, color: VIOLET, margin: 0 });
-    s.addText(l, { x: x + 0.28, y: y + 1.0, w: 2.4, h: 0.35, fontSize: 11, fontFace: BODY, color: INK2, margin: 0 });
-  });
-  s.addNotes("Performance comes from SereneDB's engine. The inverted index counts a full-text search over 4.7 million lines in 7 milliseconds; group-bys come straight from the term dictionary without scanning rows. Data loads inside the database. Timelines use ASOF joins, rankings use ROLLUP and PIVOT. Remote Parquet on S3 is read in place, and an on-demand index pays for itself after four searches. The database takes under a second per answer; most of the time is the AI writing.");
-
-  // 11 · MCP overview
-  s = slide("Technical");
-  title(s, "Technical · MCP", "One MCP server, four ways to use it");
-  await tiles(s, [[fa.FaTools, "44 tools", "just ask"], [fa.FaTerminal, "5 prompts", "type /"], [fa.FaFolderOpen, "6 resources", "type @"], [fa.FaMagic, "Completions", "press Tab"]], 1.6, 2.6);
-  s.addNotes("Now the technical part. MCP is how Claude discovers and calls our functions. Our server offers all four kinds: 44 tools Claude picks from their descriptions, 5 prompts as slash commands, 6 resources you attach with @, and completions that suggest real values from your data.");
-
-  // 12 · tools
-  s = slide("Technical");
-  title(s, "Technical · tools", "44 tools, grouped by the question");
-  const groups = [["Find", "search_logs · get_context"], ["Count", "count_by · trend · rollup"], ["Recurring", "top_patterns · pattern_history"], ["Explain", "burst_timeline · precursors"], ["Decide", "priority_table · owner_of"], ["Set up", "load_logs · use_dataset"]];
-  groups.forEach(([g, t], i) => {
-    const x = 0.5 + (i % 3) * 3.07, y = 1.6 + Math.floor(i / 3) * 1.55;
-    card(s, x, y, 2.87, 1.4, i % 2 ? PALE : MIST);
-    s.addText(g, { x: x + 0.28, y: y + 0.2, w: 2.4, h: 0.45, fontSize: 18, bold: true, fontFace: HEAD, color: INK, margin: 0 });
-    s.addText(t, { x: x + 0.28, y: y + 0.7, w: 2.45, h: 0.5, fontSize: 10.5, fontFace: MONO, color: VIOLET, margin: 0, valign: "top" });
-  });
-  s.addText("Every result: its SQL, the exact total, and a flag if cut to 50 rows", { x: 0.5, y: 4.75, w: 9, h: 0.3, fontSize: 11.5, bold: true, fontFace: BODY, color: INK2, margin: 0 });
-  s.addNotes("Forty-four tools grouped by the question they answer: find, count, recurring, explain, decide, set up. You never name a tool; Claude picks it from its description, which says when to use it, when not to, what it returns and what comes next. Every result carries the SQL that ran, the exact total, and a flag if rows were cut to 50. Full list in docs/TOOLS.md.");
-
-  // 13 · prompts + resources
-  s = slide("Technical");
-  title(s, "Technical · prompts and resources", "Shortcuts in Claude Code");
-  card(s, 0.5, 1.6, 4.4, 3.15);
-  s.addText("Prompts  /", { x: 0.8, y: 1.8, w: 3.8, h: 0.4, fontSize: 16, bold: true, fontFace: HEAD, color: INK, margin: 0 });
-  s.addText(["investigate_failure", "review_recurring_problems", "set_priorities", "worked_investigation", "whole_corpus_counts"].map((t, k, a) => ({ text: t, options: { breakLine: k < a.length - 1 } })),
-    { x: 0.8, y: 2.3, w: 3.9, h: 2.2, fontSize: 12, fontFace: MONO, color: VIOLET, margin: 0, valign: "top", paraSpaceAfter: 8 });
-  card(s, 5.1, 1.6, 4.4, 3.15, PALE);
-  s.addText("Resources  @", { x: 5.4, y: 1.8, w: 3.8, h: 0.4, fontSize: 16, bold: true, fontFace: HEAD, color: INK, margin: 0 });
-  s.addText(["datasets", "glossary", "field-guide/{dataset}", "ownership/{dataset}", "session/latest"].map((t, k, a) => ({ text: "logs://" + t, options: { breakLine: k < a.length - 1 } })),
-    { x: 5.4, y: 2.3, w: 3.9, h: 2.2, fontSize: 12, fontFace: MONO, color: DEEP, margin: 0, valign: "top", paraSpaceAfter: 8 });
-  s.addNotes("Prompts are slash commands: one playbook per role, a three-role worked investigation, and the whole-corpus counts the brief asks for. Resources attach context with @: the loaded datasets, the glossary, what each field means, the ownership table, and the full evidence of the session, beyond the 50-row tool limit. Arguments complete with real values from the data.");
-
-  // 14 · wow
-  s = slide("Wow");
-  title(s, "Wow", "Beyond what the brief asked for");
-  const wow = [[fa.FaFileAlt, "Your own logs"], [fa.FaCheckDouble, "Verify button"], [fa.FaCloud, "1 B remote rows"], [fa.FaUserShield, "Access per team"], [fa.FaFlask, "Blind evaluation"], [fa.FaBrain, "Judged once"]];
   for (let i = 0; i < 6; i++) {
-    const [ic, h] = wow[i], x = 0.5 + (i % 3) * 3.07, y = 1.6 + Math.floor(i / 3) * 1.6;
-    card(s, x, y, 2.87, 1.45, i % 2 ? PALE : MIST);
-    await dot(s, ic, x + 0.28, y + 0.45);
-    s.addText(h, { x: x + 1.0, y: y + 0.4, w: 1.8, h: 0.65, fontSize: 15, bold: true, fontFace: HEAD, color: INK, margin: 0, valign: "middle" });
+    const [ic, h, d] = feat[i], x = 0.5 + (i % 3) * 3.07, y = 1.5 + Math.floor(i / 3) * 1.75;
+    card(s, x, y, 2.87, 1.6, i % 2 ? PALE : MIST);
+    await dot(s, ic, x + 0.25, y + 0.25, 0.46);
+    s.addText(h, { x: x + 0.85, y: y + 0.25, w: 1.95, h: 0.46, fontSize: 13.5, bold: true, fontFace: HEAD, color: INK, margin: 0, valign: "middle" });
+    s.addText(d, { x: x + 0.25, y: y + 0.85, w: 2.45, h: 0.65, fontSize: 11.5, fontFace: BODY, color: INK2, margin: 0, valign: "top" });
   }
-  s.addNotes("What goes beyond the brief: load your own log files with no code; a Verify button that re-runs the query behind any number; a billion OpenTelemetry rows queried in place on S3; access per team enforced by the database, not the prompt; our own blind evaluation with 50 answer keys; and AI judgments computed once inside the database.");
+  s.addNotes("4:00 \u00b7 11 \u00b7 Features\n\"Each feature fixes a way answers go wrong. Bursts instead of lines. Jev's judgments. Exact totals in SQL, never rounded by the model. An ownership table, so every problem has a team. A computed priority. And facts are always separated from hypotheses.\"");
 
-  // 15 · proof
+  // 12 · beyond the brief
   s = slide("Wow");
-  title(s, "Wow", "Every answer comes with its proof");
-  const rep = await rounded(path.join(IMG, "report.png")), dash = await rounded(path.join(IMG, "dashboard.png"));
-  [[rep, "Session report"], [dash, "Eval dashboard"]].forEach(([im, h], i) => {
-    const x = 0.5 + i * 4.6, H = 2.75, w = Math.min(4.4 - 0.3, H * im.ratio), hh = w / im.ratio;
-    card(s, x, 1.55, 4.4, 3.4, MIST);
-    s.addImage({ data: im.data, x: x + (4.4 - w) / 2, y: 1.7, w, h: Math.min(hh, H) });
-    s.addText(h, { x: x + 0.2, y: 4.5, w: 4.0, h: 0.38, fontSize: 13, bold: true, fontFace: BODY, color: INK, margin: 0, align: "center" });
-  });
-  s.addNotes("Every answer comes with its proof. On the left, the session report: each number links to the query behind it, and Verify re-runs it. On the right, the evaluation dashboard: 50 questions, both answers, the judge's reasons, and how to re-run it. Both open offline from the repo.");
+  title(s, "Beyond the brief", "More than the challenge asked for");
+  const wow = [[fa.FaFileAlt, "Your own logs", "any file, no code"], [fa.FaCloud, "1 B remote rows", "queried in place on S3"], [fa.FaUserShield, "Access per team", "enforced by the database"],
+    [fa.FaDatabase, "11.2 M lines", "HDFS loaded in 47 s"], [fa.FaFlask, "Blind evaluation", "50 answer keys + dashboard"], [fa.FaUndo, "Fully reproducible", "--fresh reruns Jev live, same result"]];
+  for (let i = 0; i < 6; i++) {
+    const [ic, h, d] = wow[i], x = 0.5 + (i % 3) * 3.07, y = 1.5 + Math.floor(i / 3) * 1.75;
+    card(s, x, y, 2.87, 1.6, i % 2 ? MIST : PALE);
+    await dot(s, ic, x + 0.25, y + 0.3, 0.46);
+    s.addText(h, { x: x + 0.85, y: y + 0.27, w: 1.95, h: 0.5, fontSize: 14, bold: true, fontFace: HEAD, color: INK, margin: 0, valign: "middle" });
+    s.addText(d, { x: x + 0.25, y: y + 0.95, w: 2.45, h: 0.5, fontSize: 12, fontFace: BODY, color: INK2, margin: 0, valign: "top" });
+  }
+  s.addNotes("4:25 \u00b7 12 \u00b7 Beyond the brief\n\"Beyond the brief: your own log files with no code, a billion remote rows queried in place, access per team enforced by the database, 11 million lines loaded in 47 seconds, our own blind evaluation, and it is fully reproducible: run with --fresh and Jev judges everything live with the same result.\"");
 
-  // 16 · scale
+  // 13 · scale
   s = slide("Scale");
   title(s, "Scale", "Where it goes next");
-  await tiles(s, [[fa.FaIndustry, "Mittelstand", "production and IT logs"], [fa.FaBuilding, "Other industries", "anything that writes logs"], [fa.FaBoxOpen, "A product", "a self-hosted log copilot"]], 1.6, 1.95);
+  await tiles(s, [[fa.FaIndustry, "Mittelstand", "production and IT logs"], [fa.FaBuilding, "Other industries", "anything that writes logs"], [fa.FaBoxOpen, "A product", "a self-hosted log copilot"]], 1.55, 1.95);
   s.addImage({ data: await gcard(9, 1.2), x: 0.5, y: 3.75, w: 9, h: 1.2 });
-  [["10", "log types, no code change"], ["11.2 M", "lines loaded in 47 s"], ["1 B", "remote rows, in place"]].forEach(([n, l], i) => {
+  [["10", "log types, no code change"], ["≈ 5 ¢", "per answer"], ["2 min", "fresh install → answers"]].forEach(([n, l], i) => {
     s.addText(n, { x: 0.85 + i * 3.0, y: 3.85, w: 2.7, h: 0.55, fontSize: 28, bold: true, fontFace: HEAD, color: WHITE, margin: 0 });
     s.addText(l, { x: 0.85 + i * 3.0, y: 4.4, w: 2.7, h: 0.4, fontSize: 12, fontFace: BODY, color: "EDE7FF", margin: 0 });
   });
-  s.addNotes("Nothing in the code is specific to one dataset: ten log types load without code changes, eleven million HDFS lines load in 47 seconds, and a billion remote rows are queried in place. That makes it a product: a self-hosted log copilot for Mittelstand production and IT, and any industry that writes logs.");
+  s.addNotes("4:45 \u00b7 13 \u00b7 Scale\n\"Nothing is specific to one dataset: ten log types load with no code change. That makes it a product: a self-hosted log copilot for the Mittelstand and beyond.\"");
 
-  // 17 · try it
+  // 14 · try it
   s = pres.addSlide(); s.background = { color: WHITE }; N++;
   s.addImage({ data: await gcard(9, 4.6), x: 0.5, y: 0.5, w: 9, h: 4.6 });
-  s.addText("Try it in two commands", { x: 1.0, y: 0.95, w: 8, h: 0.7, fontSize: 34, bold: true, fontFace: HEAD, color: WHITE, margin: 0 });
-  s.addShape(pres.shapes.ROUNDED_RECTANGLE, { x: 1.0, y: 1.9, w: 8, h: 1.45, rectRadius: R, fill: { color: WHITE, transparency: 88 }, line: { type: "none" } });
-  s.addText("docker compose up -d\nclaude\n> Load the base corpus", { x: 1.3, y: 1.95, w: 7.5, h: 1.35, fontSize: 18, fontFace: MONO, color: WHITE, margin: 0, valign: "middle" });
-  s.addText("github.com/aircode610/making-sense-of-logs-schubki-ai-hackathon", { x: 1.0, y: 4.0, w: 8, h: 0.4, fontSize: 14, bold: true, fontFace: BODY, color: "EDE7FF", margin: 0 });
-  s.addNotes("Two commands and one sentence, and your logs answer back. The worked investigation, the dashboard and every tool are documented in the repo. Thank you.");
+  s.addText("Try it in two minutes", { x: 1.0, y: 0.95, w: 8, h: 0.7, fontSize: 34, bold: true, fontFace: HEAD, color: WHITE, margin: 0 });
+  s.addShape(pres.shapes.ROUNDED_RECTANGLE, { x: 1.0, y: 1.9, w: 8, h: 1.6, rectRadius: R, fill: { color: WHITE, transparency: 88 }, line: { type: "none" } });
+  s.addText("docker compose up -d\nuv sync\nclaude\n> Load the base corpus", { x: 1.3, y: 1.95, w: 7.5, h: 1.5, fontSize: 17, fontFace: MONO, color: WHITE, margin: 0, valign: "middle" });
+  s.addText("github.com/aircode610/making-sense-of-logs-schubki-ai-hackathon", { x: 1.0, y: 4.05, w: 8, h: 0.4, fontSize: 14, bold: true, fontFace: BODY, color: "EDE7FF", margin: 0 });
+  s.addNotes("4:55 \u00b7 14 \u00b7 Try it\n\"Four commands, about two minutes from a fresh install to answers. Thank you.\"");
 
   await pres.writeFile({ fileName: OUT });
   console.log(`wrote ${path.relative(process.cwd(), OUT)} (${N} slides)`);
