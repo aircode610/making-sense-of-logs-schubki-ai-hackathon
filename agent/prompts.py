@@ -14,9 +14,12 @@ def corpus() -> str:
         with psycopg.connect(host=os.getenv("PGHOST", "localhost"), port=os.getenv("PGPORT", "7890"),
                              user=os.getenv("PGUSER", "postgres"), dbname=os.getenv("PGDATABASE", "postgres"),
                              autocommit=True) as c:
-            rows = c.execute("SELECT d.dataset, d.title, d.location_hint, d.id_fields, min(l.ts), max(l.ts), count(*) "
+            rows = c.execute("SELECT d.dataset, d.title, d.location_meaning, concat_ws('; ', 'request_id = ' || d.request_meaning, "
+                             "'object_id = ' || d.object_meaning), min(l.ts), max(l.ts), count(*) "
                              "FROM datasets d JOIN logs l ON l.dataset = d.dataset GROUP BY ALL ORDER BY any_value(d.pattern_base)").fetchall()
-    except Exception:  # noqa: BLE001  (no database: the agent can still call describe_corpus)
+    except Exception as e:  # noqa: BLE001  (no database: the agent can still call describe_corpus)
+        import sys
+        print(f"corpus(): registry query failed, using fallback: {e}", file=sys.stderr)
         return _CORPUS_FALLBACK
     parts = [f"{d}: {t} ({lo:%Y-%m-%d} → {hi:%Y-%m-%d}, {n:,} lines" + (f"; location = {loc}" if loc else "")
              + (f"; ids: {ids}" if ids else "") + ")" for d, t, loc, ids, lo, hi, n in rows]
@@ -28,7 +31,7 @@ def corpus() -> str:
 RULES = (
     "Rules: numbers come only from tool results (copy them exactly; never compute or estimate new ones). Returned lines "
     "are samples: frequency comes from total_matches / counts, never from counting rows. Counts are log lines, not "
-    "incidents: use bursts (recurrences) and nodes (spread) to describe how often and how widely. Make independent tool "
+    "incidents: use bursts (recurrences) and nodes (how widely) to describe how often and how widely. Make independent tool "
     "calls in parallel in one turn. Keep within ~12 tool calls. When you have the evidence, stop calling tools and reply "
     "'READY' (the answer card is written in a separate step).")
 
@@ -80,6 +83,52 @@ RECIPES = {
         "3. Optional: whats_new or check_watchlist to say what is new or came back; top_patterns rank_by='growth'.\n"
         "Evidence needed: ranked problems with measured basis (bursts, nodes, change, weeks), owner team, team trend. "
         "Never mention money, downtime or customer impact: they are not in the logs."),
+}
+
+# Tool-neutral recipes (plan 013 A/B): the same evidence, in the same order, with no tool names, so that which tool
+# gets picked depends only on the tools' own descriptions. Used by both A/B arms; product prompt only if not worse.
+NEUTRAL_RECIPES = {
+    "engineer": (
+        "You support an ENGINEER investigating one failure: what failed, where, and what happened just before and after.\n"
+        "Recipe (pick the available tool that best fits each step from its description):\n"
+        "1. Anchor: find the lines for the error with time / node / component filters, earliest first; if there are no "
+        "or very few hits, try other wordings before concluding it is absent. Note the total count, first and last time, "
+        "nodes, the kind of message and one line to anchor on.\n"
+        "2. Context: what happened just before and after that line on the same node, then on the same group, request or "
+        "object; for one request / object / session, its full timeline.\n"
+        "3. Which came first: the order in which kinds of messages appeared around the incident.\n"
+        "4. Scope and history: one node or fleet-wide; new or recurring before the incident.\n"
+        "5. Baseline: the incident rate vs the usual rate just before it.\n"
+        "6. Hypothesis material if it fits: what tends to precede it, what is unusual in the window, which IPs / paths / "
+        "ids dominate, how the matches break down by component / severity / node.\n"
+        "Slow / latency questions (no error logged): find the abnormally slow operations first, then anchor on one.\n"
+        "If the question assumes something the logs do not show, say so and report what they do show.\n"
+        "Evidence needed: the error lines, before/after events, component + node, total count with scope, first error, "
+        "one node or fleet-wide, new vs recurring, rate vs the usual rate."),
+    "lead": (
+        "You support a TEAM LEAD: which problems recur, how often, whose are they, and what should the team investigate "
+        "first, over a stated period.\n"
+        "Recipe (pick the available tool that best fits each step from its description):\n"
+        "1. The recurring problems of the period (default: last 28 days) ranked by recurrences, or by growth when the "
+        "question is about getting worse; limited to a team when it names one. If the question describes a problem in "
+        "its own words, first find which kinds of messages match it.\n"
+        "2. Totals over time: recurrences per team and component, and their profile over weeks.\n"
+        "3. What changed: kinds of problems first seen in the period; known problems that came back.\n"
+        "4. Relations when asked: do two problems occur together, does one recur on a schedule, which messages are "
+        "variants of the same problem.\n"
+        "5. Optional: one example line of the top problem.\n"
+        "Evidence needed: stated absolute period, recurrences by component and team (not only lines), profile over time, "
+        "what is new or growing, the one problem to investigate first with its measured reason."),
+    "manager": (
+        "You support a MANAGER deciding what deserves attention first and what should happen next.\n"
+        "Recipe (pick the available tool that best fits each step from its description):\n"
+        "1. A ranking of the period's problems (default: last 28 days); if a computed ranking is available, explain it "
+        "and never re-rank it yourself.\n"
+        "2. Direction: is reliability improving or getting worse (per week); one team's risk when a team is named; team "
+        "subtotals.\n"
+        "3. Optional: what is new or came back; what grew most.\n"
+        "Evidence needed: ranked problems with measured basis (recurrences, nodes, change, weeks), owner team, team "
+        "direction. Never mention money, downtime or customer impact: they are not in the logs."),
 }
 
 GATHER_SYSTEM = "{recipe}\n\n{corpus}\n\n{rules}"

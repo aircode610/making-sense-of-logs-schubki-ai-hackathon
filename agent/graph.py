@@ -18,6 +18,7 @@ Baseline (the brief's reference design): `build_baseline` = `create_agent` with 
 import asyncio
 import json
 import os
+import re
 from typing import Annotated, Any, Literal, Optional, TypedDict
 
 import psycopg
@@ -51,6 +52,12 @@ ROLE_TOOLS = {
              "find_patterns", "similar_patterns", "co_occurrence", "periodicity", "search_logs"],
     "manager": ["describe_corpus", "priority_table", "reliability_trend", "team_risk", "rollup", "count_by",
                 "top_patterns", "trend", "whats_new", "check_watchlist"],
+}
+# Plan 013 A/B "old" arm: the per-role subsets of plan 010 (8 original tools), same current tool code.
+OLD_ROLE_TOOLS = {
+    "engineer": ["search_logs", "get_context", "count_by", "trend", "rate_vs_baseline", "value_outliers"],
+    "lead": ["top_patterns", "trend", "count_by", "search_logs"],
+    "manager": ["priority_table", "count_by", "top_patterns", "trend"],
 }
 # The baseline (brief's reference design) gets every read-only corpus tool; workspace / remote write tools excluded.
 BASELINE_EXCLUDE = {"create_focus_index", "drop_focus_index", "remote_index", "explain_tool"}
@@ -104,10 +111,20 @@ class CoverageMiddleware(AgentMiddleware[GatherState]):
         return {"messages": [HumanMessage(nudge)], "nudges": state.get("nudges", 0) + 1, "jump_to": "model"}
 
 
-def build_gatherer(role: str, tools: list[BaseTool], model):
+def gather_system(role: str, recipes: dict | None = None, neutral: bool = False) -> str:
+    """The gatherer's system prompt; plan 013 A/B diffs it across arms (must be identical). neutral=True also drops
+    tool-name asides like '(… request_timeline splits them)' that registry text carries for the MCP field guide."""
+    corpus = prompts.corpus()
+    if neutral:
+        corpus = re.sub(r";? [^;()]*\b[a-z]+_[a-z_]+ splits [^)]*", "", corpus)
+    return prompts.GATHER_SYSTEM.format(recipe=(recipes or prompts.RECIPES)[role], corpus=corpus, rules=prompts.RULES)
+
+
+def build_gatherer(role: str, tools: list[BaseTool], model, role_tools: dict | None = None,
+                   recipes: dict | None = None, neutral: bool = False):
     by_name = {t.name: t for t in tools}
-    system = prompts.GATHER_SYSTEM.format(recipe=prompts.RECIPES[role], corpus=prompts.corpus(), rules=prompts.RULES)
-    return create_agent(model, [by_name[n] for n in ROLE_TOOLS[role] if n in by_name], system_prompt=system,
+    names = (role_tools or ROLE_TOOLS)[role]
+    return create_agent(model, [by_name[n] for n in names if n in by_name], system_prompt=gather_system(role, recipes, neutral),
                         middleware=[CoverageMiddleware(role), ToolCallLimitMiddleware(run_limit=TURN_TOOL_CALLS)],
                         name=f"gather_{role}")
 
@@ -191,7 +208,10 @@ class RoleChoice(BaseModel):
     role: Role
 
 
-def build_graph(tools: list[BaseTool], model=None):
+def build_graph(tools: list[BaseTool], model=None, role_tools: dict | None = None, recipes: dict | None = None,
+                neutral: bool = False):
+    """role_tools / recipes default to the product's ROLE_TOOLS / prompts.RECIPES; plan 013's A/B passes per-arm
+    tool subsets with one shared tool-neutral recipe set (prompts.NEUTRAL_RECIPES)."""
     model = model or make_model()
 
     async def route(state: State) -> dict:
@@ -216,7 +236,7 @@ def build_graph(tools: list[BaseTool], model=None):
     g = StateGraph(State)
     g.add_node("route", route)
     for role in ROLE_TOOLS:
-        g.add_node(f"gather_{role}", build_gatherer(role, tools, model))
+        g.add_node(f"gather_{role}", build_gatherer(role, tools, model, role_tools, recipes, neutral))
         g.add_edge(f"gather_{role}", "handover")
     g.add_node("handover", handover)
     g.add_node("composer", build_composer(model))

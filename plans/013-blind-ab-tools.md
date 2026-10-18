@@ -62,7 +62,7 @@ judge investigations against our golden facts. Held-out untouched.
 ## 6. Steps
 - [x] Answer keys: 25 parallel context-free agents → `eval/answer_keys/`, human spot-check, freeze
 - [x] 25 more questions (writers per dataset) + their answer keys (50 keys, all golden facts agree; judgement calls settled + frozen, H27)
-- [ ] Neutral recipes + `role_tools` parameter; diff of rendered prompts = empty
+- [x] Neutral recipes + `role_tools` parameter; diff of rendered prompts = empty (prompt depends only on role + shared recipes; leak scan: no tool name in it; smoke: both arms stay in their toolsets). Also fixed `corpus()` (plan-012 column rename had silently reduced it to a one-line fallback)
 - [ ] `sql` judge tool (read-only), investigate + compare agents, blinding + leak scan
 - [ ] Smoke on 2 questions, read transcripts
 - [ ] Full run, results file, STATUS / EVAL.md
