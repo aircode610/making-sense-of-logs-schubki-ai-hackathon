@@ -116,7 +116,7 @@ async function rounded(file, rx = 28) {
   // 1 · title
   let s = pres.addSlide(); s.background = { color: WHITE }; N++;
   s.addImage({ data: await gcard(3.4, 4.6), x: 6.1, y: 0.5, w: 3.4, h: 4.6 });
-  [["14 s", "per answer"], ["≈ 5 ¢", "per answer"], ["$0.02", "to judge 1,126 kinds of message"]].forEach(([n, l], i) => {
+  [["14 s", "per answer"], ["≈ 5 ¢", "per answer"], ["$0.02 · 20 s", "to judge 1,126 kinds of message"]].forEach(([n, l], i) => {
     s.addText(n, { x: 6.45, y: 0.95 + i * 1.35, w: 2.8, h: 0.65, fontSize: 36, bold: true, fontFace: HEAD, color: WHITE, margin: 0 });
     s.addText(l, { x: 6.45, y: 1.58 + i * 1.35, w: 2.8, h: 0.35, fontSize: 13, fontFace: BODY, color: "EDE7FF", margin: 0 });
   });
@@ -158,19 +158,23 @@ async function rounded(file, rx = 28) {
   {
     const s2 = await stage(1, "Step 2 · Judge", "Jev decides what is a real problem, once",
       ["Typed questions, calibrated probabilities: real fault? routine dump? attack? whose?", "Asked once per kind of message, inside SereneDB with one SQL call", "Stored: answering never re-reads raw lines", "Real alerts in the manager's top 10: 1 → 5"],
-      [], "1:15 \u00b7 5 \u00b7 Judge\n\"Step two is where it gets cheap. Jev, a small typed-judgment model, runs inside SereneDB and asks each kind of message once: is it a real fault or a routine dump? an attack? whose is it? 1,126 kinds of message in 20 seconds for 2 cents, stored. Having an LLM read BGL instead is about 177 million tokens: roughly 89 dollars on Haiku, 354 on Sonnet, 708 on Opus, and again for every question. And it works: real alerts in the manager's top 10 go from 1 to 5.\"");
-    // price comparison: judging BGL once with Jev vs reading it with an LLM (≈177 M input tokens, an estimate)
+      [], "1:15 \u00b7 5 \u00b7 Judge\n\"Step two is where it gets cheap. Jev, a small typed-judgment model, runs inside SereneDB and asks each kind of message once: is it a real fault or a routine dump? an attack? whose is it? 1,126 kinds of message in 20 seconds for 2 cents, stored. Having an LLM read BGL instead is about 440 million tokens, measured: about two and a half hours and 220 dollars on Haiku, 880 on Sonnet, 1,760 on Opus, and again for every question. And it works: real alerts in the manager's top 10 go from 1 to 5.\"");
+    // price + time: judging BGL once with Jev vs an LLM reading every line. LLM side measured on real BGL lines:
+    // 800 KB = 473,801 tokens (1.69 B/token) → 743 MB ≈ 440 M tokens; prompt processing ≈ 48 k tokens/s → ≈ 2.5 h.
     card(s2, 5.1, 2.05, 4.4, 2.9, WHITE, LINE);
-    s2.addText("Cost to judge BGL once", { x: 5.35, y: 2.15, w: 3.95, h: 0.32, fontSize: 12.5, bold: true, fontFace: BODY, color: INK, margin: 0 });
-    const price = [["Jev, once per kind of message", "$0.02", VIOLET, true], ["Haiku 5.5 reads every line", "≈ $89", WARN, false],
-                   ["Sonnet 5.5 reads every line", "≈ $354", WARN, false], ["Opus 5.5 reads every line", "≈ $708", WARN, false]];
-    price.forEach(([l, n, c, hi], k) => {
+    s2.addText("Judge BGL once", { x: 5.35, y: 2.15, w: 2.2, h: 0.32, fontSize: 12.5, bold: true, fontFace: BODY, color: INK, margin: 0 });
+    s2.addText("cost", { x: 7.55, y: 2.15, w: 0.8, h: 0.32, fontSize: 10.5, bold: true, fontFace: BODY, color: MUTED, margin: 0, align: "right" });
+    s2.addText("time", { x: 8.45, y: 2.15, w: 0.85, h: 0.32, fontSize: 10.5, bold: true, fontFace: BODY, color: MUTED, margin: 0, align: "right" });
+    const price = [["Jev, per kind of message", "$0.02", "20 s", VIOLET, true], ["Haiku 5.5 reads all lines", "$220", "≈ 2.5 h", WARN, false],
+                   ["Sonnet 5.5 reads all lines", "$880", "≈ 2.5 h", WARN, false], ["Opus 5.5 reads all lines", "$1,760", "≈ 2.5 h", WARN, false]];
+    price.forEach(([l, n, t, c, hi], k) => {
       const y = 2.55 + k * 0.5;
       if (hi) s2.addShape(pres.shapes.ROUNDED_RECTANGLE, { x: 5.25, y: y - 0.04, w: 4.1, h: 0.46, rectRadius: 0.1, fill: { color: PALE }, line: { type: "none" } });
-      s2.addText(l, { x: 5.4, y, w: 2.75, h: 0.38, fontSize: 11.5, bold: hi, fontFace: BODY, color: INK2, margin: 0, valign: "middle" });
-      s2.addText(n, { x: 8.1, y, w: 1.2, h: 0.38, fontSize: 16, bold: true, fontFace: HEAD, color: c, margin: 0, align: "right", valign: "middle" });
+      s2.addText(l, { x: 5.4, y, w: 2.2, h: 0.38, fontSize: 11, bold: hi, fontFace: BODY, color: INK2, margin: 0, valign: "middle" });
+      s2.addText(n, { x: 7.45, y, w: 0.9, h: 0.38, fontSize: 15, bold: true, fontFace: HEAD, color: c, margin: 0, align: "right", valign: "middle" });
+      s2.addText(t, { x: 8.4, y, w: 0.9, h: 0.38, fontSize: 15, bold: true, fontFace: HEAD, color: c, margin: 0, align: "right", valign: "middle" });
     });
-    s2.addText("LLM: ≈ 177 M input tokens (709 MB ÷ ~4 B/token, estimate) × list price; again for every question, and it does not fit one context window.",
+    s2.addText("LLM: BGL ≈ 440 M tokens (measured 1.7 B/token), ≥ 440 calls of 1 M; ≈ 48 k tokens/s measured. Again for every question.",
       { x: 5.35, y: 4.5, w: 3.95, h: 0.42, fontSize: 8.5, fontFace: BODY, color: MUTED, margin: 0, valign: "top" });
   }
   await stage(2, "Step 3 · Ask", "Claude asks focused questions through MCP",

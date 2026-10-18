@@ -5,7 +5,7 @@ SchubKI National AI Hackathon 2026 · SereneDB challenge · Amirali, Konark
 > SereneDB searches and counts, Jev judges which messages are real faults, Claude explains, and every number in an
 > answer traces back to the query that produced it.
 
-**For judges:** [try it step by step](docs/TRY_IT.md) · [demo script](docs/DEMO.md) · [worked investigation](docs/INVESTIGATION.md) · [eval dashboard](docs/dashboard.html) (download and
+**For judges:** [try it step by step](docs/TRY_IT.md) · [worked investigation](docs/INVESTIGATION.md) · [eval dashboard](docs/dashboard.html) (download and
 open) · [all tools](docs/TOOLS.md) · [slides](docs/slides/making-sense-of-logs.pptx)
 
 ## Workflow
