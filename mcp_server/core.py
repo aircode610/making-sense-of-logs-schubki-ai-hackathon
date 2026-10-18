@@ -62,8 +62,24 @@ def execute(sql: str, params: Optional[dict] = None) -> None:
 # ---------------------------------------------------------------- dataset registry (plan 011: nothing dataset-specific
 # in tool code; names, components, severities and teams come from the loaded data, so a new dataset needs no change here)
 
+def pinned() -> Optional[str]:
+    """LOGS_DATASET=<name> pins the server to one dataset (plan 014): the real use case is one user's own logs, so the
+    model never chooses a dataset. Tools lose their `dataset` parameter and every query is filtered to it."""
+    return os.environ.get("LOGS_DATASET") or None
+
+
 @lru_cache(maxsize=1)
 def registry() -> dict:
+    """The loaded datasets (only the pinned one when LOGS_DATASET is set)."""
+    reg = _registry_all()
+    if pinned():
+        if pinned() not in reg:
+            raise ValueError(f"LOGS_DATASET={pinned()!r} is not loaded; loaded: {', '.join(reg)}")
+        return {pinned(): reg[pinned()]}
+    return reg
+
+
+def _registry_all() -> dict:
     """{dataset: {title, description, <field>_meaning, first_ts, last_ts, lines, components[], severities[], teams[],
     examples{field: value}, entity_kinds[]}} read once per server process from the `datasets` / `dataset_examples`
     tables and the data itself (plan 012: what each generic field means per dataset lives in data, not code)."""
@@ -394,7 +410,15 @@ def envelope(tool: str, params: dict, sqls: list[str], filters: dict, scope: str
              t0: float, **extra) -> dict:
     sql_text = "; ".join(sqls)
     eid = hashlib.sha1(json.dumps([tool, sql_text], default=str).encode()).hexdigest()[:10]
-    return {"tool": tool, "params": plain({k: v for k, v in params.items() if v is not None}, "T"),
-            "sql": sqls, "filters": plain({k: v for k, v in filters.items() if v is not None}, "T"), "scope": scope,
-            **plain(extra, "T"), "rows": [clean_row(r) for r in rows],
-            "elapsed_ms": round((time.perf_counter() - t0) * 1000, 1), "evidence_id": f"ev-{eid}"}
+    env = {"tool": tool, "params": plain({k: v for k, v in params.items() if v is not None}, "T"),
+           "sql": sqls, "filters": plain({k: v for k, v in filters.items() if v is not None}, "T"), "scope": scope,
+           **plain(extra, "T"), "rows": [clean_row(r) for r in rows],
+           "elapsed_ms": round((time.perf_counter() - t0) * 1000, 1), "evidence_id": f"ev-{eid}"}
+    # Plan 014: a truncated result says how much is missing and how to get it, so a small but important row (a rare
+    # new error, one IP) is not silently cut. Totals stay exact either way.
+    total = extra.get("total_matches")
+    if extra.get("truncated") and rows and isinstance(total, int) and total > len(rows):
+        env["truncation"] = {"shown": len(rows), "of": total,
+                             "how_to_see_more": f"raise limit (max {MAX_ROWS}) or narrow the filters / period; "
+                                                "group with count_by / facet for the full distribution"}
+    return env

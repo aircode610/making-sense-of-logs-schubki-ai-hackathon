@@ -40,7 +40,8 @@ def pattern_history(
     Not for: many patterns at once (top_patterns), lines of any search over time (trend), schedule / time-of-day
     regularity (periodicity).
     Returns: the pattern (template, component, team, lines, bursts, nodes, weeks_active, first_ts, last_ts,
-    p_problem), bursts and lines per bucket over the whole dataset (zero-filled), gap statistics, and `before`
+    p_problem), per bucket over the whole dataset (zero-filled) bursts_started and lines (lines by their own
+    timestamp), gap statistics, and `before`
     (bursts / lines before as_of, new_as_of).
     Caveats: bursts = recurrences split by > 30 min quiet, not confirmed incidents.
     Example: pattern_history(dataset=<dataset>, pattern_id=<id>, bucket='week', as_of='<incident time>')
@@ -53,10 +54,14 @@ def pattern_history(
     span = query("SELECT min(ts) AS lo, max(ts) AS hi FROM logs WHERE dataset = %(d)s", {"d": dataset})[0]
     lo, hi = (f"TIMESTAMP '{t:%Y-%m-%d %H:%M:%S}'" for t in (span["lo"], span["hi"]))
     step = {"day": "1 day", "week": "7 days", "month": "1 month"}[bucket]
-    series_sql = (f"SELECT s.b AS bucket_start, count(b.burst_no) AS bursts, coalesce(sum(b.lines), 0) AS lines "
+    # Plan 014: `lines` = log lines whose own timestamp falls in the bucket (a burst spanning midnight used to put all
+    # its lines in the day it started); `bursts_started` = bursts that began in the bucket.
+    series_sql = (f"SELECT s.b AS bucket_start, coalesce(bs.n, 0) AS bursts_started, coalesce(ls.n, 0) AS lines "
                   f"FROM generate_series(date_trunc('{bucket}', {lo}), {hi}, interval '{step}') s(b) "
-                  f"LEFT JOIN bursts b ON b.dataset = %(d)s AND b.pattern_id = %(p)s AND date_trunc('{bucket}', b.start_ts) = s.b "
-                  f"GROUP BY 1 ORDER BY 1")
+                  f"LEFT JOIN (SELECT date_trunc('{bucket}', start_ts) AS b, count(*) AS n FROM bursts "
+                  f"WHERE dataset = %(d)s AND pattern_id = %(p)s GROUP BY 1) bs ON bs.b = s.b "
+                  f"LEFT JOIN (SELECT date_trunc('{bucket}', ts) AS b, count(*) AS n FROM logs "
+                  f"WHERE dataset = %(d)s AND pattern_id = %(p)s GROUP BY 1) ls ON ls.b = s.b ORDER BY 1")
     gap_sql = ("SELECT max(gap) AS longest_gap, median(gap) AS median_gap, count(*) AS gaps FROM ("
                "SELECT start_ts - lag(end_ts) OVER (ORDER BY start_ts) AS gap FROM bursts "
                "WHERE dataset = %(d)s AND pattern_id = %(p)s) WHERE gap IS NOT NULL")

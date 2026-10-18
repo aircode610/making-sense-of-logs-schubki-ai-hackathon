@@ -99,3 +99,5 @@ notes: 'Single-server log with no node dimension. The question gives the end as 
   find child in scoreboard'' ERROR (300022), not to the NOTICE ''Found child N in scoreboard slot N'' (300016, 101 bursts, judged not a problem). An answer that ranks the NOTICE should not get credit.'
 judging: The golden order comes from a tool under test (priority_table); it agrees with the key. Full credit = 'script not found or unable to stat' (web-platform) first, jk2 scoreboard (app-integration)
   second; do not require the exact tool wording.
+data_update: 'Data update (plan 014, 2026-10-18): the loader now gives continuation lines their own component (httpd), so the mod_jk / mod_jk2 / jk2_init() ''script not found'' artefact described in this
+  key no longer exists in the data. The facts and owners in this key are unchanged; an answer that sees the whole family under httpd is correct, and the artefact trap can no longer be fallen into.'

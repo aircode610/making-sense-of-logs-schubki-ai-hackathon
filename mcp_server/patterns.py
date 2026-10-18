@@ -83,6 +83,16 @@ def _problem_where(problem_filter: str) -> str:
     return w if problem_filter == "severity" else w + f" AND j.p_problem >= {P_PROBLEM_MIN}"
 
 
+def _excluded(dataset, ps, s, e, extra: str = "", params_extra: Optional[dict] = None, n: int = 3) -> tuple[list, str]:
+    """Plan 014: the most-recurring patterns the Jev filter left out although they have problem-level lines, with
+    their judgment, so a frequent pattern judged 'not a fault' is visible (the judge, not the agent, decided it)."""
+    sql = _base_sql(False, "jev", extra + f" AND now.problem_lines > 0 AND coalesce(j.p_problem, 0) < {P_PROBLEM_MIN}") + f"""
+SELECT pattern_id, template, component, team, bursts, lines, nodes, p_problem, kind FROM base
+ORDER BY bursts DESC, pattern_id LIMIT {n}"""
+    params = _params(dataset, ps, s, e, **(params_extra or {}))
+    return query(sql, params), render(sql, params)
+
+
 def _params(dataset, ps, s, e, **kw) -> dict:
     return {"d": dataset, "ps": ps, "s": s, "e": e, **{k: v for k, v in kw.items() if v is not None}}
 
@@ -110,6 +120,7 @@ def top_patterns(
     Returns: per pattern: template, component, owner team, lines, bursts (recurrences split by > 30 min quiet),
     nodes, weeks_active, bursts_prev (previous period of equal length), change, new (first seen in the period),
     top_node_share (1.0 = one node only), p_problem / kind (stored Jev judgment). Both periods as absolute dates.
+    excluded_by_filter = the top recurring patterns with error-level lines that the Jev filter judged not a fault.
     Caveats: bursts count recurrences, not confirmed incidents; lines count log entries. Default period = the
     dataset's last 28 days.
     Example: top_patterns(dataset=<dataset>, start='<month start>', end='<next month start>', rank_by='growth')
@@ -128,8 +139,14 @@ SELECT *, count(*) OVER () AS candidates FROM base ORDER BY {order}, pattern_id 
     for r in rows:
         del r["candidates"]
     f = dict(dataset=dataset, start=s, end=e, team=team, component=component)
+    sqls = [render(sql, params)]
+    excluded = None
+    if problem_only and problem_filter == "jev":
+        excluded, xsql = _excluded(dataset, ps, s, e, extra, dict(team=team, comp=component))
+        sqls.append(xsql)
     return envelope("top_patterns", dict(problem_only=problem_only, problem_filter=problem_filter, rank_by=rank_by,
-                                         limit=limit, **f), [render(sql, params)], f,
+                                         limit=limit, **f), sqls, f,
+                    excluded_by_filter=excluded,
                     scope=f"{dataset}, period {s:%Y-%m-%d %H:%M} → {e:%Y-%m-%d %H:%M}, previous {ps:%Y-%m-%d %H:%M} → {s:%Y-%m-%d %H:%M}; "
                           f"bursts = recurrences (30-min gap), lines = log entries" + node_note(dataset),
                     rows=rows, t0=t0, total_matches=n, truncated=n > len(rows),
@@ -219,6 +236,10 @@ FROM ranked ORDER BY score DESC, bursts DESC, pattern_id"""
                    period={"start": s.isoformat(sep=" "), "end": e.isoformat(sep=" ")},
                    previous_period={"start": ps.isoformat(sep=" "), "end": s.isoformat(sep=" ")})
     del env["rows"]
+    if problem_filter == "jev":
+        excluded, xsql = _excluded(dataset, ps, s, e)
+        env["sql"].append(xsql)
+        env["excluded_by_filter"] = excluded
     env.update(items=items, team_rollup=rollup,
                unknown="Cost, downtime, customer impact and root cause are not in these logs.")
     return env

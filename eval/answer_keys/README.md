@@ -11,3 +11,5 @@ Rules for the judge (decided by Claude at Amirali's request, `docs/DECISIONS.md`
   reading the answer states explicitly is accepted; the key's `notes` give the numbers for each.
 - A key's optional `judging` field overrides the above for that question.
 - Do not edit keys after an A/B run has started; a fix means re-running the affected comparisons.
+- `data_update` (plan 014): a loader fix changed how the data represents something the key mentions (never the facts);
+  the note says what changed. Golden values were re-run after the reload and none changed.

@@ -1,60 +1,77 @@
 id: D-X16
 role: lead
 dataset: hdfs
-question: "Between 2008-11-10 00:00 and 2008-11-11 12:00, how often did HDFS pending replications time out, how many blocks did it hit, when did it start, does it recur on a schedule, and which team owns it?"
-answer_summary: "In the window there are 47 WARN lines 'PendingReplicationMonitor timed out block blk_...' (component dfs.PendingReplicationBlocks$PendingReplicationMonitor) covering 46 distinct blocks (blk_508142918386110029 timed out twice, 07:14:34 and 07:24:33 on 2008-11-11). They group into 7 bursts (9 distinct timestamps): the first is a single block at 2008-11-10 10:49:36, then 21:24 (5), 22:29 (8), 05:09 (6), 07:14-07:29 (16), 08:19 (8) and 09:24 (3) on 2008-11-11; nothing like it exists before 10:49:36 on 11-10, so these are all the occurrences in the dataset. It is not a fixed schedule: gaps between bursts are irregular (about 10.6 h, 1.1 h, 6.7 h, 2.1 h, 0.8 h, 1.1 h), it gets more frequent on 11-11, and every timeout lands about 10 minutes after a 'BLOCK* ask ... to replicate' command for that block, during the large re-replication waves (21h, 22h, 04h, 07h-09h). Only the timestamps follow a 5-minute grid (xx:x4:3x / xx:x9:3x), which is the monitor's check interval, not a recurring fault. Owner: storage-platform (the default HDFS owner; the component has its own ownership row mapping to storage-platform). All 46 blocks are labeled Anomaly in the Loghub labels. Look first at the 2008-11-11 07:00-09:30 re-replication wave and why replication targets don't confirm within the timeout."
+question: Between 2008-11-10 00:00 and 2008-11-11 12:00, how often did HDFS pending replications time out, how many blocks did it hit, when did it start, does it recur on a schedule, and which team owns
+  it?
+answer_summary: 'In the window there are 47 WARN lines ''PendingReplicationMonitor timed out block blk_...'' (component dfs.PendingReplicationBlocks$PendingReplicationMonitor) covering 46 distinct blocks
+  (blk_508142918386110029 timed out twice, 07:14:34 and 07:24:33 on 2008-11-11). They group into 7 bursts (9 distinct timestamps): the first is a single block at 2008-11-10 10:49:36, then 21:24 (5), 22:29
+  (8), 05:09 (6), 07:14-07:29 (16), 08:19 (8) and 09:24 (3) on 2008-11-11; nothing like it exists before 10:49:36 on 11-10, so these are all the occurrences in the dataset. It is not a fixed schedule: gaps
+  between bursts are irregular (about 10.6 h, 1.1 h, 6.7 h, 2.1 h, 0.8 h, 1.1 h), it gets more frequent on 11-11, and every timeout lands about 10 minutes after a ''BLOCK* ask ... to replicate'' command
+  for that block, during the large re-replication waves (21h, 22h, 04h, 07h-09h). Only the timestamps follow a 5-minute grid (xx:x4:3x / xx:x9:3x), which is the monitor''s check interval, not a recurring
+  fault. Owner: storage-platform (the default HDFS owner; the component has its own ownership row mapping to storage-platform). All 46 blocks are labeled Anomaly in the Loghub labels. Look first at the
+  2008-11-11 07:00-09:30 re-replication wave and why replication targets don''t confirm within the timeout.'
 findings:
-  - fact: "47 timeout lines, 46 distinct blocks, first 2008-11-10 10:49:36, last 2008-11-11 09:24:33 (whole dataset, so all occurrences fall in the window)"
-    sql: "SELECT count(*), count(DISTINCT request_id), min(ts), max(ts) FROM logs WHERE dataset='hdfs' AND body @@ websearch_to_tsquery('PendingReplicationMonitor')"
-    result: "47|46|2008-11-10 10:49:36|2008-11-11 09:24:33"
-    importance: must
-  - fact: "7 bursts (30-min gap rule) at 11-10 10:49 (1 line), 21:24 (5), 22:29 (8), 11-11 05:09 (6), 07:14-07:29 (16), 08:19 (8), 09:24 (3)"
-    sql: "SELECT b.burst_no, b.start_ts, b.end_ts, b.lines FROM bursts b JOIN patterns p USING (dataset, pattern_id) WHERE b.dataset='hdfs' AND p.template LIKE 'PendingReplicationMonitor timed out%' ORDER BY b.start_ts  -- confirmed by: SELECT ts, count(*), count(DISTINCT request_id) FROM logs WHERE dataset='hdfs' AND body @@ websearch_to_tsquery('PendingReplicationMonitor') GROUP BY ts ORDER BY ts"
-    result: "9 timestamps: 10:49:36|1, 21:24:35|5, 22:29:35|8, 05:09:34|6, 07:14:34|14, 07:24:33|1, 07:29:33|1, 08:19:33|8, 09:24:33|3 -> 7 bursts"
-    importance: must
-  - fact: "Owner is storage-platform (component dfs.PendingReplicationBlocks$PendingReplicationMonitor; also the HDFS * default)"
-    sql: "SELECT * FROM ownership WHERE dataset='hdfs' AND component='dfs.PendingReplicationBlocks$PendingReplicationMonitor'"
-    result: "hdfs|dfs.PendingReplicationBlocks$PendingReplicationMonitor|storage-platform|HDFS: block storage, replication and verification (default)"
-    importance: must
-  - fact: "Not periodic: burst gaps irregular (~10.6 h, 1.1 h, 6.7 h, 2.1 h, then 50 min, 65 min); each timeout follows a 'to replicate' ask for the same block by ~10 min, and bursts coincide with re-replication waves (hourly 'to replicate' lines: 11-10 21h 1030, 22h 1009; 11-11 04h 952, 07h 1219, 08h 848, 09h 771)"
-    sql: "WITH t AS (SELECT request_id, ts FROM logs WHERE dataset='hdfs' AND body @@ websearch_to_tsquery('PendingReplicationMonitor')) SELECT t.ts, t.request_id, max(l.ts) FILTER (WHERE l.ts < t.ts AND l.body LIKE '%to replicate%') last_ask FROM t JOIN logs l ON l.dataset='hdfs' AND l.request_id=t.request_id GROUP BY 1,2 ORDER BY 1"
-    result: "every timeout has a prior 'ask ... to replicate' 9-10 min earlier (e.g. 10:44:19 -> 10:49:36; 21:14:35 -> 21:24:35; 07:04:39 -> 07:14:34)"
-    importance: should
-  - fact: "All 46 affected blocks are labeled Anomaly in Loghub labels"
-    sql: "WITH b AS (SELECT DISTINCT request_id FROM logs WHERE dataset='hdfs' AND body @@ websearch_to_tsquery('PendingReplicationMonitor')) SELECT count(*), count(l.label) FROM b LEFT JOIN labels l ON l.dataset='hdfs' AND l.label=b.request_id"
-    result: "46|46"
-    importance: should
-  - fact: "Example lifecycle (blk_-5057834626410636236): written 10:39, NameNode asks 10.251.199.245 to replicate at 10:44:19, timeout 10:49:36, re-asked to 10.251.43.115 at 10:49:41, succeeds 10:50:22 - timeouts are followed by re-replication that usually succeeds"
-    sql: "SELECT ts, component, body FROM logs WHERE dataset='hdfs' AND request_id='blk_-5057834626410636236' ORDER BY ts LIMIT 30"
-    result: "10:44:19 BLOCK* ask 10.251.199.245:50010 to replicate ... ; 10:49:36 PendingReplicationMonitor timed out ...; 10:49:41 ask ... to replicate to 10.251.43.115; 10:50:22 addStoredBlock 10.251.43.115"
-    importance: nice
+- fact: 47 timeout lines, 46 distinct blocks, first 2008-11-10 10:49:36, last 2008-11-11 09:24:33 (whole dataset, so all occurrences fall in the window)
+  sql: SELECT count(*), count(DISTINCT request_id), min(ts), max(ts) FROM logs WHERE dataset='hdfs' AND body @@ websearch_to_tsquery('PendingReplicationMonitor')
+  result: 47|46|2008-11-10 10:49:36|2008-11-11 09:24:33
+  importance: must
+- fact: 7 bursts (30-min gap rule) at 11-10 10:49 (1 line), 21:24 (5), 22:29 (8), 11-11 05:09 (6), 07:14-07:29 (16), 08:19 (8), 09:24 (3)
+  sql: 'SELECT b.burst_no, b.start_ts, b.end_ts, b.lines FROM bursts b JOIN patterns p USING (dataset, pattern_id) WHERE b.dataset=''hdfs'' AND p.template LIKE ''PendingReplicationMonitor timed out%'' ORDER
+    BY b.start_ts  -- confirmed by: SELECT ts, count(*), count(DISTINCT request_id) FROM logs WHERE dataset=''hdfs'' AND body @@ websearch_to_tsquery(''PendingReplicationMonitor'') GROUP BY ts ORDER BY
+    ts'
+  result: '9 timestamps: 10:49:36|1, 21:24:35|5, 22:29:35|8, 05:09:34|6, 07:14:34|14, 07:24:33|1, 07:29:33|1, 08:19:33|8, 09:24:33|3 -> 7 bursts'
+  importance: must
+- fact: Owner is storage-platform (component dfs.PendingReplicationBlocks$PendingReplicationMonitor; also the HDFS * default)
+  sql: SELECT * FROM ownership WHERE dataset='hdfs' AND component='dfs.PendingReplicationBlocks$PendingReplicationMonitor'
+  result: 'hdfs|dfs.PendingReplicationBlocks$PendingReplicationMonitor|storage-platform|HDFS: block storage, replication and verification (default)'
+  importance: must
+- fact: 'Not periodic: burst gaps irregular (~10.6 h, 1.1 h, 6.7 h, 2.1 h, then 50 min, 65 min); each timeout follows a ''to replicate'' ask for the same block by ~10 min, and bursts coincide with re-replication
+    waves (hourly ''to replicate'' lines: 11-10 21h 1030, 22h 1009; 11-11 04h 952, 07h 1219, 08h 848, 09h 771)'
+  sql: WITH t AS (SELECT request_id, ts FROM logs WHERE dataset='hdfs' AND body @@ websearch_to_tsquery('PendingReplicationMonitor')) SELECT t.ts, t.request_id, max(l.ts) FILTER (WHERE l.ts < t.ts AND l.body
+    LIKE '%to replicate%') last_ask FROM t JOIN logs l ON l.dataset='hdfs' AND l.request_id=t.request_id GROUP BY 1,2 ORDER BY 1
+  result: every timeout has a prior 'ask ... to replicate' 9-10 min earlier (e.g. 10:44:19 -> 10:49:36; 21:14:35 -> 21:24:35; 07:04:39 -> 07:14:34)
+  importance: should
+- fact: All 46 affected blocks are labeled Anomaly in Loghub labels
+  sql: WITH b AS (SELECT DISTINCT request_id FROM logs WHERE dataset='hdfs' AND body @@ websearch_to_tsquery('PendingReplicationMonitor')) SELECT count(*), count(l.label) FROM b LEFT JOIN labels l ON l.dataset='hdfs'
+    AND l.label=b.request_id
+  result: 46|46
+  importance: should
+- fact: 'Example lifecycle (blk_-5057834626410636236): written 10:39, NameNode asks 10.251.199.245 to replicate at 10:44:19, timeout 10:49:36, re-asked to 10.251.43.115 at 10:49:41, succeeds 10:50:22 -
+    timeouts are followed by re-replication that usually succeeds'
+  sql: SELECT ts, component, body FROM logs WHERE dataset='hdfs' AND request_id='blk_-5057834626410636236' ORDER BY ts LIMIT 30
+  result: 10:44:19 BLOCK* ask 10.251.199.245:50010 to replicate ... ; 10:49:36 PendingReplicationMonitor timed out ...; 10:49:41 ask ... to replicate to 10.251.43.115; 10:50:22 addStoredBlock 10.251.43.115
+  importance: nice
 must_conclude:
-  - "47 lines / 46 distinct blocks (one block timed out twice); report blocks, not lines, as the count of affected blocks"
-  - "About 7 bursts (recurrences), starting 2008-11-10 10:49:36; it is the first occurrence in the dataset"
-  - "Not on a fixed schedule; tracks re-replication waves and intensifies on 2008-11-11 (5 of 7 bursts, 40 of 47 lines)"
-  - "Owner team: storage-platform"
+- 47 lines / 46 distinct blocks (one block timed out twice); report blocks, not lines, as the count of affected blocks
+- About 7 bursts (recurrences), starting 2008-11-10 10:49:36; it is the first occurrence in the dataset
+- Not on a fixed schedule; tracks re-replication waves and intensifies on 2008-11-11 (5 of 7 bursts, 40 of 47 lines)
+- 'Owner team: storage-platform'
 traps:
-  - "Counting 47 lines as 47 blocks or incidents (46 blocks, ~7 bursts)"
-  - "Reading the 5-minute timestamp grid (xx:x4:3x / xx:x9:3x) as a periodic fault; that is the monitor's check interval"
-  - "Assigning ownership to namenode-platform (dfs.FSNamesystem) or datanode-ops; the monitor component maps to storage-platform"
-  - "Severity is WARN, not ERROR; filtering on ERROR finds nothing"
-  - "Lines have no node field; affected datanodes only appear as IPs in related 'to replicate' lines"
+- Counting 47 lines as 47 blocks or incidents (46 blocks, ~7 bursts)
+- Reading the 5-minute timestamp grid (xx:x4:3x / xx:x9:3x) as a periodic fault; that is the monitor's check interval
+- Assigning ownership to namenode-platform (dfs.FSNamesystem) or datanode-ops; the monitor component maps to storage-platform
+- Severity is WARN, not ERROR; filtering on ERROR finds nothing
+- Lines have no node field; affected datanodes only appear as IPs in related 'to replicate' lines
 not_established:
-  - "Root cause of why replication targets did not confirm in time (slow/overloaded datanodes, network) is not stated in the timeout lines"
-  - "Whether any data was lost or unavailable; follow-up lines show re-replication, but durable impact is not established"
-  - "Any customer/job impact or downtime"
-labels_used: "labels(dataset='hdfs', label=block id) = Loghub HDFS anomalous blocks; all 46 timed-out blocks are anomalous."
+- Root cause of why replication targets did not confirm in time (slow/overloaded datanodes, network) is not stated in the timeout lines
+- Whether any data was lost or unavailable; follow-up lines show re-replication, but durable impact is not established
+- Any customer/job impact or downtime
+labels_used: labels(dataset='hdfs', label=block id) = Loghub HDFS anomalous blocks; all 46 timed-out blocks are anomalous.
 golden_check:
-  - fact: "bursts of PendingReplicationMonitor timeouts in the period"
-    golden_value: "7"
-    my_value: "7"
-    agrees: true
-  - fact: "distinct blocks that timed out"
-    golden_value: "46"
-    my_value: "46 (47 lines)"
-    agrees: true
-  - fact: "owner team"
-    golden_value: "storage-platform"
-    my_value: "storage-platform"
-    agrees: true
-notes: "Dataset ends 2008-11-11 11:16:28, so the window covers all occurrences. Timeouts trail the NameNode's replicate command by ~10 min, consistent with the pending-replication timeout; this is an inference from timing, labelled as hypothesis."
+- fact: bursts of PendingReplicationMonitor timeouts in the period
+  golden_value: '7'
+  my_value: '7'
+  agrees: true
+- fact: distinct blocks that timed out
+  golden_value: '46'
+  my_value: 46 (47 lines)
+  agrees: true
+- fact: owner team
+  golden_value: storage-platform
+  my_value: storage-platform
+  agrees: true
+notes: Dataset ends 2008-11-11 11:16:28, so the window covers all occurrences. Timeouts trail the NameNode's replicate command by ~10 min, consistent with the pending-replication timeout; this is an inference
+  from timing, labelled as hypothesis.
+data_update: 'Data update (plan 014, 2026-10-18): the hdfs `node` column is now filled with the datanode that logged the line (the ''<ip>:50010:'' prefix, or the receiving ''dest:'' datanode); NameNode
+  lines and lines naming only a peer stay NULL. Statements in this key that ''hdfs has no node column'' describe the old load; the facts (which datanodes, how many, spread) are unchanged and can now also
+  be read from `node`.'

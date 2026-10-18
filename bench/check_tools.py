@@ -229,8 +229,10 @@ for ds in DATASETS:
     # ---- timeline
     r = run(timeline.pattern_history, ds, ds, pid)
     if r:
-        ok("pattern_history", ds, "bursts in series", sum(x["bursts"] for x in r["rows"]),
+        ok("pattern_history", ds, "bursts in series", sum(x["bursts_started"] for x in r["rows"]),
            one("SELECT count(*) FROM bursts WHERE dataset = %(d)s AND pattern_id = %(p)s", {"d": ds, "p": pid}))
+        ok("pattern_history", ds, "lines in series (own timestamps)", sum(x["lines"] for x in r["rows"]),
+           one("SELECT count(*) FROM logs WHERE dataset = %(d)s AND pattern_id = %(p)s", {"d": ds, "p": pid}))
     r = run(timeline.burst_timeline, ds, ds, pid)
     if r:
         ok("burst_timeline", ds, "contains the pattern", pid in [x["pattern_id"] for x in r["rows"]] or r["truncated"], True)

@@ -12,7 +12,10 @@ run if any tool name or evidence id reaches the judge.
 
   .venv/bin/python -m eval.ab --ids D-E01,D-L04          # smoke
   .venv/bin/python -m eval.ab                            # all questions in eval/dev_questions.yaml
-  .venv/bin/python -m eval.ab --reuse eval/results/ab-<t>.runs.json   # re-judge stored answers (no agent runs)
+  .venv/bin/python -m eval.ab --arms new,old --reuse <runs.json> --reuse-arm new   # B from an earlier run
+  .venv/bin/python -m eval.ab --rejudge eval/results/ab-<t>.runs.json   # re-judge stored answers (no agent runs)
+Plan 014: every question runs on an MCP server pinned to its dataset (LOGS_DATASET), as a user runs it on their own
+logs; --unpinned restores the plan-013 multi-dataset setting.
 Performance (per run): wall = llm + tool + other, from callback intervals (parallel calls merged, not summed):
 llm = a model call in flight; tool = a tool call in flight while no model call is (client side, incl. MCP transport);
 other = graph / Python. tool_db = the tools' own server-side elapsed_ms (SereneDB + tool code) and per-tool calls / ms.
@@ -52,11 +55,17 @@ from pydantic import BaseModel, Field
 
 from agent import prompts
 from agent.graph import OLD_ROLE_TOOLS, ROLE_TOOLS, build_graph, gather_system
-from agent.run import MCP
+from agent.run import mcp_config
 from eval.judge import JUDGE_MODEL, ROLE_NEEDS
 from eval.metrics import answer_text_from_card, golden_hits
 
-ARMS = {"old": OLD_ROLE_TOOLS, "new": ROLE_TOOLS}
+# Arm = (tool subsets, recipes, neutral prompt). Plan 014: arms run on a server pinned to the question's dataset.
+ARM_DEFS = {
+    "new": (ROLE_TOOLS, prompts.NEUTRAL_RECIPES, True),           # current tools, tool-neutral prompt (plan 013 arm)
+    "old": (OLD_ROLE_TOOLS, prompts.NEUTRAL_RECIPES, True),       # plan-010 tools, same prompt
+    "product": (ROLE_TOOLS, prompts.RECIPES, False),              # current tools with the product recipes
+}
+ARMS = ("new", "old")   # set from --arms in main(); first = A, second = B
 KEYS = ROOT / "eval/answer_keys"
 JUDGE_SQL_CALLS = 15
 SQL_ROWS, SQL_TIMEOUT_S = 200, 60
@@ -264,10 +273,11 @@ async def compare(q: dict, key_text: str, a: str, b: str, model) -> dict:
 
 
 async def judge_pair(q: dict, texts: dict, seed: int, model) -> dict:
-    """texts = {'old': blinded, 'new': blinded}. Order 1: X/Y random (seeded); order 2: swapped."""
+    """texts = {arm_a: blinded, arm_b: blinded}. Order 1: X/Y random (seeded); order 2: swapped."""
     rnd = random.Random(f"{seed}-{q['id']}")
-    first = rnd.choice(["old", "new"])
-    order = [first, "new" if first == "old" else "old"]          # order[0] is X in round 1
+    a, b = list(texts)
+    first = rnd.choice([b, a])
+    order = [first, a if first == b else b]                      # order[0] is X in round 1
     key_text = (KEYS / f"{q['id']}.yaml").read_text()
     r1, r2 = await asyncio.gather(compare(q, key_text, texts[order[0]], texts[order[1]], model),
                                   compare(q, key_text, texts[order[1]], texts[order[0]], model))
@@ -318,7 +328,7 @@ def per_tool_table(rows: list[dict]) -> list[dict]:
 
 
 def tally(rows: list[dict]) -> dict:
-    t = {"new": 0, "old": 0, "tie": 0, "inconsistent": 0}
+    t = {ARMS[0]: 0, ARMS[1]: 0, "tie": 0, "inconsistent": 0}
     for r in rows:
         if r.get("judge"):
             t[r["judge"]["result"]] += 1
@@ -331,37 +341,39 @@ def tsplit(run: dict) -> str:
 
 
 def render_md(rep: dict) -> str:
-    rows = rep["rows"]
-    L = [f"# A/B toolsets: new (plan 011) vs old (plan 010) — {rep['stamp']}", "",
+    rows, A, B = rep["rows"], ARMS[0], ARMS[1]
+    L = [f"# A/B: {A} vs {B} — {rep['stamp']}", "",
          f"git {rep['git']} · agent {rep['agent_model']} · judge {rep['judge_model']} · seed {rep['seed']} · "
-         f"{len(rows)} questions · prompts identical across arms: {rep['prompts_identical']} · leaks: {rep['leaks'] or 'none'}",
-         "", "## Wins (order-consistent only)", "", "| slice | new | old | tie | inconsistent |", "|---|---|---|---|---|"]
+         f"{len(rows)} questions · server pinned to each question's dataset: {rep.get('pinned')} · "
+         f"prompts identical across arms: {rep['prompts_identical']} · leaks: {rep['leaks'] or 'none'}"
+         + (f" · {B} answers reused from {rep['reuse']}" if rep.get("reuse") else ""),
+         "", "## Wins (order-consistent only)", "", f"| slice | {A} | {B} | tie | inconsistent |", "|---|---|---|---|---|"]
     t = tally(rows)
-    L.append(f"| all | {t['new']} | {t['old']} | {t['tie']} | {t['inconsistent']} |")
+    L.append(f"| all | {t[A]} | {t[B]} | {t['tie']} | {t['inconsistent']} |")
     for dim in ("role", "dataset"):
         for v in sorted({r[dim] for r in rows}):
             t = tally([r for r in rows if r[dim] == v])
-            L.append(f"| {dim} {v} | {t['new']} | {t['old']} | {t['tie']} | {t['inconsistent']} |")
-    L += ["", "## Per arm", "", "| metric | new | old |", "|---|---|---|"]
-    for k in rep["arms"]["new"]:
-        L.append(f"| {k} | {rep['arms']['new'][k]} | {rep['arms']['old'][k]} |")
+            L.append(f"| {dim} {v} | {t[A]} | {t[B]} | {t['tie']} | {t['inconsistent']} |")
+    L += ["", "## Per arm", "", f"| metric | {A} | {B} |", "|---|---|---|"]
+    for k in rep["arms"][A]:
+        L.append(f"| {k} | {rep['arms'][A][k]} | {rep['arms'][B].get(k)} |")
     L += ["", "## Where the time goes (mean seconds per run; llm + tool + other = wall)", "",
           "| arm | wall | llm | tool (client) | other | tool db (server) | tool calls | llm calls |", "|---|---|---|---|---|---|---|---|"]
-    for arm in ("new", "old"):
+    for arm in (A, B):
         m = rep["arms"][arm]
         L.append(f"| {arm} | {m['wall_s']} | {m['llm_s']} | {m['tool_s (client, not overlapping llm)']} | {m['other_s']} | "
                  f"{m['tool_db_s (server)']} | {m['tool_calls']} | {m['llm_calls']} |")
     L += ["", "## Tool time by tool (server-side elapsed_ms)", "", "| tool | arm | calls | total s | median ms | max ms |",
           "|---|---|---|---|---|---|"]
     L += [f"| {d['tool']} | {d['arm']} | {d['calls']} | {d['total_s']} | {d['median_ms']} | {d['max_ms']} |" for d in rep["per_tool"]]
-    L += ["", "## Per question", "", "| id | role | dataset | result | new found / wrong | old found / wrong | new tools | old tools | new wall / llm / tool s | old wall / llm / tool s |",
-          "|---|---|---|---|---|---|---|---|---|---|"]
+    L += ["", "## Per question", "", f"| id | role | dataset | result | {A} found / wrong | {B} found / wrong | {A} tools | {B} tools | "
+          f"{A} wall / llm / tool s | {B} wall / llm / tool s |", "|---|---|---|---|---|---|---|---|---|---|"]
     for r in rows:
         j = r.get("judge") or {}
         f = lambda a: "/".join(str(sum(g[k] for g in j["grades"][a])) for k in ("found_problem", "claims_wrong")) if j else "-"  # noqa: E731
-        L.append(f"| {r['id']} | {r['role']} | {r['dataset']} | {j.get('result', 'not judged')} | {f('new')} | {f('old')} | "
-                 f"{len(r['runs']['new'].get('tools_used', []))} | {len(r['runs']['old'].get('tools_used', []))} | "
-                 f"{tsplit(r['runs']['new'])} | {tsplit(r['runs']['old'])} |")
+        L.append(f"| {r['id']} | {r['role']} | {r['dataset']} | {j.get('result', 'not judged')} | {f(A)} | {f(B)} | "
+                 f"{len(r['runs'][A].get('tools_used', []))} | {len(r['runs'][B].get('tools_used', []))} | "
+                 f"{tsplit(r['runs'][A])} | {tsplit(r['runs'][B])} |")
     return "\n".join(L) + "\n"
 
 
@@ -373,9 +385,16 @@ async def main() -> int:
     ap.add_argument("--ids", help="comma-separated question ids")
     ap.add_argument("--concurrency", type=int, default=3, help="questions in flight (each = 2 agent runs + 2 judges)")
     ap.add_argument("--seed", type=int, default=13)
-    ap.add_argument("--reuse", metavar="RUNS_JSON", help="judge stored answers of an earlier run (no agent runs)")
+    ap.add_argument("--arms", default="new,old", help=f"two of {sorted(ARM_DEFS)}: A,B (B may be reused, see --reuse)")
+    ap.add_argument("--reuse", metavar="RUNS_JSON", help="take arm B's answers from an earlier run (its arm named --reuse-arm)")
+    ap.add_argument("--reuse-arm", default=None, help="arm name inside RUNS_JSON to use as B (default: B's name)")
+    ap.add_argument("--rejudge", metavar="RUNS_JSON", help="judge stored answers of BOTH arms (no agent runs)")
+    ap.add_argument("--unpinned", action="store_true", help="multi-dataset server (plan 013 setting) instead of pinned")
     ap.add_argument("--no-judge", action="store_true")
     a = ap.parse_args()
+    global ARMS
+    ARMS = tuple(a.arms.split(","))
+    assert len(ARMS) == 2 and all(x in ARM_DEFS for x in ARMS), f"--arms: two of {sorted(ARM_DEFS)}"
     qs = yaml.safe_load(Path(a.questions).read_text())
     if a.ids:
         keep = set(a.ids.split(","))
@@ -384,34 +403,57 @@ async def main() -> int:
     if missing:
         sys.exit(f"no answer key for {missing}")
 
-    tools = await MultiServerMCPClient(MCP).get_tools()
-    names = {t.name for t in tools}
-    titles = {t.description.split("\n")[0].strip().rstrip("?.") for t in tools if t.description} - {""}
+    # Plan 014: one MCP server per dataset, pinned to it (how a user runs it on their own logs)
+    datasets = sorted({q["dataset"] for q in qs})
+    toolsets = {}
+    for ds in ([None] if a.unpinned else datasets):
+        toolsets[ds] = await MultiServerMCPClient(mcp_config(ds)).get_tools()
+    tools_for = (lambda ds: toolsets[None]) if a.unpinned else (lambda ds: toolsets[ds])  # noqa: E731
+    names = {t.name for ts in toolsets.values() for t in ts}
+    titles = {t.description.split("\n")[0].strip().rstrip("?.") for ts in toolsets.values() for t in ts if t.description} - {""}
     titles = {x for x in titles if len(x) > 25}                        # long first lines only (not common words)
-    prompts_identical = all(gather_system(r, prompts.NEUTRAL_RECIPES, neutral=True) ==
-                            gather_system(r, prompts.NEUTRAL_RECIPES, neutral=True) for r in ROLE_TOOLS)
-    prompt_leaks = sorted({n for r in ROLE_TOOLS for n in names
-                           if re.search(rf"\b{re.escape(n)}\b", gather_system(r, prompts.NEUTRAL_RECIPES, neutral=True))})
-    if prompt_leaks:
-        sys.exit(f"tool names in the shared prompt: {prompt_leaks}")
-    graphs = {arm: build_graph(tools, role_tools=rt, recipes=prompts.NEUTRAL_RECIPES, neutral=True) for arm, rt in ARMS.items()}
+    pin = None if a.unpinned else datasets[0]
+    shared = [arm for arm in ARMS if ARM_DEFS[arm][1] is ARM_DEFS[ARMS[0]][1]]
+    prompts_identical = len(shared) == 2 and all(
+        gather_system(r, ARM_DEFS[ARMS[0]][1], ARM_DEFS[ARMS[0]][2], pin) ==
+        gather_system(r, ARM_DEFS[ARMS[1]][1], ARM_DEFS[ARMS[1]][2], pin) for r in ROLE_TOOLS)
+    for arm in ARMS:
+        if ARM_DEFS[arm][2]:          # neutral prompt must not name tools
+            leak = sorted({n for r in ROLE_TOOLS for n in names
+                           if re.search(rf"\b{re.escape(n)}\b", gather_system(r, ARM_DEFS[arm][1], True, pin))})
+            if leak:
+                sys.exit(f"tool names in the {arm} prompt: {leak}")
+    graphs = {}
+
+    def graph_for(arm: str, ds: str):
+        key = (arm, None if a.unpinned else ds)
+        if key not in graphs:
+            rt, rec, neutral = ARM_DEFS[arm]
+            graphs[key] = build_graph(tools_for(ds), role_tools=rt, recipes=rec, neutral=neutral,
+                                      dataset=None if a.unpinned else ds)
+        return graphs[key]
+
     stored = {}
-    if a.reuse:
-        stored = {(r["id"], arm): run for r in json.loads(Path(a.reuse).read_text()) for arm, run in r["runs"].items()}
+    src = a.rejudge or a.reuse
+    if src:
+        rename = {(a.reuse_arm or ARMS[1]): ARMS[1]} if a.reuse else {}
+        stored = {(r["id"], rename.get(arm, arm)): run for r in json.loads(Path(src).read_text()) for arm, run in r["runs"].items()}
     judge_model = init_chat_model(JUDGE_MODEL, max_tokens=8000)
     sem = asyncio.Semaphore(a.concurrency)
     all_leaks: list[str] = []
 
     async def one(q: dict) -> dict:
         async with sem:
-            if stored:
+            runs = {}
+            if a.rejudge:
                 runs = {arm: stored[(q["id"], arm)] for arm in ARMS}
             else:
+                if a.reuse:
+                    runs[ARMS[1]] = stored[(q["id"], ARMS[1])]
                 rnd = random.Random(f"{a.seed}-run-{q['id']}")
-                order = sorted(ARMS, key=lambda _: rnd.random())      # which arm runs first: random per question
-                runs = {}
+                order = sorted([x for x in ARMS if x not in runs], key=lambda _: rnd.random())  # random first arm
                 for arm in order:                                     # sequential: the two arms never share the DB
-                    runs[arm] = await run_arm(graphs[arm], q)
+                    runs[arm] = await run_arm(graph_for(arm, q["dataset"]), q)
             row = {"id": q["id"], "role": q["role"], "dataset": q["dataset"], "runs": runs,
                    "E1": {arm: (golden_hits(q, runs[arm]["text"])[0] / len(q["golden"]) if q.get("golden") and runs[arm]["text"] else None)
                           for arm in ARMS}}
@@ -426,8 +468,8 @@ async def main() -> int:
                 except Exception as e:  # noqa: BLE001
                     row["judge_error"] = f"{type(e).__name__}: {e}"[:500]
             print(f"{q['id']:<6} {row.get('judge', {}).get('result', row.get('judge_skipped') or row.get('judge_error') or '-')}"
-                  f"  new {runs['new'].get('elapsed_s')}s/{len(runs['new'].get('tools_used', []))} tools"
-                  f"  old {runs['old'].get('elapsed_s')}s/{len(runs['old'].get('tools_used', []))} tools", flush=True)
+                  + "".join(f"  {arm} {runs[arm].get('elapsed_s')}s/{len(runs[arm].get('tools_used', []))} tools" for arm in ARMS),
+                  flush=True)
             return row
 
     rows = await asyncio.gather(*(one(q) for q in qs))
@@ -437,7 +479,10 @@ async def main() -> int:
                                                  text=True).stdout.strip(),
            "agent_model": os.environ.get("AGENT_MODEL", "anthropic:claude-sonnet-5-5"), "judge_model": JUDGE_MODEL,
            "seed": a.seed, "prompts_identical": prompts_identical, "leaks": all_leaks,
-           "tally": tally(rows), "arms": {arm: arm_stats(rows, arm) for arm in ("new", "old")},
+           "tally": tally(rows), "arms": {arm: arm_stats(rows, arm) for arm in ARMS},
+           "pinned": not a.unpinned, "reuse": a.reuse, "arm_defs": {arm: {"tools": "plan-010" if ARM_DEFS[arm][0] is OLD_ROLE_TOOLS
+                                                                   else "current", "recipes": "neutral" if ARM_DEFS[arm][2]
+                                                                   else "product"} for arm in ARMS},
            "per_tool": per_tool_table(rows),
            "rows": [{k: v for k, v in r.items() if k != "runs"} | {"tools": {arm: r["runs"][arm].get("tools_used", [])
                                                                              for arm in ARMS}} for r in rows]}

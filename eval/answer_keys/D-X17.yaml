@@ -1,71 +1,89 @@
 id: D-X17
 role: manager
 dataset: hdfs
-question: "Our HDFS cluster logged hundreds of thousands of warnings between 2008-11-09 and 2008-11-11 12:00. Did we lose or corrupt data, is this one bad machine or the whole fleet, and what should we prioritise?"
-answer_summary: "The logs do not show data loss or corruption: no line in the whole dataset mentions corrupt, checksum, missing or lost. 356,207 of the 362,793 WARN lines (98.2%) are a single message from the datanode transfer service, 'Got exception while serving <block> to <client>', a read-serving error; the dataset logs no exception detail for it. It is fleet-wide, not one bad machine: 202 datanodes report it, and the busiest node has only 0.53% of the lines (min 968, median 1,775, max 1,896 per node). It touches 129,295 distinct blocks, and only 3,178 of them (2.5%) are in Loghub's anomalous-block labels, so it is mostly background noise and a poor anomaly signal. The rarer warnings matter more: 5,545 'BlockInfo not found in volumeMap' delete errors (5,126 of 5,345 blocks labelled anomalous), 975 redundant addStoredBlock and 47 PendingReplicationMonitor time-outs (46 of 46 blocks anomalous). Priorities: have datanode-ops (owner of dfs.DataNode$DataXceiver) find the root cause of the cluster-wide serving exceptions; have the storage/namenode owners check the small set of anomalous blocks (replication time-outs, failed deletes); do not use the raw warning count as a measure of impact."
+question: Our HDFS cluster logged hundreds of thousands of warnings between 2008-11-09 and 2008-11-11 12:00. Did we lose or corrupt data, is this one bad machine or the whole fleet, and what should we prioritise?
+answer_summary: 'The logs do not show data loss or corruption: no line in the whole dataset mentions corrupt, checksum, missing or lost. 356,207 of the 362,793 WARN lines (98.2%) are a single message from
+  the datanode transfer service, ''Got exception while serving <block> to <client>'', a read-serving error; the dataset logs no exception detail for it. It is fleet-wide, not one bad machine: 202 datanodes
+  report it, and the busiest node has only 0.53% of the lines (min 968, median 1,775, max 1,896 per node). It touches 129,295 distinct blocks, and only 3,178 of them (2.5%) are in Loghub''s anomalous-block
+  labels, so it is mostly background noise and a poor anomaly signal. The rarer warnings matter more: 5,545 ''BlockInfo not found in volumeMap'' delete errors (5,126 of 5,345 blocks labelled anomalous),
+  975 redundant addStoredBlock and 47 PendingReplicationMonitor time-outs (46 of 46 blocks anomalous). Priorities: have datanode-ops (owner of dfs.DataNode$DataXceiver) find the root cause of the cluster-wide
+  serving exceptions; have the storage/namenode owners check the small set of anomalous blocks (replication time-outs, failed deletes); do not use the raw warning count as a measure of impact.'
 findings:
-  - fact: "No line in the window (or in the whole dataset) mentions corrupt / checksum / missing / lost, so there is no logged evidence of data loss or corruption"
-    sql: "SELECT count(*) FROM logs WHERE dataset='hdfs' AND ts >= '2008-11-09' AND ts < '2008-11-11 12:00' AND body @@ websearch_to_tsquery('corrupt OR checksum OR missing OR lost')"
-    result: "0 (also 0 over the whole dataset with corruption / 'bad block' added)"
-    importance: must
-  - fact: "The warnings are one message: 356,207 of 362,793 WARN lines are dfs.DataNode$DataXceiver 'Got exception while serving blk_X to /ip', from 2008-11-09 21:38:49 to 2008-11-11 02:39:16"
-    sql: "SELECT component, regexp_replace(regexp_replace(body,'blk_-?[0-9]+','BLK','g'),'[0-9]+(\\.[0-9]+)*','N','g') t, count(*) FROM logs WHERE dataset='hdfs' AND severity='WARN' GROUP BY 1,2 ORDER BY 3 DESC"
-    result: "serving 356207; FSDataset 'Unexpected error trying to delete block ... BlockInfo not found in volumeMap' 5545; FSNamesystem 'Redundant addStoredBlock' 975; PendingReplicationMonitor timed out 47; DataBlockScanner 'Adding an already existing block' 10; DataTransfer 'Failed to transfer ... Connection reset by peer' 9. Total WARN in the window 362793"
-    importance: must
-  - fact: "Fleet-wide, not one machine: 202 datanodes report the serving exception, and the counts are near-uniform (top node 10.251.203.149 has 1,896 lines = 0.53%; min 968, median 1,775)"
-    sql: "WITH w AS (SELECT regexp_extract(body, '^([0-9.]+):', 1) n FROM logs WHERE dataset='hdfs' AND severity='WARN' AND component='dfs.DataNode$DataXceiver'), c AS (SELECT n, count(*) k FROM w GROUP BY 1) SELECT min(k), percentile_cont(0.5) within group (order by k), max(k), count(*) FROM c"
-    result: "968 | 1775 | 1896 | 202 (202 = every datanode that logs an ip-prefixed DataNode line)"
-    importance: must
-  - fact: "Lines are not incidents: the 356,207 serving warnings cover 129,295 distinct blocks, and only 3,178 of those blocks (2.5%) are Loghub-labelled anomalous, so the warning is mostly routine noise"
-    sql: "WITH s AS (SELECT DISTINCT request_id FROM logs WHERE dataset='hdfs' AND severity='WARN' AND component='dfs.DataNode$DataXceiver') SELECT count(*), count(l.label) FROM s LEFT JOIN labels l ON l.dataset='hdfs' AND l.label=s.request_id"
-    result: "129295 | 3178 (labels table holds 16,838 anomalous blocks out of 575,061 blocks)"
-    importance: must
-  - fact: "The rare warnings are the real anomaly signal: delete errors hit 5,345 blocks (5,126 anomalous), redundant addStoredBlock 974 (971 anomalous), PendingReplicationMonitor time-outs 46 (46 anomalous)"
-    sql: "WITH w AS (SELECT request_id, CASE WHEN body LIKE '%Got exception while serving%' THEN 'serving' WHEN body LIKE '%BlockInfo not found%' THEN 'delete-notfound' WHEN body LIKE '%Redundant addStoredBlock%' THEN 'redundant' WHEN body LIKE '%PendingReplicationMonitor%' THEN 'pendingrepl-timeout' ELSE 'other' END t FROM logs WHERE dataset='hdfs' AND severity='WARN') SELECT t, count(*), count(DISTINCT request_id), count(DISTINCT CASE WHEN l.label IS NOT NULL THEN request_id END) FROM w LEFT JOIN labels l ON l.dataset='hdfs' AND l.label=w.request_id GROUP BY 1 ORDER BY 2 DESC"
-    result: "serving 356207/129295/3178; delete-notfound 5545/5345/5126; redundant 975/974/971; pendingrepl-timeout 47/46/46; other 19/14/14"
-    importance: should
-  - fact: "Not a single steady storm: hourly serving warnings come in waves (peaks 56,758 at 2008-11-09 22:00 and 65,977 at 2008-11-10 13:00, with many hours of about 6-8k) and stop after 2008-11-11 02:39, while total log volume rises sharply after 02:00 on 11-11"
-    sql: "SELECT date_trunc('hour',ts) h, count(*) FROM logs WHERE dataset='hdfs' AND severity='WARN' AND component='dfs.DataNode$DataXceiver' GROUP BY 1 ORDER BY 1"
-    result: "21:00 30574, 22:00 56758 (11-09); 07:00 27997, 08:00 32405, 12:00 23636, 13:00 65977 (11-10); last bucket 02:00 4525 (11-11); several empty hours"
-    importance: should
-  - fact: "Ownership: dfs.DataNode$DataXceiver (the serving warnings) belongs to datanode-ops; dfs.FSNamesystem to namenode-platform; dfs.FSDataset and PendingReplicationBlocks fall to the default storage-platform"
-    sql: "SELECT component, team FROM ownership WHERE dataset='hdfs'  -- from data/ownership.csv"
-    result: "DataXceiver -> datanode-ops; FSNamesystem -> namenode-platform; * -> storage-platform"
-    importance: should
-  - fact: "Separately, 3,303 blocks have INFO-level 'writeBlock ... received exception' (mostly 'Could not read from stream'), and all 3,303 are labelled anomalous: write-pipeline failures logged at INFO, not WARN"
-    sql: "WITH w AS (SELECT DISTINCT request_id FROM logs WHERE dataset='hdfs' AND severity='INFO' AND body LIKE '%writeBlock%received exception%') SELECT count(*), count(l.label) FROM w LEFT JOIN labels l ON l.dataset='hdfs' AND l.label=w.request_id"
-    result: "3303 | 3303"
-    importance: nice
+- fact: No line in the window (or in the whole dataset) mentions corrupt / checksum / missing / lost, so there is no logged evidence of data loss or corruption
+  sql: SELECT count(*) FROM logs WHERE dataset='hdfs' AND ts >= '2008-11-09' AND ts < '2008-11-11 12:00' AND body @@ websearch_to_tsquery('corrupt OR checksum OR missing OR lost')
+  result: 0 (also 0 over the whole dataset with corruption / 'bad block' added)
+  importance: must
+- fact: 'The warnings are one message: 356,207 of 362,793 WARN lines are dfs.DataNode$DataXceiver ''Got exception while serving blk_X to /ip'', from 2008-11-09 21:38:49 to 2008-11-11 02:39:16'
+  sql: SELECT component, regexp_replace(regexp_replace(body,'blk_-?[0-9]+','BLK','g'),'[0-9]+(\.[0-9]+)*','N','g') t, count(*) FROM logs WHERE dataset='hdfs' AND severity='WARN' GROUP BY 1,2 ORDER BY 3
+    DESC
+  result: serving 356207; FSDataset 'Unexpected error trying to delete block ... BlockInfo not found in volumeMap' 5545; FSNamesystem 'Redundant addStoredBlock' 975; PendingReplicationMonitor timed out
+    47; DataBlockScanner 'Adding an already existing block' 10; DataTransfer 'Failed to transfer ... Connection reset by peer' 9. Total WARN in the window 362793
+  importance: must
+- fact: 'Fleet-wide, not one machine: 202 datanodes report the serving exception, and the counts are near-uniform (top node 10.251.203.149 has 1,896 lines = 0.53%; min 968, median 1,775)'
+  sql: WITH w AS (SELECT regexp_extract(body, '^([0-9.]+):', 1) n FROM logs WHERE dataset='hdfs' AND severity='WARN' AND component='dfs.DataNode$DataXceiver'), c AS (SELECT n, count(*) k FROM w GROUP BY
+    1) SELECT min(k), percentile_cont(0.5) within group (order by k), max(k), count(*) FROM c
+  result: 968 | 1775 | 1896 | 202 (202 = every datanode that logs an ip-prefixed DataNode line)
+  importance: must
+- fact: 'Lines are not incidents: the 356,207 serving warnings cover 129,295 distinct blocks, and only 3,178 of those blocks (2.5%) are Loghub-labelled anomalous, so the warning is mostly routine noise'
+  sql: WITH s AS (SELECT DISTINCT request_id FROM logs WHERE dataset='hdfs' AND severity='WARN' AND component='dfs.DataNode$DataXceiver') SELECT count(*), count(l.label) FROM s LEFT JOIN labels l ON l.dataset='hdfs'
+    AND l.label=s.request_id
+  result: 129295 | 3178 (labels table holds 16,838 anomalous blocks out of 575,061 blocks)
+  importance: must
+- fact: 'The rare warnings are the real anomaly signal: delete errors hit 5,345 blocks (5,126 anomalous), redundant addStoredBlock 974 (971 anomalous), PendingReplicationMonitor time-outs 46 (46 anomalous)'
+  sql: WITH w AS (SELECT request_id, CASE WHEN body LIKE '%Got exception while serving%' THEN 'serving' WHEN body LIKE '%BlockInfo not found%' THEN 'delete-notfound' WHEN body LIKE '%Redundant addStoredBlock%'
+    THEN 'redundant' WHEN body LIKE '%PendingReplicationMonitor%' THEN 'pendingrepl-timeout' ELSE 'other' END t FROM logs WHERE dataset='hdfs' AND severity='WARN') SELECT t, count(*), count(DISTINCT request_id),
+    count(DISTINCT CASE WHEN l.label IS NOT NULL THEN request_id END) FROM w LEFT JOIN labels l ON l.dataset='hdfs' AND l.label=w.request_id GROUP BY 1 ORDER BY 2 DESC
+  result: serving 356207/129295/3178; delete-notfound 5545/5345/5126; redundant 975/974/971; pendingrepl-timeout 47/46/46; other 19/14/14
+  importance: should
+- fact: 'Not a single steady storm: hourly serving warnings come in waves (peaks 56,758 at 2008-11-09 22:00 and 65,977 at 2008-11-10 13:00, with many hours of about 6-8k) and stop after 2008-11-11 02:39,
+    while total log volume rises sharply after 02:00 on 11-11'
+  sql: SELECT date_trunc('hour',ts) h, count(*) FROM logs WHERE dataset='hdfs' AND severity='WARN' AND component='dfs.DataNode$DataXceiver' GROUP BY 1 ORDER BY 1
+  result: 21:00 30574, 22:00 56758 (11-09); 07:00 27997, 08:00 32405, 12:00 23636, 13:00 65977 (11-10); last bucket 02:00 4525 (11-11); several empty hours
+  importance: should
+- fact: 'Ownership: dfs.DataNode$DataXceiver (the serving warnings) belongs to datanode-ops; dfs.FSNamesystem to namenode-platform; dfs.FSDataset and PendingReplicationBlocks fall to the default storage-platform'
+  sql: SELECT component, team FROM ownership WHERE dataset='hdfs'  -- from data/ownership.csv
+  result: DataXceiver -> datanode-ops; FSNamesystem -> namenode-platform; * -> storage-platform
+  importance: should
+- fact: 'Separately, 3,303 blocks have INFO-level ''writeBlock ... received exception'' (mostly ''Could not read from stream''), and all 3,303 are labelled anomalous: write-pipeline failures logged at INFO,
+    not WARN'
+  sql: WITH w AS (SELECT DISTINCT request_id FROM logs WHERE dataset='hdfs' AND severity='INFO' AND body LIKE '%writeBlock%received exception%') SELECT count(*), count(l.label) FROM w LEFT JOIN labels l
+    ON l.dataset='hdfs' AND l.label=w.request_id
+  result: 3303 | 3303
+  importance: nice
 must_conclude:
-  - "No logged evidence of data loss or corruption (0 lines with corrupt / checksum / missing / lost); this is absence of evidence, not proof"
-  - "About 98% of the warnings are one message, 'Got exception while serving' (356,207 lines)"
-  - "It is fleet-wide (202 datanodes, evenly spread, top node about 0.5%), not one bad machine"
-  - "Warning lines are not incidents; the serving warning touches about 129k blocks and is weakly tied to labelled anomalies (about 2.5%)"
-  - "Name an owner (datanode-ops for DataXceiver) and a priority: root-cause the cluster-wide serving exceptions, and have the owners check the small set of replication time-out and delete-error blocks"
+- No logged evidence of data loss or corruption (0 lines with corrupt / checksum / missing / lost); this is absence of evidence, not proof
+- About 98% of the warnings are one message, 'Got exception while serving' (356,207 lines)
+- It is fleet-wide (202 datanodes, evenly spread, top node about 0.5%), not one bad machine
+- Warning lines are not incidents; the serving warning touches about 129k blocks and is weakly tied to labelled anomalies (about 2.5%)
+- 'Name an owner (datanode-ops for DataXceiver) and a priority: root-cause the cluster-wide serving exceptions, and have the owners check the small set of replication time-out and delete-error blocks'
 traps:
-  - "Presenting 356k (or 362k) warning lines as 356k incidents or 356k data-loss events"
-  - "Claiming data loss or corruption from the word 'exception', or claiming outright that no data was lost (the logs only show no evidence of it)"
-  - "Picking a 'top node' as the culprit when the spread is uniform (0.53% max share)"
-  - "Using the client IP (after 'to /') as the failing node; the reporting datanode is the IP prefix, and about 41,887 lines serve to their own IP"
-  - "Treating the high-volume serving warning as the anomaly signal; the label-aligned signals are the rare warnings and the INFO writeBlock exceptions"
-  - "Inventing cost, downtime or customer impact"
+- Presenting 356k (or 362k) warning lines as 356k incidents or 356k data-loss events
+- Claiming data loss or corruption from the word 'exception', or claiming outright that no data was lost (the logs only show no evidence of it)
+- Picking a 'top node' as the culprit when the spread is uniform (0.53% max share)
+- Using the client IP (after 'to /') as the failing node; the reporting datanode is the IP prefix, and about 41,887 lines serve to their own IP
+- Treating the high-volume serving warning as the anomaly signal; the label-aligned signals are the rare warnings and the INFO writeBlock exceptions
+- Inventing cost, downtime or customer impact
 not_established:
-  - "Whether any client read actually failed or any file became unreadable (the serving warning has no exception class or outcome)"
-  - "The root cause of the serving exceptions (client disconnects, timeouts and so on are hypotheses only)"
-  - "Business impact, downtime, cost or affected users"
-  - "Whether the anomalous blocks were later repaired or re-replicated (not verified end to end)"
-labels_used: "labels(dataset='hdfs') = 16,838 Loghub anomalous block ids; joined on logs.request_id to measure how well each warning type lines up with the anomalous blocks"
+- Whether any client read actually failed or any file became unreadable (the serving warning has no exception class or outcome)
+- The root cause of the serving exceptions (client disconnects, timeouts and so on are hypotheses only)
+- Business impact, downtime, cost or affected users
+- Whether the anomalous blocks were later repaired or re-replicated (not verified end to end)
+labels_used: labels(dataset='hdfs') = 16,838 Loghub anomalous block ids; joined on logs.request_id to measure how well each warning type lines up with the anomalous blocks
 golden_check:
-  - fact: "lines mentioning corrupt / checksum / missing / lost"
-    golden_value: "0"
-    my_value: "0"
-    agrees: true
-  - fact: "'Got exception while serving' warning lines"
-    golden_value: "356207"
-    my_value: "356207"
-    agrees: true
-  - fact: "datanodes reporting Got exception while serving"
-    golden_value: "202"
-    my_value: "202"
-    agrees: true
-notes: "The dataset ends at 2008-11-11 11:16:28, before the question's 12:00 bound. Severity is only INFO / WARN; there are no ERROR lines. The node is taken from the body's 'ip:50010:' prefix because node is NULL in this dataset. In the label join, 6,127 of the 16,838 anomalous blocks carry one of the non-serving WARN messages."
+- fact: lines mentioning corrupt / checksum / missing / lost
+  golden_value: '0'
+  my_value: '0'
+  agrees: true
+- fact: '''Got exception while serving'' warning lines'
+  golden_value: '356207'
+  my_value: '356207'
+  agrees: true
+- fact: datanodes reporting Got exception while serving
+  golden_value: '202'
+  my_value: '202'
+  agrees: true
+notes: The dataset ends at 2008-11-11 11:16:28, before the question's 12:00 bound. Severity is only INFO / WARN; there are no ERROR lines. The node is taken from the body's 'ip:50010:' prefix because node
+  is NULL in this dataset. In the label join, 6,127 of the 16,838 anomalous blocks carry one of the non-serving WARN messages.
+data_update: 'Data update (plan 014, 2026-10-18): the hdfs `node` column is now filled with the datanode that logged the line (the ''<ip>:50010:'' prefix, or the receiving ''dest:'' datanode); NameNode
+  lines and lines naming only a peer stay NULL. Statements in this key that ''hdfs has no node column'' describe the old load; the facts (which datanodes, how many, spread) are unchanged and can now also
+  be read from `node`.'

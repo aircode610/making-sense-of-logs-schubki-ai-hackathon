@@ -200,6 +200,9 @@ def explain_tool(
     if fn is None or tool == "explain_tool":
         raise ValueError(f"Unknown tool {tool!r}; one of: {', '.join(sorted(server.TOOLS))}.")
     from pydantic import validate_call
+    from core import pinned
+    if pinned():  # pinned server: the wrapped tool injects the dataset itself
+        args = {k: v for k, v in args.items() if k != "dataset"}
     env = validate_call(fn)(**args)  # same coercion as an MCP call (ISO strings → datetime, …)
     first = env["sql"][0]
     import re as _re

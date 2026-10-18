@@ -4,9 +4,10 @@ Same agent, same corpus, same tools; roles differ in questions, evidence and act
 _CORPUS_FALLBACK = "Corpus: log datasets in SereneDB (call describe_corpus for names, spans and fields)."
 
 
-def corpus() -> str:
-    """The corpus description from the dataset registry (plan 011: nothing dataset-specific is hard-coded here):
-    one line per loaded dataset with title, span, size and what location / ids mean. 'Now' = each dataset's last line."""
+def corpus(dataset: str | None = None) -> str:
+    """What the agent works on, from the dataset registry (nothing dataset-specific hard-coded). Plan 014: in real use
+    the MCP server holds ONE dataset (the user's own logs, LOGS_DATASET), so with `dataset` this describes only it and
+    tools take no dataset argument; without it, every loaded dataset (multi-dataset server)."""
     import os
 
     import psycopg
@@ -16,13 +17,18 @@ def corpus() -> str:
                              autocommit=True) as c:
             rows = c.execute("SELECT d.dataset, d.title, d.location_meaning, concat_ws('; ', 'request_id = ' || d.request_meaning, "
                              "'object_id = ' || d.object_meaning), min(l.ts), max(l.ts), count(*) "
-                             "FROM datasets d JOIN logs l ON l.dataset = d.dataset GROUP BY ALL ORDER BY any_value(d.pattern_base)").fetchall()
+                             "FROM datasets d JOIN logs l ON l.dataset = d.dataset "
+                             + ("WHERE d.dataset = %(d)s " if dataset else "")
+                             + "GROUP BY ALL ORDER BY any_value(d.pattern_base)", {"d": dataset} if dataset else None).fetchall()
     except Exception as e:  # noqa: BLE001  (no database: the agent can still call describe_corpus)
         import sys
         print(f"corpus(): registry query failed, using fallback: {e}", file=sys.stderr)
         return _CORPUS_FALLBACK
     parts = [f"{d}: {t} ({lo:%Y-%m-%d} → {hi:%Y-%m-%d}, {n:,} lines" + (f"; location = {loc}" if loc else "")
              + (f"; ids: {ids}" if ids else "") + ")" for d, t, loc, ids, lo, hi, n in rows]
+    if dataset:
+        return ("Logs (one dataset; every tool works on it, no dataset argument): " + " · ".join(parts)
+                + ". Teams own components (ownership table). 'Now' = the dataset's last timestamp.")
     return ("Corpus (one SereneDB database, every tool takes `dataset`): " + " · ".join(parts) + ". Teams own components "
             "(ownership table). 'Now' = the dataset's last timestamp. Name the dataset in every tool call when the "
             "question is about one system.")
@@ -50,12 +56,14 @@ RECIPES = {
         "4. Spread + history: spread(pattern_id) = one node or fleet-wide (with the rule); pattern_history(pattern_id, "
         "as_of=incident time) = new or recurring.\n"
         "5. Baseline: rate_vs_baseline for the incident window vs the previous 7 days (rate now vs usual, or new).\n"
-        "6. Hypothesis material (pick what fits): precursors(pattern_id) = what tends to come just before it (with a "
-        "control); distinctive_terms(window) = words over-represented in the incident window; top_entities = which "
-        "IPs / paths / ids dominate (security and web logs); facet = breakdown of the matches by component / severity "
-        "/ node.\n"
-        "Slow / latency / 'abnormal VM' questions (no error logged): value_outliers first, then a flagged line_id as "
-        "the anchor for get_context scope 'object' or request_timeline.\n"
+        "6. Hypothesis material (pick what fits): top_entities = which IPs / paths / ids dominate (security and web "
+        "logs); facet = breakdown of the matches by component / severity / node.\n"
+        "Slow / latency questions: 'which operation / endpoint is slowest' = latency_profile(group_by='pattern', "
+        "rank_by='p50') against its `overall` median (never rank by one slow request); 'which VMs / requests were "
+        "abnormally slow' = value_outliers, then a flagged line_id as the anchor for get_context scope 'object' or "
+        "request_timeline.\n"
+        "Context windows: if get_context shows nothing before / after, read nearest_before_window / nearest_after_window "
+        "and widen the window before saying nothing happened.\n"
         "Evidence needed: the error lines, before/after events, component + node, total count with scope, first error, "
         "spread, new vs recurring, rate vs the usual rate."),
     "lead": (
@@ -69,7 +77,7 @@ RECIPES = {
         "(team × week) for the top problems or teams.\n"
         "3. What changed: whats_new (patterns first seen in the period); check_watchlist (known problems that fired).\n"
         "4. Relations when asked: co_occurrence (do two patterns occur together, with a control), periodicity (does it "
-        "recur on a schedule), similar_patterns (variants of the same problem).\n"
+        "recur on a schedule); who or what drives a problem (IPs, paths, ids): top_entities.\n"
         "5. Optional: one search_logs on the top pattern for an example line.\n"
         "Evidence needed: stated absolute period, bursts by component and team (not only lines), trend over time, what is "
         "new or growing, the one problem to investigate first with its measured reason."),
@@ -101,7 +109,10 @@ NEUTRAL_RECIPES = {
         "5. Baseline: the incident rate vs the usual rate just before it.\n"
         "6. Hypothesis material if it fits: what tends to precede it, what is unusual in the window, which IPs / paths / "
         "ids dominate, how the matches break down by component / severity / node.\n"
-        "Slow / latency questions (no error logged): find the abnormally slow operations first, then anchor on one.\n"
+        "Slow / latency questions: for 'which operation is slowest' compare typical (median) durations per kind of "
+        "operation with the overall median, never one slow request; for 'which ones were abnormally slow' find the "
+        "outliers first, then anchor on one.\n"
+        "If the lines just before / after are empty, check how far the nearest ones are and widen before concluding.\n"
         "If the question assumes something the logs do not show, say so and report what they do show.\n"
         "Evidence needed: the error lines, before/after events, component + node, total count with scope, first error, "
         "one node or fleet-wide, new vs recurring, rate vs the usual rate."),
@@ -114,8 +125,8 @@ NEUTRAL_RECIPES = {
         "its own words, first find which kinds of messages match it.\n"
         "2. Totals over time: recurrences per team and component, and their profile over weeks.\n"
         "3. What changed: kinds of problems first seen in the period; known problems that came back.\n"
-        "4. Relations when asked: do two problems occur together, does one recur on a schedule, which messages are "
-        "variants of the same problem.\n"
+        "4. Relations when asked: do two problems occur together, does one recur on a schedule, which IPs / paths / "
+        "ids drive a problem.\n"
         "5. Optional: one example line of the top problem.\n"
         "Evidence needed: stated absolute period, recurrences by component and team (not only lines), profile over time, "
         "what is new or growing, the one problem to investigate first with its measured reason."),
@@ -145,7 +156,10 @@ Hard rules:
 - Say "log lines" for line counts and "bursts" for recurrences; never call lines incidents.
 - scope: datasets, the absolute period (dates from the results), filters, and whether results were truncated.
 - Never invent money, downtime or customer impact; at most say in unknowns that they are not in the logs.
-- A `model_summary` in the ledger is model-written context: never copy numbers or claims from it into facts."""
+- A `model_summary` in the ledger is model-written context: never copy numbers or claims from it into facts.
+- "Nothing happened before / after" is only true for the window you checked: when a context result has
+  nearest_before_window / nearest_after_window, state the closest earlier / later line (time, node, message) and how
+  far it is, in the timeline."""
 
 ROLE_CARD = {
     "engineer": "Engineer card: what failed (component, node, pattern, first/last time, lines), the timeline before → at "

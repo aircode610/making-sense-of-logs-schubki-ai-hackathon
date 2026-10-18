@@ -30,15 +30,15 @@ def describe_corpus() -> dict:
            "(SELECT count(*) FROM patterns p WHERE p.dataset = d.dataset) AS patterns, "
            "(SELECT count(*) FROM bursts b WHERE b.dataset = d.dataset) AS bursts "
            "FROM datasets d ORDER BY d.pattern_base")
-    rows = query(sql, {})
     reg = registry()
+    rows = [r for r in query(sql, {}) if r["dataset"] in reg]   # pinned server (LOGS_DATASET): its dataset only
     for r in rows:
         v = reg.get(r["dataset"], {})
         r.update(first_ts=v.get("first_ts"), last_ts=v.get("last_ts"), lines=v.get("lines"),
                  teams=v.get("teams", []), components=(v.get("components") or [])[:12],
                  components_total=len(v.get("components") or []), severities=v.get("severitys") or [],
                  entity_kinds=v.get("entity_kinds", []), examples=v.get("examples", {}))
-    return envelope("describe_corpus", {}, [sql], {}, scope="all loaded datasets; exact counts", rows=rows, t0=t0,
+    return envelope("describe_corpus", {}, [sql], {}, scope=("the dataset" if len(rows) == 1 else "all loaded datasets") + "; exact counts", rows=rows, t0=t0,
                     total_matches=len(rows), truncated=False,
                     note="lines = log entries; bursts = recurrences of one pattern split by > 30 min quiet; "
                          "components lists at most 12 (components_total = all); a NULL *_meaning = field not logged; "

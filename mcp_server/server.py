@@ -1,4 +1,6 @@
 """MCP server: log search + summary tools over SereneDB (stdio). Run: .venv/bin/python mcp_server/server.py"""
+import functools
+import inspect
 import sys
 from pathlib import Path
 
@@ -18,7 +20,7 @@ import terms
 import timeline
 import workspace
 
-from core import field_guide
+from core import field_guide, pinned
 
 INSTRUCTIONS = """Log investigation tools over SereneDB (full-text, inverted indexes, SQL analytics, AI functions).
 
@@ -48,6 +50,12 @@ Lines are not incidents: use bursts for "how often" and nodes for "how widely". 
 The logs hold no cost, downtime or customer impact.
 Every result states its SQL, filters, scope, total_matches and whether it was truncated: cite them."""
 
+if pinned():  # one user's own logs (plan 014): no choosing between datasets
+    INSTRUCTIONS = INSTRUCTIONS.replace(
+        "Field guide: the loaded datasets (each has its own time span: \"now\" = its last line) and what to pass for each filter:",
+        "This server holds ONE log dataset (every tool works on it; there is no dataset parameter). Field guide: its time "
+        "span (\"now\" = its last line) and what to pass for each filter:").replace(
+        "describe_corpus says what each dataset is", "describe_corpus says what the dataset is")
 mcp = FastMCP("logs", log_level="WARNING", instructions=INSTRUCTIONS.format(guide=field_guide()))
 
 READ_ONLY = {"readOnlyHint": True, "destructiveHint": False, "idempotentHint": True, "openWorldHint": False}
@@ -98,6 +106,27 @@ SPEC = [
     (remote.remote_search, "Remote data: search", REMOTE),
     (remote.remote_index, "Remote data: build an index", {**REMOTE, "readOnlyHint": False}),
 ]
+PINNED_SKIP = {"remote_describe", "remote_count_by", "remote_search", "remote_index"}  # other data than the user's
+
+
+def pin(fn):
+    """Pinned server (LOGS_DATASET, plan 014): the same tool without its `dataset` parameter, always called with the
+    pinned dataset. Description text that tells the model to pick a dataset is left as is (harmless: one choice)."""
+    sig = inspect.signature(fn, eval_str=True)
+    if "dataset" not in sig.parameters:
+        return fn
+
+    @functools.wraps(fn)
+    def wrapper(*args, **kwargs):
+        kwargs["dataset"] = pinned()
+        return fn(*args, **kwargs)
+    wrapper.__signature__ = sig.replace(parameters=[p for n, p in sig.parameters.items() if n != "dataset"])
+    del wrapper.__wrapped__                     # FastMCP must read __signature__, not the original
+    wrapper.__doc__ = (fn.__doc__ or "").replace("dataset=<dataset>, ", "").replace("(dataset=<dataset>)", "()")
+    return wrapper
+
+
+SPEC = [(pin(fn) if pinned() else fn, t, a) for fn, t, a in SPEC if not (pinned() and fn.__name__ in PINNED_SKIP)]
 TOOLS = {fn.__name__: fn for fn, _, _ in SPEC}
 for fn, title, ann in SPEC:
     mcp.tool(annotations={"title": title, **ann})(fn)

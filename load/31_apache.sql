@@ -2,7 +2,7 @@
 -- Load Apache httpd error log (Loghub, 56,481 lines, 2005-06-09 → 2006-02-28) via the generic loader (plan 011).
 -- Line: [Thu Jun 09 06:07:04 2005] [notice] LDAP: Built with OpenLDAP LDAP SDK
 --       [Sat Jan 21 04:34:39 2006] [error] [client 216.83.140.52] script not found or unable to stat: /var/www/cgi-bin/awstats
--- Lines without the [date] [level] prefix continue the previous message (they inherit its time and level).
+-- Lines without the [date] [level] prefix continue the previous message (they inherit its time and level, not its component).
 -- component = the module prefix of the message when there is one ('mod_jk', 'jk2_init()', 'LDAP'), else 'httpd'.
 \timing on
 CREATE TEMP TABLE stage AS
@@ -17,8 +17,10 @@ WITH raw AS (
 )
 SELECT line_id,
        try_strptime(nullif(r.ts, ''), '%b %d %H:%M:%S %Y')                     AS ts,
-       CASE WHEN r.ts = '' THEN NULL
-            ELSE coalesce(nullif(regexp_extract(r.body, '^(?:\[client [^\]]+\] )?(mod_\w+|jk2_\w+\(\)|[A-Z][A-Za-z]+\.\w+\(\)|LDAP|Digest|suEXEC)', 1), ''), 'httpd') END AS component,
+       -- component from the line's own text; continuation lines too (plan 014: inheriting the previous line's module
+       -- filed httpd's 'script not found' continuations under mod_jk / jk2_init()). Time and level still inherit.
+       coalesce(nullif(regexp_extract(CASE WHEN r.ts = '' THEN line ELSE r.body END,
+                '^(?:\[client [^\]]+\] )?(mod_\w+|jk2_\w+\(\)|[A-Z][A-Za-z]+\.\w+\(\)|LDAP|Digest|suEXEC)', 1), ''), 'httpd') AS component,
        nullif(r.severity, '')                                                  AS severity,
        NULL::VARCHAR AS node, NULL::VARCHAR AS location,
        NULL::INTEGER AS status, NULL::DOUBLE AS duration_ms,

@@ -196,13 +196,22 @@ def reliability_trend(
         teams = query(team_sql, params)
         sqls.append(render(team_sql, params))
     sl, a, b = st["slope"] or 0, st["first_half_mean"] or 0, st["second_half_mean"] or 0
-    reading = "improving" if sl < 0 and b < a else "worsening" if sl > 0 and b > a else "no clear change"
+    # Plan 014: a direction only when the halves differ by more than noise (Poisson: |b - a| > 2·sqrt((a + b) / n_half)
+    # per bucket, and at least 20 %); a tiny slope on a flat series is "no clear change", not "improving".
+    import math
+    half = max(1, n // 2)
+    noise = 2 * math.sqrt(max(a + b, 1e-9) / half)
+    clear = abs(b - a) > max(noise, 0.2 * max(a, b))
+    reading = ("improving" if sl < 0 and b < a else "worsening" if sl > 0 and b > a else "no clear change") if clear \
+        else "no clear change"
     f = dict(dataset=dataset, start=lo, end=hi)
     return envelope("reliability_trend", dict(bucket=bucket, by_team=by_team, **f), sqls, f,
                     scope=f"{dataset}, {lo} → {hi}; problem bursts (Jev real-fault patterns) per {bucket}",
                     rows=series, t0=t0, total_matches=st["total"], truncated=False, stats=st, teams=teams,
                     reading=reading,
-                    reading_rule="slope < 0 and second-half mean < first-half mean → improving; both > → worsening; else no clear change")
+                    reading_rule="slope < 0 and second-half mean < first-half mean → improving; both > → worsening; "
+                                 "only when the half means differ by > 2·sqrt((a+b)/buckets_per_half) and > 20 %; "
+                                 "else no clear change")
 
 
 BINS = ("CASE WHEN v < 0.1 THEN '< 0.1 s' WHEN v < 0.5 THEN '0.1-0.5 s' WHEN v < 1 THEN '0.5-1 s' WHEN v < 5 THEN '1-5 s' "
@@ -221,18 +230,23 @@ def latency_profile(
     group_by: Annotated[Literal["component", "pattern", "status"], Field(
         description="One profile per component, per pattern (each kind of timed operation) or per status code.")] = "component",
     bucket: Annotated[Optional[Literal["hour", "day"]], Field(description="Optional: one profile per group and time bucket.")] = None,
-    limit: Annotated[int, Field(ge=1, le=MAX_ROWS, description="Rows to return, slowest p95 first.")] = 20,
+    rank_by: Annotated[Literal["p50", "p95", "max"], Field(
+        description="Order groups by typical (p50, default), tail (p95) or single worst (max) duration. 'Which X is "
+                    "slowest' = p50; one outlier request does not make an endpoint slow.")] = "p50",
+    min_timed: Annotated[int, Field(ge=1, description="Ignore groups with fewer timed operations (default 5).")] = 5,
+    limit: Annotated[int, Field(ge=1, le=MAX_ROWS, description="Rows to return, slowest first.")] = 20,
 ) -> dict:
     """How long do operations take and how often do they fail? Duration percentiles and error rate per group.
 
     Use when: "how slow is X", "p95 latency per service", "is latency different for failed requests", "did it get
     slower over the day" (bucket), in datasets that log durations: {durations}.
     Not for: individual abnormal operations (value_outliers), error counts without durations (count_by).
-    Returns: per group (component, pattern or status; optionally per hour / day): timed operations, p50 / p95 / p99 /
-    max in seconds, lines, error_rate (problem level or status >= 500 among the group's lines), plus a duration
-    histogram over everything.
+    Returns: per group (component, pattern = each kind of operation, e.g. one API endpoint, or status; optionally per
+    hour / day): timed operations, p50 / p95 / p99 / max in seconds, lines, error_rate (problem level or status >= 500
+    among the group's lines), ordered by rank_by; `overall` p50 / p95 of everything (the "typical" to compare with),
+    plus a duration histogram.
     Caveats: only lines that carry a duration are timed; error_rate counts lines.
-    Example: latency_profile(dataset=<dataset with durations>, group_by='status')
+    Example: latency_profile(dataset=<dataset with durations>, group_by='pattern', rank_by='p50')
     Next: value_outliers for the slowest single operations; request_timeline for one slow request.
     """
     t0 = time.perf_counter()
@@ -247,18 +261,22 @@ def latency_profile(
            f"round(quantile_cont(v, 0.5), 3) AS p50_s, round(quantile_cont(v, 0.95), 3) AS p95_s, "
            f"round(quantile_cont(v, 0.99), 3) AS p99_s, round(max(v), 3) AS max_s, count(*) AS lines, "
            f"round(avg(CASE WHEN severity IN ('ERROR', 'FATAL', 'CRITICAL', 'SEVERE', 'FAILURE') OR status >= 500 "
-           f"THEN 1.0 ELSE 0.0 END), 4) AS error_rate FROM ({base}) GROUP BY {gb} HAVING count(v) > 0 "
-           f"ORDER BY p95_s DESC NULLS LAST LIMIT {limit + 1}")
+           f"THEN 1.0 ELSE 0.0 END), 4) AS error_rate FROM ({base}) GROUP BY {gb} HAVING count(v) >= {min_timed} "
+           f"ORDER BY {rank_by}_s DESC NULLS LAST LIMIT {limit + 1}")
+    overall_sql = (f"SELECT count(v) AS timed, round(quantile_cont(v, 0.5), 3) AS p50_s, "
+                   f"round(quantile_cont(v, 0.95), 3) AS p95_s FROM ({base})")
     hist_sql = f"SELECT {BINS} AS duration, count(*) AS n FROM ({base}) WHERE v IS NOT NULL GROUP BY 1 ORDER BY min(v)"
-    rows, hist = query(sql, params), query(hist_sql, params)
+    rows, hist, overall = query(sql, params), query(hist_sql, params), query(overall_sql, params)[0]
     if group_by == "pattern" and rows:
         tpl = {str(r["pattern_id"]): r["template"] for r in query(
             "SELECT pattern_id, template FROM patterns WHERE dataset = %(d)s", {"d": dataset})}
         for r in rows:
             r["template"] = tpl.get(r["pattern"])
     f = dict(dataset=dataset, start=start, end=end)
-    return envelope("latency_profile", dict(group_by=group_by, bucket=bucket, limit=limit, **f),
-                    [render(sql, params), render(hist_sql, params)], f,
+    return envelope("latency_profile", dict(group_by=group_by, bucket=bucket, rank_by=rank_by, min_timed=min_timed,
+                                            limit=limit, **f),
+                    [render(sql, params), render(hist_sql, params), render(overall_sql, params)], f,
+                    overall=overall,
                     scope=f"{dataset}, {start or 'corpus start'} → {end or 'corpus end'}; duration = "
                           + (registry_duration(dataset)) + "; error = problem severity or status ≥ 500",
                     rows=rows[:limit], t0=t0, total_matches=sum(h["n"] for h in hist), truncated=len(rows) > limit,

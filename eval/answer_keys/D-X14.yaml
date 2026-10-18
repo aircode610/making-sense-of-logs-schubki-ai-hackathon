@@ -1,65 +1,76 @@
 id: D-X14
 role: manager
 dataset: apache
-question: "Did any new kinds of errors appear on the Apache web server in November 2005 (2005-11-01 to 2005-12-01)? Do they need attention, and whose area are they?"
-answer_summary: "Yes. Two genuinely new error kinds appeared together on 2005-11-29, both never seen before in the log: 'uriMap.mapUri() uri must start with /' (27 lines) and '[client 210.245.233.251] Invalid URI in request GET  HTTP/1.1' (27 lines). They came in two short bursts (06:09-06:12 and 09:16-09:17) from a single client IP that was at the same time probing for blog/CMS paths (wordpress, drupal, xmlrpc, phpgroupware: 597 'File does not exist' lines from that IP), and they never recurred up to the end of the log (2006-02-28). This looks like a one-off scanner sending malformed requests, not a server fault, so it is low priority: a quick check by web-platform (the owner of httpd core) is enough. A single new mod_security 'Access denied with code 403' line (2005-11-20, /xmlrpc.php) is also new, also web-platform, and shows the security module blocking a request. Not new but worth more attention: the existing Tomcat-connector error 'mod_jk child workerEnv in error state' (app-integration) jumped from 87 lines before November to 2,639 in November."
+question: Did any new kinds of errors appear on the Apache web server in November 2005 (2005-11-01 to 2005-12-01)? Do they need attention, and whose area are they?
+answer_summary: 'Yes. Two genuinely new error kinds appeared together on 2005-11-29, both never seen before in the log: ''uriMap.mapUri() uri must start with /'' (27 lines) and ''[client 210.245.233.251]
+  Invalid URI in request GET  HTTP/1.1'' (27 lines). They came in two short bursts (06:09-06:12 and 09:16-09:17) from a single client IP that was at the same time probing for blog/CMS paths (wordpress,
+  drupal, xmlrpc, phpgroupware: 597 ''File does not exist'' lines from that IP), and they never recurred up to the end of the log (2006-02-28). This looks like a one-off scanner sending malformed requests,
+  not a server fault, so it is low priority: a quick check by web-platform (the owner of httpd core) is enough. A single new mod_security ''Access denied with code 403'' line (2005-11-20, /xmlrpc.php) is
+  also new, also web-platform, and shows the security module blocking a request. Not new but worth more attention: the existing Tomcat-connector error ''mod_jk child workerEnv in error state'' (app-integration)
+  jumped from 87 lines before November to 2,639 in November.'
 findings:
-  - fact: "'uri must start with /' first appears on 2005-11-29 06:09:51; all 27 occurrences in the whole log are on that day (none before or after November)."
-    sql: "SELECT min(ts), max(ts), count(*) FROM logs WHERE dataset='apache' AND body @@ websearch_to_tsquery('\"uri must start with\"')"
-    result: "2005-11-29 06:09:51 | 2005-11-29 09:17:12 | 27 (combined with Invalid URI: 54 lines, 2 distinct hours)"
-    importance: must
-  - fact: "'Invalid URI in request GET HTTP/1.1' is new on 2005-11-29 06:09:53, 27 lines, all from one client 210.245.233.251; paired one-for-one with the uriMap line."
-    sql: "SELECT regexp_extract(body,'client ([0-9.]+)',1), count(*) FROM logs WHERE dataset='apache' AND body LIKE '%Invalid URI%' GROUP BY 1"
-    result: "210.245.233.251 | 27"
-    importance: must
-  - fact: "Two short bursts, not a sustained problem: 15+15 lines at 06:09-06:12 and 12+12 lines at 09:16-09:17 on 2005-11-29; zero after 09:18."
-    sql: "SELECT date_trunc('hour',ts), count(*) FILTER (WHERE body LIKE '%uri must start%'), count(*) FILTER (WHERE body LIKE '%Invalid URI%') FROM logs WHERE dataset='apache' AND ts>='2005-11-29' AND ts<'2005-11-30' AND (body LIKE '%uri must start%' OR body LIKE '%Invalid URI%') GROUP BY 1 ORDER BY 1"
-    result: "06:00 | 15 | 15 ; 09:00 | 12 | 12 ; and count after 2005-11-29 09:18:03 = 0"
-    importance: must
-  - fact: "The same IP was scanning for CMS/blog paths at the same time (624 lines mentioning it, 597 'File does not exist', 06:07-09:18 on 2005-11-29), i.e. a probing client sending malformed requests."
-    sql: "SELECT count(*) FILTER (WHERE body LIKE '%File does not exist%'), count(*), min(ts), max(ts) FROM logs WHERE dataset='apache' AND body LIKE '%210.245.233.251%'"
-    result: "597 | 624 | 2005-11-29 06:07:17 | 2005-11-29 09:18:02"
-    importance: should
-  - fact: "Owner: these are httpd core messages -> web-platform (mod_jk/mod_jk2/jk2_init() belong to app-integration)."
-    sql: "SELECT component, team FROM ownership WHERE dataset='apache'"
-    result: "httpd, mod_security, LDAP, Digest, mod_python, suEXEC -> web-platform; mod_jk, mod_jk2, jk2_init() -> app-integration"
-    importance: must
-  - fact: "Only other new error kind: one mod_security 'Access denied with code 403. Error reading POST data' line on 2005-11-20 14:36:29 for /xmlrpc.php (before November mod_security only logged its 'configured' notice)."
-    sql: "SELECT count(*), min(ts), max(ts) FROM logs WHERE dataset='apache' AND body LIKE '%mod_security: Access denied%'"
-    result: "1 | 2005-11-20 14:36:29 | 2005-11-20 14:36:29"
-    importance: should
-  - fact: "Not new but surging: 'mod_jk child workerEnv in error state' (app-integration) had 87 lines before November and 2,639 in November; overall ERROR lines rose from 907 in Oct to 9,668 in Nov."
-    sql: "SELECT min(ts), count(*) FILTER (WHERE ts<'2005-11-01'), count(*) FILTER (WHERE ts>='2005-11-01' AND ts<'2005-12-01') FROM logs WHERE dataset='apache' AND body LIKE '%workerEnv in error state%'"
-    result: "2005-06-17 04:03:46 | 87 | 2639"
-    importance: nice
+- fact: '''uri must start with /'' first appears on 2005-11-29 06:09:51; all 27 occurrences in the whole log are on that day (none before or after November).'
+  sql: SELECT min(ts), max(ts), count(*) FROM logs WHERE dataset='apache' AND body @@ websearch_to_tsquery('"uri must start with"')
+  result: '2005-11-29 06:09:51 | 2005-11-29 09:17:12 | 27 (combined with Invalid URI: 54 lines, 2 distinct hours)'
+  importance: must
+- fact: '''Invalid URI in request GET HTTP/1.1'' is new on 2005-11-29 06:09:53, 27 lines, all from one client 210.245.233.251; paired one-for-one with the uriMap line.'
+  sql: SELECT regexp_extract(body,'client ([0-9.]+)',1), count(*) FROM logs WHERE dataset='apache' AND body LIKE '%Invalid URI%' GROUP BY 1
+  result: 210.245.233.251 | 27
+  importance: must
+- fact: 'Two short bursts, not a sustained problem: 15+15 lines at 06:09-06:12 and 12+12 lines at 09:16-09:17 on 2005-11-29; zero after 09:18.'
+  sql: SELECT date_trunc('hour',ts), count(*) FILTER (WHERE body LIKE '%uri must start%'), count(*) FILTER (WHERE body LIKE '%Invalid URI%') FROM logs WHERE dataset='apache' AND ts>='2005-11-29' AND ts<'2005-11-30'
+    AND (body LIKE '%uri must start%' OR body LIKE '%Invalid URI%') GROUP BY 1 ORDER BY 1
+  result: 06:00 | 15 | 15 ; 09:00 | 12 | 12 ; and count after 2005-11-29 09:18:03 = 0
+  importance: must
+- fact: The same IP was scanning for CMS/blog paths at the same time (624 lines mentioning it, 597 'File does not exist', 06:07-09:18 on 2005-11-29), i.e. a probing client sending malformed requests.
+  sql: SELECT count(*) FILTER (WHERE body LIKE '%File does not exist%'), count(*), min(ts), max(ts) FROM logs WHERE dataset='apache' AND body LIKE '%210.245.233.251%'
+  result: 597 | 624 | 2005-11-29 06:07:17 | 2005-11-29 09:18:02
+  importance: should
+- fact: 'Owner: these are httpd core messages -> web-platform (mod_jk/mod_jk2/jk2_init() belong to app-integration).'
+  sql: SELECT component, team FROM ownership WHERE dataset='apache'
+  result: httpd, mod_security, LDAP, Digest, mod_python, suEXEC -> web-platform; mod_jk, mod_jk2, jk2_init() -> app-integration
+  importance: must
+- fact: 'Only other new error kind: one mod_security ''Access denied with code 403. Error reading POST data'' line on 2005-11-20 14:36:29 for /xmlrpc.php (before November mod_security only logged its ''configured''
+    notice).'
+  sql: 'SELECT count(*), min(ts), max(ts) FROM logs WHERE dataset=''apache'' AND body LIKE ''%mod_security: Access denied%'''
+  result: 1 | 2005-11-20 14:36:29 | 2005-11-20 14:36:29
+  importance: should
+- fact: 'Not new but surging: ''mod_jk child workerEnv in error state'' (app-integration) had 87 lines before November and 2,639 in November; overall ERROR lines rose from 907 in Oct to 9,668 in Nov.'
+  sql: SELECT min(ts), count(*) FILTER (WHERE ts<'2005-11-01'), count(*) FILTER (WHERE ts>='2005-11-01' AND ts<'2005-12-01') FROM logs WHERE dataset='apache' AND body LIKE '%workerEnv in error state%'
+  result: 2005-06-17 04:03:46 | 87 | 2639
+  importance: nice
 must_conclude:
-  - "Yes: new kinds appeared, chiefly 'uri must start with /' and 'Invalid URI in request', both first seen 2005-11-29, 27 lines each."
-  - "They are confined to one day (two bursts, ~3 min and ~1 min) and one client IP; they never recur, so low priority / quick review, not an ongoing outage."
-  - "Owner is web-platform (httpd core)."
-  - "No money, downtime or customer impact can be stated from the logs."
+- 'Yes: new kinds appeared, chiefly ''uri must start with /'' and ''Invalid URI in request'', both first seen 2005-11-29, 27 lines each.'
+- They are confined to one day (two bursts, ~3 min and ~1 min) and one client IP; they never recur, so low priority / quick review, not an ongoing outage.
+- Owner is web-platform (httpd core).
+- No money, downtime or customer impact can be stated from the logs.
 traps:
-  - "Counting 54 lines (27+27) as 54 incidents: it is one episode from one client in two bursts on one day."
-  - "Pattern-table artifacts: 'script not found or unable to stat' under mod_jk2 / jk2_init() looks new in November (first 2005-11-03), but it is an unprefixed continuation line that inherited the previous line's component; the same message has existed since 2005-06-11 (529 lines before November). It is not a new error kind and not app-integration's."
-  - "'File does not exist: ...~mana_' (6 lines, 2005-11-10) is a new template only because of the path; 'File does not exist' is a long-standing message (2,641 lines before November)."
-  - "Confusing growth with novelty: the November ERROR surge (907 -> 9,668 lines) is mostly old kinds (File does not exist, mod_jk workerEnv error state), not the new ones."
-  - "Attributing the new URI errors to the Tomcat connector team because they show 'uriMap.mapUri()'; the loader assigns them to httpd -> web-platform."
+- 'Counting 54 lines (27+27) as 54 incidents: it is one episode from one client in two bursts on one day.'
+- 'Pattern-table artifacts: ''script not found or unable to stat'' under mod_jk2 / jk2_init() looks new in November (first 2005-11-03), but it is an unprefixed continuation line that inherited the previous
+  line''s component; the same message has existed since 2005-06-11 (529 lines before November). It is not a new error kind and not app-integration''s.'
+- '''File does not exist: ...~mana_'' (6 lines, 2005-11-10) is a new template only because of the path; ''File does not exist'' is a long-standing message (2,641 lines before November).'
+- 'Confusing growth with novelty: the November ERROR surge (907 -> 9,668 lines) is mostly old kinds (File does not exist, mod_jk workerEnv error state), not the new ones.'
+- Attributing the new URI errors to the Tomcat connector team because they show 'uriMap.mapUri()'; the loader assigns them to httpd -> web-platform.
 not_established:
-  - "Whether the malformed requests were malicious or caused any user-visible failure (error_log has no access log / response data)."
-  - "Any cost, downtime or customer impact."
-  - "Whether IP 210.245.233.251 was blocked or why it stopped."
-  - "No ground-truth labels exist for apache."
-labels_used: "None: the apache dataset has no labels."
+- Whether the malformed requests were malicious or caused any user-visible failure (error_log has no access log / response data).
+- Any cost, downtime or customer impact.
+- Whether IP 210.245.233.251 was blocked or why it stopped.
+- No ground-truth labels exist for apache.
+labels_used: 'None: the apache dataset has no labels.'
 golden_check:
-  - fact: "first uri must start with line (first ever)"
-    golden_value: "2005-11-29 06:09"
-    my_value: "2005-11-29 06:09:51"
-    agrees: true
-  - fact: "uri must start with lines in November 2005 (= whole log)"
-    golden_value: "27"
-    my_value: "27 (also 27 in whole log)"
-    agrees: true
-  - fact: "Invalid URI in request lines in November 2005"
-    golden_value: "27"
-    my_value: "27"
-    agrees: true
-notes: "New kinds identified via patterns.first_ts in November then verified on raw logs and the raw file (continuation lines 10514/10516 of Apache.log have no prefix). The uriMap line itself carries no client IP; the pairing with the Invalid URI line (1-2 s apart, equal counts) ties it to 210.245.233.251."
+- fact: first uri must start with line (first ever)
+  golden_value: 2005-11-29 06:09
+  my_value: '2005-11-29 06:09:51'
+  agrees: true
+- fact: uri must start with lines in November 2005 (= whole log)
+  golden_value: '27'
+  my_value: 27 (also 27 in whole log)
+  agrees: true
+- fact: Invalid URI in request lines in November 2005
+  golden_value: '27'
+  my_value: '27'
+  agrees: true
+notes: New kinds identified via patterns.first_ts in November then verified on raw logs and the raw file (continuation lines 10514/10516 of Apache.log have no prefix). The uriMap line itself carries no
+  client IP; the pairing with the Invalid URI line (1-2 s apart, equal counts) ties it to 210.245.233.251.
+data_update: 'Data update (plan 014, 2026-10-18): the loader now gives continuation lines their own component (httpd), so the mod_jk / mod_jk2 / jk2_init() ''script not found'' artefact described in this
+  key no longer exists in the data. The facts and owners in this key are unchanged; an answer that sees the whole family under httpd is correct, and the artefact trap can no longer be fallen into.'

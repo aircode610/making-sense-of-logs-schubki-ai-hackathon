@@ -35,6 +35,14 @@ MCP = {"logs": {"transport": "stdio", "command": str(ROOT / ".venv/bin/python"),
                 "args": [str(ROOT / "mcp_server/server.py")], "cwd": str(ROOT)}}
 
 
+def mcp_config(dataset: str | None = None) -> dict:
+    """The MCP server as a user runs it (plan 014): pinned to ONE dataset (LOGS_DATASET), so tools take no dataset
+    argument. dataset=None = the multi-dataset server (all loaded datasets)."""
+    if not dataset:
+        return MCP
+    return {"logs": {**MCP["logs"], "env": {**os.environ, "LOGS_DATASET": dataset}}}
+
+
 def git_sha() -> str:
     try:
         return subprocess.check_output(["git", "rev-parse", "--short", "HEAD"], cwd=ROOT, text=True).strip()
@@ -55,8 +63,8 @@ def _annotate(**meta) -> str | None:
 
 
 @traceable(name="ask", run_type="chain")
-async def ask(question: str, role: str | None, tools, run_id: str) -> dict:
-    graph = build_graph(tools)  # route → gather_<role> (ReAct + coverage) → handover → composer
+async def ask(question: str, role: str | None, tools, run_id: str, dataset: str | None = None) -> dict:
+    graph = build_graph(tools, dataset=dataset)  # route → gather_<role> (ReAct + coverage) → handover → composer
     t0 = time.perf_counter()
     state = await graph.ainvoke(
         {"question": question, "role": role, "messages": [HumanMessage(question)]},
@@ -77,8 +85,8 @@ async def ask(question: str, role: str | None, tools, run_id: str) -> dict:
 
 
 @traceable(name="ask-baseline", run_type="chain")
-async def ask_baseline(question: str, role: str, tools, run_id: str) -> dict:
-    agent = build_baseline(tools, role)
+async def ask_baseline(question: str, role: str, tools, run_id: str, dataset: str | None = None) -> dict:
+    agent = build_baseline(tools, role, dataset=dataset)
     t0 = time.perf_counter()
     state = await agent.ainvoke({"messages": [HumanMessage(question)]},
                                 config={"run_name": "baseline-react", "recursion_limit": 40,
@@ -98,21 +106,22 @@ async def main() -> int:
     ap.add_argument("question")
     ap.add_argument("--role", choices=["engineer", "lead", "manager"], help="omit to let Jev route the question")
     ap.add_argument("--baseline", action="store_true", help="run the reference ReAct agent instead (needs --role)")
+    ap.add_argument("--dataset", default=os.getenv("LOGS_DATASET"), help="the dataset the logs are in (pins the MCP server)")
     a = ap.parse_args()
     if a.baseline and not a.role:
         ap.error("--baseline needs --role")
 
-    tools = await MultiServerMCPClient(MCP).get_tools()
+    tools = await MultiServerMCPClient(mcp_config(a.dataset)).get_tools()
     run_id = uuid.uuid4().hex[:8]
     kind = "baseline" if a.baseline else "ours"
     extra = {"name": f"{kind}:{a.role or 'routed'}", "tags": [kind, a.role or "routed", os.getenv("AGENT_MODEL", "")],
              "metadata": {"question": a.question, "model": os.getenv("AGENT_MODEL"), "git": git_sha(), "run": run_id},
              "run_id": uuid.uuid4()}
     if a.baseline:
-        out = await ask_baseline(a.question, a.role, tools, run_id, langsmith_extra=extra)
+        out = await ask_baseline(a.question, a.role, tools, run_id, a.dataset, langsmith_extra=extra)
         print(out["answer"])
     else:
-        out = await ask(a.question, a.role, tools, run_id, langsmith_extra=extra)
+        out = await ask(a.question, a.role, tools, run_id, a.dataset, langsmith_extra=extra)
         print(render(out["card"], out["check"], out["ledger"], out["role"]))
         print(f"\nrole: {out['role']} ({out['route'].get('source')}) · tool calls {out['tool_calls']} · "
               f"{out['elapsed_s']} s · checker {'passed' if out['check']['passed'] else 'FAILED: ' + json.dumps(out['check']['unverified'])[:300]}")

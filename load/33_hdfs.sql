@@ -20,7 +20,12 @@ SELECT line_id,
        try_strptime(nullif(r.ts, ''), '%y%m%d %H%M%S')                        AS ts,
        nullif(r.component, '')                                                AS component,
        nullif(r.severity, '')                                                 AS severity,
-       NULL::VARCHAR AS node, NULL::VARCHAR AS location,
+       -- node = the datanode that logged the line (plan 014): the '<ip>:50010:' prefix of DataNode messages, else the
+       -- 'dest: /<ip>:50010' of a receive (the receiving datanode). Lines that name only a peer ('from /<ip>') or no
+       -- datanode (NameNode) stay NULL: a peer is not the logging node.
+       nullif(coalesce(nullif(regexp_extract(r.body, '^(\d+\.\d+\.\d+\.\d+):50010', 1), ''),
+                       regexp_extract(r.body, 'dest: /(\d+\.\d+\.\d+\.\d+):50010', 1)), '') AS node,
+       NULL::VARCHAR AS location,
        NULL::INTEGER AS status, NULL::DOUBLE AS duration_ms,
        CASE WHEN r.ts = '' THEN line ELSE r.body END                          AS body,
        NULL::VARCHAR AS label,
@@ -31,6 +36,7 @@ FROM p;
 \set pbase 500000
 \set title 'HDFS_v1 Hadoop file system logs (scale test, 11M lines)'
 \set description 'Loghub HDFS_v1: HDFS NameNode / DataNode logs of a Hadoop cluster over about 39 hours from 2008-11-09. request_id = the HDFS block id (blk_...), which follows one block across replicas; client and datanode IPs inside messages are entities (ip:...). Block-level anomaly labels exist for evaluation only.'
+\set node_meaning 'datanode the line is about (IP of the <ip>:50010 data transfer service); NameNode lines have none'
 \set request_meaning 'HDFS block id (blk_…): the whole life of one block across datanodes (allocate, receive, replicate, delete)'
 \ir lib/stage_to_logs.sql
 INSERT INTO labels
