@@ -1,0 +1,66 @@
+id: D-L05
+role: lead
+dataset: bgl
+question: "Across the whole BGL corpus, which components logged the most FATAL lines, and which teams own them?"
+answer_summary: "Only four BGL components ever log FATAL (855,501 FATAL lines total): KERNEL 626,756 lines (owner node-platform), APP 228,536 (owner hpc-workloads), LINKCARD 206 (node-platform) and MMCS 3 (cluster-control). The KERNEL lead is not steady-state recurrence: 529,157 of its FATAL lines (84%) fall in 4 days (2005-06-11..14), and 152,229 of them come from a single compute node, R30-M0-N9-C:J16-U01 (a 'data TLB error interrupt' storm that starts right after an 'L2 DCU read error' machine check), plus a fleet-wide register-dump burst on 2005-06-14 09:00-12:00. From July 2005 onward the ranking flips: APP 215,127 FATAL lines vs KERNEL 91,687, so APP (hpc-workloads) is the recurring FATAL source, almost entirely ciod job-launch/socket errors on I/O nodes (228,386 of 228,536 on '-I:' nodes, 1,034 distinct nodes). These are line counts, not incidents; FATAL is also not the same as a labelled alert (only 45% of KERNEL and 28% of APP FATAL lines carry a Loghub alert label). For a lead: node-platform should look at the R30-M0-N9 node / June storm first (likely hardware, but the logs don't prove root cause), and hpc-workloads owns the persistent APP/ciod FATALs, many tied to bad program images or missing paths in test jobs."
+findings:
+  - fact: "FATAL lines by component over all of BGL: KERNEL 626,756, APP 228,536, LINKCARD 206, MMCS 3 (no other component logs FATAL; 855,501 FATAL lines total)."
+    sql: "SELECT component, count(*) FROM logs WHERE dataset='bgl' AND severity='FATAL' GROUP BY 1 ORDER BY 2 DESC"
+    result: "KERNEL|626756; APP|228536; LINKCARD|206; MMCS|3"
+    importance: must
+  - fact: "Owners: KERNEL -> node-platform, APP -> hpc-workloads, LINKCARD -> node-platform, MMCS -> cluster-control."
+    sql: "SELECT * FROM ownership WHERE dataset='bgl'"
+    result: "bgl|KERNEL|node-platform; bgl|APP|hpc-workloads; bgl|LINKCARD|node-platform; bgl|MMCS|cluster-control (others: HARDWARE node-platform; CMCS, BGLMASTER, DISCOVERY, MONITOR, SERV_NET cluster-control)"
+    importance: must
+  - fact: "KERNEL's FATAL volume is concentrated in June 2005: 535,069 of 626,756 in June, 529,157 in the 4 days 2005-06-11..14 (top days 06-14 344,110; 06-11 152,183; 06-13 32,864)."
+    sql: "SELECT count(*) FROM logs WHERE dataset='bgl' AND severity='FATAL' AND component='KERNEL' AND ts >= '2005-06-11' AND ts < '2005-06-15'"
+    result: "529157 (monthly: 2005-06 KERNEL 535069, then 9466 / 22543 / 28935 / 6291 / 15160 / 8814 / 478)"
+    importance: must
+  - fact: "A single compute node, R30-M0-N9-C:J16-U01, produced 152,229 KERNEL FATAL lines (about 24% of all KERNEL FATAL) between 2005-06-11 17:17 and 2005-06-13 04:47, almost all 'data TLB error interrupt' (152,182 lines, 1 node); the first line is 'machine check interrupt (bit=0x10): L2 DCU read error'."
+    sql: "SELECT node, count(*), min(ts), max(ts) FROM logs WHERE dataset='bgl' AND severity='FATAL' AND component='KERNEL' AND ts >= '2005-06-11' AND ts < '2005-06-15' GROUP BY 1 ORDER BY 2 DESC LIMIT 5"
+    result: "R30-M0-N9-C:J16-U01|152229|2005-06-11 17:17:44|2005-06-13 04:47:31; next node only 54 lines. First rows: line 222715 'machine check interrupt (bit=0x10): L2 DCU read error', then 'data TLB error interrupt'..."
+    importance: must
+  - fact: "From 2005-07-01 to the end, APP leads FATAL lines: APP 215,127 (1,034 nodes) vs KERNEL 91,687 (12,055 nodes); the all-corpus KERNEL lead comes from the June storms."
+    sql: "SELECT component, count(*), count(DISTINCT node) FROM logs WHERE dataset='bgl' AND severity='FATAL' AND ts >= '2005-07-01' GROUP BY 1 ORDER BY 2 DESC"
+    result: "APP|215127|1034; KERNEL|91687|12055; LINKCARD|194|9; MMCS|3|2"
+    importance: should
+  - fact: "Scope: KERNEL FATAL spans 31,467 distinct nodes on 192 days; APP FATAL spans 1,034 nodes on 140 days and is almost all on I/O nodes (228,386 of 228,536). The 2005-06-14 KERNEL burst is fleet-wide (10:00 hour: 160,077 lines over 6,144 nodes) and dominated by multi-line register dumps (instruction address, machine check, exception syndrome register...), so one event yields many lines."
+    sql: "SELECT component, count(DISTINCT node), min(ts), max(ts), count(DISTINCT date_trunc('day',ts)) FROM logs WHERE dataset='bgl' AND severity='FATAL' GROUP BY 1"
+    result: "KERNEL|31467 nodes|2005-06-05..2006-01-04|192 days; APP|1034 nodes|2005-06-03..2006-01-03|140 days; LINKCARD|9|15 days; MMCS|2|2 days"
+    importance: should
+  - fact: "APP FATAL lines are ciod job-launch/IO-node errors: top templates 'Error reading message prefix on CioStream socket ... Link has been severed' (26,546), 'Error loading .../scaletest/performance/MINIBEN/.../allreduce.rts: invalid or missing program image' (20,480, all on 2005-08-12), 'Error reading message prefix after LOAD_MESSAGE ...' (15,273), 'LOGIN chdir(/bgl/apps/SWL/performance/MINIBEN/...) failed' (11,088, on 2005-09-20). 38,800 APP FATAL lines mention scaletest/MINIBEN."
+    sql: "SELECT l.component, t.template, count(*) c FROM logs l JOIN pattern_templates t ON t.dataset='bgl' AND t.pattern_id=l.pattern_id WHERE l.dataset='bgl' AND l.severity='FATAL' GROUP BY 1,2 ORDER BY 3 DESC LIMIT 15"
+    result: "KERNEL data TLB error interrupt 152734; KERNEL data storage interrupt 63491; KERNEL instruction address 47563; APP ciod CioStream Link severed 26546; KERNEL Lustre mount FAILED 26426; APP ciod Error loading MINIBEN allreduce.rts 20480; ..."
+    importance: nice
+  - fact: "FATAL is not the same as a labelled alert: 284,344 of 626,756 KERNEL FATAL lines (45%) and 63,845 of 228,536 APP FATAL lines (28%) carry a Loghub alert label; LINKCARD and MMCS FATAL lines are all labelled. Top labels: KERNDTLB 152,734, KERNSTOR 63,491, APPSEV 49,651, KERNMNTF 31,531."
+    sql: "SELECT l.component, count(*) total, count(b.line_id) labeled FROM logs l LEFT JOIN labels b ON b.dataset='bgl' AND b.line_id=l.line_id WHERE l.dataset='bgl' AND l.severity='FATAL' GROUP BY 1 ORDER BY 2 DESC"
+    result: "KERNEL|626756|284344; APP|228536|63845; LINKCARD|206|206; MMCS|3|3"
+    importance: nice
+must_conclude:
+  - "KERNEL (owner node-platform) has the most FATAL lines (626,756), APP (owner hpc-workloads) is second (228,536); LINKCARD (206, node-platform) and MMCS (3, cluster-control) are negligible."
+  - "These are line counts, not incidents; KERNEL's total is inflated by a June 2005 storm, about a quarter of it from one node (R30-M0-N9-C:J16-U01)."
+  - "Recurrence/trend: after June the persistent FATAL source is APP/ciod on I/O nodes (hpc-workloads), which outnumbers KERNEL from July on."
+  - "Investigate first: node-platform on the R30-M0-N9-C:J16-U01 TLB/machine-check storm and the 2005-06-14 fleet-wide kernel burst; hpc-workloads on the recurring ciod launch/socket failures."
+traps:
+  - "Presenting 626,756 KERNEL FATAL lines as 626,756 failures/incidents (one node and a few bursts produce most of them; register dumps emit many lines per event)."
+  - "Saying KERNEL is the steadily worst component: from July 2005 onward APP has more FATAL lines than KERNEL."
+  - "Assigning KERNEL to cluster-control or APP to node-platform (wrong owners), or naming components that never log FATAL (HARDWARE, DISCOVERY, MONITOR, etc.)."
+  - "Counting FAILURE or SEVERE lines (1,714 / 19,213) as FATAL, or using only a time slice instead of the whole corpus."
+  - "Treating FATAL as equal to labelled alerts: most FATAL lines carry no alert label."
+  - "Claiming a root cause, e.g. that R30-M0-N9 had a defective memory module, or that APP failures are user error, as established fact."
+not_established:
+  - "The root cause of the June KERNEL storm (the L2 DCU read error suggests hardware, but the logs don't confirm a faulty part or a repair)."
+  - "Whether APP/ciod errors come from user or test-job mistakes (bad program images, missing paths in scaletest/MINIBEN runs) or from a platform fault; the logs show symptoms only."
+  - "Job, customer or downtime impact of any FATAL line."
+  - "How many distinct incidents the line counts correspond to (it depends on episode grouping, not given by the logs)."
+labels_used: "labels(bgl) bound the 'FATAL = alert' assumption: 45% of KERNEL FATAL and 28% of APP FATAL lines carry an alert label (KERNDTLB 152,734 = the single-node TLB storm; KERNSTOR, APPSEV, KERNMNTF next). The labels do not change the ranking by component."
+golden_check:
+  - fact: "FATAL lines in KERNEL (whole BGL)"
+    golden_value: "626756"
+    my_value: "626756"
+    agrees: true
+  - fact: "FATAL lines in APP (whole BGL)"
+    golden_value: "228536"
+    my_value: "228536"
+    agrees: true
+notes: "The question asks for whole-corpus FATAL lines, so the headline ranking is KERNEL > APP; a strong lead answer adds that the KERNEL lead comes from the June burst and that APP dominates afterwards. One early GROUP BY run returned KERNEL 626,785 / APP 228,486 (same total). Every later run, including the exact golden queries, gave 626,756 / 228,536, so that first result was most likely a transient read during concurrent load on the server. Timestamps are the log's own (2005-2006)."

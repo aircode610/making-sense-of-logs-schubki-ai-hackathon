@@ -14,7 +14,7 @@ CREATE TEXT SEARCH DICTIONARY log_body_dict AS
     split_text(case := 'lower', break := 'alpha')
     WITH (frequency, position, norm, offset);
 
--- Hierarchical location 'R02/R02-M1/R02-M1-N0-C:J12-U11' is indexed as every ancestor path, so one predicate filters
+-- Hierarchical location ('a/a-b/a-b-c') is indexed as every ancestor path, so one predicate filters
 -- at any level (query with ts_tokenize(path, 'keyword') for an exact level).
 DROP TEXT SEARCH DICTIONARY IF EXISTS location_dict CASCADE;
 CREATE TEXT SEARCH DICTIONARY location_dict AS expand_path(delimiter := '/');
@@ -40,12 +40,18 @@ slow, latency, delay, delayed')
 -- Dataset registry (plan 011): one row per loaded dataset, written by its loader. Tools read it to validate `dataset`
 -- and to describe the corpus, so a new dataset needs no tool or agent change.
 CREATE TABLE datasets (
-    dataset       VARCHAR NOT NULL,   -- short name used everywhere ('bgl', 'openstack', 'zookeeper', ...)
-    title         VARCHAR,            -- one line for people and for the agent's corpus description
-    description   VARCHAR,            -- what the logs are, where they come from, quirks (assumed year, ...)
-    location_hint VARCHAR,            -- what `location` / `node` mean here ('rack/midplane/node', 'host', NULL)
-    id_fields     VARCHAR,            -- id columns this dataset fills ('request_id, instance_id', '', ...)
-    pattern_base  INTEGER             -- pattern_id = pattern_base + rank: ids never collide across datasets
+    dataset          VARCHAR NOT NULL,   -- short name used everywhere ('bgl', 'openstack', 'zookeeper', ...)
+    title            VARCHAR,            -- one line for people and for the agent's corpus description
+    description      VARCHAR,            -- what the logs are, where they come from, quirks (assumed year, ...)
+    -- What each generic column means in THIS dataset (plan 012); NULL = the dataset does not fill it. Tools show these
+    -- texts in their descriptions and in describe_corpus, so an agent knows what to pass for each dataset.
+    node_meaning     VARCHAR,            -- e.g. 'compute / I/O node R02-M1-N0-C:J12-U11', 'host name'
+    location_meaning VARCHAR,            -- e.g. 'rack/midplane/node', 'namespace/node/pod'
+    request_meaning  VARCHAR,            -- e.g. 'nova request id (req-…)', 'trace id', 'block id (blk_…)'
+    object_meaning   VARCHAR,            -- e.g. 'VM instance uuid (followed across requests)'
+    status_meaning   VARCHAR,            -- e.g. 'HTTP status of API requests'
+    duration_meaning VARCHAR,            -- e.g. 'HTTP request time; VM lifecycle step times (Took N seconds)'
+    pattern_base     INTEGER             -- pattern_id = pattern_base + rank: ids never collide across datasets
 );
 
 -- One row per log line. Columns a dataset doesn't have stay NULL.
@@ -53,17 +59,14 @@ CREATE TABLE logs (
     dataset     VARCHAR   NOT NULL,  -- see datasets
     line_id     BIGINT    NOT NULL,  -- line number in the raw file (per dataset/file): stable evidence id
     ts          TIMESTAMP NOT NULL,
-    component   VARCHAR,             -- BGL: KERNEL, APP, ...; OpenStack: nova service; Zookeeper: Java class, ...
+    component   VARCHAR,             -- the emitting program / service / class (dataset-defined)
     severity    VARCHAR,             -- upper case as logged (INFO .. FATAL); NULL when the format has no level
-    node        VARCHAR,             -- the emitting machine / process location (BGL node, SSH host, ...)
-    rack        VARCHAR,             -- BGL: R02
-    midplane    VARCHAR,             -- BGL: R02-M1
-    location    VARCHAR,             -- generic hierarchical path, '/'-separated, coarse → fine (plan 011)
-    request_id  VARCHAR,             -- OpenStack
-    instance_id VARCHAR,             -- OpenStack
-    tenant_id   VARCHAR,             -- OpenStack
-    status      INTEGER,             -- HTTP status where logged
-    latency_ms  DOUBLE,              -- request latency where logged
+    node        VARCHAR,             -- the emitting machine / host (datasets.node_meaning)
+    location    VARCHAR,             -- hierarchical path, '/'-separated, coarse → fine (datasets.location_meaning)
+    request_id  VARCHAR,             -- one request / session / trace / block (datasets.request_meaning)
+    object_id   VARCHAR,             -- a long-lived thing followed across requests, e.g. a VM (datasets.object_meaning)
+    status      INTEGER,             -- status code where logged (datasets.status_meaning)
+    duration_ms DOUBLE,              -- a measured duration in the line (datasets.duration_meaning)
     entities    VARCHAR[],           -- typed values pulled out of the message: 'ip:10.0.0.1', 'uuid:…', 'path:/a/b'
     body        VARCHAR,             -- message text (full-text indexed)
     pattern_id  INTEGER              -- log template id (patterns table; plan 004)
@@ -71,8 +74,8 @@ CREATE TABLE logs (
 
 -- Text + every filter column in one index, so search and filters resolve in one pass.
 CREATE INDEX logs_idx ON logs USING inverted (
-    ts, body log_body_dict, dataset, component, severity, node, rack, midplane, location location_dict,
-    request_id, instance_id, tenant_id, status, latency_ms, entities, pattern_id
+    ts, body log_body_dict, dataset, component, severity, node, location location_dict,
+    request_id, object_id, status, duration_ms, entities, pattern_id
 );
 
 -- Ground-truth labels: evaluation only, never read by agent tools.

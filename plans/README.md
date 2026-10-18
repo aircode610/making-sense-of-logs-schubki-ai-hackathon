@@ -30,6 +30,8 @@ Every plan respects: `CLAUDE.md` non-negotiables, `docs/ROLES.md` (role spec), `
 | 009 | [Eval harness: ours vs baseline, deterministic + LLM judge](009-eval.md) | Amirali | done | `feat/009-eval` |
 | 010 | [Eval fit for iteration: version vs version, noise, judge fix](010-eval-iteration.md) | Amirali | done | `feat/010-eval-iteration` |
 | 011 | [SereneDB full-capability tools, generalized](011-serenedb-features.md) | Amirali | done | `feat/011-serenedb-features` |
+| 012 | [Stand-alone, dataset-agnostic MCP server + tool descriptions](012-mcp-descriptions.md) | Amirali | done | `feat/012-mcp-descriptions` |
+| 013 | [Blind A/B: plan-010 tools vs plan-011 tools, investigator judge](013-blind-ab-tools.md) | Amirali | draft | `feat/013-blind-ab` |
 | 050 | [OpenStack load + ownership](050-openstack-load.md) | Konark | done | `feat/050-openstack-load` |
 | 051 | [count_by + trend MCP tools](051-count-trend-tools.md) | Konark | done | `feat/051-count-trend-tools` |
 | 052 | [One-command reload](052-reload-publish.md) | Konark | done | `feat/051-count-trend-tools` |

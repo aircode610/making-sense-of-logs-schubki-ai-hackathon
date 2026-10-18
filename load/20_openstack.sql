@@ -26,10 +26,12 @@ SELECT line_id,
        strptime(r.ts, '%Y-%m-%d %H:%M:%S.%f')                                  AS ts,
        r.severity,
        nullif(regexp_extract(line, '\[(req-[0-9a-f-]+) ', 1), '')               AS request_id,
-       nullif(regexp_extract(line, '\[instance: ([0-9a-f-]+)\]', 1), '')        AS instance_id,
-       CASE WHEN r.tenant NOT IN ('', '-') THEN r.tenant END                    AS tenant_id,
+       nullif(regexp_extract(line, '\[instance: ([0-9a-f-]+)\]', 1), '')        AS object_id,   -- the VM
+       CASE WHEN r.tenant NOT IN ('', '-') THEN r.tenant END                    AS tenant_id,   -- → entity 'tenant:…'
        CAST(nullif(regexp_extract(line, 'status: (\d+) len: \d+ time: [\d.]+', 1), '') AS INTEGER) AS status,
-       CAST(nullif(regexp_extract(line, 'status: \d+ len: \d+ time: ([\d.]+)', 1), '') AS DOUBLE) * 1000 AS latency_ms,
+       -- duration (plan 012): HTTP request time, or a VM lifecycle step 'Took N seconds to spawn / build / …'
+       coalesce(CAST(nullif(regexp_extract(line, 'status: \d+ len: \d+ time: ([\d.]+)', 1), '') AS DOUBLE),
+                CAST(nullif(regexp_extract(line, 'Took ([\d.]+) seconds', 1), '') AS DOUBLE)) * 1000 AS duration_ms,
        nullif(r.body, '')                                                       AS body,
        -- Template (plan 053): mask variable parts, most specific first; keep the HTTP status code, merge mask runs.
        regexp_replace(regexp_replace(regexp_replace(regexp_replace(regexp_replace(regexp_replace(regexp_replace(
@@ -51,10 +53,11 @@ CREATE TEMP TABLE os_pat AS
 SELECT component, template, (100000 + row_number() OVER (ORDER BY first_ts, component, template))::INTEGER AS pattern_id
 FROM (SELECT component, template, min(ts) AS first_ts FROM os_stage GROUP BY 1, 2);
 
-INSERT INTO logs (dataset, line_id, ts, component, severity, request_id, instance_id, tenant_id, status, latency_ms,
+INSERT INTO logs (dataset, line_id, ts, component, severity, request_id, object_id, status, duration_ms,
                   entities, body, pattern_id)
-SELECT 'openstack', s.line_id, s.ts, s.component, s.severity, s.request_id, s.instance_id, s.tenant_id, s.status,
-       s.latency_ms, extract_entities(s.body), s.body, p.pattern_id
+SELECT 'openstack', s.line_id, s.ts, s.component, s.severity, s.request_id, s.object_id, s.status,
+       s.duration_ms, list_concat(extract_entities(s.body), CASE WHEN s.tenant_id IS NOT NULL THEN ['tenant:' || s.tenant_id] ELSE []::VARCHAR[] END),
+       s.body, p.pattern_id
 FROM os_stage s JOIN os_pat p ON p.component = s.component AND p.template = s.template
 ORDER BY s.ts, s.line_id;
 
@@ -70,7 +73,10 @@ WHERE line ~ '^[0-9a-f]{8}-';
 
 INSERT INTO datasets VALUES ('openstack', 'OpenStack nova logs (cloud VM lifecycle and API)',
     'Loghub OpenStack: nova-api / nova-compute / nova-scheduler logs of a small cloud, 2017-05-16 to 2017-05-17, with request ids, tenant ids, VM instance ids, HTTP status and request latency inline. Some VMs had injected anomalies (labels for evaluation only).',
-    NULL, 'request_id, instance_id, tenant_id', 100000);
+    NULL, NULL, 'nova request id (req-…): one API call and the work it triggers',
+    'VM instance uuid: follows one VM across requests and services (spawn, build, delete)',
+    'HTTP status of nova-api requests (status: N in the message)',
+    'HTTP request time (time: N) and VM lifecycle step times (Took N seconds to spawn / build / delete)', 100000);
 
 DROP TABLE os_stage;
 DROP TABLE os_pat;

@@ -35,11 +35,17 @@ def similar_patterns(
     k: Annotated[int, Field(ge=1, le=MAX_ROWS, description="Neighbours to return.")] = 8,
     any_dataset: Annotated[bool, Field(description="Also search the other datasets (same problem in another system?).")] = False,
 ) -> dict:
-    """Patterns that MEAN the same as one pattern (nearest template embeddings, cosine distance), even when worded
-    differently: variants of one fault, the same failure in another component, or another dataset's equivalent.
-    Per neighbour: distance (0 = same meaning), template, owner, lines, bursts, nodes, Jev p_problem and cause family.
-    Use it to group a problem's variants before counting, or to ask "has something like this happened elsewhere?".
-    Similarity of wording, not proof of a shared cause.
+    """Which other kinds of messages MEAN the same as this one, even when worded differently?
+
+    Use when: grouping a problem's variants before counting them, finding the same failure in another component,
+    or "has something like this happened in another system?" (any_dataset=True).
+    Not for: finding a pattern from your own words (find_patterns), patterns that occur at the same time
+    (co_occurrence).
+    Returns: nearest patterns by template-embedding cosine distance (0 = same meaning) with template, owner, lines,
+    bursts, nodes, p_problem and cause family (stored Jev traits).
+    Caveats: similar wording, not proof of a shared cause.
+    Example: similar_patterns(dataset=<dataset>, pattern_id=<id>, k=8)
+    Next: top_patterns / search_logs(pattern_id=…) to count the variants together.
     """
     t0 = time.perf_counter()
     check_dataset(dataset)
@@ -74,10 +80,17 @@ def find_patterns(
                     "lexical without a key).")] = "hybrid",
     k: Annotated[int, Field(ge=1, le=MAX_ROWS, description="Patterns to return.")] = 10,
 ) -> dict:
-    """Find log patterns (message templates) by what they are about, when you do not know the exact log wording: the
-    agent's vocabulary → the log's vocabulary. Returns pattern ids with template, owner, lines, bursts, nodes, Jev
-    p_problem and cause, ranked; then count / trend them with top_patterns, search_logs(pattern_id=…), trend.
-    `rank_source` says which ranking produced each hit.
+    """Which kinds of log messages are about this topic? Find patterns from plain words when you do not know the
+    log's exact wording.
+
+    Use when: the question describes a problem in its own words ("disk failures", "network problems", "login
+    attacks", "memory errors") and you need the matching message templates and their pattern ids.
+    Not for: lines of a known wording (search_logs), patterns similar to a known pattern (similar_patterns).
+    Returns: ranked patterns with dataset, pattern_id, template, owner, lines, bursts, nodes, p_problem and cause;
+    rank_source = which ranking found each (lexical BM25 on template words, semantic embeddings, or both fused).
+    Caveats: semantic mode needs the embedding key (falls back to lexical, said in `note`); ranks, not counts.
+    Example: find_patterns(text='connection to peer lost', dataset=<dataset>)
+    Next: pattern_history / spread / precursors(pattern_id); search_logs(pattern_id=…) for lines.
     """
     t0 = time.perf_counter()
     check_dataset(dataset)
@@ -133,10 +146,17 @@ def summarize_burst(
     at: Annotated[Optional[datetime], Field(description="A time inside the burst; omit for the pattern's largest burst.")] = None,
     window_s: Annotated[int, Field(ge=0, le=3600, description="Also include other messages this many seconds around it.")] = 300,
 ) -> dict:
-    """A short MODEL-WRITTEN summary of what the logs say during one burst (the distinct messages of the burst and
-    `window_s` around it, in time order), written by SereneDB's ai_summarize_agg. Stored summaries are reused
-    (burst_summaries); otherwise it is generated live (needs the chat secret). It is context for reading, NOT evidence:
-    never cite numbers from it; take counts from the other tools. `model_summary` carries the text.
+    """What do the logs say during this burst, in a few sentences? A MODEL-WRITTEN summary for reading, not evidence.
+
+    Use when: a burst involves many different messages and you want a quick plain-language overview before
+    digging, or to explain a burst to a non-specialist.
+    Not for: any number or fact you will cite (take those from the other tools).
+    Returns: model_summary (text written by SereneDB's ai_summarize_agg over the burst's distinct messages and
+    `window_s` around it, stored or generated live), the burst (start, end, lines, nodes) and how many messages were
+    summarized.
+    Caveats: model text: never cite numbers or claims from it as facts.
+    Example: summarize_burst(dataset=<dataset>, pattern_id=<id>, at='<incident time>')
+    Next: burst_timeline / get_context for the evidence behind the summary.
     """
     t0 = time.perf_counter()
     check_dataset(dataset)

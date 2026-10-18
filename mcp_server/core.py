@@ -64,11 +64,12 @@ def execute(sql: str, params: Optional[dict] = None) -> None:
 
 @lru_cache(maxsize=1)
 def registry() -> dict:
-    """{dataset: {title, description, location_hint, id_fields, first_ts, last_ts, lines, components[], severities[],
-    teams[]}} read once per server process from the `datasets` table and the data itself."""
+    """{dataset: {title, description, <field>_meaning, first_ts, last_ts, lines, components[], severities[], teams[],
+    examples{field: value}, entity_kinds[]}} read once per server process from the `datasets` / `dataset_examples`
+    tables and the data itself (plan 012: what each generic field means per dataset lives in data, not code)."""
     out = {}
     for d in query("SELECT * FROM datasets ORDER BY pattern_base", {}):
-        out[d["dataset"]] = dict(d)
+        out[d["dataset"]] = dict(d, examples={}, entity_kinds=[])
     for r in query("SELECT dataset, min(ts) AS first_ts, max(ts) AS last_ts, count(*) AS lines FROM logs GROUP BY 1", {}):
         if r["dataset"] in out:
             out[r["dataset"]].update(first_ts=r["first_ts"], last_ts=r["last_ts"], lines=r["lines"])
@@ -83,14 +84,22 @@ def registry() -> dict:
     for r in query("SELECT dataset, team FROM ownership GROUP BY 1, 2 ORDER BY 1, 2", {}):
         if r["dataset"] in out:
             out[r["dataset"]].setdefault("teams", []).append(r["team"])
+    try:  # load/93_examples.sql (absent on an old database: descriptions just show no examples)
+        for r in query("SELECT dataset, field, example FROM dataset_examples ORDER BY dataset, n_values DESC", {}):
+            if r["dataset"] in out:
+                out[r["dataset"]]["examples"][r["field"]] = r["example"]
+                if r["field"].startswith("entity:"):
+                    out[r["dataset"]]["entity_kinds"].append(r["field"][7:])
+    except Exception:  # noqa: BLE001
+        pass
     return out
 
 
 def dataset_names() -> tuple[str, ...]:
     try:
-        return tuple(registry()) or ("bgl",)
+        return tuple(registry()) or ("none",)
     except Exception:  # noqa: BLE001  (server started without a database: tools fail on call, not at import)
-        return ("bgl",)
+        return ("none",)
 
 
 def _short(xs: list, n: int = 8) -> str:
@@ -98,62 +107,140 @@ def _short(xs: list, n: int = 8) -> str:
     return ", ".join(map(str, xs[:n])) + (f", … ({len(xs)} in all)" if len(xs) > n else "")
 
 
+def _reg() -> dict:
+    try:
+        return registry()
+    except Exception:  # noqa: BLE001
+        return {}
+
+
 def vocab_text(key: str, n: int = 8) -> str:
-    """'bgl: KERNEL, APP, …; openstack: nova-compute, …' for tool descriptions (most frequent first)."""
-    try:
-        return "; ".join(f"{d}: {_short(v.get(key), n)}" for d, v in registry().items() if v.get(key))
-    except Exception:  # noqa: BLE001
-        return ""
+    """'<dataset>: most frequent values, …; …' for tool descriptions (values read from the data)."""
+    return "; ".join(f"{d}: {_short(v.get(key), n)}" for d, v in _reg().items() if v.get(key))
 
 
-def all_teams() -> str:
-    try:
-        return ", ".join(sorted({t for v in registry().values() for t in v.get("teams", [])})) + ", unowned"
-    except Exception:  # noqa: BLE001
-        return "unowned"
+# generic field → (datasets.<meaning column>, dataset_examples.field)
+FIELD_META = {"node": ("node_meaning", "node"), "location": ("location_meaning", "location"),
+              "request": ("request_meaning", "request_id"), "object": ("object_meaning", "object_id"),
+              "status": ("status_meaning", "status"), "duration": ("duration_meaning", "duration_ms")}
+
+
+def field_text(field: str, with_example: bool = True) -> str:
+    """What a generic field means in each dataset that fills it, with a real example value, and which datasets leave it
+    empty, e.g. "<dataset> = <meaning> (e.g. <value>); … Not logged in: <datasets>"."""
+    mcol, ecol = FIELD_META[field]
+    have, missing = [], []
+    for d, v in _reg().items():
+        meaning, ex = v.get(mcol), v["examples"].get(ecol)
+        if meaning or ex:
+            have.append(f"{d} = {meaning or 'filled'}" + (f" (e.g. {ex})" if with_example and ex else ""))
+        else:
+            missing.append(d)
+    return "; ".join(have) + (f". Not logged in: {', '.join(missing)}" if missing and have else "")
+
+
+def durations_in() -> str:
+    """'<dataset>, <dataset>' = the datasets whose lines carry a duration (for tool descriptions)."""
+    return ", ".join(d for d, v in _reg().items() if v.get("duration_meaning")) or "none loaded"
+
+
+def field_guide() -> str:
+    """Per dataset, what to pass for each filter: span, levels, top components, and the meaning + a real example of every
+    field it fills (node, location, request_id, object_id, status, duration, entity kinds). Written ONCE into the server
+    instructions (and returned by describe_corpus) instead of into every parameter description: token budget."""
+    lines = []
+    for d, v in _reg().items():
+        span = f"{v['first_ts']:%Y-%m-%d} → {v['last_ts']:%Y-%m-%d}" if v.get("first_ts") else "no rows"
+        parts = [f"{d} ({span}, {v.get('lines', 0):,} lines): {v['title']}",
+                 "levels " + (", ".join(v.get("severitys") or []) or "none (severity is NULL)"),
+                 "components " + _short(v.get("components"), 5)]
+        for f in ("node", "location", "request", "object", "status", "duration"):
+            mcol, ecol = FIELD_META[f]
+            if v.get(mcol) or v["examples"].get(ecol):
+                ex = v["examples"].get(ecol)
+                parts.append(f"{ecol if f in ('request', 'object') else f} = {v.get(mcol) or 'filled'}"
+                             + (f" (e.g. {ex})" if ex and f != "duration" else ""))
+        if v.get("teams"):
+            parts.append("teams " + ", ".join(v["teams"]))
+        if v["entity_kinds"]:
+            parts.append("entities " + ", ".join(f"{k} (e.g. {v['examples'].get('entity:' + k)})" for k in v["entity_kinds"][:3]))
+        lines.append("- " + "; ".join(parts))
+    return "\n".join(lines)
+
+
+def entity_text() -> str:
+    """Entity kinds per dataset with a real example: '<dataset>: ip (e.g. ip:…); …'."""
+    reg = _reg()
+    return "; ".join(f"{d}: " + ", ".join(f"{k} (e.g. {v['examples'].get('entity:' + k)})" for k in v["entity_kinds"][:3])
+                     for d, v in reg.items() if v["entity_kinds"])
 
 
 def corpus_text() -> str:
-    """One paragraph per dataset (title, span, size, what location means): MCP instructions + agent prompts."""
-    try:
-        parts = []
-        for d, v in registry().items():
-            span = (f"{v['first_ts']:%Y-%m-%d} → {v['last_ts']:%Y-%m-%d}" if v.get("first_ts") else "no rows")
-            parts.append(f"{d}: {v['title']} ({span}, {v.get('lines', 0):,} lines"
-                         + (f"; location = {v['location_hint']}" if v.get("location_hint") else "")
-                         + (f"; ids: {v['id_fields']}" if v.get("id_fields") else "") + ")")
-        return " · ".join(parts)
-    except Exception:  # noqa: BLE001
+    """One line per dataset (title, span, size): MCP instructions + agent prompts."""
+    reg = _reg()
+    if not reg:
         return "datasets: see describe_corpus"
+    parts = []
+    for d, v in reg.items():
+        span = (f"{v['first_ts']:%Y-%m-%d} → {v['last_ts']:%Y-%m-%d}" if v.get("first_ts") else "no rows")
+        parts.append(f"{d}: {v['title']} ({span}, {v.get('lines', 0):,} lines)")
+    return " · ".join(parts)
 
 
 def node_note(dataset: Optional[str]) -> str:
     """'' or a warning that `nodes` is 0 because the dataset logs no node / host (spread is unknown, not 'one node')."""
-    try:
-        if dataset and registry().get(dataset, {}).get("has_node") is False:
-            return f"; {dataset} logs no node / host, so nodes = 0 means unknown spread"
-    except Exception:  # noqa: BLE001
-        pass
+    if dataset and _reg().get(dataset, {}).get("has_node") is False:
+        return f"; {dataset} logs no node / host, so nodes = 0 means unknown spread"
     return ""
 
 
 def check_dataset(dataset: Optional[str]) -> Optional[str]:
     if dataset is not None and dataset not in dataset_names():
-        raise ValueError(f"Unknown dataset {dataset!r}; loaded: {', '.join(dataset_names())}.")
+        raise ValueError(f"Unknown dataset {dataset!r}; loaded: {', '.join(dataset_names())} (describe_corpus).")
     return dataset
 
 
+# ---------------------------------------------------------------- shared parameter types (plan 012): one description
+# per concept, written once and reused by every tool, with the per-dataset meaning and real example values from the
+# registry, so the model knows what to pass for the dataset it is working on.
+
 DatasetName = Literal[dataset_names()]  # JSON-schema enum of the datasets loaded when the server started
-Dataset = Annotated[DatasetName, Field(description="Dataset: " + ", ".join(dataset_names()) + ".")]
-DatasetOpt = Annotated[Optional[DatasetName], Field(
-    description="Restrict to one dataset (" + ", ".join(dataset_names()) + "); omit for all.")]
+_DS_HELP = "Dataset (log source); see the field guide."
+Dataset = Annotated[DatasetName, Field(description=_DS_HELP)]
+DatasetOpt = Annotated[Optional[DatasetName], Field(description=_DS_HELP + " Omit to cover all datasets.")]
+Start = Annotated[Optional[datetime], Field(
+    description="Inclusive start time, 'YYYY-MM-DD HH:MM[:SS]', in the dataset's own clock (each dataset has its own "
+                "span). Omit for the dataset's beginning.")]
+End = Annotated[Optional[datetime], Field(
+    description="Exclusive end time, same format. Omit for the dataset's end.")]
+_GUIDE = " Per dataset: field guide."
+Component = Annotated[Optional[str], Field(
+    description="Exact component (program / service / class that logged the line; case-sensitive). Per dataset: "
+                "field guide; all values: list_values.")]
+Severity = Annotated[Optional[str], Field(description="Exact log level, upper case (e.g. ERROR)." + _GUIDE)]
+Node = Annotated[Optional[str], Field(description="Exact node / host that logged the line." + _GUIDE)]
+Location = Annotated[Optional[str], Field(
+    description="Location path ('/'-separated, coarse → fine), matched at ANY level: the first level(s) filter a "
+                "whole group." + _GUIDE)]
+RequestId = Annotated[Optional[str], Field(
+    description="Exact request / session / trace / block id: all lines of one unit of work." + _GUIDE)]
+ObjectId = Annotated[Optional[str], Field(
+    description="Exact id of a long-lived object followed across requests (e.g. a VM)." + _GUIDE)]
+Entity = Annotated[Optional[str], Field(
+    description="One typed value extracted from the message text, 'kind:value', e.g. 'ip:10.0.0.7', 'path:/var/log', "
+                "'uuid:…'. top_entities ranks them.")]
+Status = Annotated[Optional[int], Field(description="Exact status code (e.g. HTTP 503) where the dataset logs one." + _GUIDE)]
+Team = Annotated[Optional[str], Field(
+    description="Owning team, or 'unowned' (component without an owner). Teams per dataset: field guide.")]
+PatternIdOpt = Annotated[Optional[int], Field(
+    description="Log pattern id (a kind of message; rows of most tools carry one).")]
 
 
 def filters_sql(f: dict) -> tuple[str, dict]:
     """Equality / time-range filters → (`AND ...` clause, bound params). Only non-None values are applied."""
     clauses, params = [], {}
     check_dataset(f.get("dataset"))
-    for col in ("dataset", "component", "severity", "node", "midplane", "rack", "request_id", "instance_id", "pattern_id"):
+    for col in ("dataset", "component", "severity", "node", "request_id", "object_id", "status", "pattern_id"):
         if f.get(col) is not None:
             clauses.append(f"{col} = %({col})s")
             params[col] = f[col]
@@ -165,7 +252,7 @@ def filters_sql(f: dict) -> tuple[str, dict]:
         clauses.append("ts < %(end)s")
         params["end"] = f["end"]
     # Token predicates: literal arguments, never bound (see lit()).
-    if f.get("location") is not None:  # any level of the path: 'R02', 'R02/R02-M1', or a full location
+    if f.get("location") is not None:  # any level of the path: 'a', 'a/b', or a full location
         clauses.append(f"location @@ ts_tokenize({lit(f['location'])}, 'keyword')")
     if f.get("entity") is not None:    # one extracted value, e.g. 'ip:10.0.0.1'
         clauses.append(f"entities @@ ts_tokenize({lit(f['entity'])}, 'keyword')")
@@ -175,12 +262,10 @@ def filters_sql(f: dict) -> tuple[str, dict]:
 # ---------------------------------------------------------------- full-text query builder (plan 011)
 
 MatchMode = Literal["web", "all", "any", "phrase", "near", "fuzzy", "prefix", "at_least", "synonyms"]
-MATCH_HELP = ("How query_text matches: 'web' (default) = web-search syntax (words all required, \"phrase\", a OR b, "
-              "-word); 'all' = every word; 'any' = at least one word; 'phrase' = the words adjacent in order; 'near' = "
-              "the words within `slop` positions of each other; 'fuzzy' = every word with up to `distance` typos "
-              "(Levenshtein); 'prefix' = every word as a prefix (`sever` → severed, severity); 'at_least' = at least "
-              "`min_match` of the words; 'synonyms' = any word or its log-jargon synonym (error/fail/fault, "
-              "disconnected/severed/lost, denied/refused/invalid, …).")
+MATCH_HELP = ("How query_text matches: 'web' (default: all words, \"phrase\", a OR b, -word); 'all'; 'any' (one "
+              "word is enough); 'phrase' (adjacent, in order); 'near' (within `slop` words); 'fuzzy' (up to `distance` "
+              "typos per word); 'prefix' (`sever` → severed); 'at_least' (`min_match` of the words); 'synonyms' (a "
+              "word or its log-jargon synonym: fail/error/fault, lost/severed, denied/refused, …).")
 
 
 def _words(text: str) -> list[str]:
@@ -267,6 +352,42 @@ def clean_row(r: dict) -> dict:
             v, out["body_cut"] = v[:MAX_BODY] + "…", True
         out[k] = v
     return out
+
+
+def filter_hints(f: dict) -> list[str]:
+    """Deterministic next-step hints when filters match nothing (plan 012): a component / severity that is not a value of
+    the dataset, with the closest real values, so the agent corrects the call instead of concluding 'absent'."""
+    import difflib
+    out = []
+    reg = _reg()
+    scope = [reg[f["dataset"]]] if f.get("dataset") in reg else list(reg.values())
+    for key, col in (("component", "components"), ("severity", "severitys")):
+        v = f.get(key)
+        if v is None:
+            continue
+        values = sorted({x for d in scope for x in d.get(col) or []})
+        if v not in values:
+            close = difflib.get_close_matches(v, values, n=3, cutoff=0.3) or values[:5]
+            out.append(f"{key} {v!r} does not occur" + (f" in {f['dataset']}" if f.get("dataset") else "")
+                       + (f"; closest values: {', '.join(close)}" if close else "; this dataset logs no " + key)
+                       + f" (list_values field='{key}').")
+    return out
+
+
+def search_hints(total: int, truncated: bool, f: dict, query_text: Optional[str], rows: list[dict]) -> list[str]:
+    """Next-step hints for a search-like result (plan 012). Deterministic, short, never a conclusion."""
+    h = filter_hints(f) if not total else []
+    if not total and query_text:
+        h.append("0 matches: try match='fuzzy' (typos) or match='synonyms', suggest_terms for the logged wording, "
+                 "find_patterns to search by meaning, or fewer filters / a wider time range.")
+    if truncated:
+        h.append(f"rows are a sample of {total:,} matches: use total_matches / first_ts / last_ts for counts; count_by, "
+                 f"facet or trend with the same filters for breakdowns.")
+    pids = list(dict.fromkeys(r.get("pattern_id") for r in rows if r.get("pattern_id") is not None))[:3]
+    if pids:
+        h.append(f"pattern_id {', '.join(map(str, pids))} = the kind(s) of message found: pattern_history / spread / "
+                 f"precursors(pattern_id) for their history, reach and what precedes them.")
+    return h
 
 
 def envelope(tool: str, params: dict, sqls: list[str], filters: dict, scope: str, rows: list[dict],

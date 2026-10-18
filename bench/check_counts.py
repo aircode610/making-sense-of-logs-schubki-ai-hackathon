@@ -111,13 +111,14 @@ from outliers import value_outliers
 o = value_outliers(dataset="openstack", limit=50)
 times.append(o["elapsed_ms"])
 vals = {}
-for r in query("SELECT l.pattern_id, l.instance_id, l.latency_ms, l.body FROM logs l JOIN patterns p USING (dataset, pattern_id) "
+# independent of the loader's duration_ms: parse the raw message text again (HTTP time, or 'Took N seconds')
+for r in query("SELECT l.pattern_id, l.object_id, l.body FROM logs l JOIN patterns p USING (dataset, pattern_id) "
                "WHERE l.dataset = 'openstack' AND (strpos(p.template, 'Took <N> seconds') > 0 "
                "OR strpos(p.template, ' time: <N>') > 0)", {}):
-    m = re.search(r"Took ([\d.]+) seconds", r["body"] or "")
-    v = r["latency_ms"] / 1000 if r["latency_ms"] is not None else float(m.group(1)) if m else None
+    m = re.search(r"status: \d+ len: \d+ time: ([\d.]+)", r["body"] or "") or re.search(r"Took ([\d.]+) seconds", r["body"] or "")
+    v = float(m.group(1)) if m else None
     if v is not None:
-        vals.setdefault(r["pattern_id"], []).append((v, r["instance_id"]))
+        vals.setdefault(r["pattern_id"], []).append((v, r["object_id"]))
 ref_lines, ref_inst = 0, set()
 for pid, xs in vals.items():
     med = statistics.median(v for v, _ in xs)
@@ -125,8 +126,8 @@ for pid, xs in vals.items():
     hits = [i for v, i in xs if v > thr]
     ref_lines += len(hits)
     ref_inst |= {i for i in hits if i}
-check("value_outliers (flagged lines, VMs) vs Python", (o["total_matches"], o["flagged_instances"]), (ref_lines, len(ref_inst)))
-check("value_outliers flagged VMs (instances field)", {x["instance_id"] for x in o["instances"]}, ref_inst)
+check("value_outliers (flagged lines, VMs) vs Python", (o["total_matches"], o["flagged_objects"]), (ref_lines, len(ref_inst)))
+check("value_outliers flagged VMs (objects field)", {x["object_id"] for x in o["objects"]}, ref_inst)
 
 # plan 055: rate_vs_baseline = an independent recomputation in Python (raw timestamps, same-length windows back from
 # the window start, clipped to the dataset's first line)
@@ -168,7 +169,7 @@ check("rate_vs_baseline clipped at OpenStack start (vs Python, clipped flag)",
 check("rate_vs_baseline no data before the first BGL hour",
       rate_vs_baseline(dataset="bgl", severity="FATAL", start=D(2005, 6, 3, 15), end=D(2005, 6, 3, 16))["no_baseline_data"], True)
 check("rate_vs_baseline new pattern (R43-M0 kernel panic)",
-      rate_vs_baseline(dataset="bgl", midplane="R43-M0", query_text="kernel panic",
+      rate_vs_baseline(dataset="bgl", location="R43/R43-M0", query_text="kernel panic",
                        start=D(2005, 8, 19, 13), end=D(2005, 8, 19, 15))["new_in_baseline"], True)
 
 times.sort()

@@ -18,12 +18,37 @@ import terms
 import timeline
 import workspace
 
-from core import corpus_text
+from core import field_guide
 
-mcp = FastMCP("logs", log_level="WARNING", instructions=(
-    "Tools over log datasets in SereneDB: " + corpus_text() + ". "
-    "Every result includes the SQL that ran, its filters and scope, total_matches and a truncated flag: cite them. "
-    "Numbers come only from tool results; returned lines are samples, totals are exact. Lines are not incidents."))
+INSTRUCTIONS = """Log investigation tools over SereneDB (full-text, inverted indexes, SQL analytics, AI functions).
+
+Field guide: the loaded datasets (each has its own time span: "now" = its last line) and what to pass for each filter:
+{guide}
+
+How to investigate (dig until the evidence answers the question, then stop):
+1. Orient: describe_corpus says what each dataset is, its period, and what node / location / request_id / object_id /
+   status / duration mean there. list_values gives exact filter values; never guess a component or node name.
+2. Anchor: find the evidence the question is about. A known message → search_logs; a problem described in other
+   words → find_patterns; "which problems / what first" over a period → top_patterns / priority_table; one id →
+   request_timeline; "what changed" → whats_new / distinctive_terms; who / which IPs → top_entities.
+3. Widen and explain: get_context / burst_timeline (around one occurrence), spread (one node or fleet-wide),
+   pattern_history (new or recurring), rate_vs_baseline (unusual?), precursors / co_occurrence (what comes before /
+   with it, with a control), trend / heatmap / reliability_trend (over time), count_by / facet / rollup (by group).
+4. Check before answering: every number you state should come from a tool result (total_matches and counts are exact;
+   returned rows are samples). 0 hits → match='fuzzy' / 'synonyms' or suggest_terms before saying "absent".
+
+Ids flow between tools: rows carry line_id (→ get_context), pattern_id (→ pattern_history, spread, precursors,
+co_occurrence, periodicity, burst_timeline, search_logs(pattern_id=…)), request_id / object_id (→ request_timeline),
+entities like ip:… (→ search_logs(entity=…)).
+
+Terms: line = one log entry; pattern = a kind of message (template with numbers / ids masked); burst = one recurrence
+of a pattern (lines split by > 30 min quiet); episode = a burst on one node; problem pattern = has error-level lines
+and a stored Jev judgment says it is a real fault or a security event; team = owner of a component (ownership table).
+Lines are not incidents: use bursts for "how often" and nodes for "how widely". Association in time is not cause.
+The logs hold no cost, downtime or customer impact.
+Every result states its SQL, filters, scope, total_matches and whether it was truncated: cite them."""
+
+mcp = FastMCP("logs", log_level="WARNING", instructions=INSTRUCTIONS.format(guide=field_guide()))
 
 READ_ONLY = {"readOnlyHint": True, "destructiveHint": False, "idempotentHint": True, "openWorldHint": False}
 
@@ -76,6 +101,68 @@ SPEC = [
 TOOLS = {fn.__name__: fn for fn, _, _ in SPEC}
 for fn, title, ann in SPEC:
     mcp.tool(annotations={"title": title, **ann})(fn)
+
+
+def _drop_titles(node):
+    """pydantic adds a 'title' to every parameter ('Query Text', …): it repeats the name and costs ~2k tokens over all
+    tools in every request. Removed from the published schemas (validation is unaffected)."""
+    if isinstance(node, dict):
+        node.pop("title", None)
+        for k, v in node.items():
+            if k != "properties":
+                _drop_titles(v)
+        for v in node.get("properties", {}).values():
+            _drop_titles(v)
+    elif isinstance(node, list):
+        for v in node:
+            _drop_titles(v)
+
+
+for t in mcp._tool_manager.list_tools():
+    _drop_titles(t.parameters)
+
+# Optional playbooks (MCP prompts, plan 012): a client may start from one, but every tool stays available to every
+# question; the server itself has no roles.
+@mcp.prompt(title="Investigate a failure (engineer)")
+def investigate_failure(question: str) -> str:
+    """Engineer playbook: what failed, where, what happened just before and after, local or widespread, new or
+    recurring, a labelled hypothesis and a concrete next check."""
+    return (f"Investigate this failure with the logs tools: {question}\n\n"
+            "1. Anchor: search_logs for the error (order='time'; filters for dataset, time, node / location / component); "
+            "note total_matches, first_ts, last_ts, a line_id and the pattern_id. Unknown wording: find_patterns or "
+            "suggest_terms. One id in the question: request_timeline.\n"
+            "2. Around it: get_context(line_id) on the same node (then a coarser location or the same request / object); "
+            "burst_timeline(pattern_id, at=…) for which error came first.\n"
+            "3. Reach and history: spread(pattern_id) (one node or fleet-wide), pattern_history(pattern_id, as_of=…) "
+            "(new or recurring), rate_vs_baseline for the window vs the previous days.\n"
+            "4. Hypothesis material: precursors(pattern_id), distinctive_terms(window), top_entities, facet.\n"
+            "Answer: facts with numbers from the results, ONE labelled hypothesis with what would confirm it, unknowns, "
+            "and a concrete next check.")
+
+
+@mcp.prompt(title="Review recurring problems (team lead)")
+def review_recurring_problems(question: str) -> str:
+    """Team-lead playbook: which problems recur over a period, how often, whose, trending how, what to look at first."""
+    return (f"Review recurring problems with the logs tools: {question}\n\n"
+            "1. top_patterns for the period (bursts = recurrences; rank_by='growth' for 'getting worse'; team= for one "
+            "team); find_patterns when the problem is described in words.\n"
+            "2. rollup (team → component subtotals) and trend / heatmap for the time profile.\n"
+            "3. whats_new (first seen in the period), check_watchlist (known problems that came back).\n"
+            "4. When asked: co_occurrence, periodicity, similar_patterns.\n"
+            "Answer: the absolute period, the top 2-5 problems with owner team and measured basis (bursts, nodes, weeks, "
+            "change), the one to investigate first and why, in numbers.")
+
+
+@mcp.prompt(title="Set priorities (manager)")
+def set_priorities(question: str) -> str:
+    """Manager playbook: what deserves attention first, measured, with owners and actions; no invented impact."""
+    return (f"Decide priorities with the logs tools: {question}\n\n"
+            "1. priority_table for the period: the ranking is computed (weights returned): explain it, do not re-rank.\n"
+            "2. reliability_trend for 'improving or worse'; team_risk for one team; rollup for team subtotals.\n"
+            "3. Optionally whats_new / check_watchlist for what is new or came back.\n"
+            "Answer: top 3 in the computed order with owner team, measured basis and an action to decide or fund; "
+            "state that cost, downtime and customer impact are not in the logs.")
+
 
 if __name__ == "__main__":
     mcp.run()

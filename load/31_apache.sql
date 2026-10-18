@@ -1,3 +1,4 @@
+-- requires: data/raw/apache/Apache.log
 -- Load Apache httpd error log (Loghub, 56,481 lines, 2005-06-09 → 2006-02-28) via the generic loader (plan 011).
 -- Line: [Thu Jun 09 06:07:04 2005] [notice] LDAP: Built with OpenLDAP LDAP SDK
 --       [Sat Jan 21 04:34:39 2006] [error] [client 216.83.140.52] script not found or unable to stat: /var/www/cgi-bin/awstats
@@ -20,15 +21,14 @@ SELECT line_id,
             ELSE coalesce(nullif(regexp_extract(r.body, '^(?:\[client [^\]]+\] )?(mod_\w+|jk2_\w+\(\)|[A-Z][A-Za-z]+\.\w+\(\)|LDAP|Digest|suEXEC)', 1), ''), 'httpd') END AS component,
        nullif(r.severity, '')                                                  AS severity,
        NULL::VARCHAR AS node, NULL::VARCHAR AS location,
-       NULL::INTEGER AS status, NULL::DOUBLE AS latency_ms,
+       NULL::INTEGER AS status, NULL::DOUBLE AS duration_ms,
        CASE WHEN r.ts = '' THEN line ELSE r.body END                           AS body,
        NULL::VARCHAR AS label,
+       NULL::VARCHAR AS object_id,
        NULL::VARCHAR AS request_id
 FROM p;
 \set ds apache
 \set pbase 300000
 \set title 'Apache httpd error log (one web server)'
 \set description 'Loghub Apache: error_log of one Apache httpd server, 2005-06-09 to 2006-02-28 (264 days). Levels notice / warn / error; client IPs inside messages are extracted as entities (ip:...). Multi-line messages inherit the previous line time and level.'
-\set location_hint ''
-\set id_fields ''
 \ir lib/stage_to_logs.sql

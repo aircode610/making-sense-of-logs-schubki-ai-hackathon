@@ -3,9 +3,11 @@
 --
 -- stage columns (NULL where the format has nothing):
 --   line_id BIGINT, ts TIMESTAMP, component VARCHAR, severity VARCHAR, node VARCHAR, location VARCHAR,
---   status INTEGER, latency_ms DOUBLE, body VARCHAR, label VARCHAR, request_id VARCHAR (a correlation id: request,
---   session, connection)
--- psql variables: ds, pbase (pattern_id base, unique per dataset), title, description, location_hint, id_fields,
+--   status INTEGER, duration_ms DOUBLE, body VARCHAR, label VARCHAR, request_id VARCHAR (one request / session /
+--   trace), object_id VARCHAR (a long-lived thing followed across requests)
+-- psql variables: ds, pbase (pattern_id base, unique per dataset), title, description, and what each filled column
+--   means here (plan 012; leave unset when the column stays NULL): node_meaning, location_meaning, request_meaning,
+--   object_meaning, status_meaning, duration_meaning;
 --   variety (Drain-lite: a template word position with >= this many distinct values becomes <*>; default 10)
 --
 -- Steps: continuation lines (no timestamp of their own) inherit the previous line's ts / component / severity;
@@ -16,13 +18,37 @@
 \else
 \set variety 10
 \endif
+\if :{?node_meaning}
+\else
+\set node_meaning ''
+\endif
+\if :{?location_meaning}
+\else
+\set location_meaning ''
+\endif
+\if :{?request_meaning}
+\else
+\set request_meaning ''
+\endif
+\if :{?object_meaning}
+\else
+\set object_meaning ''
+\endif
+\if :{?status_meaning}
+\else
+\set status_meaning ''
+\endif
+\if :{?duration_meaning}
+\else
+\set duration_meaning ''
+\endif
 
 CREATE TEMP TABLE s2 AS
 SELECT line_id,
        coalesce(ts, last_value(ts IGNORE NULLS) OVER w)                AS ts,
        coalesce(component, last_value(component IGNORE NULLS) OVER w)  AS component,
        upper(coalesce(severity, last_value(severity IGNORE NULLS) OVER w)) AS severity,
-       node, location, status, latency_ms, nullif(body, '') AS body, label, request_id,
+       node, location, status, duration_ms, nullif(body, '') AS body, label, request_id, object_id,
        mask_template(body)                                             AS template0
 FROM stage
 WINDOW w AS (ORDER BY line_id ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW);
@@ -60,9 +86,9 @@ FROM (SELECT s.component, m.template, min(s.ts) AS first_ts
       GROUP BY 1, 2);
 
 -- Insert in time order so zonemaps prune time filters.
-INSERT INTO logs (dataset, line_id, ts, component, severity, node, location, request_id, status, latency_ms, entities, body,
-                  pattern_id)
-SELECT :'ds', s.line_id, s.ts, s.component, s.severity, s.node, s.location, s.request_id, s.status, s.latency_ms,
+INSERT INTO logs (dataset, line_id, ts, component, severity, node, location, request_id, object_id, status, duration_ms,
+                  entities, body, pattern_id)
+SELECT :'ds', s.line_id, s.ts, s.component, s.severity, s.node, s.location, s.request_id, s.object_id, s.status, s.duration_ms,
        extract_entities(s.body), s.body, p.pattern_id
 FROM s2 s
 JOIN tmap m ON m.component IS NOT DISTINCT FROM s.component AND m.template0 = s.template0
@@ -74,6 +100,8 @@ INSERT INTO labels SELECT :'ds', line_id, label FROM s2 WHERE label IS NOT NULL 
 
 INSERT INTO pattern_templates SELECT :'ds', pattern_id, component, template FROM spat;
 
-INSERT INTO datasets VALUES (:'ds', :'title', :'description', nullif(:'location_hint', ''), :'id_fields', :pbase);
+INSERT INTO datasets VALUES (:'ds', :'title', :'description', nullif(:'node_meaning', ''), nullif(:'location_meaning', ''),
+    nullif(:'request_meaning', ''), nullif(:'object_meaning', ''), nullif(:'status_meaning', ''),
+    nullif(:'duration_meaning', ''), :pbase);
 
 DROP TABLE s2; DROP TABLE tw; DROP TABLE tpos; DROP TABLE tvar; DROP TABLE tmap; DROP TABLE spat;

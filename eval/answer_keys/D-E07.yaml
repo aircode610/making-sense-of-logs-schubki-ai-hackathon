@@ -1,0 +1,64 @@
+id: D-E07
+role: engineer
+dataset: openstack
+question: "Were any OpenStack VMs abnormally slow to start? Which ones, and how slow compared with normal?"
+answer_summary: "Yes. 2,066 VMs logged a spawn time ('Took N seconds to spawn the instance on the hypervisor', one line per VM). The normal spawn takes about 19.7 s (median 19.74 s, mean 19.83 s, p99 21.66 s, stddev 1.12 s); outside one 2017-05-14 evening window the slowest is 22.56 s. Four VMs took far longer, and they are exactly the four labelled anomalous instances: a445709b (50.72 s, about 2.6x the median, at 2017-05-14 21:43:33), 544fd51c (41.81 s, 21:08:19), 1643649d (31.27 s, 21:47:20) and ae651dff (29.46 s, 21:09:11). A fifth, d7d68893 (26.69 s, 21:45:04), is a milder, unlabelled outlier. Nearly all the extra time sits between 'Creating image' and 'VM Started' (44.45 s for a445709b against a 13.08 s median). Every one of them still spawned successfully, logged no WARNING or ERROR of its own, and was deleted normally. They are slow, not failed."
+findings:
+  - fact: "Baseline: 2,066 spawn-time lines, one per distinct VM. Median 19.74 s, mean 19.83 s, p95 21.01 s, p99 21.66 s, stddev 1.12 s, min 10.12 s, max 50.72 s. Only 5 VMs exceed 23 s."
+    sql: "SELECT count(*), count(DISTINCT object_id), round(median(duration_ms/1000),2), round(avg(duration_ms/1000),2), round(quantile_cont(duration_ms/1000,0.95),2), round(quantile_cont(duration_ms/1000,0.99),2), round(stddev(duration_ms/1000),2), round(min(duration_ms/1000),2), round(max(duration_ms/1000),2), count(*) FILTER (WHERE duration_ms>23000) FROM logs WHERE dataset='openstack' AND body LIKE '%seconds to spawn the instance%'"
+    result: "2066 | 2066 | 19.74 | 19.83 | 21.01 | 21.66 | 1.12 | 10.12 | 50.72 | 5"
+    importance: must
+  - fact: "The slowest spawns, ranked: a445709b-6ad0-40ec-8860-bec60b6ca0c2 50.72 s (line 16728), 544fd51c-4edc-4780-baae-ba1d80a0acfc 41.81 s (line 11980), 1643649d-2f42-4303-bfcd-7798baec19f9 31.27 s (line 17234), ae651dff-c7ad-43d6-ac96-bbcd820ccca8 29.46 s (line 12086), d7d68893-c44f-4e7c-8d4b-0e7801d62776 26.69 s (line 16935). The next one is 22.56 s (f0ff0b46), inside normal variation."
+    sql: "SELECT object_id, ts, line_id, round(duration_ms/1000,2) FROM logs WHERE dataset='openstack' AND body LIKE '%seconds to spawn the instance%' ORDER BY duration_ms DESC LIMIT 12"
+    result: "a445709b|2017-05-14 21:43:33.762|16728|50.72; 544fd51c|2017-05-14 21:08:19.736|11980|41.81; 1643649d|2017-05-14 21:47:20.593|17234|31.27; ae651dff|2017-05-14 21:09:11.081|12086|29.46; d7d68893|2017-05-14 21:45:04.509|16935|26.69; f0ff0b46|2017-05-16 16:49:11.697|83437|22.56; 35ef7d14|22.17; ..."
+    importance: must
+  - fact: "Build times ('Took N seconds to build instance') show the same five VMs at the top: 51.59 / 42.81 / 32.12 / 30.32 / 27.61 s, against a 20.55 s median. So the whole build is slow, and the time is not lost somewhere outside the spawn."
+    sql: "SELECT object_id, round(duration_ms/1000,2) FROM logs WHERE dataset='openstack' AND body LIKE '%seconds to build instance%' ORDER BY duration_ms DESC LIMIT 8; SELECT round(median(duration_ms/1000),2) FROM logs WHERE dataset='openstack' AND body LIKE '%seconds to build instance%'"
+    result: "a445709b 51.59, 544fd51c 42.81, 1643649d 32.12, ae651dff 30.32, d7d68893 27.61, f0ff0b46 23.34 ...; median 20.55"
+    importance: should
+  - fact: "Where the time goes: the 'Creating image' to 'VM Started (Lifecycle Event)' phase took 44.45 s for a445709b, 34.65 s for 544fd51c, 25.22 s for 1643649d, 22.44 s for ae651dff and 19.81 s for d7d68893, against a 13.08 s median over 2,065 VMs. The 'VM Started' to 'Instance spawned successfully' phase stays normal (6.0-7.2 s against a 6.65 s median)."
+    sql: "WITH c AS (SELECT object_id, min(ts) FILTER (WHERE body LIKE '%Creating image%') ci, min(ts) FILTER (WHERE body LIKE '%VM Started (Lifecycle Event)%') st, min(ts) FILTER (WHERE body LIKE '%Instance spawned successfully%') sp FROM logs WHERE dataset='openstack' AND component='nova-compute' AND object_id IS NOT NULL GROUP BY 1) SELECT round(median(epoch(st-ci)),2), round(median(epoch(sp-st)),2), count(*) FROM c WHERE ci IS NOT NULL AND st IS NOT NULL AND sp IS NOT NULL  (and the same per object_id for the 5 slow VMs)"
+    result: "median 13.08 | 6.65 | 2065; a445709b 44.45|6.26; 544fd51c 34.65|7.16; 1643649d 25.22|6.05; ae651dff 22.44|7.01; d7d68893 19.81|6.88"
+    importance: should
+  - fact: "Sequence for a445709b (all nova-compute INFO): claim successful 21:42:42.36, 'Creating image' 21:42:43.044, then nothing for this instance until 'VM Started' 21:43:27.498, followed by Paused, Resumed 21:43:33.752, 'Instance spawned successfully', 'Took 50.72 seconds to spawn' (line 16728), 'Took 51.59 seconds to build', then Terminating at 21:43:41 and deletion complete. The VM did start and was deleted normally."
+    sql: "SELECT line_id, ts, component, severity, left(body,170) FROM logs WHERE dataset='openstack' AND object_id='a445709b-6ad0-40ec-8860-bec60b6ca0c2' ORDER BY ts, line_id LIMIT 40"
+    result: "16642 21:42:43.044 Creating image; 16710 21:43:27.498 VM Started; 16726 21:43:33.752 VM Resumed; 16727 Instance spawned successfully; 16728 Took 50.72 seconds to spawn...; 16731 Took 51.59 seconds to build; 16753 21:43:41.553 Terminating instance"
+    importance: must
+  - fact: "Temporal clustering: all five slow VMs fall in the 2017-05-14 21:00-21:50 window (the abnormal file, lines 1-18434), in two bursts: 21:08-21:09 (544fd51c, ae651dff) and 21:43-21:47 (a445709b, d7d68893, 1643649d). VMs are spawned one at a time about every 41 s, and the VMs spawned between and around them took a normal 19-21 s. The 1,869 spawns in the normal files have a 19.74 s median and a 22.56 s maximum."
+    sql: "SELECT strftime(ts,'%H:%M:%S'), left(object_id,8), round(duration_ms/1000,2) FROM logs WHERE dataset='openstack' AND body LIKE '%seconds to spawn the instance%' AND ts BETWEEN '2017-05-14 21:05' AND '2017-05-14 21:50' ORDER BY ts; SELECT count(*), round(median(duration_ms/1000),2), round(max(duration_ms/1000),2) FROM logs WHERE dataset='openstack' AND body LIKE '%seconds to spawn the instance%' AND line_id>18434"
+    result: "... 21:07:16 d7c7b763 19.2, 21:08:19 544fd51c 41.81, 21:09:11 ae651dff 29.46, 21:09:52 90b447c2 19.89 ... 21:42:20 4fc4916d 19.4, 21:43:33 a445709b 50.72, 21:44:15 6bdd55a4 19.55, 21:45:04 d7d68893 26.69, 21:45:45 9f9aa39d 20.5, 21:46:27 b8eb50cb 19.96, 21:47:20 1643649d 31.27, 21:48:01 b8832d33 20.22 ...; normal files: 1869 | 19.74 | 22.56"
+    importance: should
+  - fact: "The slow VMs logged no WARNING or ERROR of their own. Each has 25 lines with 0 non-INFO lines, the same as a typical VM (median 25 lines per instance). The only non-INFO lines nearby are 'Unknown base file' warnings, which run all the time (2,789 in the normal files, 270 in the abnormal one), and one power-state sync warning at 21:21:19."
+    sql: "SELECT left(object_id,8), count(*), count(*) FILTER (WHERE severity<>'INFO') FROM logs WHERE dataset='openstack' AND object_id IN (<5 slow VMs>) GROUP BY 1; SELECT line_id<=18434, count(*) FROM logs WHERE dataset='openstack' AND body LIKE 'Unknown base file%' GROUP BY 1"
+    result: "each of the 5: 25 lines, 0 non-INFO; Unknown base file: normal files 2789, abnormal file 270"
+    importance: should
+must_conclude:
+  - "Yes, a small number of VMs were abnormally slow to spawn. Name a445709b (50.72 s, the slowest) and also 544fd51c (41.81 s), 1643649d (31.27 s) and ae651dff (29.46 s)."
+  - "Give the normal baseline (median about 19.7 s, tight spread with p99 about 21.7 s), so a445709b is about 2.6x normal and about 29 s above p99."
+  - "They are a handful of VMs out of about 2,066, all on the evening of 2017-05-14 (21:08-21:47). Most VMs, including the ones spawned between them, were normal."
+  - "The slow VMs still spawned successfully and logged no errors. The delay sits in the image-creation / guest-boot phase (Creating image to VM Started)."
+  - "The logs do not show why. Next step: check hypervisor, image backend or storage metrics for those minutes."
+traps:
+  - "Saying no VM was slow, or reporting only the mean/max without a baseline."
+  - "Reporting the 10.12 s minimum (9b427380) as an anomaly. That VM was fast, not slow."
+  - "Treating 'Unknown base file' WARNINGs as the cause. They are constant background noise in all files."
+  - "Using HTTP request time (duration_ms on nova-api lines, 'time: N') instead of VM spawn time. duration_ms mixes both, so the filter must be on the spawn line."
+  - "Claiming the slow VMs failed or errored. All reached 'Instance spawned successfully'."
+  - "Counting the spawn and build lines separately (double-counting) or confusing line counts with VM counts. There is one spawn line per VM."
+  - "Inventing a root cause (disk contention, image download, a specific compute host). The logs carry no host column and no cause."
+not_established:
+  - "Why the image-creation / boot phase was slow. No error, resource or host-level metric explains it."
+  - "Which compute host ran the slow VMs (no host field in these lines)."
+  - "Any user or customer impact. All VMs came up and were deleted by the test workload."
+  - "Whether d7d68893 (26.69 s) was a genuine problem. It is a mild outlier and is not in the anomaly labels."
+labels_used: "The labels table holds exactly 4 anomalous OpenStack instances: 544fd51c, ae651dff, a445709b, 1643649d. These are exactly the top 4 spawn times (50.72, 41.81, 31.27, 29.46 s), which confirms them as the abnormal VMs. d7d68893 (26.69 s, 5th slowest) is not labelled, so it is an outlier by duration only."
+golden_check:
+  - fact: "slowest spawn time in seconds"
+    golden_value: "50.72"
+    my_value: "50.72"
+    agrees: true
+  - fact: "normal (median) spawn time in seconds"
+    golden_value: "19.74"
+    my_value: "19.74"
+    agrees: true
+notes: "must_mention a445709b is satisfied by naming the slowest VM. A full answer names all 4 labelled slow VMs. Mentioning d7d68893 as a borderline fifth outlier is a plus, not an error. VM uuid prefixes (8 chars) are acceptable identifiers. An OpenStack reload happened while this key was being built, so queries were re-run after the table was back at 207,820 rows."

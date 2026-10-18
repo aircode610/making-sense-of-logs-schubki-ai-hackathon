@@ -1,0 +1,67 @@
+id: D-L04
+role: lead
+dataset: bgl
+question: "Is 'rts panic! - stopping execution' one bad node or fleet-wide in October 2005 (2005-10-01 to 2005-11-01)?"
+answer_summary: "It is not one bad node. October 2005 has 46 'rts panic! - stopping execution' lines (KERNEL, FATAL), spread over 38 distinct compute nodes in 28 racks and 31 midplanes. No node has more than 2 lines. The panics fall into 33 separate episodes (10-minute gap) on 15 days. The biggest cluster is 2005-10-23, two bursts at 10:22 and 23:56 that each hit the same 6 nodes (mostly node card R30-M1-NF), so that day looks like one job's partition, not a single failing node. This is the background level, not a spike: Oct (46 lines), Nov (47) and Dec (44) are flat and far below June (2,579). Most panics directly follow a hardware machine-check interrupt on the same node (25 of 46 within 90 s, e.g. L3/dcache parity errors), so the fleet-wide pattern is panics after per-node hardware faults. The owner is node-platform (KERNEL). The one chronic node to check first is R62-M0-N4-C:J13-U01: 2 lines in October plus 5 more in Nov to Dec."
+findings:
+  - fact: "46 rts panic lines on 38 distinct nodes in October 2005, all KERNEL/FATAL, all compute cards (C), none on I/O cards. Fleet-wide spread: 6,230 distinct nodes logged in October, so about 0.6% of active nodes are affected."
+    sql: "SELECT component, severity, count(*), count(DISTINCT node), min(ts), max(ts) FROM logs WHERE dataset='bgl' AND ts >= '2005-10-01' AND ts < '2005-11-01' AND body ILIKE '%rts panic%' GROUP BY 1,2; SELECT count(DISTINCT node) FROM logs WHERE dataset='bgl' AND ts >= '2005-10-01' AND ts < '2005-11-01'"
+    result: "KERNEL|FATAL|46|38|2005-10-01 11:02:59|2005-10-31 20:44:07 ; fleet nodes in Oct = 6230 ; C cards 46, I cards 0"
+    importance: must
+  - fact: "Spread across 28 racks and 31 midplanes. Max 2 lines per node (8 nodes have 2, 30 have 1). The densest place is midplane R30-M1 (8 lines, 5 nodes, all on node card NF)."
+    sql: "SELECT split_part(node,'-',1) r, count(*), count(DISTINCT node) FROM logs WHERE dataset='bgl' AND pattern_id=69 AND ts >= '2005-10-01' AND ts < '2005-11-01' GROUP BY 1 ORDER BY 2 DESC"
+    result: "R30|10|7, R31|3|2, then 26 racks with 1-2 lines each; 28 racks total; per-node max = 2"
+    importance: must
+  - fact: "33 episodes (10-minute gap) on 15 days. The biggest is 2005-10-23: two bursts (10:22:40-10:22:55 and 23:56:07-23:56:19) with 6 nodes each, the same node set (R30-M1-NF-C J13/J15/J16/J17, R10-M0-NE-C:J05-U01, R31-M1-N9-C:J15-U01). Each burst was preceded by corrected torus retransmission errors, i.e. one job partition failing together."
+    sql: "WITH e AS (SELECT ts, node, CASE WHEN ts - lag(ts) OVER (ORDER BY ts) <= interval '10 minutes' THEN 0 ELSE 1 END s FROM logs WHERE dataset='bgl' AND pattern_id=69 AND ts >= '2005-10-01' AND ts < '2005-11-01'), g AS (SELECT ts, node, sum(s) OVER (ORDER BY ts) ep FROM e) SELECT ep, min(ts), max(ts), count(*), count(DISTINCT node) FROM g GROUP BY ep ORDER BY ep"
+    result: "33 episodes; ep21 2005-10-23 10:22:40-10:22:55 6 lines/6 nodes; ep22 2005-10-23 23:56:07-23:56:19 6/6; every other episode has 1-2 lines on 1-2 nodes"
+    importance: must
+  - fact: "This is the steady background rate, not an October spike. Monthly lines/nodes: Jun 2579/2265, Jul 207/199, Aug 581/566, Sep 478/279, Oct 46/38, Nov 47/35, Dec 44/27."
+    sql: "SELECT date_trunc('month',ts)::date, count(*), count(DISTINCT node) FROM logs WHERE dataset='bgl' AND pattern_id=69 GROUP BY 1 ORDER BY 1"
+    result: "2005-09|478|279 ; 2005-10|46|38 ; 2005-11|47|35 ; 2005-12|44|27"
+    importance: should
+  - fact: "What precedes the panics (same node, 90 s before): 25 of 46 follow a 'machine check interrupt' (L3 major internal error, L1 dcache data parity error, ...) followed by a register dump. 12 follow torus retransmission errors (the 10-23 bursts). 4 follow program interrupts. 6 follow none of these (e.g. 'rts internal error', rts assertion, 'ddr: redundant bit steering failed')."
+    sql: "WITH p AS (SELECT line_id, node, ts FROM logs WHERE dataset='bgl' AND pattern_id=69 AND ts >= '2005-10-01' AND ts < '2005-11-01'), c AS (SELECT p.line_id, bool_or(l.body LIKE 'machine check interrupt%') mc, bool_or(l.body LIKE '%torus%retransmission%') tor, bool_or(l.body LIKE 'program interrupt%' OR l.body LIKE 'data store interrupt%') prog FROM p LEFT JOIN logs l ON l.dataset='bgl' AND l.node=p.node AND l.ts BETWEEN p.ts - interval '90 seconds' AND p.ts AND l.ts >= '2005-09-30' AND l.ts < '2005-11-02' GROUP BY 1) SELECT mc, tor, prog, count(*) FROM c GROUP BY 1,2,3"
+    result: "mc only 24 ; torus only 12 ; none 6 ; prog only 3 ; mc+prog 1"
+    importance: should
+  - fact: "One chronic node: R62-M0-N4-C:J13-U01 has 2 October lines (both 2005-10-02 12:27:58, one event) and 5 more on 2005-11-09, 11-17 (x2), 11-24 and 12-23. Only 3 other October nodes ever panic outside October, once each (R51-M0-N8 09-24, R00-M0-N0 08-09, R26-M1-ND 06-14)."
+    sql: "WITH o AS (SELECT DISTINCT node FROM logs WHERE dataset='bgl' AND pattern_id=69 AND ts >= '2005-10-01' AND ts < '2005-11-01') SELECT l.node, string_agg(l.ts::date::text, ',' ORDER BY l.ts) FROM logs l JOIN o ON o.node=l.node WHERE l.dataset='bgl' AND l.pattern_id=69 AND (l.ts < '2005-10-01' OR l.ts >= '2005-11-01') GROUP BY 1"
+    result: "R62-M0-N4-C:J13-U01|2005-11-09,2005-11-17,2005-11-17,2005-11-24,2005-12-23 ; 3 others with 1 line each"
+    importance: should
+  - fact: "Ownership: component KERNEL belongs to team node-platform (data/ownership.csv: 'Compute-node kernel (memory/cache parity, torus, CIOD, interrupts)')."
+    sql: "data/ownership.csv row: bgl,KERNEL,node-platform,..."
+    result: "node-platform"
+    importance: must
+  - fact: "All 46 October lines carry the Loghub alert label KERNRTSP."
+    sql: "SELECT b.label, count(*) FROM logs l JOIN labels b ON b.dataset='bgl' AND b.line_id=l.line_id WHERE l.dataset='bgl' AND l.pattern_id=69 AND l.ts >= '2005-10-01' AND l.ts < '2005-11-01' GROUP BY 1"
+    result: "KERNRTSP|46"
+    importance: nice
+must_conclude:
+  - "Fleet-wide (diffuse), not one bad node: 38 distinct nodes across 28 racks, at most 2 lines per node."
+  - "Separate line counts (46) from nodes (38) and from episodes (about 33; the 10-23 cluster accounts for 12 lines in 2 bursts)."
+  - "Owner is node-platform (KERNEL component)."
+  - "Investigate first: the 2005-10-23 R30-M1-NF / R10-M0-NE / R31-M1-N9 partition bursts (repeated twice on the same nodes, preceded by torus retransmission errors), and the chronic node R62-M0-N4-C:J13-U01 (recurs into Nov/Dec)."
+  - "The October level is flat compared with Nov/Dec, far below June: background, not a new escalation."
+traps:
+  - "Calling it one bad node because R30-M1 or R30 has the most lines (10 lines / 7 nodes is only 22% of the month)."
+  - "Reporting 46 incidents/panics as 46 node failures, or 38 separate incidents (the 10-23 bursts are 2 events covering 12 lines)."
+  - "Counting the surrounding register-dump FATAL lines (dozens per panic) as part of the panic count."
+  - "Calling October a surge: it is one of the lowest months; the June volume (2,579) dominates any all-time count."
+  - "Asserting that the machine-check interrupt or torus errors are the proven root cause; they precede the panics but the logs only show temporal order."
+  - "Assigning ownership to hpc-workloads (APP) or cluster-control; the line is KERNEL, so the owner is node-platform."
+not_established:
+  - "Root cause of each panic (hardware defect vs software/job); the logs show only preceding machine-check / torus / program-interrupt lines."
+  - "Which jobs or users were affected, and any downtime or customer impact."
+  - "Whether nodes were replaced or repaired (the low recurrence may reflect repairs, which are not logged)."
+  - "That the 10-23 node set was one job partition; this is inferred from simultaneous timing only."
+labels_used: "labels confirm all 46 October lines are alerts with category KERNRTSP (BGL's RTS panic alert class). The labels match the template match exactly, so the count is not inflated by unrelated lines."
+golden_check:
+  - fact: "distinct nodes with rts panic in October 2005"
+    golden_value: "38"
+    my_value: "38"
+    agrees: true
+  - fact: "rts panic lines in October 2005"
+    golden_value: "46"
+    my_value: "46"
+    agrees: true
+notes: "pattern_id 69 = KERNEL 'rts panic! - stopping execution'; full-text search 'rts panic' gives the same 46/38. Episodes were grouped with a 10-minute gap (33 episodes); another gap choice changes the count slightly, but the conclusion (diffuse, max 2 per node) does not change. The question's window ends at 2005-11-01 (exclusive)."

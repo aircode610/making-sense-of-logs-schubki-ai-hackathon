@@ -43,8 +43,8 @@ SELECT component, template, row_number() OVER (ORDER BY first_ts, component, tem
 FROM (SELECT component, coalesce(template, '') AS template, min(ts) AS first_ts FROM bgl_stage GROUP BY 1, 2);
 
 -- Insert in time order so zonemaps prune time filters.
-INSERT INTO logs (dataset, line_id, ts, component, severity, node, rack, midplane, location, entities, body, pattern_id)
-SELECT 'bgl', s.line_id, s.ts, s.component, s.severity, s.node, s.rack, s.midplane,
+INSERT INTO logs (dataset, line_id, ts, component, severity, node, location, entities, body, pattern_id)
+SELECT 'bgl', s.line_id, s.ts, s.component, s.severity, s.node,
        s.rack || '/' || s.midplane || '/' || s.node, extract_entities(s.body), s.body, p.pattern_id
 FROM bgl_stage s JOIN bgl_pat p ON p.component = s.component AND p.template = coalesce(s.template, '')
 ORDER BY s.ts, s.line_id;
@@ -55,7 +55,9 @@ INSERT INTO pattern_templates SELECT 'bgl', pattern_id, component, template FROM
 
 INSERT INTO datasets VALUES ('bgl', 'Blue Gene/L supercomputer RAS logs (LLNL)',
     'Loghub BGL: reliability/availability/serviceability events of the Blue Gene/L supercomputer, 2005-06-03 to 2006-01-04 (214 days). Location = rack/midplane/node (R02-M1-N0-C:J12-U11: rack R02, midplane M1, node card N0, C = compute / I = I/O card). Components KERNEL, APP, MMCS, ... Alert labels exist for evaluation only.',
-    'rack/midplane/node', '', 0);
+    'compute / I/O node: rack-midplane-nodecard-card-unit (C = compute card, I = I/O card)',
+    'rack/midplane/node (first level = a whole rack, two levels = a midplane)',
+    NULL, NULL, NULL, NULL, 0);
 
 DROP TABLE bgl_stage;
 DROP TABLE bgl_pat;

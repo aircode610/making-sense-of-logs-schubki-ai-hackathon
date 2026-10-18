@@ -1,0 +1,67 @@
+id: D-L01
+role: lead
+dataset: bgl
+question: "Which problems recurred most in November 2005 (2005-11-01 to 2005-11-29), how often, and which teams own them? What should the team investigate first?"
+answer_summary: "Window taken as 2005-11-01 <= ts < 2005-11-29, the same as the golden SQL. The problems that recurred most were two. First, the kernel 'rts panic! - stopping execution' (KERNEL, owned by node-platform): 33 bursts, 45 lines on 33 distinct compute nodes across 22 racks, on 17 of the 28 days. It is chronic: it has occurred every month since June 2005, and each panic comes with a FATAL register/machine-state dump. Second, the ciod 'Error reading message prefix on CioStream socket ..., Link has been severed' (APP, owned by hpc-workloads): 27 bursts and 10,408 lines (11,604 counting the 'after LOAD_MESSAGE' variant). It is new: it first appeared on 2005-11-17 05:33 and hits up to all 1,024 I/O nodes in all 64 racks at once. It was rising at the end of the month (3 bursts in the week of Nov 14, 22 in the week of Nov 21) and continues into January 2006. Also owned by node-platform: a fleet-wide tree-network episode, 'rts: kernel terminated' plus 'Error receiving packet on tree network', with 7 bursts of up to 2,048 nodes each between Nov 8 and Nov 16, and none after that. Investigate the ciod 'Link has been severed' storm first, with hpc-workloads leading and node-platform supporting. It is new, it is getting worse, and every line names the same socket peer, 172.16.96.116. That points to a shared I/O or service path rather than to bad nodes. The rts panics are the steady per-node issue that comes second."
+findings:
+  - fact: "ciod 'Link has been severed' (pattern 968, APP/FATAL) had 27 bursts starting in the window, 10,408 lines, up to 1,023 nodes in one burst, on 10 days (Nov 17 to Nov 28). Raw full-text search finds 11,604 lines on 1,024 nodes, which includes the 'after LOAD_MESSAGE' variant (pattern 478, 1 burst, 1,196 lines)."
+    sql: "SELECT b.pattern_id, count(*) bursts, sum(b.lines) lines, max(b.nodes) maxnodes_in_burst, count(DISTINCT date_trunc('day',b.start_ts)) days, min(b.start_ts), max(b.start_ts) FROM bursts b WHERE b.dataset='bgl' AND b.start_ts >= '2005-11-01' AND b.start_ts < '2005-11-29' AND b.pattern_id IN (968,69,261,806,562,478) GROUP BY 1 ORDER BY bursts DESC ; raw check: SELECT component, severity, count(*), count(DISTINCT node), count(DISTINCT date_trunc('day',ts)) FROM logs WHERE dataset='bgl' AND ts >= '2005-11-01' AND ts < '2005-11-29' AND body @@ websearch_to_tsquery('\"Link has been severed\"') GROUP BY 1,2"
+    result: "968|27|10408|1023|10|2005-11-17 05:33:24|2005-11-28 10:54:21 ; raw: APP|FATAL|11604|1024|10"
+    importance: must
+  - fact: "'rts panic! - stopping execution' (pattern 69, KERNEL/FATAL) had 33 bursts, 45 lines, 33 distinct compute nodes in 22 racks, on 17 days. It is chronic: 236 bursts on 3,394 nodes over 32 weeks from June 2005 to January 2006."
+    sql: "SELECT component, severity, count(*), count(DISTINCT node), count(DISTINCT date_trunc('day',ts)) FROM logs WHERE dataset='bgl' AND ts >= '2005-11-01' AND ts < '2005-11-29' AND body @@ websearch_to_tsquery('\"rts panic\"') GROUP BY 1,2 ; SELECT count(DISTINCT node), count(DISTINCT substr(node,1,3)) FROM logs WHERE dataset='bgl' AND ts >= '2005-11-01' AND ts < '2005-11-29' AND pattern_id=69 ; SELECT lines,nodes,bursts,first_ts,last_ts,weeks_active FROM patterns WHERE dataset='bgl' AND pattern_id=69"
+    result: "KERNEL|FATAL|45|33|17 ; 33|22 ; 3983|3394|236|2005-06-05|2006-01-03|32"
+    importance: must
+  - fact: "Ownership: APP is owned by hpc-workloads (the ciod storm), and KERNEL is owned by node-platform (rts panic, tree-network/kernel-terminated, machine checks)."
+    sql: "SELECT component, team FROM ownership WHERE dataset='bgl' AND component IN ('APP','KERNEL')"
+    result: "APP|hpc-workloads ; KERNEL|node-platform (data/ownership.csv)"
+    importance: must
+  - fact: "The ciod storm is new and was growing. Its first line ever is 2005-11-17 05:33. Weekly bursts: 0 before Nov 14, 3 in the week of Nov 14, 22 in the week of Nov 21, 18 in the week of Nov 28, then about 9 per week through December. Pattern total: 82 bursts up to 2006-01-03. In contrast, rts panic held steady at 2-12 bursts per week from September onward."
+    sql: "SELECT date_trunc('week', start_ts)::date wk, count(*) FILTER (WHERE pattern_id=968) ciod, count(*) FILTER (WHERE pattern_id=69) rts FROM bursts WHERE dataset='bgl' AND pattern_id IN (968,69) AND start_ts >= '2005-10-01' AND start_ts < '2006-01-05' GROUP BY 1 ORDER BY 1 ; SELECT first_ts,last_ts,bursts FROM patterns WHERE dataset='bgl' AND pattern_id=968"
+    result: "...2005-11-07|0|8 ; 2005-11-14|3|10 ; 2005-11-21|22|11 ; 2005-11-28|18|6 ; 2005-12-05|9|7 ... ; first 2005-11-17 05:33:24, last 2006-01-03 11:56:38, 82 bursts"
+    importance: must
+  - fact: "The ciod storm is fleet-wide and limited to I/O nodes. It touched all 64 racks and 128 midplanes, and every line came from an I/O node (-I:). Every line names the same socket peer, 172.16.96.116. Single bursts hit up to 1,023 I/O nodes within about 3 minutes (e.g. 2005-11-24 22:05-22:08)."
+    sql: "SELECT count(DISTINCT substr(node,1,3)) racks, count(DISTINCT substr(node,1,6)) midplanes, count(*) FILTER (WHERE node LIKE '%-I:%') io_lines, count(*) lines, count(DISTINCT regexp_extract(body,'to ([0-9.]+):',1)) target_ips, mode(regexp_extract(body,'to ([0-9.]+):',1)) FROM logs WHERE dataset='bgl' AND ts >= '2005-11-01' AND ts < '2005-11-29' AND pattern_id=968"
+    result: "64|128|10408|10408|1|172.16.96.116"
+    importance: must
+  - fact: "A fleet-wide tree-network failure, also node-platform's: 'rts: kernel terminated for reason <N>' (562) and 'Error receiving packet on tree network' (806). It had 7 bursts each, 5,120 lines, 3,584 nodes, up to 2,048 nodes per burst, on 5 days from Nov 8 to Nov 16, with none later in the window. Labels KERNTERM and KERNREC."
+    sql: "SELECT l.label, g.pattern_id, count(*) lines, count(DISTINCT g.node) nodes, count(DISTINCT date_trunc('day',g.ts)) days, min(g.ts), max(g.ts) FROM logs g JOIN labels l ON l.dataset='bgl' AND l.line_id=g.line_id WHERE g.dataset='bgl' AND g.ts >= '2005-11-01' AND g.ts < '2005-11-29' AND g.pattern_id IN (562,806) GROUP BY 1,2"
+    result: "KERNREC|806|5120|3584|5|2005-11-08 12:59|2005-11-16 12:37 ; KERNTERM|562|5120|3584|5|2005-11-08 12:58|2005-11-16 12:37 ; bursts 7 each, max 2048 nodes/burst"
+    importance: should
+  - fact: "Labeled alert lines in the window, ranked: APPSEV 11,604 (ciod severed), KERNTERM 5,120, KERNREC 5,120, APPRES 2,256 (ciod 'Connection reset', Nov 18-21), APPTO 1,991 (ciod 'Connection timed out', Nov 21 only), KERNMNTF 230 (Lustre mount FAILED), KERNRTSP 45 (rts panic), KERNMC 37 (machine checks). Together, the ciod socket families (APPSEV, APPRES, APPTO) make up the largest share of alerts."
+    sql: "SELECT l.label, g.component, count(*) lines, count(DISTINCT g.node) nodes, count(DISTINCT date_trunc('day',g.ts)) days FROM logs g JOIN labels l ON l.dataset='bgl' AND l.line_id=g.line_id WHERE g.dataset='bgl' AND g.ts >= '2005-11-01' AND g.ts < '2005-11-29' GROUP BY 1,2 ORDER BY lines DESC"
+    result: "APPSEV|APP|11604|1024|10 ; KERNTERM|KERNEL|5120|3584|5 ; KERNREC|KERNEL|5120|3584|5 ; APPRES|APP|2256|1014|2 ; APPTO|APP|1991|972|1 ; KERNMNTF|KERNEL|230|160|2 ; ... KERNRTSP|KERNEL|45|33|17 ; KERNMC|KERNEL|37|27|17"
+    importance: should
+  - fact: "Just before the first ciod burst, a FATAL 'Power Good signal deactivated' event hit the node cards of midplane R73-M1 (2005-11-17 05:32:47, lines 4215732 onward), 37 s before the first 'Link has been severed' line (05:33:24, line 4215995, node R77-M0-NC-I:J18-U11). This is a single temporal coincidence and a hypothesis only. The later bursts are not preceded by power events of this kind."
+    sql: "SELECT line_id, ts, component, severity, node, left(body,110) FROM logs WHERE dataset='bgl' AND ts >= '2005-11-17 05:25' AND ts < '2005-11-17 05:34' AND severity IN ('FATAL','FAILURE','SEVERE','ERROR') ORDER BY ts LIMIT 8"
+    result: "4215732|2005-11-17 05:32:47|KERNEL|FATAL||Power Good signal deactivated: R73-M1-N5. A service action may be required. (and 7 more R73-M1 node cards)"
+    importance: nice
+must_conclude:
+  - "Name the two most-recurring problems with burst counts: ciod 'Link has been severed' at 27 bursts and 'rts panic! - stopping execution' at 33 bursts, both in Nov 1-28. Distinguish bursts from lines: 10,408 (or 11,604) lines for ciod, 45 lines for rts panic."
+  - "Ownership: hpc-workloads owns the ciod/APP storm and node-platform owns the rts panic (KERNEL), along with the other kernel issues."
+  - "Investigate the ciod 'Link has been severed' storm first. It is new (since Nov 17), it is rising (3, then 22, then 18 bursts per week), it is fleet-wide (up to 1,024 I/O nodes in 64 racks), and every line points at one peer, 172.16.96.116. Look at the shared I/O, service or network path, not at single nodes."
+  - "rts panic is a chronic, low-volume issue: about 1 node per burst, on 17 of 28 days, present since June. Handle it as a node-platform reliability trend, not as an outage."
+traps:
+  - "Ranking by line volume or by raw burst count across all severities. The INFO corrected-error patterns ('CE sym ... mask', 225 bursts; 'ddr error(s) detected and corrected', 150 bursts; torus or tree receiver corrected errors) and 'ciod: Received signal' (INFO, 33,620 lines) dominate, but they are informational and unlabeled, not the recurring problems."
+  - "Counting the FATAL register-dump lines ('external input interrupt enable...', 'machine check enable...', 'instruction address: ...', 40 bursts each) as separate problems. They are fields of the same panic or machine-check dump, they are unlabeled, and they should be folded into the rts panic or machine check incident."
+  - "Treating 10,408 (or 11,604) ciod lines as 10,000 incidents. They are 27 storms, each fanning out to about 500-1,024 I/O nodes."
+  - "Presenting 'Kill job <N> timed out. Block freed.' (KERNEL FATAL, 34 bursts) as a top alert. It has no node, and none of its lines are labeled alerts. Mentioning it as a noisy FATAL is acceptable."
+  - "Blaming 1,024 bad I/O nodes for the ciod storm. A single common peer (172.16.96.116) and simultaneous fan-out point to a shared dependency."
+  - "Ending the window on Nov 29 23:59 changes the counts slightly (30 ciod and 35 rts bursts if Nov 29 is included). The golden counts use < 2005-11-29."
+  - "Calling the Nov 8-16 tree-network or kernel-terminated storm ongoing. Its last line is 2005-11-16 12:37."
+not_established:
+  - "The root cause of the ciod 'Link has been severed' storm, and what 172.16.96.116 is (front-end, service node or file server). It is not described in the logs."
+  - "Whether the R73-M1 Power Good event caused the first ciod burst. It is one coincidence in time, not proven causation."
+  - "How many user jobs or users were affected, or any downtime or cost. The logs do not show job impact beyond ciod and kill-job messages."
+  - "The root cause of the individual rts panics (the logs show the register dumps, not the software or hardware fault)."
+labels_used: "The labels confirmed which patterns are real alerts. ciod severed = APPSEV, rts panic = KERNRTSP, tree network = KERNREC, kernel terminated = KERNTERM, plus APPRES, APPTO and KERNMNTF. The INFO corrected-error patterns, the FATAL register-dump fields and 'Kill job timed out' have no labels in the window, which excludes them as top problems. Each label count matches the raw full-text count (APPSEV 11,604 = 'Link has been severed' lines, KERNRTSP 45 = 'rts panic' lines)."
+golden_check:
+  - fact: "bursts of the ciod 'Link has been severed' pattern started in the period"
+    golden_value: "27"
+    my_value: "27"
+    agrees: true
+  - fact: "bursts of 'rts panic! - stopping execution' in the period"
+    golden_value: "33"
+    my_value: "33"
+    agrees: true
+notes: "Window: 'to 2005-11-29' is read as exclusive, the same as the golden SQL. Including Nov 29 gives 30 and 35 bursts, and an answer using that reading should not be penalised if it states its window. Bursts follow the repo definition: the same pattern anywhere, split when the gap exceeds 30 min. 'How often' can fairly be given as bursts, distinct nodes or days. A good answer separates these from line counts. Either ordering of the top two is defensible: rts panic has more bursts (33 vs 27), while ciod is much larger and new. For 'investigate first', ciod is the better answer because it is new, rising, fleet-wide and has one common peer. A lead answer that also flags the Nov 8-16 tree-network or kernel-terminated storm (node-platform) is more complete."

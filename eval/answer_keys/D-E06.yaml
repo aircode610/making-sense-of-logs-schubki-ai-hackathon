@@ -1,0 +1,67 @@
+id: D-E06
+role: engineer
+dataset: bgl
+question: "BGL logged 'machine check interrupt' errors in October 2005 (2005-10-01 to 2005-11-01). Where and when did they occur, and what happened around the first one?"
+answer_summary: "In October 2005 BGL logged 37 lines with the bare template 'machine check interrupt', plus 24 variant lines that name a cause: 14 'machine check interrupt (bit=0x1d): L2 dcache unit data parity error' and 10 '(bit=0x06): L3 major internal error'. That is 61 lines, all FATAL/KERNEL and all labelled KERNMC, on 54 distinct compute cards in 37 racks over 24 days, so the pattern is scattered across the fleet rather than one bad node. A few cards repeat: R02-M0-N4-C:J04-U11 (4 lines on 10-16, 15:03-16:49), R51-M0-N8-C:J13-U11 (3), R27-M1-N8-C:J10-U01 (2) and R15-M0-N6-C:J15-U01 (2). The first bare-template line was at 2005-10-02 08:34:07 on R52-M0-NB-C:J04-U01. It was followed by a roughly 90-second kernel register dump (46 lines; the status register is 0x81000000 and 'd-cache flush parity error' is set to 1) that ended in 'rts panic! - stopping execution' at 08:35:37. Around it, a job launch failed fleet-wide at 08:31 (512 I/O nodes logged 'ciod: Error loading .../ddcMDbglV ... Permission denied'). At 08:34:13-08:35:18, 496 I/O nodes then logged 'ciod: Error reading message prefix after LOAD_MESSAGE ... Link has been severed', including the R52-M0 I/O nodes. Note that the first line of any variant came earlier, at 2005-10-01 11:02:23 on R04-M0-N3-C:J17-U11 ('L3 major internal error' with '9 L3 EDRAM error(s) detected and corrected')."
+findings:
+  - fact: "October 2005 has 37 bare-template 'machine check interrupt' lines and 61 lines that contain the phrase. The 24 extra lines are variants with a bit code: 14 L2 dcache parity and 10 L3 major internal error. Every one is FATAL KERNEL."
+    sql: "SELECT pattern_id, count(*), count(DISTINCT node) FROM logs WHERE dataset='bgl' AND ts >= '2005-10-01' AND ts < '2005-11-01' AND pattern_id IN (33,86,93) GROUP BY 1   -- 33='machine check interrupt', 86='(bit=<N>d): L<N> dcache unit data parity error', 93='(bit=<N>): L<N> major internal error'"
+    result: "33|37|34 ; 86|14|13 ; 93|10|8 (ILIKE '%machine check interrupt%' gives the same 37/14/10)"
+    importance: must
+  - fact: "The lines are spread across the fleet: 61 lines on 54 distinct compute cards in 37 racks over 24 distinct days, from 2005-10-01 11:02 to 2005-10-31 20:43. There is no single hotspot."
+    sql: "SELECT count(*), count(DISTINCT node), count(DISTINCT split_part(node,'-',1)), count(DISTINCT strftime(ts,'%Y-%m-%d')), min(ts), max(ts) FROM logs WHERE dataset='bgl' AND ts >= '2005-10-01' AND ts < '2005-11-01' AND body @@ websearch_to_tsquery('\"machine check interrupt\"')"
+    result: "61|54|37|24|2005-10-01 11:02:23.732541|2005-10-31 20:43:30.11958"
+    importance: must
+  - fact: "The first bare-template line is at 2005-10-02 08:34:07.02 on R52-M0-NB-C:J04-U01 (line 3534397). The next ones are R22-M0-NA-C:J11-U01 at 09:10:05 and R21-M0-NB-C:J07-U01 at 09:10:08."
+    sql: "SELECT line_id, ts, node, body FROM logs WHERE dataset='bgl' AND ts >= '2005-10-01' AND ts < '2005-11-01' AND pattern_id IN (33,86,93) ORDER BY ts LIMIT 5"
+    result: "3532873|2005-10-01 11:02:23|R04-M0-N3-C:J17-U11|machine check interrupt (bit=0x06): L3 major internal error ; 3534397|2005-10-02 08:34:07|R52-M0-NB-C:J04-U01|machine check interrupt ; 3534939|2005-10-02 09:10:05|R22-M0-NA-C:J11-U01 ; 3534972|2005-10-02 09:10:08|R21-M0-NB-C:J07-U01 ; ..."
+    importance: must
+  - fact: "On the node, the first bare-template line is followed by a 46-line FATAL kernel register dump spanning 08:34:07-08:35:37. It shows 'instruction address: 0x0000a374', 'machine check status register: 0x81000000' and 'd-cache flush parity error........1', then GPR/SPR dumps, and it ends with 'rts panic! - stopping execution'. In the 07:30-08:34 window that node logged nothing before the machine check."
+    sql: "SELECT line_id, ts, node, severity, component, left(body,120) FROM logs WHERE dataset='bgl' AND ts >= '2005-10-02 07:30' AND ts < '2005-10-02 10:00' AND node LIKE 'R52-M0-NB%' ORDER BY ts, line_id LIMIT 60"
+    result: "3534397 08:34:07 machine check interrupt; 3534398 instruction address: 0x0000a374; 3534399 machine check status register: 0x81000000; ... 3534407 d-cache flush parity error........1; ... 3534938 08:35:37.80 rts panic! - stopping execution (46 lines on this node that day, all in 08:34:07-08:35:37)"
+    importance: must
+  - fact: "Around the first one there is fleet-wide APP/ciod noise on I/O nodes. Before it, at 08:31:34-08:32:30, 512 I/O nodes logged 'ciod: Error loading /bgl/apps/SWL/stability/DDCMD//ddcMDbglV: invalid or missing program image, Permission denied'. After it, at 08:34:13-08:35:18, 496 I/O nodes logged 'ciod: Error reading message prefix after LOAD_MESSAGE on CioStream socket ... Link has been severed', and the R52-M0 I/O nodes did so at 08:34:42-44. No other component logged anything in 08:00-09:00 apart from the dumping card."
+    sql: "SELECT left(body,60), count(*), count(DISTINCT node), min(ts), max(ts) FROM logs WHERE dataset='bgl' AND ts >= '2005-10-02 08:00' AND ts < '2005-10-02 09:00' AND component='APP' GROUP BY 1 ORDER BY 2 DESC LIMIT 10"
+    result: "ciod: Error loading ...ddcMDbglV|512|512|08:31:34|08:32:30 ; ciod: Error reading message prefix after LOAD_MESSAGE|496|496|08:34:13|08:35:18 (the same window filtered to component<>'APP' and node<>the dumping card returned 0 rows)"
+    importance: should
+  - fact: "Repeat offenders: R02-M0-N4-C:J04-U11 logged 4 lines on 10-16 (15:03, 15:23, 16:09, 16:49), alternating the bare template with L2 dcache parity. R51-M0-N8-C:J13-U11 logged 3 (10-05 12:20, 10-13 16:11, 16:37). R27-M1-N8-C:J10-U01 logged 2 (10-09, 10-11, both L3) and R15-M0-N6-C:J15-U01 logged 2 (10-18, both L3)."
+    sql: "SELECT node, count(*), string_agg(strftime(ts,'%m-%d %H:%M'), ', ' ORDER BY ts) FROM logs WHERE dataset='bgl' AND ts >= '2005-10-01' AND ts < '2005-11-01' AND pattern_id IN (33,86,93) GROUP BY 1 HAVING count(*)>1 ORDER BY 2 DESC"
+    result: "R02-M0-N4-C:J04-U11|4 ; R51-M0-N8-C:J13-U11|3 ; R27-M1-N8-C:J10-U01|2 ; R15-M0-N6-C:J15-U01|2"
+    importance: should
+  - fact: "The first line of any variant is a day earlier: 2005-10-01 11:02:23 on R04-M0-N3-C:J17-U11, 'machine check interrupt (bit=0x06): L3 major internal error', followed by an INFO line '9 L3 EDRAM error(s) (dcr 0x0157) detected and corrected' and an L3/EDRAM register dump ('uncorrectable error detected in EDRAM bank 1...1')."
+    sql: "SELECT ts, node, severity, left(body,110) FROM logs WHERE dataset='bgl' AND ts >= '2005-10-01 10:30' AND ts < '2005-10-01 11:30' AND node='R04-M0-N3-C:J17-U11' ORDER BY ts LIMIT 30"
+    result: "11:02:23.73 FATAL machine check interrupt (bit=0x06): L3 major internal error ; 11:02:23.80 INFO 9 L3 EDRAM error(s) (dcr 0x0157) detected and corrected ; ... uncorrectable error detected in EDRAM bank 1...1"
+    importance: should
+  - fact: "October's rate matches the baseline. Lines across all three templates per month: Jun 20, Jul 32, Aug 57, Sep 61, Oct 61, Nov 27, Dec 9. Bare-template lines: Sep 38, Oct 37."
+    sql: "SELECT strftime(ts,'%Y-%m'), count(*) FILTER (WHERE pattern_id=33), count(*) FROM logs WHERE dataset='bgl' AND pattern_id IN (33,86,93) GROUP BY 1 ORDER BY 1"
+    result: "2005-06|13|20 ; 2005-07|23|32 ; 2005-08|28|57 ; 2005-09|38|61 ; 2005-10|37|61 ; 2005-11|19|27 ; 2005-12|3|9"
+    importance: nice
+must_conclude:
+  - "Report the counts accurately: 37 bare-template 'machine check interrupt' lines, or 61 if the bit-coded L2/L3 variants are included. Say which definition is being used."
+  - "Scope: the lines are spread across the fleet (54 compute cards, 37 racks, 24 days), all on compute (C) cards with FATAL KERNEL severity. A handful of cards repeat, led by R02-M0-N4-C:J04-U11 with 4 lines on 10-16."
+  - "First occurrence: 2005-10-02 08:34:07 on R52-M0-NB-C:J04-U01 for the bare template. The 2005-10-01 11:02 R04-M0-N3-C:J17-U11 L3 variant should ideally be noted as the earliest line of any variant."
+  - "What happened around the first one: a kernel register dump (d-cache flush parity error bit set) ending in 'rts panic! - stopping execution' about 90 s later. There was concurrent fleet-wide ciod I/O-node noise: a program-load 'Permission denied' at 08:31, then 'Link has been severed' at 08:34-08:35."
+  - "Engineer next steps: inspect or replace the repeat cards (R02-M0-N4-C:J04-U11, R51-M0-N8-C:J13-U11), and check whether the jobs on the panicked nodes were affected. These are hardware cache/EDRAM faults, owned by node-platform (KERNEL)."
+traps:
+  - "Saying there were ~59 or 55 'machine check' errors by counting the register-dump field lines ('machine check status register', 'imprecise machine check....', 'machine check enable....'). Those are fields in a dump, not separate errors."
+  - "Treating 61 (or 37) lines as 61 incidents. Each line is one card event, several cards repeat, and the per-line dumps are parts of one event."
+  - "Blaming the machine check on the 08:31 ciod 'Permission denied' program-load failure, or on the 'Link has been severed' lines. Those are fleet-wide APP messages on 500 I/O nodes. The severed links follow the panic in time, but correlation is not cause, and the logs do not link them."
+  - "Calling it a single-node or single-rack problem. It is spread across 37 racks."
+  - "Reporting the first one as 2005-10-01 without saying it is the L3 variant, or 2005-10-02 08:34 without noting that the variant came earlier. Either answer is defensible if the definition is stated."
+  - "Claiming an October spike. September has the same count (61), so October is in line with the summer/autumn baseline."
+not_established:
+  - "The root cause of the cache/EDRAM parity faults (bad hardware, thermal or radiation). The logs only show the machine-check register state."
+  - "Which job or user was running on R52-M0-NB-C:J04-U01, and whether the job was lost. The logs have no job ID linking the panic to the ddcMDbglV load failure."
+  - "Whether any card was replaced or repaired after its repeat errors."
+  - "Any downtime or user impact beyond the node's kernel stopping execution."
+labels_used: "All 61 phrase-matching lines (patterns 33, 86 and 93) carry label KERNMC. The KERNMC label covers 65 lines on 54 nodes in October; the other 4 are 'DDR machine check register: ...' lines (pattern 132). The label confirms these are true alerts and bounds the category at 65 alert lines."
+golden_check:
+  - fact: "machine check interrupt lines (exact template) in October 2005"
+    golden_value: "37"
+    my_value: "37 (61 including the bit-coded L2/L3 variants)"
+    agrees: true
+  - fact: "first in October"
+    golden_value: "2005-10-02 08:34"
+    my_value: "2005-10-02 08:34 (exact template); the earliest variant is 2005-10-01 11:02"
+    agrees: true
+notes: "The question's phrase 'machine check interrupt' matches three templates. The golden facts use the exact bare template (37 lines, first 10-02 08:34). An answer that reports 61 lines and a first line on 10-01 11:02 (the L3 variant) is factually correct under the broader reading and should not be penalized if it states its definition. An answer that reports both is best. The surrounding window is dominated by about 1,000 fleet-wide ciod APP lines, so an answer focused on the panicked node and its dump is better than one that summarizes the ciod noise as 'what happened'."

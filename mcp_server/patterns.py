@@ -9,26 +9,25 @@ from typing import Annotated, Literal, Optional
 
 from pydantic import Field
 
-from core import MAX_ROWS, Dataset, all_teams, check_dataset, envelope, node_note, query, render
+from core import MAX_ROWS, Component, Dataset, Team, check_dataset, envelope, node_note, query, render
 
 PROBLEM = "('FATAL', 'FAILURE', 'SEVERE', 'ERROR', 'CRITICAL')"
-# A problem line: problem severity, or an HTTP 5xx (nova logs failed requests at INFO; plan 054). BGL has no status.
-# A problem-LEVEL line (candidate; the stored Jev judgment then decides): error-or-worse, WARN (plan 011: Zookeeper and
-# BGL log real faults such as "Node card is not fully functional" at WARN), HTTP 5xx, or no level in the format (SSH).
+# A problem-LEVEL line (candidate; the stored Jev judgment then decides): error-or-worse, WARN (some formats log real
+# faults at WARN, plan 011), a 5xx status (a failed request logged at INFO, plan 054), or a format without levels.
 PROBLEM_LINE = f"(severity IN {PROBLEM} OR severity IN ('WARN', 'WARNING') OR status >= 500 OR severity IS NULL)"
 P_PROBLEM_MIN = 0.5
 ProblemFilter = Annotated[Literal["jev", "severity"], Field(
-    description="How 'problem pattern' is decided: 'jev' (default) = has problem-level lines AND the stored Jev "
-                "judgments say it reports a real fault (not a diagnostic dump field) or a security event "
-                "(p_problem >= 0.5); "
-                "'severity' = any FATAL/FAILURE/SEVERE/ERROR/CRITICAL/WARN line or HTTP 5xx (baseline; ranks routine "
-                "register dumps high).")]
+    description="How 'problem pattern' is decided: 'jev' (default) = has problem-level lines (error-or-worse, WARN, "
+                "5xx status, or no level in the format) AND the stored Jev judgment says it reports a real fault (not a "
+                "routine diagnostic dump) or a security event (p_problem >= 0.5); 'severity' = level / status only "
+                "(the naive rule, kept for comparison).")]
 # Priority weights (fixed up front, returned with every result). Inputs are percentiles (cume_dist) over the candidates.
 WEIGHTS = {"frequency": 0.30, "trend": 0.20, "spread": 0.25, "persistence": 0.15, "severity": 0.10}
 
 Ds = Dataset
-Start = Annotated[Optional[datetime], Field(description="Period start (inclusive). Default: 28 days before `end`.")]
-End = Annotated[Optional[datetime], Field(description="Period end (exclusive). Default: the dataset's last timestamp.")]
+Start = Annotated[Optional[datetime], Field(description="Period start (inclusive), 'YYYY-MM-DD'. Default: 28 days before `end`.")]
+End = Annotated[Optional[datetime], Field(description="Period end (exclusive). Default: just after the dataset's last line "
+                                                      "('now' of that dataset).")]
 
 
 def _period(dataset: str, start, end) -> tuple[datetime, datetime, datetime]:
@@ -92,24 +91,29 @@ def top_patterns(
     dataset: Ds,
     start: Start = None,
     end: End = None,
-    team: Annotated[Optional[str], Field(
-        description="Owning team: " + all_teams() + ".")] = None,
-    component: Annotated[Optional[str], Field(description="Exact component, e.g. KERNEL.")] = None,
-    problem_only: Annotated[bool, Field(description="Only problem patterns (see problem_filter).")] = True,
+    team: Team = None,
+    component: Component = None,
+    problem_only: Annotated[bool, Field(description="Only problem patterns (see problem_filter); False = every kind "
+                                                    "of message.")] = True,
     problem_filter: ProblemFilter = "jev",
     rank_by: Annotated[Literal["bursts", "nodes", "lines", "growth"], Field(
         description="'bursts' = how often it recurs (default), 'nodes' = how widespread, 'lines' = log volume "
                     "(inflated by storms), 'growth' = bursts now minus bursts in the previous period.")] = "bursts",
     limit: Annotated[int, Field(ge=1, le=MAX_ROWS, description=f"Patterns to return (max {MAX_ROWS}).")] = 20,
 ) -> dict:
-    """Recurring problems in a period: which log patterns recur, how often, where, whose, and whether they grow.
+    """Which problems recur most in a period, how often, where, whose, and are they growing?
 
-    One row per pattern (a log message template, numbers/ids masked): template, component, owner team, lines, bursts
-    (= recurrences: same pattern anywhere, split by > 30 min quiet), nodes, weeks_active, bursts_prev (previous period
-    of equal length) and change, new (first seen in the corpus inside the period), top_node_share (1.0 = one node only),
-    p_fault / p_dump / p_problem / kind (stored Jev judgment of the pattern: calibrated probabilities, not counts).
-    Period defaults to the last 28 days of the dataset; both periods are returned as absolute dates.
-    Bursts count recurrences, not confirmed incidents; lines count log entries.
+    Use when: "which problems keep coming back", "top errors this month", "what got worse", "what does team X
+    struggle with": one row per kind of problem (a log pattern), ranked.
+    Not for: a computed priority order with weights (priority_table), one known error's lines (search_logs), patterns
+    first seen in the period only (whats_new), finding a pattern by meaning (find_patterns).
+    Returns: per pattern: template, component, owner team, lines, bursts (recurrences split by > 30 min quiet),
+    nodes, weeks_active, bursts_prev (previous period of equal length), change, new (first seen in the period),
+    top_node_share (1.0 = one node only), p_problem / kind (stored Jev judgment). Both periods as absolute dates.
+    Caveats: bursts count recurrences, not confirmed incidents; lines count log entries. Default period = the
+    dataset's last 28 days.
+    Example: top_patterns(dataset=<dataset>, start='<month start>', end='<next month start>', rank_by='growth')
+    Next: pattern_history / spread / precursors(pattern_id) for one row; search_logs(pattern_id=…) for its lines.
     """
     t0 = time.perf_counter()
     ps, s, e = _period(dataset, start, end)
@@ -140,15 +144,19 @@ def priority_table(
     limit: Annotated[int, Field(ge=1, le=MAX_ROWS, description="Ranked problems to return (max 50).")] = 10,
     problem_filter: ProblemFilter = "jev",
 ) -> dict:
-    """Computed priority ranking of problem patterns for a period, plus a per-team roll-up.
+    """What deserves attention first? A computed priority ranking of problems for a period, with a team roll-up.
 
-    score (0-100) = 100 × Σ weight × percentile (share of candidates with a value ≤ this one) among all problem
-    patterns of the period, for five MEASURED
-    inputs: frequency = bursts, trend = bursts − bursts in the previous period, spread = distinct nodes,
-    persistence = weeks active / weeks in the period, severity = p_problem (stored Jev judgment that the pattern
-    reports a real fault; with problem_filter='severity': share of problem-severity lines). Weights and each
-    item's per-input contribution are returned, so every score can be recomputed. Raw line counts are shown but not
-    used for ranking. The ranking says what the logs measure; it does not know cost, downtime or customer impact.
+    Use when: "what should we fix / prioritise first", "top 3 risks", "if we can fix only one thing": the ranking
+    is computed, so explain it instead of re-ranking yourself.
+    Not for: a plain list of recurring problems ranked by one measure (top_patterns), one team in depth (team_risk),
+    whether things improve over time (reliability_trend).
+    Returns: items (rank, score 0-100, template, component, team, measured inputs: bursts, change, nodes,
+    persistence, p_problem, and each input's contribution), the weights and formula, and team_rollup over ALL
+    problem patterns of the period.
+    Caveats: the logs measure frequency, spread, trend and persistence; cost, downtime and customer impact are not in
+    the logs (stated in `unknown`). Default period = the dataset's last 28 days.
+    Example: priority_table(dataset=<dataset>, start='<period start>', end='<period end>')
+    Next: team_risk(team) for the top team; pattern_history / spread for the top item.
     """
     t0 = time.perf_counter()
     ps, s, e = _period(dataset, start, end)

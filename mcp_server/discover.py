@@ -12,14 +12,21 @@ from core import (MATCH_HELP, MAX_ROWS, DatasetOpt, MatchMode, check_dataset, en
 
 
 def describe_corpus() -> dict:
-    """What is loaded: one row per dataset with its title, description, time span, lines, patterns, bursts, owning
-    teams, components and severities (most frequent first), what `location` means and which id fields exist.
+    """What logs are loaded, over which period, and what does each field mean in each dataset? Start here.
 
-    Call it first when the question does not name a dataset or period, to state the scope correctly ("the corpus
-    ends 2006-01-04, so 'now' = 2006-01-04"). Every number is an exact count over the whole dataset.
+    Use when: starting on a question, the question does not name a dataset or period, or you need to know what a
+    field means (node, location, request_id, object_id, status, duration) in a given dataset before filtering on it.
+    Not for: the values of one field (list_values), counts (count_by).
+    Returns: one row per dataset: title, description, first_ts / last_ts (each dataset has its own clock: "now" = its
+    last line), lines, patterns, bursts, owning teams, components and log levels (most frequent first), entity kinds,
+    and per field its meaning here with a real example value (NULL = the dataset does not log it).
+    Caveats: exact counts over the whole dataset; descriptions are written by whoever loaded the data.
+    Example: describe_corpus()
+    Next: list_values(dataset, field) for valid filter values; search_logs / top_patterns with the dataset and period.
     """
     t0 = time.perf_counter()
-    sql = ("SELECT d.dataset, d.title, d.description, d.location_hint, d.id_fields, "
+    sql = ("SELECT d.dataset, d.title, d.description, d.node_meaning, d.location_meaning, d.request_meaning, "
+           "d.object_meaning, d.status_meaning, d.duration_meaning, "
            "(SELECT count(*) FROM patterns p WHERE p.dataset = d.dataset) AS patterns, "
            "(SELECT count(*) FROM bursts b WHERE b.dataset = d.dataset) AS bursts "
            "FROM datasets d ORDER BY d.pattern_base")
@@ -29,30 +36,41 @@ def describe_corpus() -> dict:
         v = reg.get(r["dataset"], {})
         r.update(first_ts=v.get("first_ts"), last_ts=v.get("last_ts"), lines=v.get("lines"),
                  teams=v.get("teams", []), components=(v.get("components") or [])[:12],
-                 components_total=len(v.get("components") or []), severities=v.get("severitys") or [])
+                 components_total=len(v.get("components") or []), severities=v.get("severitys") or [],
+                 entity_kinds=v.get("entity_kinds", []), examples=v.get("examples", {}))
     return envelope("describe_corpus", {}, [sql], {}, scope="all loaded datasets; exact counts", rows=rows, t0=t0,
                     total_matches=len(rows), truncated=False,
                     note="lines = log entries; bursts = recurrences of one pattern split by > 30 min quiet; "
-                         "components lists at most 12 (components_total = all).")
+                         "components lists at most 12 (components_total = all); a NULL *_meaning = field not logged; "
+                         "severities empty = the format has no log level.")
 
 
 FIELDS = {"component": "component", "severity": "severity", "node": "node", "location": "location",
-          "request_id": "request_id", "instance_id": "instance_id", "status": "status"}
+          "request_id": "request_id", "object_id": "object_id", "status": "status"}
 
 
 def list_values(
     dataset: DatasetOpt,
-    field: Annotated[Literal["component", "severity", "node", "location", "request_id", "instance_id", "status",
+    field: Annotated[Literal["component", "severity", "node", "location", "request_id", "object_id", "status",
                              "team", "entity"], Field(
-        description="Which filter's values: component, severity, node, location (every level of the path), "
-                    "request_id, instance_id, status, team (ownership) or entity (typed values like ip:…, path:…).")],
+        description="Which field's values: component, severity, node, location (every level of the path is a value), "
+                    "request_id, object_id, status, team (ownership) or entity (typed values like ip:…, path:…).")],
     prefix: Annotated[Optional[str], Field(
-        description="Only values starting with this, e.g. 'R02' (BGL racks/midplanes), 'ip:' (entities), 'nova'.")] = None,
+        description="Only values starting with this, e.g. a location's first level, 'ip:' for entities, or the start "
+                    "of a component name.")] = None,
     limit: Annotated[int, Field(ge=1, le=MAX_ROWS, description=f"Values to return, most lines first (max {MAX_ROWS}).")] = 30,
 ) -> dict:
-    """The distinct values of one filter field with how many log lines carry each, read from the inverted index's
-    term dictionary (no scan). Use it to find valid filter values (components, nodes, racks, teams, IPs) instead of
-    guessing, or for "which X exist" questions. `values_total` = all distinct values (truncated when > limit).
+    """Which values does this field take (and how many lines carry each)? Valid filter values instead of guesses.
+
+    Use when: you need the exact spelling of a component, node, location level, team or entity before filtering, or
+    the question is "which X exist / which X logs the most".
+    Not for: values of matching lines only (facet: breakdown of a search), ranked entities with first / last time
+    (top_entities).
+    Returns: rows {value, lines}, most lines first; values_total = all distinct values (truncated when > limit).
+    Read from the inverted index's term dictionary: no scan, cheap to call.
+    Caveats: lines are log lines, not incidents.
+    Example: list_values(dataset=<dataset>, field='component')
+    Next: use a value as the filter of search_logs / count_by / trend.
     """
     t0 = time.perf_counter()
     check_dataset(dataset)
@@ -90,9 +108,16 @@ def suggest_terms(
     max_distance: Annotated[int, Field(ge=1, le=3, description="Edit distance allowed per word.")] = 2,
     per_word: Annotated[int, Field(ge=1, le=10, description="Suggestions per word.")] = 5,
 ) -> dict:
-    """Spelling suggestions from the words that really occur in the logs: for each word of `text`, the indexed terms
-    within `max_distance` edits, closest first, then by how many lines contain them. Use it when a search returns 0
-    or few matches ("lustre mont" → mount; "pasword" → password) before concluding something is absent.
+    """Which words really occur in the logs close to this spelling? Fixes a search that found nothing.
+
+    Use when: search_logs returned 0 or very few matches, or you are unsure of the log's wording or spelling
+    ("pasword" → password, "mont" → mount), before concluding that something is absent.
+    Not for: finding messages by meaning in other words (find_patterns), why a search matches (explain_search).
+    Returns: per word of `text`, indexed terms within `max_distance` edits, closest first then most lines, with the
+    lines containing each; exact_found = words that do occur as typed.
+    Caveats: candidates share the first letter; terms are lower-case word tokens.
+    Example: suggest_terms(text='conection refused', dataset=<dataset>)
+    Next: search_logs with the corrected words (or match='fuzzy').
     """
     t0 = time.perf_counter()
     check_dataset(dataset)
@@ -118,9 +143,16 @@ def explain_search(
     dataset: DatasetOpt = None,
     match: Annotated[MatchMode, Field(description=MATCH_HELP)] = "web",
 ) -> dict:
-    """Why a search matches what it matches: how the message index tokenizes the text (ts_lexize), how many lines
-    contain each token, the total matches of the whole query, and the query plan (whether the inverted index serves
-    it: IRESEARCH_SCAN with the index filter). Use it when a search returns 0 or surprisingly many lines.
+    """Why does this search match what it matches? Tokens, per-token line counts and whether the index serves it.
+
+    Use when: a search returns 0 or surprisingly many lines and you need to see how the text is tokenized (numbers,
+    dotted ids and punctuation) and which token is rare or common.
+    Not for: spelling fixes (suggest_terms), the matching lines themselves (search_logs).
+    Returns: tokens of the text, lines containing each token, total matches of the whole query, and the query plan
+    (index_served = the inverted index answers it).
+    Caveats: diagnostic only; nothing about the incident itself.
+    Example: explain_search(query_text='"status: 503"', dataset=<dataset>)
+    Next: search_logs with an adjusted query or match mode.
     """
     t0 = time.perf_counter()
     check_dataset(dataset)

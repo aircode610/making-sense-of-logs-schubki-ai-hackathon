@@ -14,12 +14,13 @@
   question: What failed on the R43-M0 midplane around 2005-08-19 13:56, and what happened just before and after?
   golden:
   - fact: kernel panic lines on R43-M0, 2005-08-19 13:40-14:15
-    sql: SELECT count(*) FROM logs WHERE dataset='bgl' AND midplane='R43-M0' AND body @@ websearch_to_tsquery('kernel panic') AND ts >= '2005-08-19 13:40' AND ts < '2005-08-19 14:15'
+    sql: SELECT count(*) FROM logs WHERE dataset='bgl' AND location @@ ts_tokenize('R43/R43-M0', 'keyword') AND body @@ websearch_to_tsquery('kernel panic') AND ts >= '2005-08-19 13:40' AND ts < '2005-08-19
+      14:15'
     value: 2
   - fact: first panic time
     match: date
-    sql: SELECT strftime(min(ts), '%Y-%m-%d %H:%M') FROM logs WHERE dataset='bgl' AND midplane='R43-M0' AND body @@ websearch_to_tsquery('kernel panic') AND ts >= '2005-08-19 13:40' AND ts < '2005-08-19
-      14:15'
+    sql: SELECT strftime(min(ts), '%Y-%m-%d %H:%M') FROM logs WHERE dataset='bgl' AND location @@ ts_tokenize('R43/R43-M0', 'keyword') AND body @@ websearch_to_tsquery('kernel panic') AND ts >= '2005-08-19
+      13:40' AND ts < '2005-08-19 14:15'
     value: 2005-08-19 13:56
   must_mention:
   - R43-M0
@@ -57,11 +58,11 @@
   question: What happened to OpenStack instance 9fafc51c-d0dd-41df-99e9-6c79d8334eaf, step by step across the nova services?
   golden:
   - fact: log lines for the instance
-    sql: SELECT count(*) FROM logs WHERE dataset='openstack' AND instance_id='9fafc51c-d0dd-41df-99e9-6c79d8334eaf'
+    sql: SELECT count(*) FROM logs WHERE dataset='openstack' AND object_id='9fafc51c-d0dd-41df-99e9-6c79d8334eaf'
     value: 25
   - fact: first line time
     match: date
-    sql: SELECT strftime(min(ts), '%Y-%m-%d %H:%M') FROM logs WHERE dataset='openstack' AND instance_id='9fafc51c-d0dd-41df-99e9-6c79d8334eaf'
+    sql: SELECT strftime(min(ts), '%Y-%m-%d %H:%M') FROM logs WHERE dataset='openstack' AND object_id='9fafc51c-d0dd-41df-99e9-6c79d8334eaf'
     value: 2017-05-16 22:51
   must_mention:
   - 9fafc51c

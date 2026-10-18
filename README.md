@@ -17,6 +17,7 @@ Requirements: Docker, Python 3.12, [`uv`](https://docs.astral.sh/uv/), `psql`.
 cp .env.example .env                     # fill in keys (TypeSafe for Jev, Anthropic for the agent, Google for embeddings)
 ./scripts/download_data.sh               # BGL + OpenStack (~770 MB) into data/raw/
 ./scripts/download_data.sh --all         # optional: Zookeeper, Apache, OpenSSH (small Loghub sets, generality test)
+./scripts/download_data.sh linux healthapp   # optional: the two "unseen" sets (loaded with zero code change, plan 012)
 ./scripts/download_data.sh hdfs          # optional: HDFS_v1, 11M lines / 1.5 GB (the scale test)
 docker compose up -d                     # SereneDB on localhost:7890 (+ OTLP/HTTP on :4318)
 psql -h localhost -p 7890 -U postgres -d postgres -f docker/init.sql   # first start only
@@ -29,9 +30,11 @@ Load the data (SereneDB reads and parses the raw files itself; schema and loader
 LOAD_OTEL=1 ./load/reload.sh  # also pull a slice of the remote 1-billion-record OpenTelemetry Parquet over HTTPS (+2 min)
 ```
 `reload.sh`: `00_cleanup.py` (drops workspaces / team views) → `00_schema.sql` (tables, dictionaries, generic mask +
-entity macros, dataset registry) → one loader per dataset (`10_bgl`, `20_openstack`, `30_zookeeper`, `31_apache`,
-`32_ssh`, `33_hdfs`, `40_otel_demo`; the new ones are one parse query + `\ir lib/stage_to_logs.sql`) → `90_publish`
-(`VACUUM` refresh + compact) → `94_ownership` (ownership with `*` defaults, watchlist, remote sources) →
+entity macros, dataset registry) → `10_bgl`, `20_openstack`, then every `load/3*.sql` / `4*.sql` whose first line
+`-- requires: <raw file>` exists (`30_zookeeper`, `31_apache`, `32_ssh`, `33_hdfs`, `34_linux`, `35_healthapp`,
+`40_otel_demo`; each is one parse query + `\ir lib/stage_to_logs.sql`) → `90_publish` (`VACUUM` refresh + compact) →
+`93_examples` (a real example value per dataset and field, for the tool descriptions) → `94_ownership` (ownership with
+`*` defaults, watchlist, remote sources) →
 `95_patterns_episodes` (patterns, bursts, episodes) → `96_pattern_judgments` (stored Jev judgments + traits) →
 `97_pattern_vectors` (template embeddings + IVF index, burst summaries) → `98_macros` (SQL API) → `99_roles.py`
 (database roles) → `bench/check_counts.py`, `bench/check_patterns.py`, `bench/check_tools.py` (every tool vs
@@ -40,10 +43,14 @@ independent SQL on every loaded dataset). Everything AI-generated is committed (
 key to load; regenerate with `scripts/judge_patterns.sh <ds>`, `scripts/judge_traits.py`, `scripts/embed_patterns.py`,
 `scripts/summarize_bursts.py` (all run their AI calls inside SereneDB).
 
-**A new log source** = `load/3x_<name>.sql` (parse the raw lines into `stage`: ts, component, severity, node,
-location path, body, optional request id) + `\ir lib/stage_to_logs.sql` + rows in `data/ownership.csv` (`<ds>,*,team`
-covers every component) + `scripts/judge_patterns.sh <ds>` / `judge_traits.py <ds>` / `embed_patterns.py`. No tool,
-agent or eval code changes (CLAUDE.md rule 11). Or replay any dataset as OpenTelemetry into SereneDB's built-in OTLP
+**A new log source** = `load/3x_<name>.sql` (first line `-- requires: <raw file>`; parse the raw lines into `stage`:
+ts, component, severity, body, and where the format has them node, location path, request_id (one request / session /
+trace), object_id (a thing followed across requests), status, duration_ms; plus one sentence per filled field saying
+what it means here, e.g. `\set request_meaning 'trace id …'`) + `\ir lib/stage_to_logs.sql` + rows in
+`data/ownership.csv` (`<ds>,*,team` covers every component) + `scripts/judge_patterns.sh <ds>` / `judge_traits.py <ds>`
+/ `embed_patterns.py`. No tool, agent or eval code changes (CLAUDE.md rule 11; `bench/lint_generic.py` enforces it):
+the meanings and real example values reach every MCP client through the server's field guide. Linux and HealthApp
+were added this way (plan 012). Or replay any dataset as OpenTelemetry into SereneDB's built-in OTLP
 receiver: `.venv/bin/python scripts/otlp_replay.py <dataset> 2000`.
 
 Connect Claude Code to the tools: the `logs` MCP server is registered in [`.mcp.json`](.mcp.json), so running
@@ -70,19 +77,40 @@ The same questions as SQL (table macros, `load/98_macros.sql`): `logs_count`, `l
 | Dataset | Lines | Span | What it is | Location / ids |
 |---|---|---|---|---|
 | `bgl` | 4,747,963 | 214 days | Blue Gene/L supercomputer RAS events | rack / midplane / node |
-| `openstack` | 207,820 | 3 days | nova API / compute / scheduler | request, VM instance, tenant, HTTP status, latency |
+| `openstack` | 207,820 | 3 days | nova API / compute / scheduler | request id, VM (`object_id`), tenant entity, HTTP status, durations |
 | `zookeeper` | 74,380 | 27 days | ZooKeeper ensemble member (Java) | class / thread |
 | `apache` | 56,482 | 264 days | Apache httpd error log | client IPs as entities |
 | `ssh` | 655,147 | 28 days | OpenSSH auth log of an internet-facing host | host, session (`sshd-<pid>`), attacker IPs |
 | `hdfs` (opt.) | 11,175,629 | 39 hours | Hadoop HDFS NameNode / DataNodes | block id (`blk_…`), datanode IPs |
 | `otel` (opt.) | 1,702,944 | 30 min (sampled) | OpenTelemetry demo webshop (slice of 1 B remote records) | k8s namespace / node / pod, TraceId |
+| `linux` (opt.) | 25,567 | 264 days | syslog of one Linux server (unseen-dataset test) | host, `<program>-<pid>`, attacker IPs |
+| `healthapp` (opt.) | 253,395 | 11 days | Android health app (unseen-dataset test) | app module, process id |
 
-All from Loghub (BGL, OpenStack, Zookeeper, Apache, OpenSSH, HDFS) and the public OpenTelemetry `text_bench` Parquet.
+All from Loghub (BGL, OpenStack, Zookeeper, Apache, OpenSSH, HDFS, Linux, HealthApp) and the public OpenTelemetry
+`text_bench` Parquet. One generic schema: `node`, `location` (path, any level), `request_id`, `object_id`, `status`,
+`duration_ms`, `entities`; what each means per dataset is a row of the `datasets` table.
 See [`data/README.md`](data/README.md). Ownership (fictional, documented per row): [`data/ownership.csv`](data/ownership.csv).
 
 ## Tools (40, one MCP server)
-MCP server [`mcp_server/`](mcp_server/) (FastMCP). Every tool is a fixed, parameterized SereneDB query: the LLM only
-fills typed fields (dataset names are an enum of the loaded datasets). Every result is an **envelope**: `tool`,
+MCP server [`mcp_server/`](mcp_server/) (FastMCP), written to be handed to ANY agent (Claude Code, our agent, another
+LLM) with a free-form question (plan 012): no roles in the server, nothing dataset-specific in its code.
+- **Descriptions follow one template**: the question the tool answers, *Use when*, *Not for* (names the better
+  sibling tool), *Returns*, *Caveats*, *Example*, *Next* (which ids to pass on). Shared parameters (node, location,
+  request_id, object_id, …) are described once in `core.py`.
+- **Server instructions** (shown by MCP clients) = the investigation loop (orient → anchor → widen → check), the ids
+  that flow between tools, the glossary (line, pattern, burst, episode, problem pattern), and a **field guide**
+  generated from the data: per dataset its span, levels, components, teams, and what node / location / request_id /
+  object_id / status / duration / entities mean there with a real example value.
+- **Results suggest the next step** (`hints`): 0 matches → fuzzy / synonyms / suggest_terms; an unknown component or
+  level → the closest real values; a sample → the counting tools; found patterns → their history / spread / precursors.
+- **Optional playbooks** as MCP prompts: `investigate_failure`, `review_recurring_problems`, `set_priorities`.
+- Checked: `bench/check_tools.py` runs every tool on every loaded dataset against independent SQL (tool × dataset
+  matrix); `bench/lint_generic.py` (no dataset values in code, template complete, definitions ≤ 36k tokens);
+  `bench/tool_use.py` (role-free benchmark: a plain agent with only this server, Opus and Sonnet) and
+  `bench/claude_code_run.py` (Claude Code itself, headless, with only this server).
+
+Every tool is a fixed, parameterized SereneDB query: the LLM only fills typed fields (dataset names are an enum of the
+loaded datasets). Every result is an **envelope**: `tool`,
 `params`, `sql` (the exact queries that ran, values inlined), `filters`, `scope`, `total_matches`, `truncated`,
 `elapsed_ms`, `evidence_id`, plus rows (≤ 50, messages cut at 300 chars). Totals are computed over all matches, never
 from a sample. `explain_tool` shows any tool's query plan.
@@ -90,7 +118,7 @@ from a sample. `explain_tool` shows any tool's query plan.
 | Group | Tools (what they answer) | SereneDB features |
 |---|---|---|
 | Discover | `describe_corpus` (what is loaded), `list_values` (valid filter values), `suggest_terms` (spelling), `explain_search` (why a search matches) | term dictionary (`ts_dict_*`), `ts_lexize`, `EXPLAIN` |
-| Search | `search_logs` (match = web / all / any / phrase / near / fuzzy / prefix / at_least / synonyms, `exclude_text`, `highlight`, `order` incl. BM25 × recency decay, `location` at any level, `entity`), `get_context` (before / after on node / location / request / VM) | inverted index, `ts_phrase(slop)`, `ts_levenshtein`, `ts_any(min_match)`, synonyms dictionary, `ts_highlight`, BM25, `expand_path` |
+| Search | `search_logs` (match = web / all / any / phrase / near / fuzzy / prefix / at_least / synonyms, `exclude_text`, `highlight`, `order` incl. BM25 × recency decay, `location` at any level, `entity`), `get_context` (before / after on node / location at any level / component / request / object) | inverted index, `ts_phrase(slop)`, `ts_levenshtein`, `ts_any(min_match)`, synonyms dictionary, `ts_highlight`, BM25, `expand_path` |
 | Breakdowns | `facet` (one-pass breakdown of a search), `distinctive_terms` (significant terms: what is different in a window), `top_entities` (top IPs / paths / ids), `check_watchlist` (saved searches that fired) | `GROUPING SETS`, term dictionary, extracted entities |
 | Counts | `count_by`, `trend`, `rate_vs_baseline`, `value_outliers` | aggregates, zero-filled `generate_series`, median / MAD |
 | Patterns | `top_patterns`, `priority_table`, `pattern_history` (new or recurring), `whats_new` | patterns / bursts tables, `cume_dist`, stored Jev judgments |

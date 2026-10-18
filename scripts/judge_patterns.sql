@@ -15,8 +15,8 @@ SELECT p.dataset, p.component, p.template, p.pattern_id,
        round((j).kind.confidence, 4) AS kind_confidence
 FROM (
     SELECT p.*, ai_system_one(
-        'component: ' || p.component || chr(10) ||
-        'severity: ' || p.severity || chr(10) ||
+        'component: ' || coalesce(p.component, 'none') || chr(10) ||   -- coalesce: NULL would null the whole prompt
+        'severity: ' || coalesce(p.severity, 'not logged') || chr(10) ||  -- (formats without levels, plan 012 fix)
         'message template (numbers and ids masked): ' || p.template || chr(10) ||
         'example message: ' || coalesce(l.body, ''),
         questions := '{
