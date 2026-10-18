@@ -43,10 +43,11 @@ SELECT component, template, row_number() OVER (ORDER BY first_ts, component, tem
 FROM (SELECT component, coalesce(template, '') AS template, min(ts) AS first_ts FROM bgl_stage GROUP BY 1, 2);
 
 -- Insert in time order so zonemaps prune time filters.
-INSERT INTO logs (dataset, line_id, ts, component, severity, node, location, entities, body, pattern_id)
-SELECT 'bgl', s.line_id, s.ts, s.component, s.severity, s.node,
+INSERT INTO logs (dataset, line_id, ts, component, severity, severity_number, node, location, entities, body, pattern_id)
+SELECT 'bgl', s.line_id, s.ts, s.component, s.severity, sm.severity_number, s.node,
        s.rack || '/' || s.midplane || '/' || s.node, extract_entities(s.body), s.body, p.pattern_id
 FROM bgl_stage s JOIN bgl_pat p ON p.component = s.component AND p.template = coalesce(s.template, '')
+LEFT JOIN severity_map sm ON sm.word = upper(s.severity)
 ORDER BY s.ts, s.line_id;
 
 INSERT INTO labels SELECT 'bgl', line_id, label FROM bgl_stage WHERE label <> '-';

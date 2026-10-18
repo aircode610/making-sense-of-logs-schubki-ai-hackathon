@@ -6,6 +6,7 @@ DROP TABLE IF EXISTS logs CASCADE;
 DROP TABLE IF EXISTS labels CASCADE;
 DROP TABLE IF EXISTS pattern_templates CASCADE;
 DROP TABLE IF EXISTS datasets CASCADE;
+DROP TABLE IF EXISTS severity_map CASCADE;
 
 -- Lowercase alpha tokens, with frequency/position/norm for BM25 + phrase queries (same as otel_logs), and offset so
 -- ts_highlight can mark phrase matches (plan 011). Recreated on every reload so its flags always match this file.
@@ -61,6 +62,9 @@ CREATE TABLE logs (
     ts          TIMESTAMP NOT NULL,
     component   VARCHAR,             -- the emitting program / service / class (dataset-defined)
     severity    VARCHAR,             -- upper case as logged (INFO .. FATAL); NULL when the format has no level
+    severity_number SMALLINT,        -- one scale for every format (plan 057): OpenTelemetry SeverityNumber 1-24 from
+                                     -- severity_map (TRACE 1, DEBUG 5, INFO 9, WARN 13, ERROR 17, FATAL 21); NULL when no
+                                     -- level or an unknown word. Informational: the problem rule still uses `severity`.
     node        VARCHAR,             -- the emitting machine / host (datasets.node_meaning)
     location    VARCHAR,             -- hierarchical path, '/'-separated, coarse → fine (datasets.location_meaning)
     request_id  VARCHAR,             -- one request / session / trace / block (datasets.request_meaning)
@@ -74,9 +78,14 @@ CREATE TABLE logs (
 
 -- Text + every filter column in one index, so search and filters resolve in one pass.
 CREATE INDEX logs_idx ON logs USING inverted (
-    ts, body log_body_dict, dataset, component, severity, node, location location_dict,
+    ts, body log_body_dict, dataset, component, severity, severity_number, node, location location_dict,
     request_id, object_id, status, duration_ms, entities, pattern_id
 );
+
+-- Raw level word → OpenTelemetry SeverityNumber (plan 057; data/severity_map.csv: OTel logs data model, RFC 5424, Java
+-- util.logging, lnav level words). Loaders fill logs.severity_number by joining on upper(severity) = word.
+CREATE TABLE severity_map AS SELECT * FROM read_csv('/data/severity_map.csv', header = true, auto_detect = false,
+    columns = {'word': 'VARCHAR', 'severity_number': 'SMALLINT', 'severity_text': 'VARCHAR', 'source': 'VARCHAR'});
 
 -- Ground-truth labels: evaluation only, never read by agent tools.
 CREATE TABLE labels (

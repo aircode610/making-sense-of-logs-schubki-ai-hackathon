@@ -1,6 +1,6 @@
 # 057: Any log file in (lower-risk version): inferred ownership, severity column, lnav format detection
 
-- **Status:** part 1 done (ownership), parts 2–3 to do · approved (Konark, 2026-10-18: lower-risk version)
+- **Status:** parts 1–2 done (ownership, severity), part 3 to do · approved (Konark, 2026-10-18: lower-risk version)
 - **Owner:** Konark · **Branch:** `feat/057-any-log-file` · **Date:** 2026-10-18
 - **PLAN.md block / slice:** generality ("unseen logs"), on top of Amirali's plans 011–012
 
@@ -61,7 +61,7 @@ Touches Amirali's `94_ownership.sql` and team display in tools (tell him).
 
 ## 6. Steps
 - [x] Part 1 ownership: rules + areas + chain + disputed + display; `owner_of`, `ownership_gaps`; checks
-- [ ] Part 2 severity column; checks unchanged
+- [x] Part 2 severity column; checks unchanged
 - [ ] Part 3 lnav detection + `ingest.sh` + `ingest_report`, `unparsed_lines`; 2 unseen files; one agent run
 - [ ] §7, README, STATUS, DECISIONS, plans index; tell Amirali
 
@@ -88,4 +88,19 @@ composer rule: inferred owners are worded as inferred, disputes reported; lead +
   (the whole-log top problem is 'rts panic', curated node-platform, not APP) and was fixed + re-scored before comparing.
 - **Schema change documented** (all tools read `ownership`): README (pipeline, new log source, ownership table,
   tools), `docs/ARCHITECTURE.md`, `data/README.md`, `load/94_ownership.sql` header, DECISIONS H27.
+**Part 2 (severity column), done 2026-10-18.** `logs.severity_number` (SMALLINT, in `logs_idx` and in focus-index
+copies) = OpenTelemetry SeverityNumber from `data/severity_map.csv` (28 words: OTel, RFC 5424, Java util.logging, lnav
+one-letter levels; BGL SEVERE 18, FAILURE 21; Apache NOTICE 10; OpenStack CRITICAL 22); filled by the three insert paths
+(`10_bgl`, `20_openstack`, `lib/stage_to_logs.sql`); NULL for SSH / Linux / HealthApp (no level). Every logged word maps
+(new check in `check_counts.py` flags unmapped words); problem rule unchanged (raw words, H22), so problem counts,
+owners and all checks are identical. `search_logs` / `get_context` rows carry the number.
+- **Benchmarks vs part 1** (same machine, same 7 datasets): full load (`reload.sh --skip-checks`, 3 runs each)
+  30.8 s → 32.6 s (+6 %, inside part 1's spread 28.6–33.1 s); tool latency, sum of medians 618 → 623 ms (+0.8 %);
+  `bench/tool_use.py` 29 q Sonnet: facts 50 → 49 /51 (the miss is wording: a correct answer wrote "two" instead of
+  "2"), unseen 10/10 both, 1 tool error (model passed line_id 0, recovered), calls 3.6 → 3.9, input tokens 125k → 134k
+  (run-to-run noise level). Verdict: same answers and speed; groundwork for part 3 (auto-detected formats' level words).
+- First speed run looked like +70 %: the part-1 worktree had no raw files, so it loaded 2 datasets instead of 7;
+  re-measured with the same data.
+- Schema change documented: README (generic schema, new log source), `docs/ARCHITECTURE.md`, `data/README.md`,
+  `load/00_schema.sql` comments, DECISIONS H28.
 - Not built: syslog-facility step (no loaded format carries a facility; add when a loader parses `<PRI>`).
