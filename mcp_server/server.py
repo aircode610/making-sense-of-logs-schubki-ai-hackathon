@@ -11,7 +11,9 @@ from mcp.server.fastmcp import FastMCP
 import analytics
 import counts
 import discover
+import ingestion
 import outliers
+import ownership
 import patterns
 import remote
 import search
@@ -73,6 +75,7 @@ SPEC = [
     (discover.list_values, "Valid filter values", READ_ONLY),
     (discover.suggest_terms, "Spelling suggestions", READ_ONLY),
     (discover.explain_search, "Why a search matches", READ_ONLY),
+    (ingestion.ingest_report, "How a log format was detected", READ_ONLY),
     (search.search_logs, "Search logs", READ_ONLY),
     (search.get_context, "Events around a line", READ_ONLY),
     (terms.facet, "Breakdown of matches", READ_ONLY),
@@ -85,6 +88,8 @@ SPEC = [
     (outliers.value_outliers, "Slow operations", READ_ONLY),
     (patterns.top_patterns, "Recurring problems", READ_ONLY),
     (patterns.priority_table, "Priority ranking", READ_ONLY),
+    (ownership.owner_of, "Who owns a component", READ_ONLY),
+    (ownership.ownership_gaps, "Unowned or uncertain owners", READ_ONLY),
     (timeline.pattern_history, "New or recurring", READ_ONLY),
     (timeline.burst_timeline, "Which error came first", READ_ONLY),
     (timeline.spread, "One node or fleet-wide", READ_ONLY),

@@ -1,0 +1,52 @@
+dataset,component,area,confidence
+proxifier,360AP.exe,network,0.49
+proxifier,AcroRd32.exe,mobile/app,0.53
+proxifier,Acrobat.exe,mobile/app,0.65
+proxifier,AliIM.exe,mobile/app,0.6
+proxifier,BSvcProcessor.exe,web/API,0.36
+proxifier,BingSvc.exe,web/API,0.45
+proxifier,DefaultPack.exe,network,0.48
+proxifier,DefaultSetup.exe,mobile/app,0.4
+proxifier,Dropbox.exe,mobile/app,0.41
+proxifier,DropboxUpdate.exe,mobile/app,0.8
+proxifier,Explorer.EXE *64,mobile/app,0.52
+proxifier,FlashPlayerPlugin_18_0_0_209.exe,mobile/app,0.54
+proxifier,GitHub.exe,mobile/app,0.49
+proxifier,GoogleUpdate.exe,mobile/app,0.66
+proxifier,HiSuiteDownLoader.exe,mobile/app,0.89
+proxifier,MSIEXEC.EXE,mobile/app,0.33
+proxifier,MobaXterm.exe,mobile/app,0.74
+proxifier,PinyinUp.exe,mobile/app,0.52
+proxifier,QPUp.exe,network,0.45
+proxifier,QQ.exe,mobile/app,0.5
+proxifier,QQExternal.exe,mobile/app,0.38
+proxifier,QQPlayer.exe,mobile/app,0.76
+proxifier,QQProtect.exe,mobile/app,0.43
+proxifier,QQProtectUpd.exe,mobile/app,0.61
+proxifier,SGDownload.exe,mobile/app,0.36
+proxifier,SGPicFaceTool.exe,mobile/app,0.65
+proxifier,SGTool.exe,network,0.52
+proxifier,Skype.exe,mobile/app,0.74
+proxifier,SkypeSetup.exe,mobile/app,0.86
+proxifier,SogouCloud.exe,mobile/app,0.39
+proxifier,SogouComMgr.exe,mobile/app,0.45
+proxifier,SohuNews.exe,mobile/app,0.53
+proxifier,TeamViewer.exe,mobile/app,0.64
+proxifier,TeamViewer_Service.exe,mobile/app,0.37
+proxifier,WeChat.exe,mobile/app,0.91
+proxifier,WinSCP.exe,mobile/app,0.65
+proxifier,Wiz.exe,mobile/app,0.37
+proxifier,YodaoDict.exe,mobile/app,0.74
+proxifier,YoudaoIE.exe,mobile/app,0.4
+proxifier,chrome.exe,mobile/app,0.42
+proxifier,chrome.exe *64,mobile/app,0.44
+proxifier,firefox.exe,mobile/app,0.45
+proxifier,git-remote-https.exe,application,0.52
+proxifier,msfeedssync.exe *64,mobile/app,0.35
+proxifier,putty.exe,network,0.39
+proxifier,spoolsv.exe *64,kernel/OS,0.84
+proxifier,ssh-add.exe,auth/security,0.98
+proxifier,sublime_text.exe *64,mobile/app,0.62
+proxifier,svchost.exe *64,kernel/OS,0.93
+proxifier,tencentdl.exe,mobile/app,0.48
+proxifier,yundetectservice.exe,network,0.31

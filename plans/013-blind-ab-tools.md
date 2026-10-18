@@ -62,7 +62,7 @@ judge investigations against our golden facts. Held-out untouched.
 
 ## 6. Steps
 - [x] Answer keys: 25 parallel context-free agents → `eval/answer_keys/`, human spot-check, freeze
-- [x] 25 more questions (writers per dataset) + their answer keys (50 keys, all golden facts agree; judgement calls settled + frozen, H27)
+- [x] 25 more questions (writers per dataset) + their answer keys (50 keys, all golden facts agree; judgement calls settled + frozen, H30)
 - [x] Neutral recipes + `role_tools` parameter; diff of rendered prompts = empty (prompt depends only on role + shared recipes; leak scan: no tool name in it; smoke: both arms stay in their toolsets). Also fixed `corpus()` (plan-012 column rename had silently reduced it to a one-line fallback)
 - [x] `sql` judge tool (logs_manager, read-only), compare agents against the frozen keys, blinding + leak scan (`eval/ab.py`)
 - [x] Smoke on 2 questions (D-X25, D-M07): prompts identical, no leaks, judge verifies with SQL and caught a false claim; first verdicts flipped with order (position bias on near-ties) → judge told order is random and to call tie unless one is clearly better; re-judged: 2 consistent ties

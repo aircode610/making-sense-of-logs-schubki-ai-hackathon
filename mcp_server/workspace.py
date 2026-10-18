@@ -14,7 +14,7 @@ from pydantic import Field
 from core import Component, Dataset, Node, check_dataset, envelope, execute, filters_sql, query, render, tsquery_sql
 
 MAX_ROWS_WS = 2_000_000
-COLS = ("dataset, line_id, ts, component, severity, node, location, request_id, object_id, status, duration_ms, "
+COLS = ("dataset, line_id, ts, component, severity, severity_number, node, location, request_id, object_id, status, duration_ms, "
         "entities, body, pattern_id")
 
 
@@ -81,10 +81,10 @@ def create_focus_index(
     execute(f"DROP TABLE IF EXISTS {t} CASCADE", {})
     execute("DELETE FROM workspaces WHERE name = %(n)s", {"n": name})
     ddl = [f"CREATE TABLE {t} (dataset VARCHAR, line_id BIGINT, ts TIMESTAMP, component VARCHAR, severity VARCHAR, "
-           f"node VARCHAR, location VARCHAR, request_id VARCHAR, object_id VARCHAR, status INTEGER, duration_ms DOUBLE, "
+           f"severity_number SMALLINT, node VARCHAR, location VARCHAR, request_id VARCHAR, object_id VARCHAR, status INTEGER, duration_ms DOUBLE, "
            f"entities VARCHAR[], body VARCHAR, pattern_id INTEGER) "
            f"WITH (storage = 'search', optimize_top_k = 'bm25(1.2, 0.75)')",
-           f"CREATE INDEX {t}_idx ON {t} USING inverted (ts, body log_body_dict, dataset, component, severity, node, "
+           f"CREATE INDEX {t}_idx ON {t} USING inverted (ts, body log_body_dict, dataset, component, severity, severity_number, node, "
            f"location location_dict, request_id, object_id, status, duration_ms, entities, pattern_id)"]
     tb = time.perf_counter()
     for d in ddl:

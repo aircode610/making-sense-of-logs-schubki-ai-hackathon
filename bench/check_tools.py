@@ -19,7 +19,9 @@ load_dotenv(Path(__file__).parent.parent / ".env")
 import analytics
 import counts
 import discover
+import ingestion
 import outliers
+import ownership
 import patterns
 import remote
 import search
@@ -108,6 +110,13 @@ for ds in DATASETS:
     r = run(discover.explain_search, ds, word, ds)
     if r:
         ok("explain_search", ds, "total", r["total_matches"], exact)
+
+    r = run(ingestion.ingest_report, ds, ds, unmatched_limit=3)  # plan 057: auto-detected datasets only
+    if r:
+        auto = one("SELECT count(*) FROM ingest_runs WHERE dataset = %(d)s", P)
+        ok("ingest_report", ds, "report only for auto-detected datasets", len(r["rows"]), auto)
+        if auto:
+            ok("ingest_report", ds, "lines loaded", r["rows"][0]["lines_loaded"], lines_total)
 
     # ---- search
     r = run(search.search_logs, ds, query_text=word, dataset=ds, limit=3)
@@ -225,6 +234,25 @@ for ds in DATASETS:
                     f"AND coalesce(o.team, 'unowned') = %(t)s", {"d": ds, "t": team}))
         else:
             skip("team_risk", ds, "no problem patterns")
+
+    # ---- ownership (plan 057): curated owners unchanged, gaps = components without a curated row (+ disputes)
+    if comp:
+        r = run(ownership.owner_of, ds, ds, comp)
+        if r:
+            ok("owner_of", ds, f"{comp!r} lines", r["rows"][0]["lines"],
+               one("SELECT count(*) FROM logs WHERE dataset = %(d)s AND component = %(c)s", {"d": ds, "c": comp}))
+            cur = one("SELECT coalesce(max(team) FILTER (WHERE component = %(c)s), max(team) FILTER (WHERE component = '*')) "
+                      "FROM ownership_raw WHERE dataset = %(d)s", {"d": ds, "c": comp})
+            if cur:
+                ok("owner_of", ds, "curated owner unchanged", (r["rows"][0]["team"], r["rows"][0]["source"] in
+                                                              ("curated", "curated default")), (cur, True))
+    r = run(ownership.ownership_gaps, ds, ds, limit=50)
+    if r:
+        no_curated = one("SELECT count(DISTINCT l.component) FROM logs l WHERE l.dataset = %(d)s AND l.component IS NOT NULL "
+                         "AND NOT EXISTS (SELECT 1 FROM ownership_raw o WHERE o.dataset = l.dataset "
+                         "AND o.component IN (l.component, '*'))", P)
+        ok("ownership_gaps", ds, "components without a curated owner",
+           sum(t["components"] for t in r["totals"] if t["kind"] != "disputed"), no_curated)
 
     # ---- timeline
     r = run(timeline.pattern_history, ds, ds, pid)

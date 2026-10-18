@@ -6,6 +6,6 @@ cd "$(dirname "$0")/.."
 ds="${1:-bgl}"
 PSQL=(psql -h "${PGHOST:-localhost}" -p "${PGPORT:-7890}" -U "${PGUSER:-postgres}" -d "${PGDATABASE:-postgres}" -X -q -v ON_ERROR_STOP=1)
 out="data/pattern_judgments_${ds}.csv"
-time "${PSQL[@]}" -v where="p.dataset = '${ds}'" -f scripts/judge_patterns.sql > "$out.tmp"
+time "${PSQL[@]}" -v ai_cap="${AI_CAP:-5000}" -v where="p.dataset = '${ds}'" -f scripts/judge_patterns.sql > "$out.tmp"
 mv "$out.tmp" "$out"
 echo "$(($(wc -l < "$out") - 1)) judgments → $out"

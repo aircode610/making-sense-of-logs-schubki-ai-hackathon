@@ -14,15 +14,16 @@ echo "== load/00_cleanup.py"; .venv/bin/python load/00_cleanup.py
 run load/00_schema.sql
 run load/10_bgl.sql
 run load/20_openstack.sql
+shopt -s nullglob  # load/gen may be empty
 # Extra datasets (plan 012: generic): every load/3*.sql / 4*.sql whose first line `-- requires: <file>` exists
 # (or `-- requires: env NAME=1` is set, e.g. LOAD_OTEL=1 for the remote OTel slice). A new dataset = one more file.
-for f in load/3*.sql load/4*.sql; do
+for f in load/3*.sql load/4*.sql load/gen/*.sql; do  # load/gen: auto-detected loaders (plan 057, scripts/ingest.py)
   req=$(head -1 "$f" | sed -n 's/^-- requires: //p')
   if [[ "$req" == env\ * ]]; then kv=${req#env }; name=${kv%%=*}; [ "${!name:-0}" = "${kv#*=}" ] || continue
   elif [ -n "$req" ] && [ ! -f "$req" ]; then continue; fi
   run "$f"
 done
-for f in load/90_publish.sql load/93_examples.sql load/94_ownership.sql load/95_patterns_episodes.sql load/96_pattern_judgments.sql \
+for f in load/90_publish.sql load/93_examples.sql load/94_ownership.sql load/95_patterns_episodes.sql load/96_pattern_judgments.sql load/96b_ownership_inferred.sql \
          load/97_pattern_vectors.sql load/98_macros.sql; do
   run "$f"
 done

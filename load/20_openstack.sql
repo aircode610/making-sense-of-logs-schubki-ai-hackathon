@@ -53,12 +53,13 @@ CREATE TEMP TABLE os_pat AS
 SELECT component, template, (100000 + row_number() OVER (ORDER BY first_ts, component, template))::INTEGER AS pattern_id
 FROM (SELECT component, template, min(ts) AS first_ts FROM os_stage GROUP BY 1, 2);
 
-INSERT INTO logs (dataset, line_id, ts, component, severity, request_id, object_id, status, duration_ms,
+INSERT INTO logs (dataset, line_id, ts, component, severity, severity_number, request_id, object_id, status, duration_ms,
                   entities, body, pattern_id)
-SELECT 'openstack', s.line_id, s.ts, s.component, s.severity, s.request_id, s.object_id, s.status,
+SELECT 'openstack', s.line_id, s.ts, s.component, s.severity, sm.severity_number, s.request_id, s.object_id, s.status,
        s.duration_ms, list_concat(extract_entities(s.body), CASE WHEN s.tenant_id IS NOT NULL THEN ['tenant:' || s.tenant_id] ELSE []::VARCHAR[] END),
        s.body, p.pattern_id
 FROM os_stage s JOIN os_pat p ON p.component = s.component AND p.template = s.template
+LEFT JOIN severity_map sm ON sm.word = upper(s.severity)
 ORDER BY s.ts, s.line_id;
 
 INSERT INTO pattern_templates SELECT 'openstack', pattern_id, component, template FROM os_pat;

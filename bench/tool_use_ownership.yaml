@@ -1,0 +1,37 @@
+# Ownership questions (plan 057), same format as bench/tool_use_questions.yaml; run with
+#   .venv/bin/python bench/tool_use.py --questions bench/tool_use_ownership.yaml --models anthropic:claude-sonnet-5-5
+# Written by Claude after seeing the data (dev only). Facts are literal values checked against the database when written:
+# curated owners from data/ownership.csv, disputes / areas from the plan-057 ownership table. The previous server
+# (no area, no dispute flag) can only find the curated owners, so these questions measure the new capability.
+
+- id: O-1
+  dataset: bgl
+  question: Which team owns the problem that recurs most often on the BGL supercomputer over the whole log, and how certain is that ownership?
+  first: [top_patterns, priority_table, rollup, owner_of, ownership_gaps]
+  need: [[top_patterns, priority_table, rollup]]
+  facts:
+  - {fact: "owner of the top recurring pattern over the whole log ('rts panic', KERNEL; curated, not disputed)", match: text, value: node-platform}
+- id: O-2
+  dataset: linux
+  question: On the Linux server, who owns the messages logged by sshd, and what functional area of the system does sshd belong to?
+  first: [owner_of, list_values, search_logs, count_by, facet]
+  need: [[owner_of, count_by, search_logs, facet, list_values]]
+  facts:
+  - {fact: owner (curated dataset default), match: text, value: linux-ops}
+  - {fact: functional area, match: text, value: security}
+- id: O-3
+  dataset: zookeeper
+  question: Is the ownership of any ZooKeeper component disputed or uncertain? Which component, and which team does the evidence point to instead?
+  first: [ownership_gaps, owner_of, list_values, count_by, top_patterns]
+  need: [[ownership_gaps, owner_of, count_by, top_patterns]]
+  facts:
+  - {fact: disputed component, match: text, value: LearnerCnxAcceptor}
+  - {fact: team the Jev evidence points to, match: text, value: client-connectivity}
+- id: O-4
+  dataset: bgl
+  question: Across all loaded logs, which component's owner should a team lead double-check first because the evidence points to a different team, and how many log lines does that component have?
+  first: [ownership_gaps, owner_of, count_by, top_patterns, priority_table, rollup]
+  need: [[ownership_gaps, owner_of, count_by, top_patterns, rollup]]
+  facts:
+  - {fact: lines of the disputed component (BGL APP), sql: "SELECT count(*) FROM logs WHERE dataset='bgl' AND component='APP'"}
+  - {fact: team the Jev evidence points to, match: text, value: node-platform}

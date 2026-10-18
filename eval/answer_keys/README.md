@@ -4,7 +4,7 @@ One file per dev question (`eval/dev_questions.yaml`, 50 questions). Each was wr
 context, from read-only SQL over raw `logs` + `labels` + `ownership` (no MCP tools, no past answers), anchored on the
 question's golden facts. All 50 golden facts were reproduced. The A/B judge grades answers against these keys.
 
-Rules for the judge (decided by Claude at Amirali's request, `docs/DECISIONS.md` H27):
+Rules for the judge (decided by Claude at Amirali's request, `docs/DECISIONS.md` H30):
 - The key is the truth; a golden fact computed by one of our tools (`match: order` / `priority_table`) is not. Grade the
   substance (right problem, owner, scope), not the tool's exact order or wording.
 - Ambiguous windows or definitions (e.g. an exclusive end date, a template vs its variants, ERROR vs ERROR+FATAL): any

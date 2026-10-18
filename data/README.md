@@ -6,11 +6,28 @@
 - Optional extra sets (`download_data.sh --all`, `hdfs`, `linux healthapp`): `zookeeper/`, `apache/`, `ssh/`, `hdfs/`,
   `linux/` (25,567 lines; read as latin-1: some lines carry raw attack bytes) and `healthapp/` (253,395 lines). Linux and
   HealthApp are the plan-012 "unseen" sets: loaded with a loader file + a `*` ownership row only.
+- Auto-detected sets (plan 057 part 3, `scripts/ingest.sh`; downloaded by hand from Loghub Zenodo record 8196385):
+  `android/Android.log` (Android_v1, 1,555,005 lines, logcat format, year not logged: 2017 assumed) and
+  `proxifier/Proxifier.log` (21,329 lines, year not logged: 2016 assumed). Loaders are generated into `load/gen/`.
+- `pattern_vectors_<ds>.parquet` (committed, plan 057): embeddings of one dataset's templates
+  (`scripts/embed_patterns.py <ds>`), so adding a dataset never rewrites the shared `pattern_vectors.parquet`.
 - `pattern_judgments_<ds>.csv`, `pattern_traits_<ds>.csv`, `pattern_vectors.parquet`, `burst_summaries.csv`
   (committed): AI outputs computed inside SereneDB (Jev / embeddings / summaries), so a clean checkout needs no key.
 - `ownership.csv` (committed): **fictional** component → team mapping for team-lead / manager aggregations.
   BGL component = 9th field of a line (KERNEL, APP, DISCOVERY, MMCS, HARDWARE, MONITOR, LINKCARD, CMCS, BGLMASTER, …);
-  OpenStack component = the nova service from the file prefix. Unmapped components are grouped as `unowned`.
+  OpenStack component = the nova service from the file prefix. Since plan 057 rows are optional: components without
+  a row get an inferred owner (below), and only those with no owner at confidence ≥ 0.6 are grouped as `unowned`.
+- `severity_map.csv` (committed, plan 057): raw level word → OpenTelemetry SeverityNumber + text (TRACE 1, DEBUG 5,
+  INFO 9, WARN 13, ERROR 17, FATAL 21–24), with the source of each row (OTel logs data model, RFC 5424, Java
+  util.logging, lnav one-letter levels). Loaded by `load/00_schema.sql` as `severity_map`; loaders fill
+  `logs.severity_number`.
+- `ownership_rules.csv` (committed, plan 057): `priority, match_type (exact|prefix|regex), pattern, area, source_ref`:
+  public name lists → functional area (OpenStack service-types authority, Kubernetes components, ~50 common programs).
+  Names are normalised first (lower case, no `[pid]`, `(pam_unix)`, trailing `-<n>` / `.service`).
+- `area_teams.csv` (committed, plan 057): area → team, **fictional** like `ownership.csv`; the only place inferred
+  team names come from.
+- `component_areas_<ds>.csv` (committed, plan 057): Jev's functional area per component with its probability
+  (`scripts/judge_areas.py`, one `ai_system_one` call per component inside SereneDB).
 
 Labels (for evaluation only, never shown to the agent as answers): BGL first field `-` = normal, otherwise alert
 category; OpenStack `anomaly_labels.txt` lists 3 VM instance ids with injected anomalies (in `openstack_abnormal.log`).

@@ -156,6 +156,9 @@ Hard rules:
 - Say "log lines" for line counts and "bursts" for recurrences; never call lines incidents.
 - scope: datasets, the absolute period (dates from the results), filters, and whether results were truncated.
 - Never invent money, downtime or customer impact; at most say in unknowns that they are not in the logs.
+- Owners: when a result gives owner_source other than 'curated' / 'curated default', write the team as inferred with
+  its source and confidence; when it gives owner_disputed_by / disputed_by, keep the curated owner and say the
+  ownership is disputed (Jev names the other team). Never name a team the results do not give.
 - A `model_summary` in the ledger is model-written context: never copy numbers or claims from it into facts.
 - "Nothing happened before / after" is only true for the window you checked: when a context result has
   nearest_before_window / nearest_after_window, state the closest earlier / later line (time, node, message) and how

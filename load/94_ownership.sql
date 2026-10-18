@@ -2,6 +2,8 @@
 -- dataset's default team for components without their own row (datasets with many components, e.g. Java classes).
 -- `ownership` = one row per (dataset, component) that occurs in logs, exact match first, then the '*' default;
 -- components with neither stay out (tools show them as 'unowned'). Run after the loaders.
+-- Plan 057: load/96b_ownership_inferred.sql later REBUILDS `ownership` with the same (dataset, component, team,
+-- description) for curated rows plus area / source / confidence / dispute columns and inferred rows.
 \timing on
 SET sdb_scan_split = 'never';  -- TsDict facet counts off by one with split segments (plan 011)
 DROP TABLE IF EXISTS ownership_raw CASCADE;

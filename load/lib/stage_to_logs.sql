@@ -86,13 +86,14 @@ FROM (SELECT s.component, m.template, min(s.ts) AS first_ts
       GROUP BY 1, 2);
 
 -- Insert in time order so zonemaps prune time filters.
-INSERT INTO logs (dataset, line_id, ts, component, severity, node, location, request_id, object_id, status, duration_ms,
+INSERT INTO logs (dataset, line_id, ts, component, severity, severity_number, node, location, request_id, object_id, status, duration_ms,
                   entities, body, pattern_id)
-SELECT :'ds', s.line_id, s.ts, s.component, s.severity, s.node, s.location, s.request_id, s.object_id, s.status, s.duration_ms,
+SELECT :'ds', s.line_id, s.ts, s.component, s.severity, sm.severity_number, s.node, s.location, s.request_id, s.object_id, s.status, s.duration_ms,
        extract_entities(s.body), s.body, p.pattern_id
 FROM s2 s
 JOIN tmap m ON m.component IS NOT DISTINCT FROM s.component AND m.template0 = s.template0
 JOIN spat p ON p.component IS NOT DISTINCT FROM m.component AND p.template = m.template
+LEFT JOIN severity_map sm ON sm.word = s.severity  -- s2.severity is already upper case
 WHERE s.ts IS NOT NULL
 ORDER BY s.ts, s.line_id;
 

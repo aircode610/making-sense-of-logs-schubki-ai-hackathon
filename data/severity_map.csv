@@ -1,0 +1,29 @@
+word,severity_number,severity_text,source
+TRACE,1,TRACE,OpenTelemetry logs data model (TRACE 1-4)
+FINEST,1,TRACE,Java util.logging FINEST ~ OTel TRACE
+FINER,2,TRACE2,Java util.logging FINER ~ OTel TRACE2
+DEBUG,5,DEBUG,OpenTelemetry logs data model (DEBUG 5-8); RFC 5424 severity 7
+FINE,5,DEBUG,Java util.logging FINE ~ OTel DEBUG
+CONFIG,6,DEBUG2,Java util.logging CONFIG ~ OTel DEBUG2
+D,5,DEBUG,one-letter level (glog / Android); lnav level words
+V,1,TRACE,one-letter level verbose (Android); lnav level words
+INFO,9,INFO,OpenTelemetry logs data model (INFO 9-12); RFC 5424 severity 6 (informational)
+INFORMATIONAL,9,INFO,RFC 5424 severity 6
+I,9,INFO,one-letter level (glog / Android); lnav level words
+NOTICE,10,INFO2,RFC 5424 severity 5 (notice) ~ OTel INFO2
+WARN,13,WARN,OpenTelemetry logs data model (WARN 13-16)
+WARNING,13,WARN,RFC 5424 severity 4; Java util.logging WARNING
+W,13,WARN,one-letter level (glog / Android); lnav level words
+ERROR,17,ERROR,OpenTelemetry logs data model (ERROR 17-20); RFC 5424 severity 3
+ERR,17,ERROR,RFC 5424 keyword err
+E,17,ERROR,one-letter level (glog / Android); lnav level words
+SEVERE,18,ERROR2,Java util.logging SEVERE; BGL level between ERROR and FAILURE ~ OTel ERROR2
+FAILURE,21,FATAL,BGL level just below FATAL ~ OTel FATAL
+FATAL,21,FATAL,OpenTelemetry logs data model (FATAL 21-24)
+F,21,FATAL,one-letter level (glog); lnav level words
+CRITICAL,22,FATAL2,RFC 5424 severity 2 (critical) ~ OTel FATAL2
+CRIT,22,FATAL2,RFC 5424 keyword crit
+ALERT,23,FATAL3,RFC 5424 severity 1 (alert) ~ OTel FATAL3
+EMERG,24,FATAL4,RFC 5424 severity 0 (emergency) ~ OTel FATAL4
+EMERGENCY,24,FATAL4,RFC 5424 severity 0
+PANIC,24,FATAL4,RFC 5424 deprecated keyword panic

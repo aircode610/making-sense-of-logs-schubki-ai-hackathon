@@ -30,7 +30,8 @@ PARTS = ["Use when:", "Not for:", "Returns:", "Caveats:", "Example:", "Next:"]
 BUDGET = 36_000  # counted tokens = the plan's "+20 %" over the plan-011 server (29,963 counted)
 # Ordinary English / operations words that some dataset happens to use as a component name; not dataset knowledge.
 COMMON = {"email", "payment", "shipping", "checkout", "quote", "cart", "frontend", "recommendation", "kernel", "Digest",
-          "accounting", "currency", "LDAP", "image", "network", "storage", "kafka", "ad"}
+          "accounting", "currency", "LDAP", "image", "network", "storage", "kafka", "ad",
+          "Index", "Calendar"}  # Android tag names (plan 057) that are ordinary words in existing code
 
 
 def forbidden() -> set[str]:

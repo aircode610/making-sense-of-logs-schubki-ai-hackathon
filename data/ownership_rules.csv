@@ -1,0 +1,94 @@
+priority,match_type,pattern,area,source_ref
+10,prefix,nova,compute/virtualisation,OpenStack service-types authority: nova = compute
+10,prefix,neutron,network,OpenStack service-types authority: neutron = network
+10,prefix,cinder,storage,OpenStack service-types authority: cinder = block-storage
+10,prefix,swift,storage,OpenStack service-types authority: swift = object-store
+10,prefix,glance,storage,OpenStack service-types authority: glance = image
+10,prefix,keystone,auth/security,OpenStack service-types authority: keystone = identity
+10,prefix,heat,orchestration,OpenStack service-types authority: heat = orchestration
+10,prefix,horizon,web/API,OpenStack service-types authority: horizon = dashboard
+10,prefix,placement,compute/virtualisation,OpenStack service-types authority: placement
+10,prefix,octavia,network,OpenStack service-types authority: octavia = load-balancer
+10,prefix,designate,network,OpenStack service-types authority: designate = dns
+10,prefix,barbican,auth/security,OpenStack service-types authority: barbican = key-manager
+10,prefix,manila,storage,OpenStack service-types authority: manila = shared-file-system
+20,prefix,kube-apiserver,orchestration,Kubernetes components: control plane
+20,prefix,kube-scheduler,orchestration,Kubernetes components: control plane
+20,prefix,kube-controller-manager,orchestration,Kubernetes components: control plane
+20,prefix,cloud-controller-manager,orchestration,Kubernetes components: control plane
+20,exact,etcd,orchestration,Kubernetes components: control plane store
+20,prefix,kubelet,orchestration,Kubernetes components: node
+20,prefix,kube-proxy,network,Kubernetes components: node (service networking)
+20,prefix,containerd,compute/virtualisation,Kubernetes components: container runtime
+20,prefix,dockerd,compute/virtualisation,Kubernetes components: container runtime
+20,prefix,cri-o,compute/virtualisation,Kubernetes components: container runtime
+30,exact,sshd,auth/security,common programs: OpenSSH server
+30,exact,sudo,auth/security,common programs: privilege escalation
+30,exact,su,auth/security,common programs: switch user
+30,exact,login,auth/security,common programs: console login
+30,exact,passwd,auth/security,common programs: password change
+30,exact,useradd,auth/security,common programs: account management
+30,exact,userdel,auth/security,common programs: account management
+30,exact,auditd,auth/security,common programs: audit daemon
+30,prefix,pam,auth/security,common programs: PAM authentication
+30,exact,ftpd,auth/security,common programs: FTP login (authentication)
+30,exact,kernel,kernel/OS,common programs: kernel messages
+30,exact,klogd,kernel/OS,common programs: kernel log daemon
+30,exact,systemd,kernel/OS,common programs: init / service manager
+30,exact,init,kernel/OS,common programs: init
+30,exact,udev,kernel/OS,common programs: device manager
+30,exact,rsyslogd,kernel/OS,common programs: syslog daemon
+30,exact,syslogd,kernel/OS,common programs: syslog daemon
+30,exact,syslog,kernel/OS,common programs: syslog daemon
+30,exact,logrotate,kernel/OS,common programs: log rotation
+30,exact,irqbalance,kernel/OS,common programs: IRQ balancing
+30,exact,ntpd,kernel/OS,common programs: time sync
+30,exact,chronyd,kernel/OS,common programs: time sync
+30,exact,cups,kernel/OS,common programs: printing
+30,exact,cupsd,kernel/OS,common programs: printing
+30,exact,cron,scheduler,common programs: cron
+30,exact,crond,scheduler,common programs: cron
+30,exact,anacron,scheduler,common programs: cron
+30,exact,atd,scheduler,common programs: at jobs
+30,prefix,postgres,database,common programs: PostgreSQL
+30,exact,mysqld,database,common programs: MySQL
+30,prefix,mariadb,database,common programs: MariaDB
+30,exact,mongod,database,common programs: MongoDB
+30,prefix,redis,database,common programs: Redis
+30,prefix,cassandra,database,common programs: Cassandra
+30,exact,nginx,web/API,common programs: web server
+30,exact,httpd,web/API,common programs: Apache HTTP server
+30,exact,apache2,web/API,common programs: Apache HTTP server
+30,exact,haproxy,web/API,common programs: load balancer / proxy
+30,exact,envoy,web/API,common programs: proxy
+30,prefix,tomcat,web/API,common programs: Java web server
+30,prefix,kafka,messaging,common programs: Kafka
+30,prefix,rabbitmq,messaging,common programs: RabbitMQ
+30,prefix,activemq,messaging,common programs: ActiveMQ
+30,prefix,zookeeper,orchestration,common programs: ZooKeeper coordination
+30,exact,named,network,common programs: DNS server
+30,exact,dnsmasq,network,common programs: DNS / DHCP
+30,exact,dhcpd,network,common programs: DHCP server
+30,exact,dhclient,network,common programs: DHCP client
+30,exact,network,network,common programs: network init script
+30,exact,networkmanager,network,common programs: NetworkManager
+30,exact,iptables,network,common programs: firewall
+30,exact,firewalld,network,common programs: firewall
+30,exact,ifup,network,common programs: interface up
+30,exact,portmap,network,common programs: RPC port mapper
+30,exact,xinetd,network,common programs: internet super-server
+30,exact,sendmail,mail,common programs: mail transfer agent
+30,exact,postfix,mail,common programs: mail transfer agent
+30,exact,dovecot,mail,common programs: mail delivery
+30,exact,exim,mail,common programs: mail transfer agent
+30,exact,smartd,hardware,common programs: disk health (S.M.A.R.T.)
+30,exact,mdadm,storage,common programs: software RAID
+30,prefix,lvm,storage,common programs: volume manager
+30,prefix,nfs,storage,common programs: NFS
+30,prefix,rpc.statd,storage,common programs: NFS lock / status
+30,exact,multipathd,storage,common programs: multipath storage
+30,exact,iscsid,storage,common programs: iSCSI
+30,exact,snmpd,observability,common programs: SNMP agent
+30,exact,collectd,observability,common programs: metrics collector
+30,prefix,prometheus,observability,common programs: metrics
+30,exact,telegraf,observability,common programs: metrics agent

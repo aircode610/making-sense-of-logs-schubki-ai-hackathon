@@ -9,9 +9,14 @@ data/*
 !data/pattern_judgments_*.csv
 !data/pattern_traits_*.csv
 !data/pattern_vectors.parquet
+!data/pattern_vectors_*.parquet
 !data/burst_summaries.csv
 !data/watchlist.csv
 !data/remote_sources.csv
+!data/ownership_rules.csv
+!data/severity_map.csv
+!data/area_teams.csv
+!data/component_areas_*.csv
 !data/README.md
 
 # third-party doc dumps (re-fetch with scripts/refresh_docs.sh; use the typesafe-docs MCP instead)

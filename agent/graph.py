@@ -51,9 +51,10 @@ ROLE_TOOLS = {
                  "value_outliers", "latency_profile", "burst_timeline", "pattern_history", "spread", "top_entities",
                  "request_timeline"],
     "lead": ["describe_corpus", "top_patterns", "trend", "count_by", "rollup", "heatmap", "whats_new", "check_watchlist",
-             "find_patterns", "top_entities", "co_occurrence", "periodicity", "search_logs"],
+             "find_patterns", "top_entities", "co_occurrence", "periodicity", "search_logs", "owner_of",
+             "ownership_gaps"],
     "manager": ["describe_corpus", "priority_table", "reliability_trend", "team_risk", "rollup", "count_by",
-                "top_patterns", "trend", "whats_new", "check_watchlist"],
+                "top_patterns", "trend", "whats_new", "check_watchlist", "ownership_gaps"],
 }
 # Plan 013 A/B "old" arm: the per-role subsets of plan 010 (8 original tools), same current tool code.
 OLD_ROLE_TOOLS = {
