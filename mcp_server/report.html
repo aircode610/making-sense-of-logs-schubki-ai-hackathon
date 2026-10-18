@@ -59,7 +59,7 @@ h2 { font-family: var(--display); font-size: 18px; font-weight: 600; margin: 0; 
 .card-head { display: flex; align-items: center; gap: 8px; }
 .card-title { font-family: var(--display); font-weight: 600; font-size: 15.5px; }
 .tag { font-size: 11px; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); border: 1px solid var(--line); border-radius: 999px; padding: 1px 8px; }
-.support { margin-left: auto; font-size: 12px; color: var(--muted); display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; }
+.support { margin-left: auto; font-size: 12px; color: var(--muted); display: inline-flex; align-items: center; gap: 6px; white-space: normal; text-align: right; }
 .meter { width: 38px; height: 5px; border-radius: 3px; background: var(--mist); overflow: hidden; display: inline-block; }
 .meter i { display: block; height: 100%; background: linear-gradient(90deg, var(--brand-a), var(--brand-b)); }
 .card-body { font-size: 14.5px; color: var(--ink-2); }
@@ -223,7 +223,8 @@ pre { font-family: var(--mono); font-size: 12px; background: var(--mist); border
 const $ = s => document.querySelector(s);
 const parts = location.pathname.split("/").filter(Boolean);
 const SID = parts[0] === "s" && parts[1] ? parts[1] : "latest";
-const LIVE = SID === "latest";
+const SNAP = window.SNAPSHOT || null;   // static export (scripts/export_report.py): data + verify results baked in
+const LIVE = SID === "latest" && !SNAP;
 const QS = new URLSearchParams(location.search);
 let data = null, verified = {}, openStep = null, lastSig = "", support = null, openSup = null;
 
@@ -452,6 +453,7 @@ document.addEventListener("keydown", e => { const n = e.target.closest(".num"); 
 
 async function verifyStep(i) {
   verified[i] = "busy"; render();
+  if (SNAP) { verified[i] = SNAP.verify[i] || {status: "error", detail: "not verified in this snapshot"}; return render(); }
   try { const v = await (await fetch(`/verify/${SID}/${i}`)).json(); verified[i] = v.error ? {status: "error", detail: v.error} : v; }
   catch (e) { verified[i] = {status: "error", detail: "The report server stopped (the Claude session ended)."}; }
   render();
@@ -467,13 +469,14 @@ $("#verify-all").onclick = async () => {
 async function loadSupport() {
   if (!data.sections || !data.sections.length || support !== null) return;
   support = undefined; renderAnswer();
+  if (SNAP) { support = SNAP.support || []; return renderAnswer(); }
   try { const s = await (await fetch(`/support/${SID}`)).json(); support = s.some(v => v && v.total) ? s : []; } catch (e) { support = []; }
   renderAnswer();
 }
 
 async function load() {
   try {
-    const d = await (await fetch(`/api/${SID}`)).json();
+    const d = SNAP ? SNAP.api : await (await fetch(`/api/${SID}`)).json();
     const sig = d.calls.length + "|" + JSON.stringify(d.report || {});
     if (sig !== lastSig) { data = d; lastSig = sig; support = null; render(); loadSupport(); }
   } catch (e) { if (!data) $("#q").textContent = "The report server is not running. Ask Claude for the session report again."; }

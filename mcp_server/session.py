@@ -145,7 +145,7 @@ def numbers_check(answer: str, calls: list[dict]) -> list[dict]:
 
 # ---------------------------------------------------------------- answer → cards
 
-SECTION = re.compile(r"(?m)^(?:#{1,4}\s*|\*\*)?([A-Z][A-Za-z ,'/()-]{2,48}?)(?:\*\*)?\s*:(?:\*\*)?\s+")
+SECTION = re.compile(r"(?m)^(?:#{1,4}\s+([^\n]{2,80}?)\s*\n|(?:\*\*)?([A-Z][A-Za-z ,'/()-]{2,48}?)(?:\*\*)?\s*:(?:\*\*)?\s+)")
 HYPO = re.compile(r"\b(hypothes|reading|likely|possible cause|suggests|may have|might)\w*", re.I)
 
 
@@ -163,7 +163,7 @@ def sections(answer: str) -> list[dict]:
     for i, m in enumerate(marks):
         end = marks[i + 1].start() if i + 1 < len(marks) else len(text)
         body = text[m.end():end].strip()
-        title = m.group(1).strip()
+        title = (m.group(1) or m.group(2)).strip().rstrip(":")
         out.append({"title": title, "body": body, "start": m.end()})
     for sct in out:
         t = (sct["title"] or "").lower()
@@ -262,6 +262,18 @@ ROW_KEYS = ("line_id", "pattern_id", "evidence_id", "entity", "team", "component
             "dataset", "rank")
 
 
+def _typed(fn, args: dict) -> dict:
+    """Recorded args are JSON (datetimes became strings): give datetime parameters their type back."""
+    import inspect
+    from datetime import datetime as dt
+    sig = inspect.signature(fn, eval_str=True).parameters
+    out = {}
+    for k, v in args.items():
+        ann = str(sig[k].annotation) if k in sig else ""
+        out[k] = dt.fromisoformat(v) if isinstance(v, str) and "datetime" in ann else v
+    return out
+
+
 def verify(session: str, step: int) -> dict:
     """Re-run one recorded step and compare with what the client saw: the same tool with the same arguments (so
     composite tools — hybrid search, multi-query rankings — are re-run exactly), on a fresh read-only connection.
@@ -284,7 +296,7 @@ def verify(session: str, step: int) -> dict:
         if c.get("dataset") and core.single():  # the dataset the step ran on, not the one active now
             core.set_active(c["dataset"])
         try:
-            fresh = fn(**c.get("args", {}))
+            fresh = fn(**_typed(fn, c.get("args", {})))
         finally:
             if core.single():
                 core.set_active(prev)

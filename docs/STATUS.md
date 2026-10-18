@@ -1,6 +1,12 @@
 # Status (read first; keep short and current)
 
-_Last updated: 2026-10-18 (plan 016); before: 2026-10-17, plan 009 done (eval: ours vs baseline), plans 053–055 done (OpenStack patterns, Jev judgments, `value_outliers`, `rate_vs_baseline`; 8 MCP tools)._
+_Last updated: 2026-10-18 (plan 017); before: 2026-10-17, plan 009 done (eval: ours vs baseline), plans 053–055 done (OpenStack patterns, Jev judgments, `value_outliers`, `rate_vs_baseline`; 8 MCP tools)._
+
+- **Plan 017 done (ship):** final A/B on 50 keys, our agent vs the reference ReAct agent: **16-12** (base corpus 13-2,
+  engineer 10-2, manager 2-6), wrong claims 53 vs 69, 44 vs 22 s. Worked investigation `docs/INVESTIGATION.md`
+  (62/62 numbers, 17/17 steps verify). Judge pages: `docs/dashboard.html`, `docs/investigation/report.html`.
+  MCP: 5 prompts, 6 resources, completions; `docs/TOOLS.md` generated. Slides `docs/slides/`. Repo cleaned.
+  **Left:** rehearse the 5-min demo (notes in the slides), submit (repo link + slides), merge `feat/017-ship`.
 
 - **Plan 010 done:** eval fit for iteration: judge sees full evidence (claims supported ours 0.92 / baseline 0.71
   after re-judging), failures score 0, `--compare/--reuse-baseline/--rejudge/--repeat`, E6 ranking golden facts,
