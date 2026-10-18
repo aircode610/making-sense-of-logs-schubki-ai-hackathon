@@ -31,7 +31,8 @@ def main(sid: str, out: str) -> None:
             verify[i] = session.verify(sid, i)
         except Exception as e:  # noqa: BLE001
             verify[i] = {"status": "error", "detail": str(e)[:300]}
-    snap = json.dumps({"api": data, "verify": verify, "support": support}, default=str).replace("</", "<\\/")
+    import jev_guide
+    snap = json.dumps({"api": data, "verify": verify, "support": support, "jevq": jev_guide.guide()}, default=str).replace("</", "<\\/")
     html = (ROOT / "mcp_server/report.html").read_text()
     html = html.replace("<script>\nconst $", f"<script>window.SNAPSHOT = {snap};</script>\n<script>\nconst $", 1)
     Path(out).parent.mkdir(parents=True, exist_ok=True)

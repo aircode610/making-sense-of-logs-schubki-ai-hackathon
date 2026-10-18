@@ -104,6 +104,29 @@ h2 { font-family: var(--display); font-size: 18px; font-weight: 600; margin: 0; 
 .bars .v { font-family: var(--mono); color: var(--ink-2); text-align: right; }
 .jmeta { margin-top: 8px; font-size: 12.5px; color: var(--ink-2); }
 
+/* tabs */
+.tabs { display: flex; gap: 2px; border-bottom: 1px solid var(--line); margin: 0 0 22px; overflow-x: auto; }
+.tabs button { border: 0; background: none; color: var(--muted); padding: 10px 14px; cursor: pointer; font-size: 14.5px; border-bottom: 2px solid transparent; margin-bottom: -1px; white-space: nowrap; }
+.tabs button[aria-selected="true"] { color: var(--ink); border-bottom-color: var(--accent); font-weight: 600; }
+.tabs .count { font-size: 12px; color: var(--muted); margin-left: 4px; font-weight: 400; }
+[role="tabpanel"] > .section-head:first-child { margin-top: 0; }
+/* Jev guide */
+.jq { border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface); margin: 8px 0; }
+.jq > summary { cursor: pointer; padding: 12px 14px; list-style: none; display: grid; grid-template-columns: minmax(0,1fr) auto; gap: 10px; align-items: center; }
+.jq > summary::-webkit-details-marker { display: none; }
+.jq .qid { font-family: var(--mono); font-size: 12.5px; color: var(--accent); }
+.jq .qtext { font-size: 14.5px; color: var(--ink); }
+.jq .stage { font-size: 12px; color: var(--muted); white-space: nowrap; }
+.jq .jbody { padding: 0 14px 14px; font-size: 13.5px; color: var(--ink-2); }
+.jq .jbody .kv { display: grid; grid-template-columns: 90px minmax(0,1fr); gap: 4px 12px; margin-bottom: 10px; }
+.jq .jbody .kv dt { color: var(--muted); } .jq .jbody .kv dd { margin: 0; }
+.choices { display: grid; gap: 6px; }
+.choice { display: grid; grid-template-columns: minmax(110px, 190px) minmax(0,1fr); gap: 12px; background: var(--mist); border-radius: 10px; padding: 8px 12px; }
+.choice b { font-weight: 600; color: var(--ink); }
+.choice .ex { font-family: var(--mono); font-size: 11.5px; color: var(--muted); margin-top: 3px; }
+.formula { background: color-mix(in srgb, var(--accent) 9%, var(--surface)); border-radius: var(--radius); padding: 12px 16px; font-size: 14px; color: var(--ink-2); margin: 4px 0 8px; }
+.formula code { background: transparent; padding: 0; color: var(--ink); font-weight: 600; }
+
 /* session strip */
 .totals { display: flex; gap: 18px; font-size: 13px; color: var(--muted); flex-wrap: wrap; }
 .totals b { color: var(--ink); font-weight: 600; font-variant-numeric: tabular-nums; }
@@ -165,6 +188,8 @@ pre { font-family: var(--mono); font-size: 12px; background: var(--mist); border
   .t, .find, .ms { display: none; }
   .detail { padding-left: 16px; }
   .dl { grid-template-columns: 1fr; }
+  .choice { grid-template-columns: 1fr; gap: 2px; }
+  .jq > summary { grid-template-columns: 1fr; }
 }
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
 </style>
@@ -184,39 +209,47 @@ pre { font-family: var(--mono); font-size: 12px; background: var(--mist); border
   <div class="eyebrow">Question</div>
   <h1 id="q">Waiting for the first tool call…</h1>
 
-  <section id="answer">
-    <div class="empty-box">The answer appears here when Claude calls <code>session_report</code>. The steps below fill in as tools run.</div>
+  <div class="tabs" role="tablist">
+    <button role="tab" id="t-answer" aria-controls="p-answer">Answer</button>
+    <button role="tab" id="t-steps" aria-controls="p-steps">Steps<span class="count" id="n-steps"></span></button>
+    <button role="tab" id="t-jev" aria-controls="p-jev">Jev</button>
+    <button role="tab" id="t-about" aria-controls="p-about">About</button>
+  </div>
+
+  <section role="tabpanel" id="p-answer" aria-labelledby="t-answer">
+    <div id="answer"><div class="empty-box">The answer appears when Claude calls <code>session_report</code>.</div></div>
   </section>
 
-  <section id="jev-section" hidden>
-    <div class="section-head">
-      <h2>What Jev judged</h2>
-      <span class="sub">Stored judgments of the kinds of messages in this session · computed once in SereneDB, not by Claude</span>
+  <section role="tabpanel" id="p-steps" aria-labelledby="t-steps" hidden>
+    <div class="section-head"><div class="totals" id="totals"></div><button class="btn primary" id="verify-all">Verify all steps</button></div>
+    <div class="strip" id="strip" role="list" aria-label="Session timeline"></div>
+    <div class="legend">
+      <span><i class="dot" style="background:linear-gradient(180deg,var(--brand-a),var(--brand-b))"></i>SereneDB</span>
+      <span><i class="dot" style="background:var(--tool)"></i>Rest of the tool call</span>
+      <span><i class="dot" style="background:var(--mist);border:1px solid var(--line)"></i>Claude thinking</span>
     </div>
-    <div class="jev-grid" id="jev"></div>
+    <div class="steps" id="steps" style="margin-top:16px"></div>
   </section>
 
-  <div class="section-head">
-    <h2>Session</h2>
-    <div class="totals" id="totals"></div>
-  </div>
-  <div class="strip" id="strip" role="list" aria-label="Session timeline"></div>
-  <div class="legend">
-    <span><i class="dot" style="background:linear-gradient(180deg,var(--brand-a),var(--brand-b))"></i>Inside SereneDB</span>
-    <span><i class="dot" style="background:var(--tool)"></i>Rest of the tool call</span>
-    <span><i class="dot" style="background:var(--mist);border:1px solid var(--line)"></i>Claude thinking between calls</span>
-  </div>
+  <section role="tabpanel" id="p-jev" aria-labelledby="t-jev" hidden>
+    <div id="jev-section" hidden>
+      <div class="section-head"><h2>Judged in this session</h2><span class="sub">stored at load time, not by Claude</span></div>
+      <div class="jev-grid" id="jev"></div>
+    </div>
+    <div class="section-head"><h2>What Jev is asked</h2><span class="sub" id="jq-how"></span></div>
+    <div class="formula" id="jq-formula"></div>
+    <div id="jq"></div>
+  </section>
 
-  <div class="section-head">
-    <h2>Steps</h2>
-    <button class="btn primary" id="verify-all">Verify all steps</button>
-  </div>
-  <div class="steps" id="steps"></div>
-
-  <p class="note">Every step is a fixed, parameterised query over your logs in SereneDB; nothing on this page is written by
-  a model except the answer. <b>Verify</b> runs the step again with the same arguments on a read-only connection and
-  shows what it compared with what Claude saw. Jev scores are calibrated probabilities from TypeSafe's Jev, computed in
-  SereneDB. Session file: <code id="sid"></code></p>
+  <section role="tabpanel" id="p-about" aria-labelledby="t-about" hidden>
+    <div class="cards">
+      <article class="card"><div class="card-title">Numbers</div><div class="card-body">Every number in the answer is matched to the tool result it came from. Click one to open its step.</div></article>
+      <article class="card"><div class="card-title">Steps</div><div class="card-body">Each step is a fixed, parameterised query in SereneDB. Open one for its arguments, scope, rows and SQL.</div></article>
+      <article class="card"><div class="card-title">Verify</div><div class="card-body">Runs a step again with the same arguments on a read-only connection and compares the result.</div></article>
+      <article class="card"><div class="card-title">Jev</div><div class="card-body">Calibrated probabilities from TypeSafe's Jev, computed in SereneDB. The Jev tab lists every question it is asked.</div></article>
+    </div>
+    <p class="note">Session file: <code id="sid"></code></p>
+  </section>
 </div>
 
 <script>
@@ -236,6 +269,17 @@ $("#theme").onclick = () => {
   document.documentElement.dataset.theme = next;
   try { localStorage.setItem("sdb-theme", next); } catch (e) {}
 };
+
+const tabs = [...document.querySelectorAll('[role="tab"]')];
+function show(id) {
+  tabs.forEach(t => { const on = t.id === id; t.setAttribute("aria-selected", on); t.tabIndex = on ? 0 : -1;
+    document.getElementById(t.getAttribute("aria-controls")).hidden = !on; });
+  try { history.replaceState(null, "", location.pathname + location.search + "#tab-" + id.slice(2)); } catch (e) {}
+}
+tabs.forEach((t, i) => { t.onclick = () => show(t.id);
+  t.onkeydown = e => { const d = e.key === "ArrowRight" ? 1 : e.key === "ArrowLeft" ? -1 : 0; if (d) { const n = tabs[(i + d + tabs.length) % tabs.length]; n.focus(); show(n.id); } }; });
+const want = "t-" + location.hash.replace("#tab-", "");
+show(tabs.some(t => t.id === want) ? want : "t-answer");
 
 const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({"&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;"}[c]));
 const fmt = n => typeof n === "number" ? n.toLocaleString("en-US") : n;
@@ -399,6 +443,7 @@ function render() {
   $("#live").hidden = !LIVE;
   $("#q").textContent = rep.question || (calls.length ? "Session in progress" : "Waiting for the first tool call…");
   renderAnswer(); renderJev();
+  $("#n-steps").textContent = calls.length ? calls.length : "";
   const t0 = calls.length ? new Date(calls[0].ts) - calls[0].wall_ms : 0;
   const tEnd = calls.length ? Math.max(...calls.map(c => +new Date(c.ts))) : 0;
   const span = Math.max(1, tEnd - t0);
@@ -438,7 +483,9 @@ function render() {
 }
 
 function focusStep(i, keep) {
-  openStep = keep ? i : (openStep === i ? null : i); render();
+  openStep = keep ? i : (openStep === i ? null : i);
+  if ($("#p-steps").hidden) show("t-steps");
+  render();
   if (openStep != null) $("#step-" + i).scrollIntoView({behavior: "smooth", block: "center"});
 }
 document.addEventListener("click", e => {
@@ -465,6 +512,20 @@ $("#verify-all").onclick = async () => {
   const ok = Object.values(verified).filter(v => v.status === "match").length;
   $("#verify-all").textContent = `${ok} of ${data.calls.length} steps give the same result`;
 };
+
+async function loadGuide() {
+  let g = SNAP ? SNAP.jevq : null;
+  if (!g) try { g = await (await fetch("/jevq")).json(); } catch (e) { return; }
+  if (!g || !g.questions) return;
+  $("#jq-how").textContent = "read from the code that asks it";
+  $("#jq-formula").innerHTML = `<code>${esc(g.formula.split(". ")[0])}</code><br>${esc(g.formula.split(". ").slice(1).join(". "))} ${esc(g.how)}`;
+  $("#jq").innerHTML = g.questions.map(q => `<details class="jq"><summary>
+      <span><span class="qid">${esc(q.id)}</span> · <span class="qtext">${esc(q.question)}</span></span><span class="stage">${esc(q.stage)}</span></summary>
+    <div class="jbody"><dl class="kv"><dt>Asked about</dt><dd>${esc(q.about)}</dd><dt>Answer</dt><dd>${esc(q.type)}</dd><dt>Used for</dt><dd>${esc(q.use)}</dd></dl>
+      <div class="choices">${q.choices.map(c => `<div class="choice"><b>${esc(c.label)}</b><div>${esc(c.meaning) || "<span class=sub>(graded)</span>"}${c.examples && c.examples.length ? `<div class="ex">${c.examples.map(esc).join(" · ")}</div>` : ""}</div></div>`).join("")}</div>
+    </div></details>`).join("");
+}
+loadGuide();
 
 async function loadSupport() {
   if (!data.sections || !data.sections.length || support !== null) return;

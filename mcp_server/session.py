@@ -391,6 +391,9 @@ class _Handler(BaseHTTPRequestHandler):
             if parts[0] == "verify" and len(parts) == 3:
                 sid = SESSION if parts[1] == "latest" else parts[1]
                 return self._send(200, json.dumps(verify(sid, int(parts[2])), default=str).encode(), "application/json")
+            if parts[0] == "jevq":                               # what Jev is asked (read from the code that asks it)
+                import jev_guide
+                return self._send(200, json.dumps(jev_guide.guide()).encode(), "application/json")
             if parts[0] == "sessions":
                 items = sorted((p.stem for p in DIR.glob("*.jsonl")), reverse=True)[:50] if DIR.exists() else []
                 return self._send(200, json.dumps(items).encode(), "application/json")
