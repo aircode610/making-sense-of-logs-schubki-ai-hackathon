@@ -50,3 +50,5 @@ otel,ad,catalog-team,Ad service
 otel,kafka,shop-platform,Event bus
 otel,accounting,payments-team,Accounting consumer
 otel,fraud-detection,payments-team,Fraud detection consumer
+linux,*,linux-ops,Default owner: all programs of the Linux server (unseen-dataset test: only a * row)
+healthapp,*,mobile-health,Default owner: all modules of the health app (unseen-dataset test: only a * row)

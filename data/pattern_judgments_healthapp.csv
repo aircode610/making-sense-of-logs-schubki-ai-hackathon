@@ -1,0 +1,212 @@
+dataset,component,template,pattern_id,p_fault,p_dump,p_corrected,kind,kind_confidence
+healthapp,Step_LSC,onStandStepChanged <N>,800001,0.03,0.35,0.02,not a problem,1
+healthapp,Step_LSC,onExtend:<HEX> <N> <N> <N>,800002,0.05,0.6,0.04,not a problem,1
+healthapp,Step_StandReportReceiver,onReceive action: android.intent.action.SCREEN_ON,800003,0.02,0.15,0.02,not a problem,1
+healthapp,Step_LSC,processHandleBroadcastAction action:android.intent.action.SCREEN_ON,800004,0.03,0.29,0.02,not a problem,1
+healthapp,Step_SPUtils," getTodayTotalDetailSteps = <HEX>##<N>##<HEX>##<N>##<N>##<HEX>",800005,0.03,0.93,0.02,not a problem,1
+healthapp,Step_StandStepCounter,flush sensor data,800006,0.04,0.16,0.03,not a problem,1
+healthapp,Step_SPUtils,<*>,800007,0.04,0.86,0.04,not a problem,1
+healthapp,Step_ExtSDM,calculateCaloriesWithCache totalCalories=<HEX>,800008,0.02,0.72,0.01,not a problem,1
+healthapp,Step_ExtSDM,calculateAltitudeWithCache totalAltitude=<N>,800009,0.03,0.62,0.02,not a problem,1
+healthapp,Step_StandReportReceiver,REPORT : <N> <N> <HEX> <N>,800010,0.09,0.49,0.03,not a problem,1
+healthapp,Step_StandReportReceiver,onReceive action: android.intent.action.SCREEN_OFF,800011,0.03,0.17,0.02,not a problem,1
+healthapp,Step_ScreenUtil,isScreenOn true,800012,0.02,0.84,0.02,not a problem,1
+healthapp,Step_StandReportReceiver,"screen status unknown,think screen on",800013,0.14,0.28,0.03,not a problem,0.69
+healthapp,Step_LSC,processHandleBroadcastAction action:android.intent.action.TIME_TICK,800014,0.03,0.24,0.02,not a problem,1
+healthapp,Step_LSC,flushTempCacheToDB by stand,800015,0.04,0.15,0.05,not a problem,1
+healthapp,Step_FlushableStepDataCache,upLoadOneMinuteDataToEngine time=<N>,800016,0.03,0.59,0.03,not a problem,1
+healthapp,Step_FlushableStepDataCache,writeDataToDB size <N>,800017,0.03,0.43,0.02,not a problem,1
+healthapp,Step_LSC,Alarm uploadStaticsToDB totalSteps=<HEX>lories:<HEX>loor:<N>Distance:<N>,800018,0.1,0.47,0.04,not a problem,0.82
+healthapp,HiH_HiAppUtil,getBinderPackageName packageName = com.huawei.health,800019,0.03,0.83,0.02,not a problem,1
+healthapp,HiH_HiHealthBinder,"getAppContext() isAppValid health or wear, packageName = com.huawei.health",800020,0.06,0.36,0.03,not a problem,0.92
+healthapp,HiH_HiHealthBinder,insertHiHealthData() checkAppType <N> appID = <N>,800021,0.06,0.36,0.03,not a problem,0.97
+healthapp,HiH_HiHealthBinder,"insertHiHealthData() size = <N>,app = <N>,One Data Type = <N>,packageName = com.huawei.health,writeStatType = <N>",800022,0.03,0.81,0.02,not a problem,1
+healthapp,HiH_HiHealthDataInsertStore,"saveHealthDetailData() deviceID = <N>,clientID=<N>,id=<N>",800023,0.03,0.17,0.02,not a problem,1
+healthapp,HiH_DataStatManager,"new date =<HEX>, type=<N>,old=<N>",800024,0.03,0.47,0.04,not a problem,1
+healthapp,HiH_HiHealthDataInsertStore,"saveStatData() type =<N>,time = <HEX>,statClient = <N>,who is <N>",800025,0.03,0.44,0.02,not a problem,1
+healthapp,HiH_HiHealthDataInsertStore,"saveHealthDetailData() saveOneDetailData fail hiHealthData = <HEX>,type = <N>",800026,0.86,0.17,0.02,job or application failure,0.91
+healthapp,HiH_HiHealthDataInsertStore,"bulkSaveDetailHiHealthData() size = <N>,totalTime = <N>",800027,0.03,0.48,0.01,not a problem,1
+healthapp,HiH_ListenerManager,startListenerChange subscribeList = [<N>],800028,0.03,0.27,0.02,not a problem,1
+healthapp,HiH_HiHealthBinder,"insertHiHealthData() bulkSaveDetailHiHealthData fail errorCode = <N>,errorMessage = ERR_DATA_INSERT ",800029,0.89,0.18,0.02,job or application failure,0.94
+healthapp,HiH_HiHealthBinder,insertHiHealthData() end totalTime = <N>,800030,0.03,0.26,0.02,not a problem,1
+healthapp,Step_LSC,uploadStaticsToDB failed message=true,800031,0.9,0.57,0.03,job or application failure,0.94
+healthapp,Step_LSC,uploadStaticsToDB() onResult type = <N> obj=true,800032,0.06,0.22,0.06,not a problem,0.99
+healthapp,HiH_HiSyncControl,checkInsertStatus stepSum or calorieSum is enough,800033,0.06,0.16,0.06,not a problem,0.96
+healthapp,HiH_HiSyncControl,checkInsertStatus stepStatSum or calorieStatSum is enough,800034,0.05,0.1,0.05,not a problem,0.97
+healthapp,HiH_HiSyncControl,"startInsertSportSync start auto sync,app is <N>",800035,0.02,0.07,0.03,not a problem,1
+healthapp,HiH_HiSyncControl,"stepSyncOrNot appSynTimes is <N>, statsyncTimes is <N>",800036,0.04,0.59,0.03,not a problem,1
+healthapp,HiH_HiSyncControl,"startInsertSportSync first <N> steps sync,do all sync",800037,0.05,0.14,0.04,not a problem,0.96
+healthapp,HiH_HiSyncUtil,"checkFirstSyncByType no such data in db ,type is <N> deviceCode is <N>",800038,0.2,0.08,0.02,not a problem,0.46
+healthapp,HiH_HiSyncControl,"startSync hiSyncOption = HiSyncOption{syncAction=<N>, syncMethod=<N>, syncScope=<N>, syncDataType=<N>, syncModel=<N>, pushAction=<N>},app = <N> who = <N>",800039,0.02,0.2,0.02,not a problem,1
+healthapp,HiH_HiSyncControl,needAutoSync autoSyncSwitch is open,800040,0.07,0.34,0.04,not a problem,0.97
+healthapp,HiH_,initDataPrivacy the dataPrivacy is true,800041,0.02,0.46,0.02,not a problem,1
+healthapp,HiH_HiSyncControl,"initDataPrivacy the dataPrivacy switch is open, start push health data!",800042,0.02,0.11,0.01,not a problem,1
+healthapp,HiH_,initUserPrivacy the userPrivacy is true,800043,0.02,0.29,0.02,not a problem,1
+healthapp,HiH_HiBroadcastUtil,sendSyncFailedBroadcast,800044,0.86,0.29,0.03,network or I/O failure,0.47
+healthapp,HiH_HiSyncControl,ifCanSync not! no cloud version,800045,0.54,0.22,0.03,not a problem,0.15
+healthapp,HiH_HiSyncControl,"initUserPrivacy the userPrivacy switch is open, start push user data!",800046,0.02,0.08,0.01,not a problem,1
+healthapp,HiH_HiHealthDataInsertStore,"saveRealTimeHealthDatasStat() size = <N>,totalTime = <N>",800047,0.02,0.46,0.01,not a problem,1
+healthapp,Step_FlushableStepDataCache,InsertCallBack() onSuccess type = <N> data=true,800048,0.02,0.15,0.06,not a problem,1
+healthapp,Step_FlushableStepDataCache,InsertEvent success begin:<HEX> end:<HEX>,800049,0.02,0.11,0.04,not a problem,1
+healthapp,Step_LSC,flush2DB result success,800050,0.02,0.11,0.07,not a problem,1
+healthapp,Step_SPUtils,setWriteDBLastDataMinute success,800051,0.02,0.11,0.08,not a problem,1
+healthapp,Step_LSC,"timeStamp back,extendReportTimeStamp=<HEX>",800052,0.04,0.84,0.06,not a problem,1
+healthapp,HiH_HiSyncControl,startTimer start autoSync,800053,0.02,0.12,0.03,not a problem,1
+healthapp,HiH_HiSyncControl,stepSyncOrNot appSynTimes is <N>,800054,0.06,0.58,0.03,not a problem,1
+healthapp,Step_LSC,getTodaySportData mStepsRecordManager=com.huawei.health.g.c@<HEX>,800055,0.04,0.59,0.03,not a problem,1
+healthapp,Step_StandStepDataManager,theDayChanged <HEX>,800056,0.03,0.72,0.02,not a problem,1
+healthapp,Step_SPUtils, getStepCounterStatus= true,800057,0.03,0.94,0.03,not a problem,1
+healthapp,Step_StandStepCounter,reStartStepCounter,800058,0.09,0.37,0.07,not a problem,0.99
+healthapp,Step_StandStepDataManager,initEnviroument,800059,0.04,0.45,0.02,not a problem,0.99
+healthapp,Step_StandStepCounter,registersensorsuccess: true,800060,0.02,0.9,0.08,not a problem,1
+healthapp,Step_DataCache,clear(),800061,0.05,0.4,0.04,not a problem,1
+healthapp,Step_SPUtils," getTodayBasicStandardSteps= <HEX>##<N>##<N>",800062,0.03,0.94,0.02,not a problem,1
+healthapp,Step_SPUtils," getDiffTotalSteps= <HEX>##<N>",800063,0.05,0.93,0.02,not a problem,1
+healthapp,Step_SPUtils,setBasicStandardSteps basicStandardStep=<N> restartSteps=<N>,800064,0.04,0.59,0.04,not a problem,1
+healthapp,Step_StandStepDataManager,tryToRecordAsBasicStepData bWrite true,800065,0.04,0.75,0.03,not a problem,1
+healthapp,Step_StandStepDataManager,<ID>|<N>|<N>|<N>,800066,0.06,0.71,0.09,not a problem,1
+healthapp,Step_StandStepDataManager,reload : <N> restar <N>,800067,0.08,0.58,0.12,not a problem,1
+healthapp,Step_ExtSDM,calculateCaloriesWithCache totalCalories=<N>,800068,0.03,0.73,0.02,not a problem,1
+healthapp,Step_StandReportReceiver,REPORT : <N> <N> <N> <N>,800069,0.05,0.52,0.03,not a problem,1
+healthapp,Step_HGNH,next day:steps0mLastReport7<N>,800070,0.04,0.55,0.03,not a problem,1
+healthapp,Step_SPUtils,setGoalNotifiShownRecord <HEX> false,800071,0.03,0.78,0.03,not a problem,1
+healthapp,Step_HGNH,closeNotification...,800072,0.07,0.33,0.08,not a problem,1
+healthapp,Step_NotificationUtil,deleteHealthNotification() ,800073,0.04,0.32,0.03,not a problem,0.99
+healthapp,HiH_HiSyncControl,"checkCurrentDay a new day comes , reset basicSyncCondition, currentDay is <HEX> oldDay is <HEX>",800074,0.02,0.06,0.03,not a problem,1
+healthapp,Step_LSC,Alarm uploadStaticsToDB totalSteps=<N>Calories:<N>Floor:<N>Distance:<N>,800075,0.09,0.43,0.05,not a problem,0.9
+healthapp,Step_LSC,flushTempCacheToDB by ext,800076,0.05,0.15,0.04,not a problem,0.97
+healthapp,HiH_DataStatManager,"new date =<HEX>, type=<N>,old=null",800077,0.04,0.66,0.03,not a problem,1
+healthapp,Step_LSC,uploadStaticsToDB success ,800078,0.02,0.08,0.05,not a problem,1
+healthapp,HiH_HiSyncUtil,getTodayNoSyncTotalValue datas is null or empty,800079,0.19,0.12,0.02,not a problem,0.54
+healthapp,Step_ReportController,FAILED_SCREEN_OFF block report,800080,0.79,0.19,0.03,job or application failure,0.4
+healthapp,Step_ScreenUtil,isScreenOn false,800081,0.06,0.84,0.02,not a problem,0.97
+healthapp,Step_LSC,processHandleBroadcastAction action:android.intent.action.TIME_SET,800082,0.03,0.3,0.03,not a problem,1
+healthapp,Step_StaticReceiver,onReceive action: android.intent.action.BOOT_COMPLETED,800083,0.02,0.13,0.02,not a problem,1
+healthapp,Step_SPUtils,"setDeviceShutDownValue shutDownTime=<N>,isShutDown=false",800084,0.03,0.65,0.03,not a problem,1
+healthapp,Step_SPUtils,getFirstStartDaemonFromUI: true,800085,0.03,0.92,0.03,not a problem,1
+healthapp,Step_SPUtils, getVersion= Athene3,800086,0.02,0.9,0.02,not a problem,1
+healthapp,Step_SPUtils,getDeviceShutDownBoolean shutDown=false,800087,0.04,0.89,0.02,not a problem,1
+healthapp,Step_SPUtils,getDeviceShutDownTime shutDownTime=<N>,800088,0.06,0.87,0.02,not a problem,1
+healthapp,Step_SPUtils, getServiceRestartRecord= <HEX>,800089,0.04,0.95,0.02,not a problem,1
+healthapp,Step_SPUtils, getStepsTarget= <N>,800090,0.03,0.92,0.02,not a problem,1
+healthapp,Step_ReportController,FAILED_ERROR_DATA,800091,0.82,0.41,0.03,job or application failure,0.9
+healthapp,Step_LSC,init ....com.huawei.health.manager.ae@<HEX>,800092,0.04,0.63,0.03,not a problem,0.97
+healthapp,Step_SPUtils, getLastSyncDBTime= -<N>,800093,0.1,0.95,0.03,not a problem,0.95
+healthapp,Step_LSC,registerDynamicBroadcastReceiver,800094,0.05,0.31,0.02,not a problem,0.9
+healthapp,Step_SPUtils," getDiffTotalAltitude= <HEX>##<N>",800095,0.04,0.95,0.02,not a problem,1
+healthapp,Step_SPUtils," getDiffTotalCalories= <HEX>##<N>",800096,0.03,0.93,0.02,not a problem,1
+healthapp,Step_SPUtils," getIntercepterDistance from Prefence success and intercepterDistanceStr= <HEX>##<N>",800097,0.03,0.13,0.07,not a problem,1
+healthapp,Step_SPUtils, getUserInfoFromPerference success ,800098,0.02,0.08,0.06,not a problem,1
+healthapp,Step_SPUtils,setUserInfoToPerference success,800099,0.02,0.1,0.06,not a problem,1
+healthapp,Step_UserInfo,userInfo changed detail,800100,0.02,0.08,0.02,not a problem,1
+healthapp,Step_CfgFilePolicy,getCfgFile enter...,800101,0.02,0.12,0.02,not a problem,1
+healthapp,Step_CfgFilePolicy,policy=<PATH>:<PATH>:<PATH>:<PATH>:<PATH>:/hw_odm:/hw_oem:<PATH>:<PATH>:/cust_spec,800102,0.03,0.86,0.02,not a problem,1
+healthapp,Step_CounterSupport,readXmlIfSupportEX,800103,0.13,0.45,0.04,not a problem,0.68
+healthapp,Step_CounterSupport,readXmlIfSupportEX result=true,800104,0.03,0.62,0.12,not a problem,1
+healthapp,Step_CounterSupport,"support extand step counter!,return true",800105,0.08,0.2,0.11,not a problem,0.97
+healthapp,Step_CounterSupport,"supportPrivateStandStepcounter=true,supportStandStepCounter=true",800106,0.04,0.94,0.05,not a problem,1
+healthapp,Step_CounterSupport,supportStandStepCounter true,800107,0.04,0.89,0.12,not a problem,1
+healthapp,Step_SPUtils,setDeviceClassType success,800108,0.02,0.1,0.08,not a problem,1
+healthapp,Step_StepCounterManager,initStepCounter : deviceType <N>,800109,0.03,0.21,0.02,not a problem,1
+healthapp,Step_CounterSupport,getMidWareStepCountService: isSystemApp = true,800110,0.02,0.89,0.02,not a problem,1
+healthapp,Step_CounterSupport,"getMidWareStepCountService: pkgName = com.huawei.systemserver, service = com.huawei.systemserver.ihealth.connectivity.HwStepCounterService",800111,0.04,0.5,0.03,not a problem,0.97
+healthapp,Step_SPUtils," getGoalNotifiShownRecord= <HEX>##false",800112,0.04,0.95,0.03,not a problem,1
+healthapp,Step_SPUtils, getGoalNotificationShowStatus= true,800113,0.02,0.94,0.02,not a problem,1
+healthapp,Step_SPUtils, getStepsNotificationShowStatus= false,800114,0.04,0.96,0.02,not a problem,1
+healthapp,Step_SPUtils,setGoalNotificationShowStatus success,800115,0.02,0.15,0.06,not a problem,1
+healthapp,Step_StepCounterManager,initExtendStepCounter <N>,800116,0.03,0.29,0.03,not a problem,1
+healthapp,Step_SPUtils, getWriteDBLastDataMinute= <HEX>,800117,0.03,0.94,0.02,not a problem,1
+healthapp,Step_ExtSDM,initCacheFromFile enter...,800118,0.02,0.15,0.01,not a problem,1
+healthapp,Step_NotificationUtil,registerDynamicBroadcastReceiver,800119,0.04,0.41,0.02,not a problem,0.96
+healthapp,Step_UIWidgetManager,registerDynamicBroadcastReceiver,800120,0.03,0.35,0.02,not a problem,0.99
+healthapp,Step_MidwareStepCounter,bind ret true,800121,0.03,0.6,0.08,not a problem,0.99
+healthapp,Step_StandStepDataManager,SystemClock.elapsedRealtime(): <N>,800122,0.02,0.87,0.01,not a problem,1
+healthapp,Step_StandStepDataManager,context=com.huawei.health.manager.DaemonService@<ID>,800123,0.04,0.74,0.03,not a problem,0.99
+healthapp,Step_StandStepDataManager,initDataManager enter...,800124,0.02,0.12,0.01,not a problem,1
+healthapp,Step_StandStepDataManager,updateBasicRestartStepsInfo restart but same day,800125,0.11,0.15,0.11,not a problem,0.89
+healthapp,Step_StandStepDataManager,updateBasicRestartStepsInfo restartStep=<N>,800126,0.04,0.33,0.04,not a problem,1
+healthapp,Step_UIManager,registerDynamicBroadcastReceiver,800127,0.03,0.4,0.02,not a problem,0.99
+healthapp,Step_SPUtils," getTodayTotalDetailSteps = <HEX>##<N>##<HEX>##<N>##<N>##<N>",800128,0.03,0.92,0.02,not a problem,1
+healthapp,Step_StandStepDataManager,the first init <ID>,800129,0.03,0.45,0.02,not a problem,1
+healthapp,Step_HGNH,target init: <ID>,800130,0.04,0.48,0.03,not a problem,0.99
+healthapp,Step_SPUtils,getARDebugConfig ,800131,0.04,0.38,0.02,not a problem,1
+healthapp,Step_UploadStaticAlarmUtil,setActionRestartSensorAlarm=<HEX>,800132,0.05,0.93,0.05,not a problem,1
+healthapp,Step_DaemonService,onStartCommand Intent { cmp=com.huawei.health/.manager.DaemonService },800133,0.02,0.26,0.02,not a problem,1
+healthapp,Step_LSC,compareMidWareCacheAndLocalCache enter...,800134,0.02,0.1,0.02,not a problem,1
+healthapp,Step_LSC,start compare with midware counter,800135,0.03,0.09,0.02,not a problem,1
+healthapp,Step_LSC,startStepCounter enter...,800136,0.02,0.22,0.02,not a problem,1
+healthapp,Step_LSC,startStepCounterInter mStandStepCounter = com.huawei.health.b.b.a@<ID>,800137,0.03,0.8,0.02,not a problem,1
+healthapp,Step_MidwareStepCounter,MyServiceConn connect <IP>,800138,0.04,0.09,0.02,not a problem,0.97
+healthapp,Step_SPUtils,setStepCounterStatus success,800139,0.02,0.13,0.08,not a problem,1
+healthapp,Step_MidwareStepCounter,getMidWareCache mRemote=com.huawei.health.c.c@<ID>,800140,0.04,0.62,0.03,not a problem,1
+healthapp,Step_MidwareStepCounter,getMidWareCache result=true,800141,0.02,0.63,0.05,not a problem,1
+healthapp,Step_LSC,compareMidWareCacheAndLocalCache onFailed,800142,0.82,0.16,0.04,job or application failure,0.75
+healthapp,Step_MidwareStepCounter,MyGetDetailDataCallback onResult bundle == null,800143,0.52,0.12,0.02,job or application failure,0.87
+healthapp,Step_LSC,startStepCounterInter stand,800144,0.03,0.27,0.02,not a problem,1
+healthapp,Step_MidwareStepCounter,openStepCounter com.huawei.health.c.c@<ID>,800145,0.04,0.32,0.02,not a problem,1
+healthapp,Step_MidwareStepCounter,startStepCounter com.huawei.health.c.c@<ID>,800146,0.03,0.2,0.02,not a problem,1
+healthapp,Step_LSC,processHandleBroadcastAction action:com.huawei.health.WIDGET_DISABLE,800147,0.06,0.41,0.03,not a problem,0.99
+healthapp,Step_LSC,startStepCounterInter extend,800148,0.04,0.29,0.05,not a problem,1
+healthapp,Step_MidwareStepCounter,registerCallback com.huawei.health.c.c@<ID>,800149,0.03,0.4,0.02,not a problem,1
+healthapp,Step_MidwareStepCounter,registerLogCallback com.huawei.health.c.c@<ID>,800150,0.02,0.53,0.02,not a problem,1
+healthapp,Step_MidwareStepCounter,registerLogCallback com.huawei.health.c.c@<ID> cb:com.huawei.health.b.a.g@<HEX>,800151,0.03,0.47,0.02,not a problem,1
+healthapp,HiH_HiHealthService,onCreate(),800152,0.03,0.22,0.02,not a problem,0.99
+healthapp,HiH_HiSyncControl,initSyncModel current SyncModel is <N>,800153,0.03,0.22,0.02,not a problem,1
+healthapp,HiH_HiHealthService,onBind intent = Intent { act=com.huawei.hihealthservice.HiHealthService pkg=com.huawei.health },800154,0.03,0.45,0.02,not a problem,1
+healthapp,HiH_HiHealthBinder,moveOldData(),800155,0.05,0.37,0.03,not a problem,0.95
+healthapp,HiH_HiHealthBinder,"initBinder() app = <N>, packageName = com.huawei.health",800156,0.03,0.33,0.02,not a problem,1
+healthapp,HiH_HiHealthBinder,getStringHuid() who is com.huawei.health,800157,0.04,0.34,0.02,not a problem,0.89
+healthapp,Step_SPUtils,setGoalNotifiShownRecord <HEX> true,800158,0.02,0.8,0.02,not a problem,1
+healthapp,Step_HGNH,startNotification...,800159,0.06,0.33,0.04,not a problem,1
+healthapp,Step_HGNH,createHealthNotification(),800160,0.05,0.29,0.02,not a problem,1
+healthapp,Step_HGNH,upDateHealthNotification()|<N>|<N>|<N>,800161,0.07,0.59,0.05,not a problem,1
+healthapp,Step_HGNH,rebuild notification,800162,0.1,0.17,0.16,not a problem,0.95
+healthapp,Step_HGNH,next day:steps0mLastReport1<N>,800163,0.03,0.54,0.03,not a problem,1
+healthapp,HiH_HiSyncControl,checkSportDataNum setp and calories is too less,800164,0.16,0.11,0.02,not a problem,0.8
+healthapp,Step_OneMinuteStepData,checkLocalDataValue false,800165,0.22,0.83,0.04,not a problem,0.89
+healthapp,Step_StandStepDataManager,SystemClock.elapsedRealtime(): <HEX>,800166,0.02,0.88,0.01,not a problem,1
+healthapp,Step_LSC,startStepCounterInter mStandStepCounter = com.huawei.health.b.b.a@<HEX>,800167,0.03,0.7,0.02,not a problem,1
+healthapp,Step_MidwareStepCounter,getMidWareCache mRemote=com.huawei.health.c.c@<HEX>,800168,0.04,0.72,0.02,not a problem,1
+healthapp,Step_MidwareStepCounter,openStepCounter com.huawei.health.c.c@<HEX>,800169,0.04,0.34,0.02,not a problem,1
+healthapp,Step_MidwareStepCounter,startStepCounter com.huawei.health.c.c@<HEX>,800170,0.02,0.23,0.02,not a problem,1
+healthapp,Step_MidwareStepCounter,registerCallback com.huawei.health.c.c@<HEX>,800171,0.03,0.41,0.02,not a problem,1
+healthapp,Step_MidwareStepCounter,registerLogCallback com.huawei.health.c.c@<HEX>,800172,0.03,0.56,0.02,not a problem,1
+healthapp,Step_MidwareStepCounter,registerLogCallback com.huawei.health.c.c@<HEX> cb:com.huawei.health.b.a.g@<HEX>,800173,0.02,0.47,0.02,not a problem,1
+healthapp,Step_LSC,Alarm uploadStaticsToDB totalSteps=<N>Calories:<HEX>loor:<N>Distance:<N>,800174,0.06,0.45,0.03,not a problem,0.97
+healthapp,Step_LSC,getTodaySportData mStepsRecordManager=com.huawei.health.g.c@<ID>,800175,0.03,0.55,0.02,not a problem,1
+healthapp,Step_HGNH,next day:steps0mLastReport5<N>,800176,0.03,0.67,0.03,not a problem,1
+healthapp,Step_LSC,Alarm uploadStaticsToDB totalSteps=<HEX>lories:<N>Floor:<N>Distance:<N>,800177,0.19,0.4,0.04,not a problem,0.46
+healthapp,Step_HGNH,next day:steps0mLastReport6<N>,800178,0.04,0.62,0.03,not a problem,1
+healthapp,Step_SPUtils," getTodayTotalDetailSteps = <HEX>##<N>##<HEX>##<N>##<HEX>##<HEX>",800179,0.03,0.92,0.02,not a problem,1
+healthapp,Step_LSC,initDiffAltitude from File mAltitudeDiff=<N>,800180,0.03,0.46,0.03,not a problem,1
+healthapp,Step_LSC,initDiffCaloriesfromFile mCaloriesDiff=<N>,800181,0.02,0.75,0.03,not a problem,1
+healthapp,Step_LSC,initTrackDistancefromFile from File mTrackDistance=<N>,800182,0.03,0.38,0.03,not a problem,1
+healthapp,Step_StandStepDataManager,context=com.huawei.health.manager.DaemonService@<HEX>,800183,0.04,0.72,0.03,not a problem,0.99
+healthapp,Step_HGNH,next day:steps0mLastReport4<N>,800184,0.03,0.59,0.03,not a problem,1
+healthapp,Step_HGNH,next day:steps0mLastReport9<N>,800185,0.04,0.58,0.03,not a problem,1
+healthapp,Step_SPUtils," getTodayTotalDetailSteps = <HEX>##<N>##<N>##<N>##<N>##<HEX>",800186,0.03,0.94,0.02,not a problem,1
+healthapp,Step_SPUtils," getTodayTotalDetailSteps = <HEX>##<N>##<N>##<N>##<N>##<N>",800187,0.03,0.93,0.01,not a problem,1
+healthapp,Step_FlushableStepDataCache,insert conflict event timeBegin <HEX> timeEnd <HEX>,800188,0.2,0.18,0.06,not a problem,0.76
+healthapp,Step_DaemonService,onStartCommand Intent { pkg=com.huawei.health cmp=com.huawei.health/.manager.DaemonService (has extras) },800189,0.03,0.31,0.02,not a problem,0.99
+healthapp,Step_SPUtils,setFirstStartDaemonFromUI success: true,800190,0.02,0.28,0.08,not a problem,1
+healthapp,HiH_HiHealthBinder,subscribeHiHealthData() checkAppType <N> appID = <N>,800191,0.05,0.38,0.03,not a problem,0.99
+healthapp,Step_CounterRemoteProxy,switchTrackMonitor false,800192,0.09,0.77,0.03,not a problem,1
+healthapp,HiH_HiHealthBinder,fetchPhoneDataClient,800193,0.08,0.46,0.03,not a problem,0.79
+healthapp,HiH_HiHealthBinder,getUserPreference key = custom.UserPreference_HeartZone_Config,800194,0.03,0.72,0.02,not a problem,1
+healthapp,HiH_HiHealthBinder,aggregateHiHealthData() checkAppType <N> appID = <N> id = <N> time= <HEX>,800195,0.03,0.43,0.02,not a problem,1
+healthapp,HiH_HiHealthBinder,readHiHealthData() checkAppType <N> appID = <N> id = <N> time = <HEX>,800196,0.03,0.43,0.02,not a problem,1
+healthapp,HiH_HiHealthBinder,"aggregateHiHealthData aggregateOption is HiAggregateOption{startTime=<HEX>, endTime=<HEX>, type=[<N>, <N>], alignType=<N>, aggregateType=<N>, groupUnitType=<N>}",800197,0.02,0.57,0.01,not a problem,1
+healthapp,HiH_HiHealthBinder,"readHiHealthData() readOption = HiDataReadOption{startTime=<HEX>, endTime=<HEX>, type=[<N>, <N>], count = <N>, sortOrder=<N>, readType=<N>, alignType=<N>}",800198,0.03,0.51,0.02,not a problem,1
+healthapp,HiH_HiHealthBinder,"aggregateHiHealthData aggregateOption is HiAggregateOption{startTime=<HEX>, endTime=<HEX>, type=[<N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>], alignType=<N>, aggregateType=<N>, groupUnitType=<N>}",800199,0.02,0.65,0.01,not a problem,1
+healthapp,HiH_HiHealthBinder,aggregateHiHealthDataEx() checkAppType <N> appID = <N>,800200,0.04,0.48,0.03,not a problem,0.99
+healthapp,HiH_HiHealthBinder,"aggregateHiHealthData() time = <HEX>, totalTime = <N>",800201,0.02,0.54,0.01,not a problem,1
+healthapp,HiH_HiHealthBinder,"readHiHealthData() end time = <HEX>, totalTime = <N>",800202,0.03,0.28,0.02,not a problem,1
+healthapp,HiH_HiHealthBinder,getUserPreference key = custom.onboarding_concern_status,800203,0.03,0.75,0.02,not a problem,1
+healthapp,HiH_HiHealthBinder,"readHiHealthData() readOption = HiDataReadOption{startTime=<HEX>, endTime=<HEX>, type=[<N>], count = <N>, sortOrder=<N>, readType=<N>, alignType=<N>}",800204,0.03,0.52,0.01,not a problem,1
+healthapp,HiH_HiHealthBinder,"aggregateHiHealthData aggregateOption is HiAggregateOption{startTime=<N>, endTime=<HEX>, type=[<N>, <N>, <N>], alignType=<N>, aggregateType=<N>, groupUnitType=<N>}",800205,0.03,0.6,0.02,not a problem,1
+healthapp,HiH_HiHealthBinder,"fetchDataSourceByType type = <N>,timeInterval = HiTimeInterval{startTime=<N> <N>, endTime=<N> <N>, timeZone=<N>}",800206,0.03,0.28,0.02,not a problem,1
+healthapp,HiH_HiDataClientStore,"getHealthClientListByTime() dataClientIDs is null timeInterval = HiTimeInterval{startTime=<N> <N>, endTime=<N> <N>, timeZone=<N>}",800207,0.16,0.21,0.02,not a problem,0.39
+healthapp,HiH_HiHealthBinder,"aggregateHiHealthData aggregateOption is HiAggregateOption{startTime=<HEX>, endTime=<HEX>, type=[<N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>, <N>], alignType=<N>, aggregateType=<N>, groupUnitType=<N>}",800208,0.03,0.66,0.01,not a problem,1
+healthapp,Step_StandReportReceiver,                                                                                                          <HEX>-<MAC><N>|Step_StaticReceiver|<HEX>|onReceive action: android.intent.action.BOOT_COMPLETED,800209,0.03,0.17,0.02,not a problem,0.97
+healthapp,Step_SPUtils," getGoalNotifiShownRecord= <HEX>##true",800210,0.03,0.95,0.02,not a problem,1
+healthapp,Step_HGNH,next day:steps0mLastReport2<N>,800211,0.03,0.57,0.03,not a problem,1

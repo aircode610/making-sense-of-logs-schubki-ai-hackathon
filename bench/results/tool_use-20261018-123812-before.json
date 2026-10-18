@@ -1,0 +1,3405 @@
+{
+ "label": "before",
+ "summary": {
+  "anthropic:claude-opus-5-5": {
+   "questions": 30,
+   "first_ok": 1.0,
+   "need_ok": 1.0,
+   "facts": 0.8,
+   "errors_per_q": 0.03,
+   "calls_per_q": 3.7,
+   "tokens_in_per_q": 101694,
+   "seconds_per_q": 21.2,
+   "crashed": 0
+  },
+  "anthropic:claude-sonnet-5-5": {
+   "questions": 30,
+   "first_ok": 0.967,
+   "need_ok": 1.0,
+   "facts": 0.745,
+   "errors_per_q": 0.0,
+   "calls_per_q": 4.1,
+   "tokens_in_per_q": 97341,
+   "seconds_per_q": 14.2,
+   "crashed": 0
+  }
+ },
+ "results": [
+  {
+   "id": "T-B1",
+   "dataset": "bgl",
+   "model": "anthropic:claude-opus-5-5",
+   "question": "Something failed on the R43-M0 midplane of the BGL supercomputer around 2005-08-19 13:56. What was it, and what happened just before and after?",
+   "answer": "**What failed:** Two **kernel panics** (KERNEL, FATAL, pattern 576) on two I/O nodes of midplane R43-M0, about 0.35 s apart:\n- 2005-08-19 13:56:00.280831, `R43-M0-NC-I:J18-U01`: \"kernel panic\"\n- 2005-08-19 13:56:00.628434, `R43-M0-N8-I:J18-U11`: \"kernel panic\"\n\nThose two lines are the only lines anywhere in the BGL log from 13:46 to 14:06. The panic lines carry no other details, such as a cause or a stack trace.\n\n**Just before (same midplane, 2 hours back):** 8 lines, all APP FATAL, from 12:24:59 to 12:26:12. That is about 90 minutes before the panics:\n- 6 lines of `ciod: LOGIN chdir(/home/auselton/testing) failed: No such file or directory`. They came in pairs on N4 (12:24:59), N0 (12:25:04–05) and NC (12:26:12). The NC pair included J18-U01, one of the two nodes that later panicked.\n- 2 lines of `ciod: Error reading message prefix after LOGIN_MESSAGE on CioStream socket to 172.16.96.116:4077x: Link has been severed`, on N8 J18-U11 and J18-U01 at 12:26:09. N8-I:J18-U11 is the other node that later panicked.\n\nSo both nodes that panicked had job-login (ciod) errors about 1.5 h earlier. With a 90-minute gap and nothing logged in between, I can't say whether the two are linked.\n\n**Just after:** Nothing more on R43-M0 for 2 hours. Across all of BGL, the next line is at 17:11:25, more than 3 hours later. It starts a wave of 1,051 lines in the next 6 h. The 10 lines I looked at were all the same `ciod: LOGIN chdir(/home/auselton/testing) failed` error, on other midplanes (R56-M1, R54-M1, R44-M0, R36-M0). That looks like the same user's job failing to start again, not a follow-on from the panics.\n\n**Has this happened before?** Kernel panics are rare but recur. The pattern has 18 lines in 13 bursts on 18 nodes, from 2005-08-15 to 2005-11-11, owned by node-platform. Before this event there had been only 2 earlier bursts (3 lines), all within the same week.",
+   "calls": [
+    {
+     "name": "search_logs",
+     "args": {
+      "dataset": "bgl",
+      "midplane": "R43-M0",
+      "start": "2005-08-19 13:50",
+      "end": "2005-08-19 14:05",
+      "limit": 30
+     }
+    },
+    {
+     "name": "get_context",
+     "args": {
+      "dataset": "bgl",
+      "line_id": 3069219,
+      "scope": "midplane",
+      "before_s": 7200,
+      "after_s": 7200,
+      "limit": 15
+     }
+    },
+    {
+     "name": "get_context",
+     "args": {
+      "dataset": "bgl",
+      "line_id": 3069219,
+      "scope": "all",
+      "before_s": 600,
+      "after_s": 600,
+      "limit": 15
+     }
+    },
+    {
+     "name": "pattern_history",
+     "args": {
+      "dataset": "bgl",
+      "pattern_id": 576,
+      "as_of": "2005-08-19 13:56"
+     }
+    },
+    {
+     "name": "get_context",
+     "args": {
+      "dataset": "bgl",
+      "line_id": 3069220,
+      "scope": "all",
+      "before_s": 0,
+      "after_s": 21600,
+      "limit": 10
+     }
+    }
+   ],
+   "errors": [],
+   "run_error": null,
+   "first_tool": "search_logs",
+   "first_ok": true,
+   "need_ok": true,
+   "facts": 2,
+   "facts_total": 2,
+   "facts_missed": [],
+   "n_calls": 5,
+   "n_errors": 0,
+   "tokens_in": 126913,
+   "tokens_out": 1822,
+   "elapsed_s": 27.2
+  },
+  {
+   "id": "T-B2",
+   "dataset": "bgl",
+   "model": "anthropic:claude-opus-5-5",
+   "question": "How widespread was the 'data TLB error interrupt' problem on BGL in June 2005, and when did it start?",
+   "answer": "The node count looks wide, but almost all of the volume came from one node. The first line appeared on **2005-06-05 00:08:13**, the first time this message shows up anywhere in the BGL logs.\n\n**How widespread (June 2005):**\n- There were **152,659** \"data TLB error interrupt\" lines (KERNEL, FATAL, pattern 31, owned by node-platform) on **467 distinct nodes**, spread across 13 racks (R20–R25 and R30–R37).\n- **152,182 of those lines (99.7%) came from one node, R30-M0-N9-C:J16-U01.** By the tool's rule (top node's share ≥ 0.5) that counts as \"concentrated on one node.\"\n- The other ~466 nodes logged about one line each, at most 3 (for example R22-M0-N7-C:J04-U01, R25-M0-NA-C:J14-U01). Lines per rack: R21 74, R24 63, R25 62, R20 55, R22 35, R32 29, R35 29, R33 28, R31 27, R36 24, R37 20, R34 14. R30 had 152,199 lines over 18 nodes, nearly all from the one bad node.\n\n**When it started:**\n- **June 5:** 4 bursts with 477 lines in total. The first lines were on rack R20 (R20-M0-N2-C:J10-U11, then other R20-M0/M1 nodes), and it reached hundreds of nodes with a line or two each. That looks like many jobs failing at once, not a hardware fault on one node, but that's a guess.\n- **June 6–10:** no occurrences.\n- **June 11, 17:17:44 to 23:39:32:** one burst of 152,182 lines, all from R30-M0-N9-C:J16-U01. This storm accounts for almost all of June's volume.\n- There were no more lines in June after 2005-06-11 23:39:32. The pattern came back in small bursts in July, August and November, with the last one on 2005-11-28.\n\nIn short, the message was briefly logged across the system on June 5, but by volume June's problem was a ~6-hour storm on one node, R30-M0-N9-C:J16-U01, on June 11. That node is the one to check.",
+   "calls": [
+    {
+     "name": "search_logs",
+     "args": {
+      "dataset": "bgl",
+      "query_text": "\"data TLB error interrupt\"",
+      "start": "2005-06-01",
+      "end": "2005-07-01",
+      "limit": 5
+     }
+    },
+    {
+     "name": "spread",
+     "args": {
+      "dataset": "bgl",
+      "query_text": "\"data TLB error interrupt\"",
+      "start": "2005-06-01",
+      "end": "2005-07-01"
+     }
+    },
+    {
+     "name": "pattern_history",
+     "args": {
+      "dataset": "bgl",
+      "pattern_id": 31,
+      "as_of": "2005-06-01T00:00:00",
+      "bucket": "day"
+     }
+    },
+    {
+     "name": "search_logs",
+     "args": {
+      "dataset": "bgl",
+      "query_text": "\"data TLB error interrupt\"",
+      "node": "R30-M0-N9-C:J16-U01",
+      "start": "2005-06-01",
+      "end": "2005-07-01",
+      "limit": 2
+     }
+    }
+   ],
+   "errors": [],
+   "run_error": null,
+   "first_tool": "search_logs",
+   "first_ok": true,
+   "need_ok": true,
+   "facts": 3,
+   "facts_total": 3,
+   "facts_missed": [],
+   "n_calls": 4,
+   "n_errors": 0,
+   "tokens_in": 99479,
+   "tokens_out": 1473,
+   "elapsed_s": 19.2
+  },
+  {
+   "id": "T-B3",
+   "dataset": "bgl",
+   "model": "anthropic:claude-opus-5-5",
+   "question": "Which problems kept coming back on BGL from 2005-11-01 to 2005-11-29, and which teams own them?",
+   "answer": "Between 2005-11-01 and 2005-11-29, BGL logged **407 recurrences (\"bursts\") of problem patterns**. Three teams own them: **node-platform 256**, **hpc-workloads 96** and **cluster-control 55**. A burst is a recurrence of the same message after more than 30 minutes of quiet, so it is not the same as a confirmed incident. There are 126 problem patterns in total; these are the ones that came back most often:\n\n| # | Problem (pattern) | Team / component | Bursts (vs prior 28 d) | Lines | Nodes |\n|---|---|---|---|---|---|\n| 1 | `Kill job <N> timed out. Block freed.` (261) | node-platform / KERNEL | 34 (41, −7) | 48 | no node recorded |\n| 2 | `rts panic! - stopping execution` (69) | node-platform / KERNEL | 33 (27, +6) | 45 | 33 |\n| 3 | `ciod: Error reading message prefix on CioStream socket…Link has been severed` (968) — **new 2005-11-17** | hpc-workloads / APP | 27 (0, +27) | 10,408 | 1,024 |\n| 4 | `machine check interrupt` (33) | node-platform / KERNEL | 17 (30, −13) | 18 | 18 |\n| 5–7 | `invalid operation exception` (software / sqrt / int cnvt) (943/944/945) — **new 2005-11-17** | node-platform / KERNEL | 14 each (0, +14) | 24 each | 15 |\n| 8–9 | `Node card is not fully functional` / `Can not get assembly information for node card` (165/166) | cluster-control / DISCOVERY | 9 each (19, −10) | 561 each | 456 |\n| 10 | `machine check interrupt… L<N> dcache unit read return parity error` (1021) — **new 2005-11-24** | node-platform / KERNEL | 8 (0) | 8 | 1 node only |\n| 11 | `rts: kernel terminated for reason <N>` (562) | node-platform / KERNEL | 7 (2, +5) | 5,120 | 3,584 |\n| 12 | `Error receiving packet on tree network…` (806) | node-platform / KERNEL | 7 (1, +6) | 5,120 | 3,584 |\n| 13 | `idoproxy communication failure: socket closed` (892) — new 2005-11-15 | node-platform / KERNEL | 6 (0) | 12 | 7 |\n| 14 | `ciod: …CioStream socket…Connection reset by peer` (988) — new 2005-11-18 | hpc-workloads / APP | 5 (0) | 2,256 | 1,014 |\n| 15 | `ciod: Error loading …mdcask.opt: program image too big` (822) — new 2005-11-03 | hpc-workloads / APP | 5 (0) | 88 | 16 |\n\nWhat stands out:\n- **Problems that have been around for a while (node-platform):** job-kill timeouts and rts panics are the most frequent, each seen in 5 weeks of the period. Rts panics are up from 27 to 33 bursts. General machine-check interrupts fell from 30 to 17 bursts.\n- **New problems from mid-November:** the ciod \"Link has been severed\" errors (hpc-workloads) went from nothing to 27 bursts on all 1,024 of their nodes. The three invalid-operation exceptions (node-platform) appeared at the same time, on 2005-11-17.\n- **Two patterns that look linked:** `kernel terminated` and the tree-network packet error have identical counts (5,120 lines on 3,584 nodes, 7 bursts each). That suggests they come from the same events, but I haven't checked it.\n- **One bad node:** the new dcache parity-error machine check comes from a single node.\n- **Getting better (cluster-control):** the paired node-card discovery errors dropped from 19 to 9 bursts.",
+   "calls": [
+    {
+     "name": "top_patterns",
+     "args": {
+      "dataset": "bgl",
+      "start": "2005-11-01",
+      "end": "2005-11-29",
+      "limit": 15
+     }
+    },
+    {
+     "name": "rollup",
+     "args": {
+      "dataset": "bgl",
+      "start": "2005-11-01",
+      "end": "2005-11-29",
+      "by": [
+       "team"
+      ]
+     }
+    }
+   ],
+   "errors": [],
+   "run_error": null,
+   "first_tool": "top_patterns",
+   "first_ok": true,
+   "need_ok": true,
+   "facts": 2,
+   "facts_total": 2,
+   "facts_missed": [],
+   "n_calls": 2,
+   "n_errors": 0,
+   "tokens_in": 93005,
+   "tokens_out": 1652,
+   "elapsed_s": 22.5
+  },
+  {
+   "id": "T-B4",
+   "dataset": "bgl",
+   "model": "anthropic:claude-opus-5-5",
+   "question": "If the BGL operations team can fix only one thing based on August 2005, which should it be and why?",
+   "answer": "**Fix the \"rts: kernel terminated for reason N\" crash (pattern 562, KERNEL, owned by node-platform) and the tree-network / rts message-header errors that come with it.**\n\n**Why this one:**\n- **It ranks first.** For August 2005 it scored 96.0 out of 100, the highest of 148 problem patterns. The score combines how often a problem recurs, how fast it is growing, how many nodes it hits, how many weeks it shows up and how serious it is judged to be.\n- **It is the most widespread.** It hit 2,666 nodes (11,349 lines). No single node accounts for more than 0.2% of the lines, so this is a fleet-wide problem, not one bad node. The next most widespread problem reached 1,967 nodes.\n- **It is new and grew fast.** It first appeared on 2005-08-13 and recurred 13 times in August (0 in July). It peaked in the week of Aug 15: 10 separate bursts (a burst is a run of the error separated from the next by more than 30 minutes of quiet), 7,670 lines.\n- **It is a serious failure.** Every line is FATAL, and the stored judgment classes it as a system software failure (p_fault 0.96).\n- **One fix may clear several problems.** Patterns ranked 5–8 are all new \"rts: bad message header…\" variants (563, 564, 565, 566). They occur with the crash on the same node within 5 minutes, with almost no matches when the times are shifted by a day. 36.5% of crash episodes also show \"Error receiving packet on tree network, expecting type…\" (pattern 806). This suggests one shared fault in the tree-network/rts messaging path, but that is only an inference from timing, not a confirmed root cause.\n- **It did not go away by itself.** It kept coming back until 2005-11-16: 25 bursts and 18,587 lines across 7,650 nodes over the whole dataset.\n\n**Runner-up:** the hardware problem \"Node card is not fully functional\" / \"Can not get assembly information for node card\" (DISCOVERY, cluster-control) scored 91.5 and 90.8. It recurs more often (37 bursts, up from 21 in July) and showed up all 5 weeks. But it is an older problem that was already there, it reached fewer nodes (1,967) and it is judged less severe (p_problem 0.799 vs 0.912).\n\nThe logs don't show cost, downtime or how many jobs were affected, so this ranking is based only on what the logs measure.",
+   "calls": [
+    {
+     "name": "priority_table",
+     "args": {
+      "dataset": "bgl",
+      "start": "2005-08-01",
+      "end": "2005-09-01",
+      "limit": 8
+     }
+    },
+    {
+     "name": "co_occurrence",
+     "args": {
+      "dataset": "bgl",
+      "pattern_a": 562,
+      "limit": 8
+     }
+    },
+    {
+     "name": "pattern_history",
+     "args": {
+      "dataset": "bgl",
+      "pattern_id": 562,
+      "bucket": "week"
+     }
+    }
+   ],
+   "errors": [],
+   "run_error": null,
+   "first_tool": "priority_table",
+   "first_ok": true,
+   "need_ok": true,
+   "facts": 1,
+   "facts_total": 1,
+   "facts_missed": [],
+   "n_calls": 3,
+   "n_errors": 0,
+   "tokens_in": 96288,
+   "tokens_out": 1334,
+   "elapsed_s": 18.7
+  },
+  {
+   "id": "T-B5",
+   "dataset": "bgl",
+   "model": "anthropic:claude-opus-5-5",
+   "question": "Which recurring BGL problems got worse in October 2005 compared with September?",
+   "answer": "October was worse than September mainly because of one recurring job problem and one cluster of memory/hardware errors. All of them are KERNEL patterns owned by node-platform. I counted \"bursts\", meaning separate recurrences (a new burst starts after 30+ minutes of quiet). October is 2005-10-01 to 11-01. The tool's comparison window was 2005-08-31 to 10-01, so \"September\" here includes Aug 31.\n\n**Biggest increases**\n| Pattern | Oct bursts | Sep bursts | Change |\n|---|---|---|---|\n| `Kill job <N> timed out. Block freed.` (FATAL, job failure) | 44 | 29 | **+15** |\n| `machine check interrupt (bit=<N>): L<N> major internal error` (FATAL, hardware; 8 nodes, 10 lines) | 10 | 5 | **+5** |\n\n**Memory/parity errors, all doubled from 2 to 4 bursts (+2 each), each on 4 nodes in 4 active weeks:**\n- uncorrectable error in directory / EDRAM bank / external DDR\n- `uncorrectable error...`\n- memory manager uncorrectable error\n- parity error in bank / read queue / read queue PLB\n- address parity error\n- DDR failing data registers / address register\n\nThese ten patterns have identical counts, so they probably come from the same 4 error events, each logging the whole set. I'd treat them as roughly one recurring memory fault, not ten separate problems. I haven't checked this against the individual lines.\n\n**Smaller increases**\n- `NodeCard is not fully functional` (HARDWARE, SEVERE): 1 → 3 bursts, all on a single node.\n- `Microloader Assertion`: 0 → 2 bursts, on 18 nodes. It isn't new; it was first seen 2005-08-03.\n- `program interrupt: illegal instruction` and `privileged instruction`: 3 → 4 bursts each.\n\n**Not worse, but new in October:** three ciod job-loading errors owned by hpc-workloads, 2 bursts each:\n- EPStreamTriad \"Permission denied\": 768 lines\n- flash \"program image too big\": 1,024 lines\n- `LOGIN chdir … No such file or directory`: 1,920 lines\n\nThey first appeared on Oct 15, 21 and 29, so they weren't recurring problems that grew.\n\nCounts are recurrences in the logs, not confirmed incidents.",
+   "calls": [
+    {
+     "name": "top_patterns",
+     "args": {
+      "dataset": "bgl",
+      "start": "2005-10-01 00:00",
+      "end": "2005-11-01 00:00",
+      "rank_by": "growth",
+      "limit": 20
+     }
+    }
+   ],
+   "errors": [],
+   "run_error": null,
+   "first_tool": "top_patterns",
+   "first_ok": true,
+   "need_ok": true,
+   "facts": 2,
+   "facts_total": 2,
+   "facts_missed": [],
+   "n_calls": 1,
+   "n_errors": 0,
+   "tokens_in": 60716,
+   "tokens_out": 1146,
+   "elapsed_s": 14.4
+  },
+  {
+   "id": "T-B6",
+   "dataset": "bgl",
+   "model": "anthropic:claude-opus-5-5",
+   "question": "On BGL, what usually shows up on a node shortly before a 'kernel panic'?",
+   "answer": "Usually nothing. On BGL, most kernel panics have no warning sign in the logs on the same node. The one repeated precursor is an \"L\\<N> correctable errors exceeds threshold\" message, and it appears in only 4 of the 18 panics.\n\n**The panics:** There are 18 \"kernel panic\" lines (pattern 576, KERNEL, FATAL, owned by node-platform), each on a different node, between 2005-08-15 and 2005-11-11. All 18 are I/O nodes (`…-I:J18-U01/U11`).\n\n**What came before, on the same node:**\n- **Look-back of 600 s:** Only 2 message patterns ever started before a panic.\n  - **Pattern 178, \"L\\<N> correctable errors exceeds threshold (iar \\<HEX> lr \\<HEX>)\"** (INFO, node-platform): before 4 of 18 panics (22.2%). The median lead time is just 0.4 s, so it shows up right before the panic rather than giving early warning. It never appeared in the same window one day earlier (control share 0.0), and it was the message immediately before the panic all 4 times.\n  - **Pattern 812, a `ciod: Error loading … invalid or missing program image, Permission denied` line** (FATAL, hpc-workloads): before 1 of 18 panics (5.6%), 20.7 s earlier. A single case, so it means little.\n- **Look-back of 3600 s:** Exactly the same result, so there is no slower build-up within the hour before.\n- **The other 13 panics** had nothing before them. I checked two by hand: node R57-M1-N4 on 2005-08-23 had no lines on the node in the 10 minutes before. Node R35-M0-N0 on 2005-10-19 had no lines on the node or its whole midplane (R35-M0) in that time.\n\n**What this suggests:** Your best early hint is a correctable-memory-error threshold alert on an I/O node. But with only 4 of 18 cases it's a weak signal, and the panic follows within about a second, so it's no use as advance warning. These are timing matches, not proof that the memory errors cause the panics. With only 18 panics in total, all these figures are rough.",
+   "calls": [
+    {
+     "name": "find_patterns",
+     "args": {
+      "text": "kernel panic",
+      "dataset": "bgl",
+      "k": 5
+     }
+    },
+    {
+     "name": "precursors",
+     "args": {
+      "dataset": "bgl",
+      "pattern_id": 576,
+      "limit": 15
+     }
+    },
+    {
+     "name": "precursors",
+     "args": {
+      "dataset": "bgl",
+      "pattern_id": 576,
+      "limit": 10,
+      "window_s": 3600
+     }
+    },
+    {
+     "name": "search_logs",
+     "args": {
+      "dataset": "bgl",
+      "pattern_id": 576,
+      "limit": 20
+     }
+    },
+    {
+     "name": "get_context",
+     "args": {
+      "dataset": "bgl",
+      "line_id": 3105115,
+      "before_s": 600,
+      "after_s": 60,
+      "limit": 10
+     }
+    },
+    {
+     "name": "get_context",
+     "args": {
+      "dataset": "bgl",
+      "line_id": 3625957,
+      "before_s": 600,
+      "after_s": 60,
+      "limit": 10
+     }
+    },
+    {
+     "name": "get_context",
+     "args": {
+      "dataset": "bgl",
+      "line_id": 3625957,
+      "before_s": 600,
+      "after_s": 60,
+      "limit": 10,
+      "scope": "midplane"
+     }
+    }
+   ],
+   "errors": [],
+   "run_error": null,
+   "first_tool": "find_patterns",
+   "first_ok": true,
+   "need_ok": true,
+   "facts": 2,
+   "facts_total": 2,
+   "facts_missed": [],
+   "n_calls": 7,
+   "n_errors": 0,
+   "tokens_in": 195374,
+   "tokens_out": 1790,
+   "elapsed_s": 30.2
+  },
+  {
+   "id": "T-B7",
+   "dataset": "bgl",
+   "model": "anthropic:claude-opus-5-5",
+   "question": "Is reliability on BGL improving between September and November 2005 (2005-09-01 to 2005-11-29)?",
+   "answer": "**Not really.** The tool's fixed rule labels the period \"improving\", but the margin is small and comes from a partial week at the end. Taken week by week, the data doesn't show a clear improvement, and the worst weeks fell in mid-November.\n\n**What the tool measured** (BGL problem bursts, i.e. recurrences of patterns judged to be real faults, per week, 2005-09-01 to 2005-11-29):\n- 1,198 bursts in total.\n- Slope: **−1.332 bursts/week per week**.\n- First-half mean is **87.43/week** and second-half mean is **83.71/week**, so the rule calls it \"improving\".\n- All three teams have slightly negative slopes: node-platform −0.398 (775 bursts), hpc-workloads −0.578 (245), cluster-control −0.356 (178).\n\n**Why I don't trust that label:**\n\n| Week starting | Bursts |\n|---|---|\n| 08-29 (partial, from Sep 1) | 130 |\n| 09-05 | 89 |\n| 09-12 | 48 |\n| 09-19 | 99 |\n| 09-26 | 115 |\n| 10-03 | 72 |\n| 10-10 | 59 |\n| 10-17 | 86 |\n| 10-24 | 85 |\n| 10-31 | 46 |\n| 11-07 | 80 |\n| **11-14** | **154** |\n| **11-21** | **117** |\n| 11-28 (partial, Nov 28 only) | 18 |\n\n- The last bucket covers just one day (18 bursts). It pulls both the slope and the second-half mean down. Leave it out and the second half averages about 94.7/week (my calculation from the rows above), which is *higher* than the first half's 87.43.\n- The two busiest weeks of the period are 14 Nov (154) and 21 Nov (117), right at the end.\n- From week to week the counts swing widely (46 to 154), and that noise is bigger than the trend.\n\n**Bottom line:** fault recurrences on BGL stayed roughly flat and noisy from September to November 2005. If anything, they rose in the second half of November, so I wouldn't claim reliability improved. These are recurrence counts, not incidents or downtime.",
+   "calls": [
+    {
+     "name": "reliability_trend",
+     "args": {
+      "dataset": "bgl",
+      "start": "2005-09-01",
+      "end": "2005-11-29"
+     }
+    }
+   ],
+   "errors": [],
+   "run_error": null,
+   "first_tool": "reliability_trend",
+   "first_ok": true,
+   "need_ok": true,
+   "facts": 0,
+   "facts_total": 2,
+   "facts_missed": [
+    "FATAL lines in November to 11-29 = 42801",
+    "FATAL lines in September = 81844"
+   ],
+   "n_calls": 1,
+   "n_errors": 0,
+   "tokens_in": 56386,
+   "tokens_out": 1087,
+   "elapsed_s": 17.0
+  },
+  {
+   "id": "T-B8",
+   "dataset": "bgl",
+   "model": "anthropic:claude-opus-5-5",
+   "question": "Did any kinds of messages appear on BGL from 2005-12-01 to 2005-12-08 that had never been seen before? Which look like real problems?",
+   "answer": "Yes. **23 message patterns** appeared on BGL for the first time in the whole dataset between 2005-12-01 and 2005-12-08. The stored pattern judgments rate **12 of them as likely real problems** (p_problem ≥ 0.5) and 11 as routine. A new pattern is a new message wording. It doesn't always mean a new kind of fault.\n\n**Likely real problems (12)**\n\n*Failures loading or starting jobs (APP, owned by hpc-workloads). These hit the most nodes:*\n| id | Message | First seen | Lines / nodes | p_problem |\n|---|---|---|---|---|\n| 1061 | `ciod: Error loading …/sppm_chkpt/sppm: not a CNK program image` | 12-07 08:08 | 1024 / 1024 | 0.856 |\n| 1059 | `ciod: Error loading /bgl/apps/SWL/functional/linpack-…/xhpl…: invalid or missing program image, Permission denied` | 12-06 05:50 | 1016 / 1016 | 0.846 |\n| 1057 | `ciod: LOGIN chdir(/p/gb/rfisher/StirTurbDirect/…) failed: No such file or directory` | 12-03 13:27 | 256 / 128 | 0.828 |\n| 1049 | `ciod: LOGIN chdir(/g/g…/loewe/romio_tests) failed: No such file…` | 12-02 07:52 | 32 / 8 | 0.846 |\n| 1048 | `ciod: LOGIN chdir(/home/loewe/romio_testsuite) failed: No such file…` | 12-02 07:49 | 16 / 8 | 0.865 |\n| 1058 | `ciod: Error loading …/rfisher/FLASH…/flash…: invalid or missing program image, No such file…` | 12-04 11:36 | 8 / 8 | 0.865 |\n\nEach of these happened in a single burst. They look like a bad binary, wrong permissions or a missing directory for one job, not a hardware fault. Even so, 1061 and 1059 each failed across about 1,000 nodes at once.\n\n*Programs dumping core (KERNEL, owned by node-platform):*\n- 1056 FLASH StirTurbDirect: 144 lines, 72 nodes, 2 bursts (p 0.561)\n- 1054 FLASH StirTurbPnet: 12 lines, 10 nodes, 2 bursts (p 0.662)\n- 1051 parallel_debugger `mem_err/merr`, 1060 HPL `xhpl`, 1062 `auselton/bgl/mib`: 1 line each on 1 node (p 0.598, 0.739, 0.751). The `mem_err` program looks like a deliberate debugger test case.\n\n*The only new one that looks like a system or hardware issue:*\n- **1053 `instruction TLB error interrupt`** (KERNEL): one line on one node at 2005-12-03 07:57:10, rated \"system software failure\" (p 0.766). It's only one line, but it's the one I'd check on that node.\n\n**Probably not problems (11, all KERNEL / node-platform)**\n- **Interrupt and rbs-handler statistics** (1041, 1042, 1043–1047): these make up most of the volume, about 135k lines each for 1041 and 1042 across ~65.5k nodes, from 12-01 06:34 on. They're timing statistics, not errors, and the many ids are mostly the same message with numbers written as hex or decimal.\n- **1055 integer alignment exceptions:** 22,177 lines on 15,258 nodes, 2 bursts, rated p 0.174.\n- **Correctable-error throttling:** `ddr: Suppressing further CE interrupts` (1052: 104 lines, 67 nodes, 12 bursts, the most repeated new pattern) and the corrected-SRAM threshold message (1050: 15 lines, 3 nodes). Neither error is fatal, but they do show that correctable memory errors went over their threshold on those nodes.\n- **1063 torus y+ retransmission errors:** detected and corrected, 1 line.\n\n**Bottom line:** most of the new likely problems are failed job launches or core dumps that look specific to one program, especially the two failures on about 1,000 nodes (12-06 and 12-07). The only new message that points to the machine itself is the single instruction TLB error.",
+   "calls": [
+    {
+     "name": "whats_new",
+     "args": {
+      "dataset": "bgl",
+      "start": "2005-12-01",
+      "end": "2005-12-08",
+      "problem_only": false,
+      "limit": 50
+     }
+    },
+    {
+     "name": "whats_new",
+     "args": {
+      "dataset": "bgl",
+      "start": "2005-12-01",
+      "end": "2005-12-08",
+      "problem_only": true,
+      "limit": 50
+     }
+    }
+   ],
+   "errors": [],
+   "run_error": null,
+   "first_tool": "whats_new",
+   "first_ok": true,
+   "need_ok": true,
+   "facts": 2,
+   "facts_total": 2,
+   "facts_missed": [],
+   "n_calls": 2,
+   "n_errors": 0,
+   "tokens_in": 61749,
+   "tokens_out": 1849,
+   "elapsed_s": 20.4
+  },
+  {
+   "id": "T-O1",
+   "dataset": "openstack",
+   "model": "anthropic:claude-opus-5-5",
+   "question": "What happened to OpenStack instance 9fafc51c-d0dd-41df-99e9-6c79d8334eaf, step by step across the nova services?",
+   "answer": "Instance 9fafc51c-d0dd-41df-99e9-6c79d8334eaf went through a normal create-then-delete cycle that lasted about 44 seconds on 2017-05-16, and nothing failed. All 25 lines tagged with this instance come from **nova-compute**, and every one is INFO. A text search for the UUID found 2 more lines from **nova-api**, both successful. **nova-scheduler** never logs this UUID, so the logs don't show its placement step.\n\n**Build (22:51:36.968 → 22:51:58.074)**\n1. **22:51:36.968, nova-compute:** asks for resources: 2048 MB memory, 20 GB disk, 1 vCPU. The host reports 64172 MB total memory with 512 MB used, a 96258 MB memory limit with 95746 MB free, 15 GB total disk with 0 used, and 16 vCPUs with 0 used. No disk or vCPU limit is set, so both default to unlimited. One oddity: it asks for 20 GB on a 15 GB disk, and the claim works only because there is no disk limit.\n2. **22:51:37.003:** \"Claim successful\".\n3. **22:51:37.261, nova-api:** `GET /v2/54fadb412c4e40cdbaed9335e4c35a9e/servers/9fafc51c-…` returns 200 in 0.2032521 s (request req-b36b8c2b-f262-4826-9e3c-8065cbdd059a). This is a client checking the server's status.\n4. **22:51:37.619:** \"Creating image\".\n5. **22:51:51.023:** \"VM Started\", then 61 ms later \"VM Paused\". This is the normal libvirt start sequence. The power-state check skips the instance because its spawn task is still pending.\n6. **22:51:57.927:** \"VM Resumed\", then \"Instance spawned successfully\".\n   - Spawning on the hypervisor took 20.32 s.\n   - At 22:51:58.074 the whole build is logged as 21.12 s.\n\n**Teardown (22:52:05.334 → 22:52:20.587)**\n7. **22:52:05.334, nova-api:** `DELETE /v2/…/servers/9fafc51c-…` returns 204 in 0.2555110 s (request req-6dc007d0-d454-4226-977c-2e3431d1ad61). This came about 7 seconds after the build finished.\n8. **22:52:05.374, nova-compute:** \"Terminating instance\". At 22:52:05.590 it logs \"Instance destroyed successfully\".\n9. **22:52:06.285–.287:** deletes the instance files under `/var/lib/nova/instances/9fafc51c-…_del` and logs that the deletion is complete.\n   - Destroying the instance on the hypervisor took 1.03 s.\n   - Releasing its network took 0.45 s.\n10. **22:52:20.587:** a \"VM Stopped\" event is logged, which is the last line for this instance.\n\nThe instance was created, ran for about 7 seconds and was deleted, with no errors or warnings anywhere. I didn't compare the 20.32 s spawn against other instances, so I can't say whether that time is typical. The short life and quick delete look like an automated or test workload, but that's my guess; the logs don't say.",
+   "calls": [
+    {
+     "name": "request_timeline",
+     "args": {
+      "dataset": "openstack",
+      "instance_id": "9fafc51c-d0dd-41df-99e9-6c79d8334eaf"
+     }
+    },
+    {
+     "name": "search_logs",
+     "args": {
+      "dataset": "openstack",
+      "query_text": "9fafc51c-d0dd-41df-99e9-6c79d8334eaf",
+      "exclude_text": "instance",
+      "limit": 20
+     }
+    }
+   ],
+   "errors": [],
+   "run_error": null,
+   "first_tool": "request_timeline",
+   "first_ok": true,
+   "need_ok": true,
+   "facts": 1,
+   "facts_total": 2,
+   "facts_missed": [
+    "first line = 2017-05-16 22:51"
+   ],
+   "n_calls": 2,
+   "n_errors": 0,
+   "tokens_in": 94034,
+   "tokens_out": 1421,
+   "elapsed_s": 19.6
+  },
+  {
+   "id": "T-O2",
+   "dataset": "openstack",
+   "model": "anthropic:claude-opus-5-5",
+   "question": "Were any OpenStack VMs abnormally slow to start? Which ones, and how slow compared with normal?",
+   "answer": "Yes. Six of the 2,066 VM starts in the OpenStack logs were abnormally slow. For each one, both the \"spawn on hypervisor\" step and the overall \"build instance\" step went over the outlier threshold.\n\n**What normal looks like** (all 2,066 starts):\n- **Spawn:** usually 19.74 s; 95% finish within 21.01 s. Anything over 22.26 s is flagged.\n- **Build:** usually 20.55 s; 95% finish within 21.81 s. Anything over 23.07 s is flagged.\n\n**The slow VMs** (slowest first; \"× normal\" compares spawn time with the usual 19.74 s):\n\n| Instance | Time | Spawn | Build | × normal |\n|---|---|---|---|---|\n| a445709b-6ad0-40ec-8860-bec60b6ca0c2 | 2017-05-14 21:43:33 | 50.72 s | 51.59 s | **2.57×** |\n| 544fd51c-4edc-4780-baae-ba1d80a0acfc | 2017-05-14 21:08:19 | 41.81 s | 42.81 s | **2.12×** |\n| 1643649d-2f42-4303-bfcd-7798baec19f9 | 2017-05-14 21:47:20 | 31.27 s | 32.12 s | 1.58× |\n| ae651dff-c7ad-43d6-ac96-bbcd820ccca8 | 2017-05-14 21:09:11 | 29.46 s | 30.32 s | 1.49× |\n| d7d68893-c44f-4e7c-8d4b-0e7801d62776 | 2017-05-14 21:45:04 | 26.69 s | 27.61 s | 1.35× |\n| f0ff0b46-b3cd-43e6-97eb-839fd1cdaa87 | 2017-05-16 16:49:11 | 22.56 s | 23.34 s | 1.14× (only just over the line) |\n\n**When it happened:** Five of the six started within about 40 minutes of each other on 2017-05-14 (21:08–21:47). That suggests one temporary slowdown in that window rather than separate problems with each VM, but I haven't confirmed a cause.\n\n**Not VM starts:** A few API calls were also slow, all on 2017-05-17 around 06:25. They took 2.1–4.2 s against a normal of 0.1–0.33 s, which is 10–22× slower. None of these calls is tied to any of the six VMs.",
+   "calls": [
+    {
+     "name": "value_outliers",
+     "args": {
+      "dataset": "openstack",
+      "limit": 30
+     }
+    }
+   ],
+   "errors": [],
+   "run_error": null,
+   "first_tool": "value_outliers",
+   "first_ok": true,
+   "need_ok": true,
+   "facts": 2,
+   "facts_total": 2,
+   "facts_missed": [],
+   "n_calls": 1,
+   "n_errors": 0,
+   "tokens_in": 66282,
+   "tokens_out": 975,
+   "elapsed_s": 13.5
+  },
+  {
+   "id": "T-O3",
+   "dataset": "openstack",
+   "model": "anthropic:claude-opus-5-5",
+   "question": "Why did the OpenStack API return HTTP 503, when did it happen, and what happened around those requests?",
+   "answer": "**Why:** In both cases nova-api couldn't validate the client's Keystone token. The identity service answered nova-api's token check with HTTP 503 (its reply was an HTML error page, not token data), so nova-api turned down the request with a 503. Each time, nova-api logged the same three lines in a row, within about 2–5 ms, before the 503 response:\n\n1. ERROR `Bad response code while validating token: 503`\n2. WARNING `Identity response: <!DOCTYPE HTML PUBLIC \"-//IETF//DTD HTML 2.0//EN\">`\n3. CRITICAL `Unable to validate token: Failed to fetch token data from identity server`\n4. INFO `10.11.10.1 \"GET /v2/54fadb412c4e40cdbaed9335e4c35a9e/servers/detail HTTP/1.1\" status: 503 len: 323 time: …`\n\nThe logs show the identity server failing, but not why it failed. Its own logs aren't in this dataset.\n\n**When:** There were only two 503s in the whole OpenStack dataset (4 matching lines in total):\n- **2017-05-16 06:25:02.870**: request `req-1cc7d50c-25a2-46b0-a668-9c00f589160c`, response time 0.0080531 s\n- **2017-05-17 06:25:03.049**: request `req-abcdb287-429c-40a5-8e79-d490d4fb7410`, response time 0.0101860 s\n\nThey happened almost exactly 24 hours apart, both at about 06:25. That could point to a daily job briefly taking the identity service down at that time, such as a token flush, log rotation or restart. This is only a guess from the timing; the logs don't confirm it.\n\n**What happened around them (±10 s):**\n- **Before:** Everything looked normal. The same client (10.11.10.1) was polling the same `GET …/servers/detail` endpoint about every 1–1.5 s and getting 200s in about 0.24–0.36 s. There was also an all-tenants `changes-since` poll, and nova-compute's routine image-cache checks (\"checking\", \"in use\", \"Active base files\"). One oddity: on both days the request ID that failed also appears on a 200 response about 1 s earlier.\n- **After:** Only one request failed each time; the logs don't show an outage lasting several seconds. On 05-17 the cloud carried on normally within seconds. A VM spawn in progress (instance `96c58299…`) completed: a `network-vif-plugged` event was posted and returned 200 in 2.14 s, then \"Instance spawned successfully\" and \"Took 21.39 seconds to spawn\". On 05-16 the only lines after the failure in the 10 s window were that request's own three error lines and its 503.\n\n**Impact:** Two `servers/detail` polls failed quickly (8–10 ms) with 503. No VM operations failed.",
+   "calls": [
+    {
+     "name": "search_logs",
+     "args": {
+      "dataset": "openstack",
+      "query_text": "503",
+      "limit": 20
+     }
+    },
+    {
+     "name": "count_by",
+     "args": {
+      "dataset": "openstack",
+      "group_by": "status"
+     }
+    },
+    {
+     "name": "get_context",
+     "args": {
+      "dataset": "openstack",
+      "line_id": 70743,
+      "scope": "all",
+      "before_s": 10,
+      "after_s": 10,
+      "limit": 12
+     }
+    },
+    {
+     "name": "get_context",
+     "args": {
+      "dataset": "openstack",
+      "line_id": 194062,
+      "scope": "all",
+      "before_s": 10,
+      "after_s": 10,
+      "limit": 12
+     }
+    },
+    {
+     "name": "search_logs",
+     "args": {
+      "dataset": "openstack",
+      "query_text": "validating token",
+      "limit": 10
+     }
+    }
+   ],
+   "errors": [
+    {
+     "name": "count_by",
+     "error": "[{'type': 'text', 'text': \"Error executing tool count_by: 1 validation error for count_byArguments\\ngroup_by\\n  Input should be 'dataset', 'team', 'component', 'severity', 'node' or 'location' [type=literal_error, input_value='status', input_type=str]\\n    For further information visit https://error"
+    }
+   ],
+   "run_error": null,
+   "first_tool": "search_logs",
+   "first_ok": true,
+   "need_ok": true,
+   "facts": 2,
+   "facts_total": 2,
+   "facts_missed": [],
+   "n_calls": 5,
+   "n_errors": 1,
+   "tokens_in": 95302,
+   "tokens_out": 1682,
+   "elapsed_s": 22.3
+  },
+  {
+   "id": "T-O4",
+   "dataset": "openstack",
+   "model": "anthropic:claude-opus-5-5",
+   "question": "How many OpenStack API requests failed with a 4xx or 5xx status, and is latency different for failed requests?",
+   "answer": "**3,971 OpenStack API requests failed**: 3,969 returned **404** and 2 returned **503**. That's about 4.0% of the 98,733 lines that carry an HTTP status. No other 4xx or 5xx code appears; the only other statuses are 200, 202 and 204.\n\n**Yes, latency is different: failed requests are faster, not slower.**\n\n| Status | Requests | p50 | p95 | p99 | max |\n|---|---|---|---|---|---|\n| 200 | 90,633 | 0.26 s | 0.358 s | 0.433 s | 4.164 s |\n| 202 | 2,065 | 0.504 s | 0.648 s | 0.765 s | 1.793 s |\n| 204 | 2,064 | 0.261 s | 0.297 s | 0.437 s | 1.251 s |\n| **404** | 3,969 | **0.09 s** | 0.248 s | 0.367 s | 0.72 s |\n| **503** | 2 | **0.009 s** | 0.01 s | 0.01 s | 0.01 s |\n\n- **404s** have a median of about a third of the 200s' (0.09 s vs 0.26 s), and none took longer than 0.72 s. That fits the server finding nothing and returning early.\n- **503s** came back in about 10 ms. That looks like the service rejecting the request straight away rather than timing out. With only two of them, though, that's an observation, not a pattern.\n- **The slow requests are all successful ones**: 202 (accepted, e.g. starting an asynchronous action) at 0.504 s median, and some 200s reaching 4.164 s.\n\nSo the failures don't explain any latency problem. Where slowness exists, it's in successful requests and in VM operations that log \"Took N seconds\" but carry no HTTP status (median 10.94 s, max 51.59 s).",
+   "calls": [
+    {
+     "name": "latency_profile",
+     "args": {
+      "dataset": "openstack",
+      "group_by": "status"
+     }
+    },
+    {
+     "name": "list_values",
+     "args": {
+      "dataset": "openstack",
+      "field": "status"
+     }
+    }
+   ],
+   "errors": [],
+   "run_error": null,
+   "first_tool": "latency_profile",
+   "first_ok": true,
+   "need_ok": true,
+   "facts": 2,
+   "facts_total": 2,
+   "facts_missed": [],
+   "n_calls": 2,
+   "n_errors": 0,
+   "tokens_in": 55754,
+   "tokens_out": 862,
+   "elapsed_s": 11.7
+  },
+  {
+   "id": "T-S1",
+   "dataset": "ssh",
+   "model": "anthropic:claude-opus-5-5",
+   "question": "On the SSH server, which IP addresses drove the failed root logins between 2018-01-01 and 2018-01-08, and how many attempts were there?",
+   "answer": "Between 2018-01-01 and 2018-01-08, the SSH host LabSZ logged **102,039 \"Failed password for root\" lines from 214 different IP addresses**. They ran from 2018-01-01 00:12:30 to 2018-01-07 17:07:13.\n\nEight IPs produced most of them: 94,236 lines, about 92%.\n\n| IP | Lines | Active window |\n|---|---|---|\n| 59.63.188.30 | 28,766 | Jan 3 10:07 → Jan 5 12:22 |\n| 183.63.110.206 | 17,340 | Jan 2 19:15 → Jan 3 10:08 |\n| 58.242.83.25 | 14,383 | Jan 1 08:48 → Jan 2 17:13 |\n| 183.192.189.131 | 8,670 | Jan 3 00:57 → Jan 3 12:36 |\n| 218.65.30.30 | 8,374 | Jan 1 14:23 → Jan 2 11:12 |\n| 218.87.109.156 | 7,135 | Jan 3 15:01 → Jan 4 12:17 |\n| 182.100.67.120 | 6,179 | Jan 1 20:32 → Jan 2 11:31 |\n| 182.100.67.52 | 3,389 | Jan 4 03:43 → Jan 5 07:32 |\n\nThe rest are much smaller. The next ones are 183.192.189.133 (614), 139.219.239.13 (566), 123.235.32.19 (499), 119.7.221.129 (462), 60.2.12.12 (435), 115.238.230.180 (432) and 114.112.48.155 (320).\n\nMost of the big sources attacked in one intense run of several hours up to about two days, and the runs mostly came one after another. 123.235.32.19, 60.2.12.12 and 114.112.48.155 were slower but kept going over several days.\n\nThe 102,039 figure counts log lines, so it's a lower bound on actual attempts. Some lines are sshd summaries like \"message repeated 5 times: [ Failed password for root …]\", where one line stands for several attempts. I didn't add up those repeat counts, so the true number of attempts is higher.",
+   "calls": [
+    {
+     "name": "top_entities",
+     "args": {
+      "dataset": "ssh",
+      "query_text": "\"Failed password for root\"",
+      "start": "2018-01-01",
+      "end": "2018-01-08",
+      "limit": 15
+     }
+    },
+    {
+     "name": "search_logs",
+     "args": {
+      "dataset": "ssh",
+      "query_text": "\"Failed password for root\"",
+      "start": "2018-01-01",
+      "end": "2018-01-08",
+      "limit": 3
+     }
+    }
+   ],
+   "errors": [],
+   "run_error": null,
+   "first_tool": "top_entities",
+   "first_ok": true,
+   "need_ok": true,
+   "facts": 2,
+   "facts_total": 2,
+   "facts_missed": [],
+   "n_calls": 2,
+   "n_errors": 0,
+   "tokens_in": 57211,
+   "tokens_out": 1239,
+   "elapsed_s": 14.6
+  },
+  {
+   "id": "T-S2",
+   "dataset": "ssh",
+   "model": "anthropic:claude-opus-5-5",
+   "question": "Were there break-in attempts against the SSH server? How many, and on which day did they peak?",
+   "answer": "Yes. The SSH server (host LabSZ) logged **19,406 \"POSSIBLE BREAK-IN ATTEMPT!\" warnings** between 2017-12-10 06:55:46 and 2018-01-07 15:26:49. The warnings peaked on **2018-01-03, with 8,724 lines**. That one day is about 45% of the total.\n\n**What these lines are:** sshd writes this warning when the reverse DNS lookup of a connecting IP fails, for example `reverse mapping checking getaddrinfo for ns.marryaldkfaczcz.com [173.234.31.186] failed - POSSIBLE BREAK-IN ATTEMPT!`. So 19,406 is a count of suspicious connections, not of separate attacks. The warnings came from 298 different IP addresses.\n\n**How the volume changed over time:**\n- **Dec 10–23:** a steady background of 78–458 a day. The highest day in this stretch was Dec 20, with 458.\n- **Dec 24–28:** none at all. I didn't check whether the server logged anything else on those days, so this may be a gap in the log rather than a quiet period.\n- **Dec 31–Jan 3:** a sharp rise: 1,402 → 2,149 → 2,889 → **8,724**.\n- **Jan 4–7:** back down to 104–389 a day.\n\n**What caused the peak:** one IP, **183.192.189.131**, produced 8,670 of the 8,724 lines on Jan 3, between 00:57:50 and 12:36:42. That address first showed up on 2017-12-11 and accounts for 8,755 of the warnings overall, about 45% of the whole period. Nothing from it appears after Jan 3 12:36. I didn't check whether it was blocked or simply stopped.\n\nThese numbers count only the \"POSSIBLE BREAK-IN ATTEMPT\" message. Other attack signs in the same log, such as failed passwords and invalid usernames, would add more if you count every brute-force attempt.",
+   "calls": [
+    {
+     "name": "describe_corpus",
+     "args": {}
+    },
+    {
+     "name": "search_logs",
+     "args": {
+      "dataset": "ssh",
+      "query_text": "\"POSSIBLE BREAK-IN ATTEMPT\"",
+      "limit": 5
+     }
+    },
+    {
+     "name": "trend",
+     "args": {
+      "dataset": "ssh",
+      "query_text": "\"POSSIBLE BREAK-IN ATTEMPT\"",
+      "bucket": "day"
+     }
+    },
+    {
+     "name": "top_entities",
+     "args": {
+      "dataset": "ssh",
+      "query_text": "\"POSSIBLE BREAK-IN ATTEMPT\"",
+      "start": "2018-01-03 00:00",
+      "end": "2018-01-04 00:00",
+      "limit": 5
+     }
+    },
+    {
+     "name": "top_entities",
+     "args": {
+      "dataset": "ssh",
+      "query_text": "\"POSSIBLE BREAK-IN ATTEMPT\"",
+      "limit": 1
+     }
+    }
+   ],
+   "errors": [],
+   "run_error": null,
+   "first_tool": "search_logs",
+   "first_ok": true,
+   "need_ok": true,
+   "facts": 3,
+   "facts_total": 3,
+   "facts_missed": [],
+   "n_calls": 5,
+   "n_errors": 0,
+   "tokens_in": 126980,
+   "tokens_out": 1378,
+   "elapsed_s": 22.4
+  },
+  {
+   "id": "T-S3",
+   "dataset": "ssh",
+   "model": "anthropic:claude-opus-5-5",
+   "question": "Do the failed password attempts on the SSH server follow a daily rhythm? At what hour are they worst?",
+   "answer": "I don't see a meaningful daily rhythm. The attempts come in campaigns that vary from day to day, and no hour of the day stands out clearly.\n\n**How much there is:** 197,587 \"Failed password\" lines, all on the single host LabSZ, from 2017-12-10 06:55 to 2018-01-07 17:07. Three message types make up almost all of them: pattern 400011 has 140,768 lines (71%), 400015 has 36,966 (19%) and 400007 (failed logins for invalid users) has 19,848 (10%).\n\n**No time-of-day pattern:**\n- **Pattern 400011:** its 258 bursts start fairly evenly across all 24 hours, between 7 and 18 per hour. The most common start hours are 08:00 (18 bursts) and 23:00 (16). The busiest hour holds only about 7% of bursts, far below the 30% the tool's rule needs to call it a time-of-day pattern. Only 27.6% of the gaps between bursts are close to the typical gap, so there's no regular schedule either.\n- **Pattern 400007:** its 171 bursts range from 4 to 11 per hour, with 23:00 the highest at 11. The tool's reading is again \"no regular schedule\".\n- **Weekdays:** there's a mild weekend tilt. For 400011, Saturday has 50 bursts against 25–43 on other days. For 400007, Saturday and Sunday have 34 each against 16–30.\n\n**Days matter much more than hours.** Daily totals swing widely: 31,843 on 2018-01-03, 27,342 on 01-04 and 24,732 on 01-02, against about 1,000–1,600 a day from 12-18 to 12-22. There are none at all from 12-24 to 12-28, which looks like a gap in the logs.\n\n**Worst hour:** there isn't a clear one. I couldn't get line counts by hour for the failed-password messages alone. The closest figure covers all SSH problem messages together, of which these lines are about 40%. That peaks at 04:00 with 38,432 lines, followed by 05:00 (31,130) and 03:00 (28,409), and is lowest at 22:00 (11,546). So the early-morning hours (03:00–05:00, in the log's own timestamps) are the worst, but even that peak is only about 3× the quietest hour. Given how much the days vary, a few heavy campaign days could easily produce a peak like that.\n\nIn short, the attacks look campaign-driven rather than tied to a time of day. If you want to block them, look at which source IPs drive the heavy days rather than at a time window.",
+   "calls": [
+    {
+     "name": "search_logs",
+     "args": {
+      "dataset": "ssh",
+      "query_text": "\"Failed password\"",
+      "limit": 3
+     }
+    },
+    {
+     "name": "periodicity",
+     "args": {
+      "dataset": "ssh",
+      "pattern_id": 400007
+     }
+    },
+    {
+     "name": "facet",
+     "args": {
+      "dataset": "ssh",
+      "query_text": "\"Failed password\"",
+      "dims": [
+       "pattern_id"
+      ]
+     }
+    },
+    {
+     "name": "heatmap",
+     "args": {
+      "dataset": "ssh",
+      "cols": "hour_of_day",
+      "rows": "component",
+      "unit": "lines",
+      "problem_only": true
+     }
+    },
+    {
+     "name": "periodicity",
+     "args": {
+      "dataset": "ssh",
+      "pattern_id": 400011
+     }
+    },
+    {
+     "name": "trend",
+     "args": {
+      "dataset": "ssh",
+      "query_text": "\"Failed password\"",
+      "bucket": "day"
+     }
+    }
+   ],
+   "errors": [],
+   "run_error": null,
+   "first_tool": "search_logs",
+   "first_ok": true,
+   "need_ok": true,
+   "facts": 0,
+   "facts_total": 1,
+   "facts_missed": [
+    "failed password lines in the worst hour of day = 15357"
+   ],
+   "n_calls": 6,
+   "n_errors": 0,
+   "tokens_in": 123967,
+   "tokens_out": 2227,
+   "elapsed_s": 30.4
+  },
+  {
+   "id": "T-S4",
+   "dataset": "ssh",
+   "model": "anthropic:claude-opus-5-5",
+   "question": "What should the security team look at first on the SSH server over the last four weeks of logs?",
+   "answer": "Start with the password brute-forcing against the one SSH host, **LabSZ**. It accounts for every top-ranked problem. I found no sign that any of the main attacking IPs got in.\n\n**Scope:** the period is 2017-12-10 17:22 → 2018-01-07 17:22, which is the last 28 days of the SSH data. All lines come from LabSZ (sshd), owned by security-ops.\n\n**1. Brute-force password guessing (top priority)**\nThe ranking scored 53 problem patterns, all security-ops, with 3,541 bursts and 471,930 lines in total. The top items are all the same activity:\n\n| Rank | Pattern | Score | Bursts | Lines |\n|---|---|---|---|---|\n| 1 | `Disconnecting: Too many authentication failures … [preauth]` (400012) | 97.7 | 260 | 37,289 |\n| 2 | `Failed password for <*> from <IP> …` (400011) | 97.2 | 253 | 129,251 |\n| 3 | `PAM <N> more authentication failures …` (400022) | 96.8 | 255 | 1,187 |\n| 4 | `message repeated <N> times: [ Failed password for root …]` (400015) | 95.3 | 209 | 36,959 |\n| 6 | `reverse mapping … POSSIBLE BREAK-IN ATTEMPT!` (400005) | 91.5 | 268 (most of any pattern) | 18,803 |\n| 7 / 9 | `Invalid user` / `Failed password for invalid user` | 91.5 / 90.8 | 168 each | 13,976 / 19,207 |\n\nEvery one of these was active in all 5 calendar weeks the period touches. Patterns 400015 and 400013 show that much of the guessing targets **root**.\n\nOne caution: the ranking says bursts went from about 5 to about 250 per pattern compared with the previous 4 weeks. That jump is mostly an artifact, because the log only starts on 2017-12-10. The fair reading is \"constant and heavy\", not \"suddenly rising\".\n\n**2. Block or investigate these IPs (lines mentioning each, whole log)**\n- 59.63.188.30: 57,539 lines (2018-01-03 → 01-05)\n- 183.63.110.206: 52,020 lines (2018-01-02 → 01-03)\n- 183.238.178.195: 43,557 lines (2017-12-12 → 12-16)\n- 183.192.189.131: 35,020 lines, active for weeks (2017-12-11 → 2018-01-03)\n- Also 183.62.140.253, 139.219.191.138, 58.242.83.25, 183.129.154.138, 183.63.172.52 and 218.65.30.30, each with 20,950–32,953 lines\n\n**3. Check that no attack succeeded**\n- The log has 182 `Accepted password` lines from 42 IPs.\n- None of them came from the 10 attacking IPs above.\n- None were for root.\n- The successful logins are named users such as fztu, jmzhu and curi. The most frequent source is 111.222.107.90, with 25 logins between 2017-12-21 and 2018-01-07.\n- That only rules out the top 10 attackers. The next step is to compare the 42 accepted-login IPs with *all* the IPs that failed logins, and confirm the accepted users and source addresses are expected.\n\n**What I'd recommend:**\n1. Turn off root and password logins over SSH (key-only access).\n2. Add fail2ban-style rate limiting.\n3. Block the IPs above.\n4. Audit the 42 IPs with successful logins.\n\nThe logs can't show impact or cost, or whether any login was really malicious. They only show what was attempted and what was accepted.",
+   "calls": [
+    {
+     "name": "priority_table",
+     "args": {
+      "dataset": "ssh",
+      "limit": 10
+     }
+    },
+    {
+     "name": "top_entities",
+     "args": {
+      "dataset": "ssh",
+      "limit": 10
+     }
+    },
+    {
+     "name": "search_logs",
+     "args": {
+      "dataset": "ssh",
+      "query_text": "Accepted",
+      "limit": 10
+     }
+    },
+    {
+     "name": "top_entities",
+     "args": {
+      "dataset": "ssh",
+      "query_text": "Accepted",
+      "limit": 10
+     }
+    },
+    {
+     "name": "search_logs",
+     "args": {
+      "dataset": "ssh",
+      "query_text": "Accepted (59.63.188.30 OR 183.63.110.206 OR 183.238.178.195 OR 183.192.189.131 OR 183.62.140.253 OR 139.219.191.138 OR 58.242.83.25 OR 183.129.154.138 OR 183.63.172.52 OR 218.65.30.30)",
+      "limit": 5
+     }
+    },
+    {
+     "name": "facet",
+     "args": {
+      "dataset": "ssh",
+      "query_text": "Accepted",
+      "dims": [
+       "pattern_id"
+      ]
+     }
+    },
+    {
+     "name": "search_logs",
+     "args": {
+      "dataset": "ssh",
+      "query_text": "Accepted root",
+      "limit": 5
+     }
+    }
+   ],
+   "errors": [],
+   "run_error": null,
+   "first_tool": "priority_table",
+   "first_ok": true,
+   "need_ok": true,
+   "facts": 1,
+   "facts_total": 1,
+   "facts_missed": [],
+   "n_calls": 7,
+   "n_errors": 0,
+   "tokens_in": 179801,
+   "tokens_out": 2373,
+   "elapsed_s": 36.5
+  },
+  {
+   "id": "T-Z1",
+   "dataset": "zookeeper",
+   "model": "anthropic:claude-opus-5-5",
+   "question": "Which problems recurred most in the ZooKeeper ensemble between 2015-07-29 and 2015-08-26, which teams own them, and what should be investigated first?",
+   "answer": "Between 2015-07-29 and 2015-08-26 there are 11 problem patterns in the ZooKeeper ensemble. Two teams own all of them, and I'd start with the quorum election connectivity failures owned by **coordination-platform**.\n\n**What recurred most** (a burst is one recurrence, with more than 30 min of quiet between bursts):\n\n| Rank (priority score) | Pattern | Component | Team | Bursts | Lines | Weeks active |\n|---|---|---|---|---|---|---|\n| 1 (89.5) | caught end of stream exception | NIOServerCnxn | client-connectivity | 18 | 1,670 | 3 |\n| 2 (86.4) | Cannot open channel to <N> at election address /<IP> | QuorumCnxManager | coordination-platform | 8 | 2,584 | **5 of 5** |\n| 3 (82.7) | Unexpected Exception: | NIOServerCnxn | client-connectivity | 9 | 27 | 2 |\n| 4 (80.9) | Unexpected exception causing shutdown while sock still open | LearnerHandler | coordination-platform | 7 | 590 | 2 |\n| 5 (77.7) | Exception when following the leader | Follower | coordination-platform | 6 | 11 | 3 |\n| 6 (70.9) | Connection broken for id <N>, my id = <N>, error = | QuorumCnxManager$RecvWorker | coordination-platform | 6 | 32 | 2 |\n| 7 (63.2) | Unexpected exception, tries=<N>, connecting to /<IP> | Learner | coordination-platform | 5 | 8 | 3 |\n\nThere's also a one-off storm, \"Connection broken for id <HEX>…\" (RecvWorker): 10,356 lines in a single burst.\n\n**By team:**\n- **coordination-platform**: 7 patterns, 35 bursts, 13,585 lines. These are quorum, election and leader/follower problems.\n- **client-connectivity**: 4 patterns, 30 bursts, 1,864 lines. These are client sessions dropping.\n\n**Investigate first: the election-channel failure** (pattern 200018).\n- It's the only problem active in all 5 weeks, from 2015-07-29 17:41 to 2015-08-25 11:23. It came back roughly every 3.5 days (median gap 3 days 10:56).\n- It's getting worse at the end: the last week (starting 2015-08-24) had one burst of 2,417 lines, against 8–14 lines per burst in the middle weeks.\n- Almost all of it involves two peers: 10.10.34.13 (1,289 lines) and 10.10.34.12 (1,276 lines). 10.10.34.11 shows up in only 19 lines.\n- Check whether those two servers were reachable on their election port, and whether they were up or restarting at those times.\n- The leader-side errors may come from the same loss of quorum connectivity, but that's a hypothesis: the patterns appear close together in time, which doesn't prove one causes the other.\n  - In the largest LearnerHandler burst (2015-07-29 19:03–19:21), \"shutdown while sock still open\" (580 lines) came with 577 \"GOODBYE /<IP>\" lines. That looks like followers being disconnected all at once.\n  - The follower, broken-connection and \"ZooKeeperServer not running\" session-close errors all first appear around 19:53 the same day.\n\n**Second: \"caught end of stream exception\"** from client-connectivity. It recurs the most (18 bursts) but carries the lowest fault likelihood of these patterns (p_problem 0.551). Client disconnects are often normal, so check whether its bursts line up with the quorum outages above before treating it as a separate problem.\n\n**Limits:**\n- The dataset starts at 2015-07-29 17:41. Every pattern is therefore marked \"new\" with 0 bursts in the previous period, so the growth part of the score can't tell growth from the start of the data.\n- ZooKeeper lines carry no node or host field, so how widely each problem spread is unknown.\n- The logs say nothing about impact, downtime or root cause.",
+   "calls": [
+    {
+     "name": "priority_table",
+     "args": {
+      "dataset": "zookeeper",
+      "start": "2015-07-29",
+      "end": "2015-08-26",
+      "limit": 10
+     }
+    },
+    {
+     "name": "top_patterns",
+     "args": {
+      "dataset": "zookeeper",
+      "start": "2015-07-29",
+      "end": "2015-08-26",
+      "limit": 10
+     }
+    },
+    {
+     "name": "pattern_history",
+     "args": {
+      "dataset": "zookeeper",
+      "pattern_id": 200018
+     }
+    },
+    {
+     "name": "burst_timeline",
+     "args": {
+      "dataset": "zookeeper",
+      "pattern_id": 200048,
+      "limit": 10
+     }
+    },
+    {
+     "name": "top_entities",
+     "args": {
+      "dataset": "zookeeper",
+      "pattern_id": 200018,
+      "limit": 5
+     }
+    }
+   ],
+   "errors": [],
+   "run_error": null,
+   "first_tool": "priority_table",
+   "first_ok": true,
+   "need_ok": true,
+   "facts": 2,
+   "facts_total": 2,
+   "facts_missed": [],
+   "n_calls": 5,
+   "n_errors": 0,
+   "tokens_in": 145725,
+   "tokens_out": 2202,
+   "elapsed_s": 29.3
+  },
+  {
+   "id": "T-Z2",
+   "dataset": "zookeeper",
+   "model": "anthropic:claude-opus-5-5",
+   "question": "The ZooKeeper servers kept logging \"Cannot open channel ... at election address\". How many times, since when, and to which peers?",
+   "answer": "The ZooKeeper logs contain **2,584** \"Cannot open channel to <N> at election address /<IP>\" warnings. All of them come from one message template (pattern 200018), logged by QuorumCnxManager at WARN level and owned by coordination-platform.\n\n**Since when:** the first one is at **2015-07-29 17:41:41.733**, about 0.2 s after the dataset starts (17:41:41.536). The last is at **2015-08-25 11:23:57.731**, a few minutes before the dataset ends (11:26:28). So these warnings span the whole log.\n\n**Peers it couldn't reach (all on election port 3888):**\n\n| Server id | Election address | Lines | First seen | Last seen |\n|---|---|---|---|---|\n| 3 | 10.10.34.13:3888 | 1,289 | 2015-07-29 17:41:41.738 | 2015-08-25 11:23:07.173 |\n| 2 | 10.10.34.12:3888 | 1,276 | 2015-07-29 17:41:41.733 | 2015-08-25 11:23:57.731 |\n| (probably 1) | 10.10.34.11:3888 | 19 | 2015-07-30 23:46:28.266 | 2015-08-10 18:25:25.419 |\n\nAlmost all failures were to servers 2 and 3, in roughly equal numbers. The sample lines show ids 2 and 3 mapping to .12 and .13; I didn't check which id goes with .11.\n\n**How it recurred:** the warnings came in 8 bursts (a new burst starts after 30 quiet minutes) across 5 weeks. The longest quiet gap was 7 days 21:43, and the median gap was about 3.5 days.\n- Week of Jul 27: 4 bursts, 135 lines\n- Week of Aug 3: 1 burst, 14 lines\n- Week of Aug 10: 1 burst, 8 lines\n- Week of Aug 17: 1 burst, 10 lines\n- **Week of Aug 24: 1 burst, 2,417 lines.** That one final burst is about 94% of the total.\n\nThe logs don't record which server wrote each line (the host field is empty), so I can't tell you which member reported these failures. The time pattern looks like ensemble restarts or leader elections, with the largest one at the end of August, but that is only a guess. I didn't check it against the election or connection messages around each burst.",
+   "calls": [
+    {
+     "name": "search_logs",
+     "args": {
+      "dataset": "zookeeper",
+      "query_text": "\"Cannot open channel\" election address",
+      "limit": 5
+     }
+    },
+    {
+     "name": "top_entities",
+     "args": {
+      "dataset": "zookeeper",
+      "query_text": "\"Cannot open channel\" election address",
+      "entity_type": "any",
+      "limit": 20
+     }
+    },
+    {
+     "name": "pattern_history",
+     "args": {
+      "dataset": "zookeeper",
+      "pattern_id": 200018
+     }
+    }
+   ],
+   "errors": [],
+   "run_error": null,
+   "first_tool": "search_logs",
+   "first_ok": true,
+   "need_ok": true,
+   "facts": 2,
+   "facts_total": 2,
+   "facts_missed": [],
+   "n_calls": 3,
+   "n_errors": 0,
+   "tokens_in": 86171,
+   "tokens_out": 1231,
+   "elapsed_s": 16.1
+  },
+  {
+   "id": "T-Z3",
+   "dataset": "zookeeper",
+   "model": "anthropic:claude-opus-5-5",
+   "question": "In ZooKeeper, what else tends to happen at the same time as \"caught end of stream exception\"?",
+   "answer": "\"caught end of stream exception\" (pattern 200062, NIOServerCnxn, owned by client-connectivity) almost always shows up alongside the normal steps of a client session closing and reconnecting. It is not usually paired with other faults.\n\n**How I measured it:** the pattern has 1,670 lines in 18 bursts, from 2015-07-29 to 2015-08-21. The ZooKeeper lines carry no node, so I counted any other pattern starting within ±300 s anywhere in the dataset. The control is the same check moved one day earlier.\n\n| Co-occurring pattern | Share of the 18 bursts | Control | Lift |\n|---|---|---|---|\n| Closed socket connection for client /<IP> which had sessionid <HEX> | 18/18 (100%) | 5.6% | 17.9 |\n| Processed session termination for sessionid: <HEX> | 18/18 (100%) | 5.6% | 17.9 |\n| Expiring session <HEX>, timeout of <N>ms exceeded | 18/18 (100%) | 5.6% | 17.9 |\n| Accepted socket connection from /<IP> | 13/18 (72.2%) | 5.6% | 12.9 |\n| Connection request from old client /<IP>; will be dropped if server is in r-o mode | 13/18 (72.2%) | 5.6% | 12.9 |\n| Client attempting to establish new session at /<IP> | 13/18 (72.2%) | 5.6% | 12.9 |\n| Established session <HEX> with negotiated timeout <N> for client /<IP> | 13/18 (72.2%) | 5.6% | 12.9 |\n| Got zxid <HEX> expected <N>x1 | 5/18 (27.8%) | 0% | 5.0 |\n| Creating new log file: log.<HEX> | 4/18 (22.2%) | 0% | 4.0 |\n| Unexpected Exception: | 2/18 (11.1%) | 0% | 2.0 |\n\n**What this suggests:**\n- Every burst comes with sockets closing, sessions ending and sessions expiring on timeout.\n- About 72% of bursts also show clients reconnecting: socket accepted, new session requested, session established.\n- A smaller share overlaps with transaction-log activity (\"Got zxid\", new log file), and occasionally with \"Unexpected Exception\".\n- Leader election (\"LOOKING\", \"Notification time out\") overlapped only once each, so it is not a regular companion.\n\nOne possible reading, which I haven't confirmed: clients drop their connections, often because sessions time out, and then reconnect. Appearing at the same time doesn't show what causes what, and since there are no hostnames, I can't tell whether these events happen on the same server.",
+   "calls": [
+    {
+     "name": "find_patterns",
+     "args": {
+      "text": "caught end of stream exception",
+      "dataset": "zookeeper",
+      "k": 5
+     }
+    },
+    {
+     "name": "co_occurrence",
+     "args": {
+      "dataset": "zookeeper",
+      "pattern_a": 200062,
+      "scope": "dataset",
+      "limit": 12
+     }
+    }
+   ],
+   "errors": [],
+   "run_error": null,
+   "first_tool": "find_patterns",
+   "first_ok": true,
+   "need_ok": true,
+   "facts": 1,
+   "facts_total": 1,
+   "facts_missed": [],
+   "n_calls": 2,
+   "n_errors": 0,
+   "tokens_in": 85839,
+   "tokens_out": 1213,
+   "elapsed_s": 18.5
+  },
+  {
+   "id": "T-Z4",
+   "dataset": "zookeeper",
+   "model": "anthropic:claude-opus-5-5",
+   "question": "How did the volume of WARN messages in ZooKeeper change week by week?",
+   "answer": "Almost all ZooKeeper WARN lines came in the first week. Volume then dropped to almost nothing and rose steadily over the last three weeks. There are 48,507 WARN lines in total, from 2015-07-29 17:41 to 2015-08-25 11:23.\n\n| Week starting (Monday) | WARN lines |\n|---|---|\n| 2015-07-27 | 45,097 |\n| 2015-08-03 | 16 |\n| 2015-08-10 | 374 |\n| 2015-08-17 | 577 |\n| 2015-08-24 | 2,443 |\n\n- **First week (93% of all WARN lines):** this is only a partial week, since the logs start on Wed 07-29. Four message patterns (200050–200053) make up about 10,400 lines each, 92% of the week together. They all come from the components that handle connections between the ZooKeeper servers: `QuorumCnxManager$SendWorker` (20,774 lines) and `QuorumCnxManager$RecvWorker` (20,772 lines). Smaller sources are `NIOServerCnxn` (1,402), `ZooKeeperServer` (1,391) and `LearnerHandler` (588). A burst like this usually means the servers kept losing their connections to each other. I haven't checked that against the message text.\n- **Week of 08-03:** nearly silent, with only 16 lines.\n- **Weeks of 08-10 to 08-24:** volume grew each week: 374, then 577, then 2,443. The last week is also partial (it ends 08-25), so its rate is higher than the count suggests. I didn't break down which messages caused this later rise. That would be the next thing to check if the upward trend matters.\n\nThese counts are log lines, not incidents.",
+   "calls": [
+    {
+     "name": "trend",
+     "args": {
+      "dataset": "zookeeper",
+      "severity": "WARN",
+      "bucket": "week"
+     }
+    },
+    {
+     "name": "facet",
+     "args": {
+      "dataset": "zookeeper",
+      "severity": "WARN",
+      "dims": [
+       "pattern_id",
+       "component"
+      ],
+      "top": 5,
+      "end": "2015-08-03 00:00"
+     }
+    }
+   ],
+   "errors": [],
+   "run_error": null,
+   "first_tool": "trend",
+   "first_ok": true,
+   "need_ok": true,
+   "facts": 1,
+   "facts_total": 1,
+   "facts_missed": [],
+   "n_calls": 2,
+   "n_errors": 0,
+   "tokens_in": 83328,
+   "tokens_out": 917,
+   "elapsed_s": 15.0
+  },
+  {
+   "id": "T-A1",
+   "dataset": "apache",
+   "model": "anthropic:claude-opus-5-5",
+   "question": "Based on the Apache web server error log from 2005-12-01 to 2006-03-01, what should we prioritise next?",
+   "answer": "Top priority is the **\"script not found or unable to stat\"** errors (httpd, owned by web-platform). They're growing fastest, and most of them come from requests for a missing AWStats CGI script. Second is the jk2 scoreboard error, and third is one JNI startup failure that happens on restarts.\n\n**1. \"script not found or unable to stat\" (web-platform). Highest score and fastest growth**\n- It comes in two forms, ranked #1 (score 89.5) and #3 (84.2).\n  - The bare message: 127 bursts in this period against 29 in the previous 90 days (+98), 3,339 lines, active in 10 of 14 weeks.\n  - The form with client IP and path: 77 bursts against 32 (+45), 2,207 lines.\n- Weekly line counts went from 0–46 a week in Sep–Oct to 280–1,017 a week from January to the end of February. The four weeks of 5–31 Dec show 0 lines; I didn't check whether that's a gap in the log itself.\n- Two paths account for most of the lines: `/var/www/cgi-bin/awstats.pl` (1,101 lines) and `/var/www/cgi-bin/awstats` (1,083 lines).\n- The rest are spread over many client IPs, usually about 46 lines in a few seconds each (e.g. 61.84.135.157 on 2006-02-08, 213.131.241.73 on 2006-01-28). That looks like automated scanning for AWStats. This is a guess from the pattern, not something I confirmed.\n- **Suggested action:** decide whether AWStats should exist. If not, block or rate-limit requests to `/cgi-bin/awstats*`, which would remove most of this noise. If it should exist, the script is missing or can't be read.\n\n**2. \"jk2_init() Can't find child N in scoreboard\" (app-integration). Most persistent**\n- Ranked #2 (score 87.5): 69 bursts against 54 (+15), 415 lines, active in 13 of 14 weeks. It shows up almost every week and is still slightly increasing.\n- This is the mod_jk2 connector losing track of Apache's worker processes, so Apache-to-Tomcat requests are probably affected.\n\n**3. mod_jk2 JNI startup failures (web-platform). Treat as one issue**\n- Ranks #4–#10 are seven messages that always appear together, each with 11 bursts and 11 lines: \"Can't create worker.jni:onStartup / onShutdown / channel.jni:jni\" and the matching \"Factory error creating … vm\".\n- In practice it's one failure that happens about 11 times, presumably once per restart. It's falling (16 bursts → 11), but it's a config error that a single fix should clear.\n\n**Overall:** web-platform owns 17 problem patterns with 1,205 bursts (down from 1,331 before). app-integration owns 3 with 164 bursts (down from 231). So problem bursts fell overall, even though the AWStats errors grew.\n\nThe log shows only one server, so I couldn't tell how widespread any of these are. It also says nothing about cost, downtime or user impact. The scores only measure how often each error recurs, its trend, how persistent it is and how severe the message is.",
+   "calls": [
+    {
+     "name": "priority_table",
+     "args": {
+      "dataset": "apache",
+      "start": "2005-12-01",
+      "end": "2006-03-01",
+      "limit": 10
+     }
+    },
+    {
+     "name": "describe_corpus",
+     "args": {}
+    },
+    {
+     "name": "top_entities",
+     "args": {
+      "dataset": "apache",
+      "entity_type": "any",
+      "query_text": "script not found or unable to stat",
+      "start": "2005-12-01",
+      "end": "2006-03-01",
+      "limit": 10
+     }
+    },
+    {
+     "name": "trend",
+     "args": {
+      "dataset": "apache",
+      "query_text": "\"script not found or unable to stat\"",
+      "bucket": "week",
+      "start": "2005-09-01",
+      "end": "2006-03-01"
+     }
+    }
+   ],
+   "errors": [],
+   "run_error": null,
+   "first_tool": "priority_table",
+   "first_ok": true,
+   "need_ok": true,
+   "facts": 2,
+   "facts_total": 2,
+   "facts_missed": [],
+   "n_calls": 4,
+   "n_errors": 0,
+   "tokens_in": 103477,
+   "tokens_out": 1751,
+   "elapsed_s": 23.5
+  },
+  {
+   "id": "T-A2",
+   "dataset": "apache",
+   "model": "anthropic:claude-opus-5-5",
+   "question": "Which client IPs triggered the most \"Directory index forbidden\" errors on the Apache server?",
+   "answer": "The Apache log has **6,745** \"Directory index forbidden by rule: /var/www/html/\" errors (all `httpd`, severity ERROR), logged between 2005-06-09 and 2006-02-28. They came from **4,201 different client IPs**. One IP stands far above the rest:\n\n| # | Client IP | Lines | First seen | Last seen |\n|---|---|---|---|---|\n| 1 | **218.144.240.75** | **276** | 2005-07-21 03:37:11 | 2005-07-21 03:37:27 |\n| 2 | 81.169.128.235 | 69 | 2005-06-26 10:39:33 | 2005-07-01 00:57:52 |\n| 3 | 63.199.49.133 | 68 | 2005-06-18 06:02:20 | 2005-07-27 02:10:32 |\n| 4 | 148.245.16.6 | 46 | 2005-11-22 06:03:46 | 2005-11-22 06:04:07 |\n| 5 | 59.56.12.199 | 32 | 2005-06-21 22:16:01 | 2005-06-21 22:17:28 |\n| 6 | 63.119.14.138 | 32 | 2005-06-18 04:52:49 | 2005-07-05 18:36:04 |\n\n**What stands out:**\n- **218.144.240.75** caused 276 errors in only about 16 seconds. A burst that fast looks like an automated scanner, though that's an inference.\n- Two IPs came back over a longer stretch instead of in one burst: **81.169.128.235** (about 5 days) and **63.199.49.133** (about 5½ weeks).\n- At least 9 more IPs each caused exactly **23** errors, nearly all within seconds (for example 203.199.72.190, 208.62.55.75, 210.115.233.107 and 210.204.28.3). Getting the same count in the same kind of quick burst suggests one scanning tool making a fixed series of requests.\n- Apart from these, the errors are spread thinly across thousands of IPs, so the top six account for only about 8% of the total.",
+   "calls": [
+    {
+     "name": "top_entities",
+     "args": {
+      "dataset": "apache",
+      "query_text": "\"Directory index forbidden\"",
+      "entity_type": "ip",
+      "limit": 15
+     }
+    },
+    {
+     "name": "search_logs",
+     "args": {
+      "dataset": "apache",
+      "query_text": "\"Directory index forbidden\"",
+      "limit": 3
+     }
+    }
+   ],
+   "errors": [],
+   "run_error": null,
+   "first_tool": "top_entities",
+   "first_ok": true,
+   "need_ok": true,
+   "facts": 2,
+   "facts_total": 2,
+   "facts_missed": [],
+   "n_calls": 2,
+   "n_errors": 0,
+   "tokens_in": 56666,
+   "tokens_out": 984,
+   "elapsed_s": 15.5
+  },
+  {
+   "id": "T-A3",
+   "dataset": "apache",
+   "model": "anthropic:claude-opus-5-5",
+   "question": "When did \"mod_jk child workerEnv in error state\" errors start on the Apache server, and are they getting worse?",
+   "answer": "**When it started:** the first error was logged on **2005-06-17 04:03:46** (`mod_jk child workerEnv in error state 1`, component mod_jk, severity ERROR, owned by app-integration). The Apache logs run from 2005-06-09 to 2006-02-28, so this message first appeared about a week in. Its last occurrence was **2006-01-25 07:33:59**. In total there are **4,349 lines** in **263 bursts**, active in 30 weeks.\n\n**Is it getting worse? No. It peaked and then fell back.**\n\n| Period | Bursts/week | Lines/week |\n|---|---|---|\n| Jun–early Nov 2005 | 0–7 | 0–19 |\n| **Storm: weeks of Nov 14, Nov 21, Nov 28, Dec 5** | **47, 65, 50, 17** | **1,135, 725, 1,826, 491** |\n| Dec 12–26 | 1 each | 1 each |\n| Jan 2006 (weeks of Jan 2, 9, 16, 23) | 5, 9, 8, 4 | 8, 21, 19, 14 |\n| Jan 30 – Feb 28 | 0 | 0 |\n\n- **Before mid-November** it was a low, steady background error of a few bursts a week.\n- **Mid-November to early December 2005** is the bad stretch. About 4,177 lines (96% of all lines for this error) fall in those four weeks, and the worst week was Nov 28 with 1,826 lines.\n- **After the storm** it dropped almost to nothing. January 2006 shows a small rise again, but it is back at the normal background level (≤9 bursts/week), not near the storm.\n- **Since 2006-01-25** there have been no occurrences at all, which leaves about 5 quiet weeks before the logs end on 2006-02-28.\n\nNormally bursts come about 2 hours apart (median gap 1h58m). The longest quiet gap was 21 days.\n\n**Bottom line:** this error recurred on a low level from June 2005, had one major flare-up from mid-November to early December 2005, and then went back to its old level before stopping completely after 2006-01-25. It is not getting worse. These figures count log lines and recurrences, not confirmed outages. The logs don't say what caused the November storm, so start there if you want a root cause.",
+   "calls": [
+    {
+     "name": "search_logs",
+     "args": {
+      "dataset": "apache",
+      "query_text": "\"workerEnv in error state\"",
+      "limit": 3
+     }
+    },
+    {
+     "name": "trend",
+     "args": {
+      "dataset": "apache",
+      "query_text": "\"workerEnv in error state\""
+     }
+    },
+    {
+     "name": "pattern_history",
+     "args": {
+      "dataset": "apache",
+      "pattern_id": 300040
+     }
+    }
+   ],
+   "errors": [],
+   "run_error": null,
+   "first_tool": "search_logs",
+   "first_ok": true,
+   "need_ok": true,
+   "facts": 2,
+   "facts_total": 2,
+   "facts_missed": [],
+   "n_calls": 3,
+   "n_errors": 0,
+   "tokens_in": 88866,
+   "tokens_out": 1150,
+   "elapsed_s": 17.0
+  },
+  {
+   "id": "T-H1",
+   "dataset": "hdfs",
+   "model": "anthropic:claude-opus-5-5",
+   "question": "What happened to HDFS block blk_-1608999687919862906, step by step?",
+   "answer": "Block blk_-1608999687919862906 went through a normal, healthy lifecycle. It was the `job.jar` for MapReduce job `job_200811092030_0001`. It was written, copied out to 10 DataNodes, read about 200 times while the job started up, and then deleted from all 10 copies about an hour later. All 269 log lines are INFO. There are no errors, warnings or failed transfers.\n\n**Step by step (2008-11-09):**\n\n1. **20:35:18: Block created.** The NameNode's `NameSystem.allocateBlock` gave the block to `/mnt/hadoop/mapred/system/job_200811092030_0001/job.jar`.\n\n2. **20:35:18–19: First write through a 3-node pipeline.** Three DataNodes logged \"Receiving block\", PacketResponders 0, 1 and 2 shut down, and \"Received block … of size 91178\" was logged 3 times. The NameNode then recorded three stored copies: 10.250.10.6, 10.251.111.209 and 10.250.14.224.\n\n3. **20:35:21–32: Extra copies made in a chain.** The NameNode asked existing holders to copy the block onward:\n   - 10.250.14.224 → 10.251.215.16 and 10.251.71.193 (20:35:21)\n   - 10.251.215.16 → 10.251.74.79 and 10.251.107.19 (20:35:24–26)\n   - 10.251.107.19 → 10.251.31.5 and 10.251.71.240 (20:35:27–28)\n   - 10.251.31.5 → 10.251.90.64 (asked 20:35:30, stored 20:35:32)\n\n   After this, 10 DataNodes held a copy, each 91178 bytes. Job jars are normally stored with 10 copies so many task nodes can download them at once, and that fits what happened here.\n\n4. **20:35:23 – 20:36:26: Heavy reading.** The replicas served the block 203 times (\"Served block … to /…\"), which is 75% of all lines for this block. This looks like task nodes fetching the jar as the job started. The last read was at 20:36:26, from 10.251.74.79.\n\n5. **About 1 hour of silence.** No lines at all between 20:36:26 and 21:38:09.\n\n6. **21:38:09: Marked for deletion.** At the same moment, the NameNode added the block to the deletion list (`NameSystem.delete … invalidSet`) of all 10 replica holders. This is consistent with the job finishing and its system files being cleaned up.\n\n7. **21:38:10 – 21:38:40: Copies deleted.** `FSDataset` logged \"Deleting block … file /mnt/hadoop/dfs/data/current/blk_-1608999687919862906\" 10 times, once for each replica. The last one was at 21:38:40, the final line for this block.\n\nThe block existed for about 63 minutes in total.",
+   "calls": [
+    {
+     "name": "search_logs",
+     "args": {
+      "dataset": "hdfs",
+      "query_text": "blk_-1608999687919862906",
+      "limit": 50
+     }
+    },
+    {
+     "name": "facet",
+     "args": {
+      "dataset": "hdfs",
+      "query_text": "blk_-1608999687919862906",
+      "dims": [
+       "pattern_id",
+       "severity",
+       "component"
+      ],
+      "top": 20
+     }
+    },
+    {
+     "name": "search_logs",
+     "args": {
+      "dataset": "hdfs",
+      "query_text": "blk_-1608999687919862906",
+      "limit": 30,
+      "order": "recent",
+      "exclude_text": "Served"
+     }
+    },
+    {
+     "name": "search_logs",
+     "args": {
+      "dataset": "hdfs",
+      "query_text": "blk_-1608999687919862906 Served",
+      "limit": 3,
+      "order": "recent"
+     }
+    }
+   ],
+   "errors": [],
+   "run_error": null,
+   "first_tool": "search_logs",
+   "first_ok": true,
+   "need_ok": true,
+   "facts": 1,
+   "facts_total": 2,
+   "facts_missed": [
+    "first = 2008-11-09 20:35"
+   ],
+   "n_calls": 4,
+   "n_errors": 0,
+   "tokens_in": 150077,
+   "tokens_out": 1883,
+   "elapsed_s": 27.3
+  },
+  {
+   "id": "T-H2",
+   "dataset": "hdfs",
+   "model": "anthropic:claude-opus-5-5",
+   "question": "Which HDFS errors or warnings are the most frequent, and are they limited to a few datanodes?",
+   "answer": "**Short answer:** HDFS warnings are dominated by one message, and it is not confined to a few datanodes. It comes from about 200 IPs at a fairly even rate.\n\n**What the logs contain:** HDFS has 11,175,629 lines. 10,812,836 are INFO and 362,793 are WARN. There are no ERROR or FATAL lines at all.\n\n**The WARN messages, most frequent first (whole dataset):**\n\n| # | Message | Component / team | Lines | Bursts |\n|---|---|---|---|---|\n| 1 | `<IP>:Got exception while serving blk_… to /<IP>:` | DataNode$DataXceiver / datanode-ops | **356,207** | 8 |\n| 2 | `Unexpected error trying to delete block blk_…. BlockInfo not found in volumeMap.` | FSDataset / storage-platform | 5,545 | 18 |\n| 3 | `Redundant addStoredBlock request received for blk_…` | FSNamesystem / namenode-platform | 975 | 7 |\n| 4 | `PendingReplicationMonitor timed out block blk_…` | storage-platform | 47 | 7 |\n| 5 | `Adding an already existing block blk_…` | DataBlockScanner / datanode-ops | 10 | 3 |\n| 6 | `Failed to transfer blk_… got java.io.IOException: Connection reset by peer` | DataNode$DataTransfer / storage-platform | 9 | 5 |\n\nThe top message accounts for about 98% of all WARN lines. It ran from 2008-11-09 21:38:49 to 2008-11-11 02:39:16. Items 3 and 5 are classified as \"not a problem\" (p_problem about 0.07). The deletion-error message (item 2) recurs the most often, in 18 separate bursts.\n\n**Is it a few datanodes?** HDFS lines have no host field, so I measured spread from the IPs written in the messages.\n- The \"Got exception while serving\" lines mention **202 distinct IPs**. Each line names both the datanode serving the block and the client receiving it.\n- No IP stands out. The top one, 10.251.203.149, appears in 3,611 lines, about 1% of 356,207. The next 14 all fall between 3,454 and 3,519 lines.\n- Every one of those top IPs starts within seconds of 21:38:50 on 2008-11-09 and stops around 02:30–02:39 on 2008-11-11.\n\nSo it looks like an issue across the whole cluster during that roughly 29-hour window, not a few failing nodes. Possible causes include heavy client churn, readers disconnecting, or a cluster-wide job. That is a guess, because the log line doesn't say what the exception was.\n\nI couldn't check the spread of the deletion-error message: its text contains no IPs, so these logs can't tell which datanodes it came from.",
+   "calls": [
+    {
+     "name": "top_patterns",
+     "args": {
+      "dataset": "hdfs",
+      "rank_by": "lines",
+      "problem_filter": "severity",
+      "limit": 10,
+      "start": "2000-01-01T00:00:00"
+     }
+    },
+    {
+     "name": "count_by",
+     "args": {
+      "group_by": "severity",
+      "dataset": "hdfs"
+     }
+    },
+    {
+     "name": "top_entities",
+     "args": {
+      "dataset": "hdfs",
+      "pattern_id": 500040,
+      "limit": 15
+     }
+    },
+    {
+     "name": "top_entities",
+     "args": {
+      "dataset": "hdfs",
+      "pattern_id": 500038,
+      "limit": 10
+     }
+    },
+    {
+     "name": "search_logs",
+     "args": {
+      "dataset": "hdfs",
+      "pattern_id": 500040,
+      "limit": 3
+     }
+    }
+   ],
+   "errors": [],
+   "run_error": null,
+   "first_tool": "top_patterns",
+   "first_ok": true,
+   "need_ok": true,
+   "facts": 1,
+   "facts_total": 1,
+   "facts_missed": [],
+   "n_calls": 5,
+   "n_errors": 0,
+   "tokens_in": 92337,
+   "tokens_out": 1643,
+   "elapsed_s": 21.3
+  },
+  {
+   "id": "T-H3",
+   "dataset": "hdfs",
+   "model": "anthropic:claude-opus-5-5",
+   "question": "In HDFS, what happens right before \"PendingReplicationMonitor timed out block\" events, and how often do they occur?",
+   "answer": "**How often:** It's rare. The HDFS logs cover 2008-11-09 20:35 to 2008-11-11 11:16, and in that time the pattern `PendingReplicationMonitor timed out block blk_<HEX>` (pattern 500054, WARN, owned by storage-platform) appears in **47 lines spread over 7 bursts**:\n- **2008-11-10:** 3 bursts, 14 lines. The first one is at 10:49:36.\n- **2008-11-11:** 4 bursts, 33 lines. The last one is at 09:24:33.\n- **Timing:** It doesn't follow a schedule. Bursts start a median of 5,700 s (about 1.6 h) apart, and none of the gaps fall within ±20% of that median. Four gaps are 1–6 h and two are 6–24 h, and the longest quiet stretch is 10:34:59. The bursts start at scattered hours: 5, 7, 8, 9, 10, 21 and 22.\n- **Largest burst:** 16 lines, 2008-11-11 07:14:34 → 07:29:33.\n\n**What comes right before:** No single message reliably comes first. These lines have no node attached, so I could only compare against the whole cluster, and with just 7 bursts the signal is weak:\n- **Most frequent precursor:** `BLOCK* Removing block … from neededReplications as it does not belong to any file`. It came before 2 of the 7 bursts (29%), with a median lead of 416.5 s. It never appeared in the same 10-minute window one day earlier.\n- **Before single bursts (1 of 7 each):**\n  - Data-transfer failures: `InterruptedIOException … waiting for IO on channel` in receiveBlock/writeBlock (lead about 475 s), `Failed to transfer … Connection reset by peer` (about 510 s) and `PacketResponder … Broken pipe` (about 74 s).\n  - Other block messages: `Redundant addStoredBlock request` (WARN, about 399 s), `Changing block file offset` (about 74 s) and `Receiving empty packet` (about 395 s).\n- **In the 10 minutes before the largest burst (from 07:04:34):**\n  - The usual heavy write and replication traffic: about 45k \"Receiving block\" lines and about 1.1k \"ask … to replicate\" and \"Starting thread to transfer\" lines each.\n  - Small numbers of failed transfers: 16 `Connection reset by peer` exceptions in receiveBlock/writeBlock.\n  - The first problem-level line was a `Redundant addStoredBlock` WARN at 07:07:31.\n\n**My reading (a guess, not proven):** The namenode asks datanodes to replicate blocks, and some of those copies fail with connection resets, broken pipes or I/O interrupts. The pending replication then times out. Some of the blocks involved may also have been deleted (the \"does not belong to any file\" message). These messages come before the timeouts in time, but with only 7 bursts that doesn't establish that they cause them.",
+   "calls": [
+    {
+     "name": "find_patterns",
+     "args": {
+      "text": "PendingReplicationMonitor timed out block",
+      "dataset": "hdfs",
+      "k": 3
+     }
+    },
+    {
+     "name": "precursors",
+     "args": {
+      "dataset": "hdfs",
+      "pattern_id": 500054,
+      "scope": "dataset"
+     }
+    },
+    {
+     "name": "periodicity",
+     "args": {
+      "dataset": "hdfs",
+      "pattern_id": 500054
+     }
+    },
+    {
+     "name": "pattern_history",
+     "args": {
+      "dataset": "hdfs",
+      "pattern_id": 500054,
+      "bucket": "day"
+     }
+    },
+    {
+     "name": "burst_timeline",
+     "args": {
+      "dataset": "hdfs",
+      "pattern_id": 500054,
+      "same_nodes": false,
+      "limit": 15
+     }
+    }
+   ],
+   "errors": [],
+   "run_error": null,
+   "first_tool": "find_patterns",
+   "first_ok": true,
+   "need_ok": true,
+   "facts": 1,
+   "facts_total": 2,
+   "facts_missed": [
+    "first = 2008-11-10 10:49"
+   ],
+   "n_calls": 5,
+   "n_errors": 0,
+   "tokens_in": 125137,
+   "tokens_out": 1623,
+   "elapsed_s": 22.7
+  },
+  {
+   "id": "T-T1",
+   "dataset": "otel",
+   "model": "anthropic:claude-opus-5-5",
+   "question": "In the OpenTelemetry demo shop logs, which services and teams have the most error-level problems?",
+   "answer": "The **frontend** service, owned by **web-frontend**, has by far the most error-level problems. Most of them look like they start in the **payment** service, owned by **payments-team**.\n\nThe OTel dataset covers about 30 minutes, 2025-09-23 00:00 to 00:29. It has 1,702,944 lines, of which 203,185 are ERROR and 8,807 are FATAL.\n\n**ERROR lines by team and service**\n\n| Team | ERROR lines | Services |\n|---|---|---|\n| web-frontend | 174,711 (86%) | frontend 174,711 |\n| payments-team | 24,191 | payment 23,984, currency 199, accounting 8 |\n| fulfilment-team | 4,240 | email 4,218, quote 22 |\n| checkout-team | 43 | checkout 40, cart 3 |\n\nNo other team logged ERROR lines.\n\n**What the errors are**\n- The most common frontend error message (26,122 lines) is `failed to charge card: could not charge the card: rpc error: code = Unknown desc = Visa cache full: cannot add new item.` The next is `Failed to place order` (21,821 lines). Both appear on 27 nodes over the whole window.\n- The payment service's own errors say `Visa cache full: cannot add new item.` on 24 nodes.\n- The frontend messages include the payment error's own text, so my guess is that one fault in payment (its Visa cache filling up) is causing much of the frontend error volume. I haven't proven this by tracing individual requests.\n\n**Other views**\n- **Counted as recurring problems instead of lines:** web-frontend still leads with 63 of 93 bursts (frontend service). Then come payments-team with 11 (mostly currency, 7), catalog-team 6, fulfilment-team 5, checkout-team 5 and shop-platform 3. A burst is one stretch of repeated messages, split wherever there are more than 30 quiet minutes.\n- **FATAL lines rank differently:** cart leads with 4,036, ahead of frontend (2,169), email (763) and recommendation (558).\n\nThese are log-line counts, not separate incidents: one fault can write thousands of lines.",
+   "calls": [
+    {
+     "name": "count_by",
+     "args": {
+      "group_by": "component",
+      "dataset": "otel",
+      "severity": "ERROR"
+     }
+    },
+    {
+     "name": "count_by",
+     "args": {
+      "group_by": "team",
+      "dataset": "otel",
+      "severity": "ERROR"
+     }
+    },
+    {
+     "name": "count_by",
+     "args": {
+      "group_by": "severity",
+      "dataset": "otel"
+     }
+    },
+    {
+     "name": "facet",
+     "args": {
+      "dataset": "otel",
+      "severity": "ERROR",
+      "dims": [
+       "pattern_id",
+       "component"
+      ],
+      "top": 6
+     }
+    },
+    {
+     "name": "count_by",
+     "args": {
+      "group_by": "component",
+      "dataset": "otel",
+      "severity": "FATAL"
+     }
+    },
+    {
+     "name": "rollup",
+     "args": {
+      "dataset": "otel",
+      "by": [
+       "team",
+       "component"
+      ]
+     }
+    },
+    {
+     "name": "search_logs",
+     "args": {
+      "dataset": "otel",
+      "pattern_id": 600038,
+      "limit": 1
+     }
+    },
+    {
+     "name": "search_logs",
+     "args": {
+      "dataset": "otel",
+      "pattern_id": 600005,
+      "limit": 1
+     }
+    },
+    {
+     "name": "search_logs",
+     "args": {
+      "dataset": "otel",
+      "severity": "ERROR",
+      "component": "payment",
+      "limit": 2
+     }
+    }
+   ],
+   "errors": [],
+   "run_error": null,
+   "first_tool": "count_by",
+   "first_ok": true,
+   "need_ok": true,
+   "facts": 0,
+   "facts_total": 2,
+   "facts_missed": [
+    "frontend error-or-fatal lines = 176880",
+    "payment error-or-fatal lines = 24219"
+   ],
+   "n_calls": 9,
+   "n_errors": 0,
+   "tokens_in": 123087,
+   "tokens_out": 1790,
+   "elapsed_s": 24.4
+  },
+  {
+   "id": "T-T2",
+   "dataset": "otel",
+   "model": "anthropic:claude-opus-5-5",
+   "question": "Why are orders failing in the demo shop, and which service is the source?",
+   "answer": "Orders are failing because the **payment service** can't charge cards. It keeps returning **\"Visa cache full: cannot add new item.\"** The frontend logs that error and then gives up on the order.\n\n**How the failure travels (payment → checkout → frontend)**\n- The payment service logs `Visa cache full: cannot add new item.` **11,253 times** across 24 nodes (pattern 600010). It has 23,984 ERROR lines in total, and the rest are generic error entries tied to the same traces.\n- The frontend gets that back as a gRPC INTERNAL error: `failed to charge card: could not charge the card: rpc error: code = Unknown desc = Visa cache full…`. The phrase \"Visa cache full\" shows up in **102,615 lines** in total: 91,362 from the frontend and 11,253 from payment.\n- The frontend then logs **`Failed to place order` 21,821 times** (pattern 600005, all 27 nodes). The structured version, which includes the payment error, adds another 7,665 lines (pattern 600014).\n- The checkout service itself logs almost no errors (only 40 ERROR lines). It's passing on the payment failure, not causing it.\n\n**A second, smaller cause: currency conversion**\n- 73,005 frontend lines mention currency conversion failing. They come in two forms: `failed to prepare order: failed to convert price of \"<ID>\" to USD` (about 6,190 lines per variant) and `failed to convert shipping cost… rpc error: code = Unavailable… connection reset by peer` (8,435 lines). The currency service has 199 ERROR lines of its own. So currency calls sometimes drop, and those orders fail before they reach payment.\n\n**Not a cause of failed orders**\n- Checkout also warns `failed to send order confirmation… email service: expected 200, got 500`. These are WARN-level and come after the order is placed. Customers miss their confirmation emails, but the orders themselves go through. The email service owns this one.\n\n**Caveat:** the logs only cover 2025-09-23 00:00 to 00:29. Every one of these patterns appears from the first second, so I can't tell when the problem started or whether it's new. Counts are log lines, not distinct orders, and one failed order logs several lines.\n\n**Next step:** payments-team should look at the Visa cache in the payment service. It looks like a cache that fills up and never gets cleared, or has a size limit that's too low. Fixing it should clear most of the failures. Then check why connections to the currency service are being reset.",
+   "calls": [
+    {
+     "name": "facet",
+     "args": {
+      "dataset": "otel",
+      "severity": "ERROR",
+      "dims": [
+       "component",
+       "pattern_id"
+      ],
+      "top": 10
+     }
+    },
+    {
+     "name": "search_logs",
+     "args": {
+      "dataset": "otel",
+      "query_text": "order failed OR \"failed to\" OR error",
+      "component": "checkout",
+      "limit": 15
+     }
+    },
+    {
+     "name": "top_patterns",
+     "args": {
+      "dataset": "otel",
+      "rank_by": "lines",
+      "problem_filter": "severity",
+      "limit": 15
+     }
+    },
+    {
+     "name": "facet",
+     "args": {
+      "dataset": "otel",
+      "query_text": "checkout OR \"place order\" OR placeorder",
+      "match": "web",
+      "severity": "ERROR",
+      "dims": [
+       "component",
+       "pattern_id"
+      ]
+     }
+    },
+    {
+     "name": "count_by",
+     "args": {
+      "dataset": "otel",
+      "group_by": "component",
+      "query_text": "\"Visa cache full\""
+     }
+    },
+    {
+     "name": "count_by",
+     "args": {
+      "dataset": "otel",
+      "group_by": "component",
+      "query_text": "\"convert currency\" OR \"failed to convert price\""
+     }
+    },
+    {
+     "name": "search_logs",
+     "args": {
+      "dataset": "otel",
+      "component": "payment",
+      "severity": "ERROR",
+      "limit": 5
+     }
+    }
+   ],
+   "errors": [],
+   "run_error": null,
+   "first_tool": "facet",
+   "first_ok": true,
+   "need_ok": true,
+   "facts": 1,
+   "facts_total": 2,
+   "facts_missed": [
+    "Failed-to-place-order lines = 45800"
+   ],
+   "n_calls": 7,
+   "n_errors": 0,
+   "tokens_in": 141705,
+   "tokens_out": 1969,
+   "elapsed_s": 25.7
+  },
+  {
+   "id": "T-T3",
+   "dataset": "otel",
+   "model": "anthropic:claude-opus-5-5",
+   "question": "Follow trace 68a1dd0d5118a650745a1e0fcd04105f in the demo shop through the services. Where did it go wrong?",
+   "answer": "The checkout failed at the **payment service**. Its error was `Visa cache full: cannot add new item.` The frontend then logged that the order could not be placed.\n\nThe trace has 11 log lines over 53 ms on 2025-09-23, from 00:19:00.014 to 00:19:00.067:\n\n| +s | Service | Event |\n|---|---|---|\n| 0.000 | frontend | `Checkout` |\n| 0.002 | cart | `GetCartAsync called…` (OK) |\n| 0.006 / 0.014 / 0.027 | currency | `Convert conversion successful` (3 times) |\n| 0.024 | quote | `Calculated quote` (OK) |\n| 0.040 | payment | `Charge request received.` |\n| **0.050** | **payment** | **ERROR `Visa cache full: cannot add new item.`** ← where it broke |\n| 0.052 | frontend | ERROR `Failed to place order` |\n| 0.052–0.053 | frontend | ERROR gRPC `code 13`: \"failed to charge card: could not charge the card: rpc error: code = Unknown desc = Visa cache full: cannot add new item.\" |\n\nCart, currency and quote all worked. The charge request reached payment, and payment threw the cache-full error 10 ms later. The error went back to the frontend as gRPC code 13 (internal error), and the order failed. The three frontend errors are that same payment error passed upstream, not separate faults.\n\nThis wasn't a one-off. The same `Visa cache full` error shows up **11,253 times** across 24 nodes, covering the whole dataset (2025-09-23 00:00:00 → 00:29:00.099). So it's an ongoing fault in the payment service, not something specific to this order. The payment service's Visa cache seems to be full and never cleared, so any Visa charge would fail this way. That's my reading of the error text; the logs don't show the cause.",
+   "calls": [
+    {
+     "name": "request_timeline",
+     "args": {
+      "dataset": "otel",
+      "request_id": "68a1dd0d5118a650745a1e0fcd04105f"
+     }
+    },
+    {
+     "name": "search_logs",
+     "args": {
+      "dataset": "otel",
+      "pattern_id": 600010,
+      "limit": 1
+     }
+    }
+   ],
+   "errors": [],
+   "run_error": null,
+   "first_tool": "request_timeline",
+   "first_ok": true,
+   "need_ok": true,
+   "facts": 1,
+   "facts_total": 2,
+   "facts_missed": [
+    "services in the trace = 5"
+   ],
+   "n_calls": 2,
+   "n_errors": 0,
+   "tokens_in": 88918,
+   "tokens_out": 896,
+   "elapsed_s": 21.7
+  },
+  {
+   "id": "T-X1",
+   "dataset": null,
+   "model": "anthropic:claude-opus-5-5",
+   "question": "Which of the loaded systems had the most error-level log lines overall, and which team owns most of them?",
+   "answer": "**The OpenTelemetry demo webshop (`otel`) has the most ERROR-level lines, and the web-frontend team owns most of them.**\n\nThis counts only lines whose severity is exactly `ERROR`. There are 358,663 such lines across the corpus:\n\n| System | ERROR lines |\n|---|---|\n| **otel** (OpenTelemetry demo webshop) | **203,185** |\n| bgl (Blue Gene/L) | 112,355 |\n| apache | 42,312 |\n| zookeeper | 617 |\n| openstack | 194 |\n\nSSH logs have no severity levels, and HDFS only uses INFO and WARN, so neither has any ERROR lines.\n\n**Who owns the otel errors:**\n- **web-frontend: 174,711 lines (about 86%).** All of them come from the `frontend` service.\n- payments-team: 24,191 lines, almost all from the `payment` service (23,984).\n- fulfilment-team: 4,240 lines, mostly from `email` (4,218).\n- checkout-team: 43 lines.\n\nTwo things to keep in mind:\n- **These are line counts, not incidents.** One fault can write thousands of lines.\n- **The otel data is a partial sample.** It covers 30 minutes of 2025-09-23 and keeps only 0.1 s of each minute. BGL covers 214 days, so comparing raw totals between the two says little about how reliable each system is. BGL also has other problem severities (FATAL, SEVERE, FAILURE) that this count leaves out. If you count all problem severities instead of just ERROR, the ranking could change.",
+   "calls": [
+    {
+     "name": "count_by",
+     "args": {
+      "group_by": "dataset",
+      "severity": "ERROR"
+     }
+    },
+    {
+     "name": "describe_corpus",
+     "args": {}
+    },
+    {
+     "name": "count_by",
+     "args": {
+      "group_by": "team",
+      "severity": "ERROR",
+      "dataset": "otel"
+     }
+    },
+    {
+     "name": "count_by",
+     "args": {
+      "group_by": "component",
+      "severity": "ERROR",
+      "dataset": "otel",
+      "limit": 10
+     }
+    }
+   ],
+   "errors": [],
+   "run_error": null,
+   "first_tool": "count_by",
+   "first_ok": true,
+   "need_ok": true,
+   "facts": 0,
+   "facts_total": 1,
+   "facts_missed": [
+    "bgl FATAL+ERROR+SEVERE+FAILURE lines = 988783"
+   ],
+   "n_calls": 4,
+   "n_errors": 0,
+   "tokens_in": 90247,
+   "tokens_out": 959,
+   "elapsed_s": 17.8
+  },
+  {
+   "id": "T-B1",
+   "dataset": "bgl",
+   "model": "anthropic:claude-sonnet-5-5",
+   "question": "Something failed on the R43-M0 midplane of the BGL supercomputer around 2005-08-19 13:56. What was it, and what happened just before and after?",
+   "answer": "**What failed.** At 2005-08-19 13:56:00 two FATAL KERNEL \"kernel panic\" lines (pattern 576) were logged on R43-M0. They were 0.35 s apart:\n- 13:56:00.281 on R43-M0-NC-I:J18-U01\n- 13:56:00.628 on R43-M0-N8-I:J18-U11\n\nThese two lines are the only R43-M0 entries between 13:46 and 14:06. Nothing else in rack R43 was logged within an hour either side, so the panic didn't spread beyond these two I/O-node chips. The logs give no cause for the panic.\n\n**Before (same midplane, earlier that day).** Between 12:24 and 12:26 there was a burst of FATAL `ciod` (APP) errors on R43-M0 I/O nodes N4, N0, NC and N8:\n- Most were `ciod: LOGIN chdir(/home/auselton/testing) failed: No such file or directory` (pattern 586).\n- Two, on N8 at 12:26:09, were `Error reading message prefix after LOGIN_MESSAGE on CioStream socket to 172.16.96.116:4077x: Link has been severed` (pattern 435).\n\nNothing was logged on R43-M0 for about 1.5 hours between 12:26:12 and the panic. So the earlier errors look like a user job failing at login (bad working directory) and a lost control link, not a direct precursor. I can't tell from the logs whether they are related to the panic.\n\n**After.**\n- **17:12:37–45:** the same two `ciod` errors came back on N8, N4, N0 and NC, one of them a \"Link has been severed\" error on N8. That is about 3 h 16 min after the panic.\n- **23:27 (19 Aug):** a single correctable DDR error on R43-M0-N7-C:J05-U01 (INFO). This is a different node and is routine.\n- **07:04–07:35 on 20 Aug:** INFO lines from `ciod` saying it generated core files for the `sppm` and `umt2k` applications. Some of the `sppm` lines say 64 core files. That points to application crashes or checkpoints on those I/O nodes.\n\nThe panic hit two of the midplane's I/O nodes, and the same I/O nodes kept logging `ciod` errors before and after it.",
+   "calls": [
+    {
+     "name": "search_logs",
+     "args": {
+      "dataset": "bgl",
+      "midplane": "R43-M0",
+      "start": "2005-08-19 13:46",
+      "end": "2005-08-19 14:06",
+      "limit": 50
+     }
+    },
+    {
+     "name": "get_context",
+     "args": {
+      "dataset": "bgl",
+      "line_id": 3069219,
+      "scope": "rack",
+      "before_s": 3600,
+      "after_s": 3600,
+      "limit": 30
+     }
+    },
+    {
+     "name": "search_logs",
+     "args": {
+      "dataset": "bgl",
+      "midplane": "R43-M0",
+      "start": "2005-08-19 00:00",
+      "end": "2005-08-20 12:00",
+      "limit": 50
+     }
+    }
+   ],
+   "errors": [],
+   "run_error": null,
+   "first_tool": "search_logs",
+   "first_ok": true,
+   "need_ok": true,
+   "facts": 1,
+   "facts_total": 2,
+   "facts_missed": [
+    "kernel panic lines on R43-M0 13:40-14:15 = 2"
+   ],
+   "n_calls": 3,
+   "n_errors": 0,
+   "tokens_in": 91385,
+   "tokens_out": 1288,
+   "elapsed_s": 14.0
+  },
+  {
+   "id": "T-B2",
+   "dataset": "bgl",
+   "model": "anthropic:claude-sonnet-5-5",
+   "question": "How widespread was the 'data TLB error interrupt' problem on BGL in June 2005, and when did it start?",
+   "answer": "**Start:** The first \"data TLB error interrupt\" line in June 2005 was at 2005-06-05 00:08:13 on node R20-M0-N2-C:J10-U11. All of them are KERNEL, FATAL, pattern 31.\n\n**How widespread:** By node count it was widespread. By line count it was dominated by one node.\n- June had 152,659 lines across 467 nodes, and they all fall on two days.\n- **June 5:** 477 lines on 466 distinct nodes, from 00:08 to 08:32. That is about one line per node across racks R20–R25 and R31–R37, so it was a broad but brief burst. The rack-level counts (R21 74 nodes, R24 62, R25 60, R20 55, and so on) are for the whole month, but 466 of the 467 nodes appear on June 5.\n- **June 6–10:** none.\n- **June 11:** 152,182 lines, all from a single node, R30-M0-N9-C:J16-U01, between 17:17:44 and 23:39:32. That one node produced 99.7% of the month's lines. The spread tool reads this as \"concentrated on one node\".\n\nOf the 467 nodes, 466 logged the message on June 5. The June 11 flood came from R30-M0-N9-C:J16-U01, and I did not check whether that node also logged it on June 5. The rack-level totals suggest R30 had 18 nodes with the message, but I did not break those out.",
+   "calls": [
+    {
+     "name": "search_logs",
+     "args": {
+      "query_text": "\"data TLB error interrupt\"",
+      "dataset": "bgl",
+      "start": "2005-06-01",
+      "end": "2005-07-01",
+      "limit": 5
+     }
+    },
+    {
+     "name": "spread",
+     "args": {
+      "dataset": "bgl",
+      "query_text": "\"data TLB error interrupt\"",
+      "start": "2005-06-01",
+      "end": "2005-07-01"
+     }
+    },
+    {
+     "name": "trend",
+     "args": {
+      "dataset": "bgl",
+      "query_text": "\"data TLB error interrupt\"",
+      "start": "2005-06-01",
+      "end": "2005-07-01",
+      "bucket": "day"
+     }
+    },
+    {
+     "name": "search_logs",
+     "args": {
+      "query_text": "\"data TLB error interrupt\"",
+      "dataset": "bgl",
+      "start": "2005-06-05",
+      "end": "2005-06-06",
+      "order": "recent",
+      "limit": 1
+     }
+    },
+    {
+     "name": "search_logs",
+     "args": {
+      "query_text": "\"data TLB error interrupt\"",
+      "dataset": "bgl",
+      "node": "R30-M0-N9-C:J16-U01",
+      "start": "2005-06-01",
+      "end": "2005-07-01",
+      "limit": 1
+     }
+    }
+   ],
+   "errors": [],
+   "run_error": null,
+   "first_tool": "search_logs",
+   "first_ok": true,
+   "need_ok": true,
+   "facts": 3,
+   "facts_total": 3,
+   "facts_missed": [],
+   "n_calls": 5,
+   "n_errors": 0,
+   "tokens_in": 91562,
+   "tokens_out": 1380,
+   "elapsed_s": 13.9
+  },
+  {
+   "id": "T-B3",
+   "dataset": "bgl",
+   "model": "anthropic:claude-sonnet-5-5",
+   "question": "Which problems kept coming back on BGL from 2005-11-01 to 2005-11-29, and which teams own them?",
+   "answer": "Between 2005-11-01 and 2005-11-29, BGL had 126 problem patterns and 407 problem bursts. A burst is a recurrence of a pattern after more than 30 minutes of quiet, so it is not the same as an incident. Three teams own those bursts: node-platform (256), hpc-workloads (96) and cluster-control (55). The bursts_prev figures below are the previous 28 days (2005-10-04 to 2005-11-01).\n\n**node-platform (KERNEL and HARDWARE)**\n- **\"Kill job <N> timed out. Block freed.\"** had 34 bursts (48 lines), down from 41 before. It is the most frequent pattern.\n- **\"rts panic! - stopping execution\"** had 33 bursts on 33 nodes, up from 27.\n- **\"machine check interrupt\"** had 17 bursts, down from 30. A related parity-error variant (\"L<N> dcache unit data parity error\") had 5 bursts, down from 14.\n- **Three \"invalid operation exception\" patterns** (software, sqrt, int cnvt) had 14 bursts each on 15 nodes. All three first appeared on 2005-11-17.\n- **\"rts: kernel terminated for reason <N>\"** had 7 bursts, up from 2. It logged 5,120 lines across 3,584 nodes.\n- **\"Error receiving packet on tree network…\"** had 7 bursts, up from 1, with the same 5,120 lines across 3,584 nodes.\n- **\"idoproxy communication failure: socket closed\"** had 6 bursts, new this period.\n- **\"machine check interrupt (bit=<N>): L<N> dcache unit read return parity error\"** had 8 bursts, all on a single node, and is new this period.\n- **\"rts internal error\"** had 5 bursts, up from 1.\n- **\"LinkCard power module U<N> is not accessible\"** (HARDWARE) had 5 bursts, all on one node.\n\n**hpc-workloads (APP, 96 bursts)**\n- **\"ciod: Error reading message prefix on CioStream socket…, Link has been severed\"** had 27 bursts and 10,408 lines across 1,024 nodes. It first appeared on 2005-11-17, so it is new this period.\n- **The \"Connection reset by peer\" variant of the same ciod error** had 5 bursts and 2,256 lines. It first appeared on 2005-11-18.\n- **\"ciod: Error loading … mdcask.opt: program image too big\"** had 5 bursts on 16 nodes. This looks like a job-specific failure.\n\n**cluster-control (55 bursts: MONITOR 30, DISCOVERY 18, MMCS 5, BGLMASTER 2)**\n- **\"Node card is not fully functional\"** and **\"Can not get assembly information for node card\"** each had 9 bursts and 561 lines across 456 nodes. Both were down from 19 bursts before.\n- **\"Temperature Over Limit on link card\"** had 4 bursts and 972 lines. It is new this period.\n- **\"Link PGOOD error latched on link card\"** had 4 bursts and 349 lines. It is also new this period.\n\n**Patterns worth watching**\n- The 2005-11-17 onset of the ciod \"Link has been severed\" errors and the three \"invalid operation exception\" patterns falls on the same day. I didn't check whether the two are linked.\n- Several patterns that were already known are getting worse: rts panic, rts kernel terminated, tree-network packet errors and rts internal error.\n- The machine-check and node-card patterns are declining.\n\nThe pattern list above is truncated to the top 20 of 126 by burst count.",
+   "calls": [
+    {
+     "name": "top_patterns",
+     "args": {
+      "dataset": "bgl",
+      "start": "2005-11-01",
+      "end": "2005-11-29",
+      "limit": 20
+     }
+    },
+    {
+     "name": "rollup",
+     "args": {
+      "dataset": "bgl",
+      "start": "2005-11-01",
+      "end": "2005-11-29"
+     }
+    }
+   ],
+   "errors": [],
+   "run_error": null,
+   "first_tool": "top_patterns",
+   "first_ok": true,
+   "need_ok": true,
+   "facts": 2,
+   "facts_total": 2,
+   "facts_missed": [],
+   "n_calls": 2,
+   "n_errors": 0,
+   "tokens_in": 62019,
+   "tokens_out": 1441,
+   "elapsed_s": 11.6
+  },
+  {
+   "id": "T-B4",
+   "dataset": "bgl",
+   "model": "anthropic:claude-sonnet-5-5",
+   "question": "If the BGL operations team can fix only one thing based on August 2005, which should it be and why?",
+   "answer": "**Recommendation: fix the \"rts: kernel terminated for reason N\" fatal kernel failures (pattern 562, KERNEL, node-platform).** The logs show that this is the top problem in August 2005. They can't show the root cause.\n\n**Why this one**\n- **Ranking:** it is #1 of 148 problem patterns for August in the priority table, with a score of 96.0 (the next is 91.5). The score combines burst frequency, trend, spread, persistence and severity.\n- **It is new.** The first line is 2005-08-13 21:27:41. There were 0 bursts in July and 13 in August.\n- **Severity:** every line is FATAL, and the stored judgment gives p_problem 0.912 (\"system software failure\").\n- **Spread:** it hit 2,666 distinct nodes in August (11,349 lines), and the top node held only 0.2% of the lines. It is not one bad node.\n- **Rack-wide kills:** the bursts come in round sizes such as 768, 2,387, 4,880 and 2,896 lines, with 512- and 1,024-line bursts later in the year. That looks like whole partitions or jobs being killed, not scattered faults.\n- **Where it clusters:** 5 of the 13 August bursts fell between 08-13 and 08-17, and one 08-17 burst alone hit 402 nodes. The pattern then recurs through 2005-11-16 (25 bursts, 18,587 lines, 7,650 nodes overall), so it did not go away.\n- **Companions:** four new \"rts: bad message header …\" patterns (563–566, same team) also appeared in August. They are ranked #5 to #8, and they look like the same software family. Fixing the cause may remove all five.\n- **Team context:** node-platform's problem bursts rose from 136 in July to 460 in August, the largest increase of the three teams.\n\n**Caveats**\n- The logs don't show the cause. In the 08-17 burst I checked, the affected nodes logged only routine corrected-error INFO lines (DDR, torus and tree receiver) beforehand. Nothing on them pointed to a trigger, so the first step is to find what changed around 08-13 (software or kernel, or a job type).\n- The logs say nothing about cost, downtime or which jobs were lost.\n\n**Runner-up:** the persistent hardware pair \"Node card is not fully functional\" and \"Can not get assembly information for node card\" (patterns 165 and 166, DISCOVERY, cluster-control). They were active in all 5 weeks, rose from 21 to 37 bursts (pattern 165), and hit about 1,967 nodes. If you value an ongoing hardware problem over a new software failure, pick these. The kernel-termination fault ranks first because it is new, fatal, widespread and spiking.",
+   "calls": [
+    {
+     "name": "describe_corpus",
+     "args": {}
+    },
+    {
+     "name": "priority_table",
+     "args": {
+      "dataset": "bgl",
+      "start": "2005-08-01",
+      "end": "2005-09-01",
+      "limit": 10
+     }
+    },
+    {
+     "name": "pattern_history",
+     "args": {
+      "dataset": "bgl",
+      "pattern_id": 562,
+      "bucket": "day"
+     }
+    },
+    {
+     "name": "search_logs",
+     "args": {
+      "dataset": "bgl",
+      "pattern_id": 562,
+      "limit": 3
+     }
+    },
+    {
+     "name": "facet",
+     "args": {
+      "dataset": "bgl",
+      "pattern_id": 562,
+      "dims": [
+       "severity",
+       "location"
+      ],
+      "start": "2005-08-01",
+      "end": "2005-09-01"
+     }
+    },
+    {
+     "name": "burst_timeline",
+     "args": {
+      "dataset": "bgl",
+      "pattern_id": 562,
+      "at": "2005-08-17 12:00:00",
+      "before_s": 3600,
+      "same_nodes": false,
+      "limit": 12
+     }
+    },
+    {
+     "name": "trend",
+     "args": {
+      "dataset": "bgl",
+      "pattern_id": 165,
+      "start": "2005-07-01",
+      "end": "2005-09-15",
+      "bucket": "week"
+     }
+    }
+   ],
+   "errors": [],
+   "run_error": null,
+   "first_tool": "priority_table",
+   "first_ok": true,
+   "need_ok": true,
+   "facts": 1,
+   "facts_total": 1,
+   "facts_missed": [],
+   "n_calls": 7,
+   "n_errors": 0,
+   "tokens_in": 168985,
+   "tokens_out": 2278,
+   "elapsed_s": 26.0
+  },
+  {
+   "id": "T-B5",
+   "dataset": "bgl",
+   "model": "anthropic:claude-sonnet-5-5",
+   "question": "Which recurring BGL problems got worse in October 2005 compared with September?",
+   "answer": "In BGL, the recurring problems that got worse in October 2005 are mostly node-platform kernel faults. I ranked problem patterns by growth in bursts, where a burst is a recurrence after more than 30 minutes of quiet. The comparison period is 2005-08-31 to 2005-09-30, so it includes one August day. The tool returned the top 20 of 86 problem patterns, so the list is not exhaustive.\n\n**Recurring problems that grew (October bursts vs September)**\n- **\"Kill job <N> timed out. Block freed.\"** (KERNEL, FATAL, pattern 261) went from 29 to 44 bursts, up 15. It is the largest increase. It had 47 lines in October and has been seen since June.\n- **\"machine check interrupt (bit=<N>): L<N> major internal error\"** (pattern 93) went from 5 to 10 bursts, up 5. It hit 8 nodes.\n- **A group of hardware and memory faults** all went from 2 to 4 bursts, on 4 nodes each. They look like one fault event seen across many message types, not separate problems.\n  - Pattern 120: uncorrectable error detected in directory.\n  - Pattern 122: uncorrectable error detected in EDRAM bank.\n  - Pattern 123: parity error in bank.\n  - Pattern 124: uncorrectable error detected in external DDR.\n  - Pattern 125: parity error in read queue.\n  - Pattern 126: parity error in read queue PLB.\n  - Pattern 135: memory manager uncorrectable error.\n  - Pattern 153: uncorrectable error.\n  - Pattern 154: address parity error.\n  - Pattern 158: DDR failing data registers.\n  - Pattern 160: DDR failing address register.\n- **\"NodeCard is not fully functional\"** (HARDWARE, SEVERE, pattern 318) went from 1 to 3 bursts, all on a single node.\n- **\"Microloader Assertion\"** (pattern 467) went from 0 to 2 bursts, across 18 nodes. It was first seen in August.\n- **Program interrupt patterns** (illegal instruction and privileged instruction, patterns 190 and 191) went from 3 to 4 bursts, up 1.\n\n**New in October (first seen in the corpus that month, 2 bursts each)**\nThese are hpc-workloads `ciod` job-loading failures:\n- Pattern 767: \"invalid or missing program image, Permission denied\" (768 lines, 768 nodes).\n- Pattern 790: \"program image too big\" (1,024 lines, 384 nodes).\n- Pattern 808: \"LOGIN chdir … No such file or directory\" (1,920 lines, 64 nodes).\n\nThese look like user or job configuration errors, not hardware faults. Their line counts are large because each burst touches many nodes at once.\n\nThe increases for the hardware patterns are small in absolute terms, with 1 to 5 extra bursts. The job-timeout pattern (261) is the one with a clearly larger increase.",
+   "calls": [
+    {
+     "name": "top_patterns",
+     "args": {
+      "dataset": "bgl",
+      "start": "2005-10-01",
+      "end": "2005-11-01",
+      "rank_by": "growth",
+      "limit": 20
+     }
+    }
+   ],
+   "errors": [],
+   "run_error": null,
+   "first_tool": "top_patterns",
+   "first_ok": true,
+   "need_ok": true,
+   "facts": 2,
+   "facts_total": 2,
+   "facts_missed": [],
+   "n_calls": 1,
+   "n_errors": 0,
+   "tokens_in": 60635,
+   "tokens_out": 1234,
+   "elapsed_s": 10.3
+  },
+  {
+   "id": "T-B6",
+   "dataset": "bgl",
+   "model": "anthropic:claude-sonnet-5-5",
+   "question": "On BGL, what usually shows up on a node shortly before a 'kernel panic'?",
+   "answer": "On BGL, a \"kernel panic\" usually has nothing logged on the same node just before it.\n\n- **How often it occurs:** \"kernel panic\" (pattern 576) has 18 lines on 18 different nodes, between 2005-08-15 and 2005-11-11. All are FATAL, from KERNEL, and owned by node-platform. The nodes I checked are I/O-node locations, ending in `-I:J18-U01` or `-I:J18-U11`.\n- **Most panics have no precursor:** I looked back 10 minutes and 60 minutes on the same node, and both gave identical results. For 13 of the 18 panics, no other pattern was logged on that node in that window. I opened two cases (2005-08-15 16:31:53 on R04-M0-N8-I:J18-U01 and 2005-08-19 13:56:00 on R43-M0-NC-I:J18-U01). Neither node logged anything in the 15 minutes before the panic.\n- **The only recurring precursor:** 4 of 18 panics (22%) were preceded by \"L<N> correctable errors exceeds threshold (iar <HEX> lr <HEX>)\" (pattern 178, INFO). It came about 0.4 s before the panic (median). The same check shifted one day earlier found it 0% of the time, so the lift is 4.0. That is only 4 occurrences, so it is a weak signal, not a reliable warning.\n- **A one-off:** 1 of 18 panics (6%) was preceded, about 20.7 s earlier, by a FATAL ciod error: \"Error loading … invalid or missing program image, Permission denied\" (pattern 812). With a single case, I wouldn't call that a pattern.\n\nRelated KERNEL messages exist, such as \"rts panic! - stopping execution\" and \"rts: kernel terminated for reason <N>\". I did not check whether they come before \"kernel panic\". Association in time is not proof of cause.",
+   "calls": [
+    {
+     "name": "find_patterns",
+     "args": {
+      "text": "kernel panic",
+      "dataset": "bgl"
+     }
+    },
+    {
+     "name": "search_logs",
+     "args": {
+      "query_text": "kernel panic",
+      "dataset": "bgl",
+      "limit": 10
+     }
+    },
+    {
+     "name": "precursors",
+     "args": {
+      "dataset": "bgl",
+      "pattern_id": 576,
+      "window_s": 600
+     }
+    },
+    {
+     "name": "precursors",
+     "args": {
+      "dataset": "bgl",
+      "pattern_id": 576,
+      "window_s": 3600
+     }
+    },
+    {
+     "name": "get_context",
+     "args": {
+      "dataset": "bgl",
+      "line_id": 3050899,
+      "before_s": 900,
+      "after_s": 60
+     }
+    },
+    {
+     "name": "get_context",
+     "args": {
+      "dataset": "bgl",
+      "line_id": 3069219,
+      "before_s": 900,
+      "after_s": 60
+     }
+    }
+   ],
+   "errors": [],
+   "run_error": null,
+   "first_tool": "find_patterns",
+   "first_ok": true,
+   "need_ok": true,
+   "facts": 2,
+   "facts_total": 2,
+   "facts_missed": [],
+   "n_calls": 6,
+   "n_errors": 0,
+   "tokens_in": 130203,
+   "tokens_out": 1308,
+   "elapsed_s": 18.6
+  },
+  {
+   "id": "T-B7",
+   "dataset": "bgl",
+   "model": "anthropic:claude-sonnet-5-5",
+   "question": "Is reliability on BGL improving between September and November 2005 (2005-09-01 to 2005-11-29)?",
+   "answer": "**Not clearly. The tool's fixed rule says \"improving\", but the decline is slight and the end of the period is worse than the start.**\n\nThe tool counted problem bursts per week, meaning recurrences of patterns judged to be real faults. There were 1,198 bursts from 2005-09-01 to 2005-11-29.\n\n- **Slope:** -1.332 bursts per week, per week.\n- **Half means:** 87.43 bursts per week in the first half, 83.71 in the second. That is about a 4% drop.\n- **Rule:** slope below 0 and a lower second-half mean gives \"improving\".\n\n**Weekly problem bursts** (week starting on the date shown):\n\n| Week starting | Bursts |\n|---|---|\n| 08-29 (partial, Sep 1–4 only) | 130 |\n| 09-05 | 89 |\n| 09-12 | 48 |\n| 09-19 | 99 |\n| 09-26 | 115 |\n| 10-03 | 72 |\n| 10-10 | 59 |\n| 10-17 | 86 |\n| 10-24 | 85 |\n| 10-31 | 46 |\n| 11-07 | 80 |\n| 11-14 | 154 |\n| 11-21 | 117 |\n| 11-28 (partial) | 18 |\n\n**Why I would not call it improving:**\n- **Noisy series:** weekly counts swing between 46 and 154, and the small drop in the half means sits well within that noise.\n- **Partial weeks:** the first and last buckets are partial. The first one (130 bursts, Sep 1–4) pulls the slope down, and the last one (18) is nearly empty.\n- **Worst weeks at the end:** the two highest full weeks are 11-14 (154) and 11-21 (117). The best stretch was early to mid-October and the week of 10-31.\n\n**By team** (slope in bursts per week, per week):\n\n| Team | Bursts | Slope |\n|---|---|---|\n| node-platform | 775 | -0.398 |\n| hpc-workloads | 245 | -0.578 |\n| cluster-control | 178 | -0.356 |\n\nAll three slopes are slightly negative, so no single team is driving the result. They share the same distortion from the partial first week.\n\n**Conclusion:** the trend is flat to marginally down, with no sustained improvement. The sharp rise in mid-to-late November is worth investigating before anyone reports a reliability gain. These are counts of recurring log patterns, not confirmed incidents or impact.",
+   "calls": [
+    {
+     "name": "reliability_trend",
+     "args": {
+      "dataset": "bgl",
+      "start": "2005-09-01",
+      "end": "2005-11-29"
+     }
+    },
+    {
+     "name": "describe_corpus",
+     "args": {}
+    }
+   ],
+   "errors": [],
+   "run_error": null,
+   "first_tool": "reliability_trend",
+   "first_ok": true,
+   "need_ok": true,
+   "facts": 0,
+   "facts_total": 2,
+   "facts_missed": [
+    "FATAL lines in November to 11-29 = 42801",
+    "FATAL lines in September = 81844"
+   ],
+   "n_calls": 2,
+   "n_errors": 0,
+   "tokens_in": 59990,
+   "tokens_out": 1113,
+   "elapsed_s": 10.4
+  },
+  {
+   "id": "T-B8",
+   "dataset": "bgl",
+   "model": "anthropic:claude-sonnet-5-5",
+   "question": "Did any kinds of messages appear on BGL from 2005-12-01 to 2005-12-08 that had never been seen before? Which look like real problems?",
+   "answer": "Yes. 23 message patterns appeared on BGL between 2005-12-01 and 2005-12-08 that had never been seen earlier in the dataset. Of these, 12 look like real problems. That judgment comes from the stored per-pattern score (p_problem ≥ 0.5), not from my own reading of each message. Counts are log lines, and they are counted up to 2005-12-08.\n\n**Likely real problems (12)**\n\nMost are job or application failures: bad program images, missing directories and core dumps. Only one is a possible hardware or kernel fault.\n\n*Application (APP) errors, hpc-workloads team*\n- **Pattern 1061, first seen 12-07 08:08:** `ciod: Error loading …/sppm_chkpt/sppm: not a CNK program image`. It hit 1,024 nodes with 1,024 lines (p=0.856, \"system software failure\").\n- **Pattern 1059, first seen 12-06 05:50:** `ciod: Error loading …/linpack…/xhpl…: invalid or missing program image, Permission denied`. It hit 1,016 nodes with 1,016 lines (p=0.846).\n- **Pattern 1057, first seen 12-03 13:27:** `ciod: LOGIN chdir(/p/gb/rfisher/StirTurbDirect/…) failed: No such file or directory`. It produced 256 lines on 128 nodes (p=0.828, \"network or I/O failure\").\n- **Pattern 1049, first seen 12-02 07:52:** `ciod: LOGIN chdir(/g/g…/loewe/romio_tests) failed: No such file or directory`. It produced 32 lines on 8 nodes.\n- **Pattern 1048, first seen 12-02 07:49:** `ciod: LOGIN chdir(/home/loewe/romio_testsuite) failed: No such file or directory`. It produced 16 lines on 8 nodes.\n- **Pattern 1058, first seen 12-04 11:36:** `ciod: Error loading …/rfisher/FLASH…/flash…: invalid or missing program image, No such file or directory`. It produced 8 lines on 8 nodes.\n\n*Core dumps (KERNEL), node-platform team*\n- **Pattern 1056, first seen 12-03 13:15:** core files generated for the FLASH `StirTurbDirect` program. It produced 144 lines on 72 nodes (p=0.561).\n- **Pattern 1054, first seen 12-03 11:17:** core files generated for the FLASH `StirTurbPnet` program. It produced 12 lines on 10 nodes (p=0.662).\n- **Pattern 1051, first seen 12-03 00:16:** core files generated for the `mem_err/merr` test program. It produced 1 line.\n- **Pattern 1060, first seen 12-07 07:31:** core files generated for `HPL/xhpl`. It produced 1 line.\n- **Pattern 1062, first seen 12-07 09:45:** core files generated for `auselton/bgl/mib`. It produced 1 line.\n\n*Possible hardware or kernel fault*\n- **Pattern 1053, first seen 12-03 07:57:** `instruction TLB error interrupt`. It appeared once, on one node (p=0.766, \"system software failure\"). It's rare, but it is the only new message that points at the machine and not at a user job.\n\n**New but probably benign (11)**\n- **Correctable-error and interrupt reporting (KERNEL):**\n  - Pattern 1052, `ddr: Suppressing further CE interrupts`: 104 lines, 67 nodes, p=0.129.\n  - Pattern 1050, the corrected SRAM error threshold message: 15 lines, 3 nodes, p=0.094.\n  - Pattern 1063, a single torus sender retransmission message that was detected and corrected: p=0.056.\n- **Counter-dump variants of the \"rbs signal handler\" and \"total interrupts\" messages:** patterns 1041–1047 differ only in how the numbers are formatted, as decimal or hex. Patterns 1041 and 1042 are huge, about 135,000 lines each across about 65,500 nodes. All score p ≤ 0.05.\n- **Pattern 1055, integer alignment exceptions:** 22,177 lines on 15,258 nodes, p=0.174. It is high volume but judged not a problem.\n\n**Caveats**\n- The \"new\" label means the message template was first seen in this window. It does not mean a new fault.\n- Many of these patterns differ only by the file or program path in the message. They are therefore best read as a few user or job issues, not 12 separate problems:\n  - program images that are missing, wrong or not permitted\n  - working directories that are missing\n  - crashing FLASH, HPL and test runs\n- The two largest events are 1,024 and 1,016 nodes failing to load a program image, on 12-07 and 12-06. They were each a single burst, which points to one bad job launch each. They do not point to 1,000 separate node faults.",
+   "calls": [
+    {
+     "name": "whats_new",
+     "args": {
+      "dataset": "bgl",
+      "start": "2005-12-01",
+      "end": "2005-12-08",
+      "problem_only": false,
+      "limit": 50
+     }
+    },
+    {
+     "name": "whats_new",
+     "args": {
+      "dataset": "bgl",
+      "start": "2005-12-01",
+      "end": "2005-12-08",
+      "problem_only": true,
+      "limit": 50
+     }
+    }
+   ],
+   "errors": [],
+   "run_error": null,
+   "first_tool": "whats_new",
+   "first_ok": true,
+   "need_ok": true,
+   "facts": 2,
+   "facts_total": 2,
+   "facts_missed": [],
+   "n_calls": 2,
+   "n_errors": 0,
+   "tokens_in": 61749,
+   "tokens_out": 1974,
+   "elapsed_s": 15.2
+  },
+  {
+   "id": "T-O1",
+   "dataset": "openstack",
+   "model": "anthropic:claude-sonnet-5-5",
+   "question": "What happened to OpenStack instance 9fafc51c-d0dd-41df-99e9-6c79d8334eaf, step by step across the nova services?",
+   "answer": "Instance 9fafc51c-d0dd-41df-99e9-6c79d8334eaf was built, started and then deleted within about 44 seconds on 2017-05-16. Only `nova-compute` logged lines tagged with this instance ID, 25 lines in a single session. None were errors or warnings. I didn't see any `nova-api` or `nova-scheduler` lines for it, so I can't show those steps.\n\nAll times below are 22:51–22:52 UTC, with seconds since the first line in brackets.\n\n**Build**\n1. **22:51:36.968 (+0 s):** It tried to claim 2048 MB of memory, 20 GB of disk and 1 vCPU.\n2. **22:51:36.969–.971 (+0.001–0.003 s):** Resource check lines followed.\n   - The host reported 64172 MB total memory with 512 MB used, 15 GB disk and 16 VCPU.\n   - The memory limit was 96258 MB with 95746 MB free.\n   - Disk and vCPU limits were unspecified and defaulted to unlimited.\n3. **22:51:37.003 (+0.035 s):** The claim succeeded.\n4. **22:51:37.619 (+0.65 s):** It started creating the image.\n5. **22:51:51.023 (+14.1 s):** The VM started (lifecycle event), then paused at 22:51:51.084. At 22:51:51.201 a power-state sync skipped it because the instance had a pending task (spawning).\n6. **22:51:57.927 (+21.0 s):** The VM resumed.\n7. **22:51:57.936 (+21.0 s):** \"Instance spawned successfully.\" The log said the spawn took 20.32 s on the hypervisor.\n8. **22:51:58.054–.074 (+21.1 s):** A second power-state sync skip and a second \"VM Resumed\" event were logged. Then came \"Took 21.12 seconds to build instance.\"\n\n**Deletion**\n9. **22:52:05.374 (+28.4 s):** \"Terminating instance\" was logged, about 7 s after the build finished.\n10. **22:52:05.590 (+28.6 s):** The instance was destroyed successfully.\n11. **22:52:06.285–.287 (+29.3 s):** It deleted `/var/lib/nova/instances/9fafc51c-..._del`, and the deletion completed.\n12. **22:52:06.405 (+29.4 s):** The log said destroying it on the hypervisor took 1.03 s.\n13. **22:52:06.858 (+29.9 s):** Network deallocation took 0.45 s.\n14. **22:52:20.587 (+43.6 s):** The final line was \"VM Stopped (Lifecycle Event)\", arriving about 13.7 s after the network step.\n\nThe 21 s build is a normal spawn. The log doesn't say who requested the deletion or why.",
+   "calls": [
+    {
+     "name": "request_timeline",
+     "args": {
+      "dataset": "openstack",
+      "instance_id": "9fafc51c-d0dd-41df-99e9-6c79d8334eaf"
+     }
+    }
+   ],
+   "errors": [],
+   "run_error": null,
+   "first_tool": "request_timeline",
+   "first_ok": true,
+   "need_ok": true,
+   "facts": 1,
+   "facts_total": 2,
+   "facts_missed": [
+    "first line = 2017-05-16 22:51"
+   ],
+   "n_calls": 1,
+   "n_errors": 0,
+   "tokens_in": 59741,
+   "tokens_out": 1137,
+   "elapsed_s": 9.7
+  },
+  {
+   "id": "T-O2",
+   "dataset": "openstack",
+   "model": "anthropic:claude-sonnet-5-5",
+   "question": "Were any OpenStack VMs abnormally slow to start? Which ones, and how slow compared with normal?",
+   "answer": "Yes. Six VMs were abnormally slow to start. Their spawn and build times were well above the norm.\n\nNormal is a median of about 19.7 s to spawn an instance on the hypervisor (p95 21.0 s) and about 20.6 s to build it (p95 21.8 s). Both figures come from 2,066 VMs. The flagging threshold was about 22.3 s for spawn and 23.1 s for build.\n\n| VM (instance id) | When | Spawn | Build | vs. median |\n|---|---|---|---|---|\n| a445709b-6ad0-40ec-8860-bec60b6ca0c2 | 2017-05-14 21:43 | 50.72 s | 51.59 s | ~2.6× |\n| 544fd51c-4edc-4780-baae-ba1d80a0acfc | 2017-05-14 21:08 | 41.81 s | 42.81 s | ~2.1× |\n| 1643649d-2f42-4303-bfcd-7798baec19f9 | 2017-05-14 21:47 | 31.27 s | 32.12 s | ~1.6× |\n| ae651dff-c7ad-43d6-ac96-bbcd820ccca8 | 2017-05-14 21:09 | 29.46 s | 30.32 s | ~1.5× |\n| d7d68893-c44f-4e7c-8d4b-0e7801d62776 | 2017-05-14 21:45 | 26.69 s | 27.61 s | ~1.35× |\n| f0ff0b46-b3cd-43e6-97eb-839fd1cdaa87 | 2017-05-16 16:49 | 22.56 s | 23.34 s | ~1.14× (marginal) |\n\n- **Pattern:** Five of the six were on 2017-05-14, between about 21:08 and 21:47. They fall in two clusters, around 21:08–21:09 and 21:43–21:47. The sixth, on 05-16, only just crossed the threshold.\n- **Cause:** I did not look for one. The logs only show that these VMs were slow.\n- **Other slow requests:** Four API or metadata requests on 2017-05-17 around 06:25 were also slow, at 2.1–4.2 s against medians of 0.1–0.3 s. They were a `os-server-external-events` POST, a `servers/detail` GET for host `cp-1.slowvm1…`, and two metadata GETs (`meta_data.json` and `vendor_data.json`). They are not VM start times, and I did not check whether they are linked to the slow VMs.",
+   "calls": [
+    {
+     "name": "value_outliers",
+     "args": {
+      "dataset": "openstack",
+      "limit": 30
+     }
+    }
+   ],
+   "errors": [],
+   "run_error": null,
+   "first_tool": "value_outliers",
+   "first_ok": true,
+   "need_ok": true,
+   "facts": 1,
+   "facts_total": 2,
+   "facts_missed": [
+    "median spawn seconds = 19.74"
+   ],
+   "n_calls": 1,
+   "n_errors": 0,
+   "tokens_in": 66282,
+   "tokens_out": 926,
+   "elapsed_s": 9.2
+  },
+  {
+   "id": "T-O3",
+   "dataset": "openstack",
+   "model": "anthropic:claude-sonnet-5-5",
+   "question": "Why did the OpenStack API return HTTP 503, when did it happen, and what happened around those requests?",
+   "answer": "**Why:** The 503s came from a failed token check, not from nova-api itself. For each failing request, nova-api called the identity service to validate the auth token. The identity side returned a 503 with an HTML error page, so nova-api could not validate the token and returned 503 to the client. The logs don't say why the identity service returned 503. Nothing from it is in this dataset.\n\n**When:** There are only two 503 responses in the whole OpenStack dataset, both from `nova-api`:\n\n| Time | Request | Client call |\n|---|---|---|\n| 2017-05-16 06:25:02.870 | `req-1cc7d50c-25a2-46b0-a668-9c00f589160c` | `GET /v2/54fadb412c4e40cdbaed9335e4c35a9e/servers/detail`, 8.1 ms |\n| 2017-05-17 06:25:03.049 | `req-abcdb287-429c-40a5-8e79-d490d4fb7410` | the same call, 10.2 ms |\n\nThe two events happened almost exactly 24 hours apart. That could point to something scheduled, but I did not run a periodicity check, so treat it as a hypothesis.\n\n**What happened around them:** Both requests logged the same four lines within about 3 ms:\n1. **`ERROR`:** \"Bad response code while validating token: 503\".\n2. **`WARNING`:** \"Identity response: <!DOCTYPE HTML PUBLIC \"-//IETF//DTD HTML 2.0//EN\">\". This is the start of an HTML error page, which suggests a web server or proxy answered instead of the identity API. That is an inference from the snippet.\n3. **`CRITICAL`:** \"Unable to validate token: Failed to fetch token data from identity server\".\n4. **`INFO`:** the access-log line with `status: 503 len: 323`.\n\n- **Before:** Each failing request's previous call had succeeded. In the first case the same request id returned 200 with a 278 ms latency one second earlier, and in the second case the same request id returned 200 with a 262 ms latency.\n- **Surrounding traffic:** In the minute before each failure, the identical `servers/detail` calls were all returning 200 in about 250–450 ms.\n- **After:** Normal traffic resumed within seconds. On 05-17, `nova-compute` finished a VM spawn (21.39 s) and `nova-api` served 200s for metadata and server-list calls.\n- **Scope:** The failure was transient and isolated to these two requests. I found no other errors or 5xx responses in these windows. The `nova-compute` lines (periodic image checks, resource audits, one VM spawning) look unrelated.\n\nTo find the root cause, check the identity service (Keystone) and any proxy in front of it around 06:25 on both days. This dataset has no logs from them.",
+   "calls": [
+    {
+     "name": "search_logs",
+     "args": {
+      "dataset": "openstack",
+      "query_text": "503",
+      "limit": 50
+     }
+    },
+    {
+     "name": "count_by",
+     "args": {
+      "dataset": "openstack",
+      "group_by": "component",
+      "status": 503
+     }
+    },
+    {
+     "name": "get_context",
+     "args": {
+      "dataset": "openstack",
+      "line_id": 70743,
+      "scope": "request"
+     }
+    },
+    {
+     "name": "get_context",
+     "args": {
+      "dataset": "openstack",
+      "line_id": 70743,
+      "scope": "all",
+      "before_s": 60,
+      "after_s": 60,
+      "limit": 30
+     }
+    },
+    {
+     "name": "get_context",
+     "args": {
+      "dataset": "openstack",
+      "line_id": 194062,
+      "scope": "all",
+      "before_s": 60,
+      "after_s": 60,
+      "limit": 30
+     }
+    }
+   ],
+   "errors": [],
+   "run_error": null,
+   "first_tool": "search_logs",
+   "first_ok": true,
+   "need_ok": true,
+   "facts": 2,
+   "facts_total": 2,
+   "facts_missed": [],
+   "n_calls": 5,
+   "n_errors": 0,
+   "tokens_in": 109196,
+   "tokens_out": 1692,
+   "elapsed_s": 16.2
+  },
+  {
+   "id": "T-O4",
+   "dataset": "openstack",
+   "model": "anthropic:claude-sonnet-5-5",
+   "question": "How many OpenStack API requests failed with a 4xx or 5xx status, and is latency different for failed requests?",
+   "answer": "**Failed requests:** 3,971 OpenStack API requests returned a 4xx or 5xx status. That is 3,969 with 404 and 2 with 503. No other 4xx or 5xx codes appear. For comparison, there are 90,633 requests with 200, 2,065 with 202 and 2,064 with 204.\n\n**Latency:** Failed requests are faster, not slower, than successful ones.\n\n| Status | Timed requests | p50 | p95 | Max |\n|---|---|---|---|---|\n| 404 | 3,969 | 0.090 s | 0.248 s | 0.72 s |\n| 503 | 2 | 0.009 s | 0.010 s | 0.010 s |\n| 200 | 90,633 | 0.260 s | 0.358 s | 4.16 s |\n| 204 | 2,064 | 0.261 s | 0.297 s | 1.25 s |\n| 202 | 2,065 | 0.504 s | 0.648 s | 1.79 s |\n\n- **404s:** They return about 3 times faster than 200s at the median (0.09 s against 0.26 s). That fits a quick \"not found\" lookup.\n- **503s:** Two requests are too few to draw a conclusion. Both returned in about 10 ms.\n- **Slowest operations:** The slowest timed lines in the dataset carry no HTTP status. They are the \"Took N seconds\" lines (8,261 of them), with p50 of 10.9 s and p95 of 21.1 s. These are VM spawn and build timings, not API requests, so I did not count them as failures.",
+   "calls": [
+    {
+     "name": "latency_profile",
+     "args": {
+      "dataset": "openstack",
+      "group_by": "status"
+     }
+    },
+    {
+     "name": "list_values",
+     "args": {
+      "dataset": "openstack",
+      "field": "status"
+     }
+    }
+   ],
+   "errors": [],
+   "run_error": null,
+   "first_tool": "latency_profile",
+   "first_ok": true,
+   "need_ok": true,
+   "facts": 1,
+   "facts_total": 2,
+   "facts_missed": [
+    "timed nova-api requests = 98733"
+   ],
+   "n_calls": 2,
+   "n_errors": 0,
+   "tokens_in": 55754,
+   "tokens_out": 667,
+   "elapsed_s": 6.8
+  },
+  {
+   "id": "T-S1",
+   "dataset": "ssh",
+   "model": "anthropic:claude-sonnet-5-5",
+   "question": "On the SSH server, which IP addresses drove the failed root logins between 2018-01-01 and 2018-01-08, and how many attempts were there?",
+   "answer": "Eight IP addresses account for nearly all of the failed root logins on the SSH server (host LabSZ). From 2018-01-01 to 2018-01-08 there were **102,039 log lines** of \"Failed password for root\". They came from 214 distinct IPs. The log ends on 2018-01-07 17:22, so that is the effective end of the window.\n\nThese figures count log lines, not exact attempts. Some lines read \"message repeated N times: [Failed password…]\" and stand for several attempts each, so the true attempt count is somewhat higher.\n\n| IP | Lines | Active (2018) |\n|---|---|---|\n| 59.63.188.30 | 28,766 | Jan 3 10:07 – Jan 5 12:22 |\n| 183.63.110.206 | 17,340 | Jan 2 19:15 – Jan 3 10:08 |\n| 58.242.83.25 | 14,383 | Jan 1 08:48 – Jan 2 17:13 |\n| 183.192.189.131 | 8,670 | Jan 3 00:57 – Jan 3 12:36 |\n| 218.65.30.30 | 8,374 | Jan 1 14:23 – Jan 2 11:12 |\n| 218.87.109.156 | 7,135 | Jan 3 15:01 – Jan 4 12:17 |\n| 182.100.67.120 | 6,179 | Jan 1 20:32 – Jan 2 11:31 |\n| 182.100.67.52 | 3,389 | Jan 4 03:43 – Jan 5 07:32 |\n\nTogether these eight IPs account for about 94,000 of the 102,039 lines (roughly 92%). Each ran its attempts as a sustained burst lasting hours to a day or two.\n\nA long tail of smaller sources follows, each with fewer than 650 lines:\n- 183.192.189.133 (614)\n- 139.219.239.13 (566)\n- 123.235.32.19 (499)\n- 119.7.221.129 (462)\n- 60.2.12.12 (435)\n- 115.238.230.180 (432)\n\nI only pulled the top 30 IPs. The remaining ~184 IPs each have 114 lines or fewer.\n\nSeveral of the sources sit in neighbouring address blocks: 218.65.30.x, 182.100.67.x and 218.87.109.x. That could mean coordinated or related scanning, but the logs don't confirm it.",
+   "calls": [
+    {
+     "name": "describe_corpus",
+     "args": {}
+    },
+    {
+     "name": "top_entities",
+     "args": {
+      "dataset": "ssh",
+      "query_text": "failed password root",
+      "start": "2018-01-01",
+      "end": "2018-01-08",
+      "limit": 30
+     }
+    },
+    {
+     "name": "search_logs",
+     "args": {
+      "dataset": "ssh",
+      "query_text": "failed password root",
+      "start": "2018-01-01",
+      "end": "2018-01-08",
+      "limit": 3
+     }
+    }
+   ],
+   "errors": [],
+   "run_error": null,
+   "first_tool": "top_entities",
+   "first_ok": true,
+   "need_ok": true,
+   "facts": 2,
+   "facts_total": 2,
+   "facts_missed": [],
+   "n_calls": 3,
+   "n_errors": 0,
+   "tokens_in": 92456,
+   "tokens_out": 1350,
+   "elapsed_s": 13.4
+  },
+  {
+   "id": "T-S2",
+   "dataset": "ssh",
+   "model": "anthropic:claude-sonnet-5-5",
+   "question": "Were there break-in attempts against the SSH server? How many, and on which day did they peak?",
+   "answer": "Yes. The SSH server (host LabSZ) was under sustained attack, and the peak was **3 January 2018**.\n\n**Explicit break-in attempts:** 19,406 log lines say \"POSSIBLE BREAK-IN ATTEMPT!\". Sshd logs this when a connecting IP's reverse DNS lookup fails. The lines run from 2017-12-10 to 2018-01-07. 3 January had 8,724 of them, far more than any other day. The next highest days were 2 January (2,889) and 1 January (2,149), so the attack ramped up from 31 December and dropped sharply on 4 January (355).\n\n**Wider brute-force activity** over the same 28 days:\n- There are 197,587 \"Failed password\" lines. Of these, 19,848 are for invalid usernames and the rest are mostly root logins.\n- There are 152,982 PAM authentication-failure lines.\n- There are 37,298 \"Too many authentication failures\" disconnects.\n- There are 14,581 \"Invalid user\" lines.\n- Failed passwords by day peaked at 31,843 on 3 January. 2 January (24,732) and 4 January (27,342) were also heavy.\n- The logs are empty from 24 to 28 December, so the data has a gap there.\n\nThese are log lines, not separate attackers or incidents. One IP can generate thousands of lines. I did not count distinct source IPs.",
+   "calls": [
+    {
+     "name": "describe_corpus",
+     "args": {}
+    },
+    {
+     "name": "search_logs",
+     "args": {
+      "dataset": "ssh",
+      "query_text": "failed password OR invalid user OR authentication failure",
+      "limit": 5
+     }
+    },
+    {
+     "name": "search_logs",
+     "args": {
+      "dataset": "ssh",
+      "query_text": "POSSIBLE BREAK-IN ATTEMPT",
+      "limit": 3
+     }
+    },
+    {
+     "name": "top_patterns",
+     "args": {
+      "dataset": "ssh",
+      "start": "2017-12-10",
+      "end": "2018-01-08",
+      "rank_by": "lines",
+      "limit": 15,
+      "problem_only": false
+     }
+    },
+    {
+     "name": "trend",
+     "args": {
+      "dataset": "ssh",
+      "query_text": "\"POSSIBLE BREAK-IN ATTEMPT\"",
+      "bucket": "day"
+     }
+    },
+    {
+     "name": "trend",
+     "args": {
+      "dataset": "ssh",
+      "query_text": "\"Failed password\"",
+      "bucket": "day"
+     }
+    }
+   ],
+   "errors": [],
+   "run_error": null,
+   "first_tool": "search_logs",
+   "first_ok": true,
+   "need_ok": true,
+   "facts": 2,
+   "facts_total": 3,
+   "facts_missed": [
+    "peak day = 2018-01-03"
+   ],
+   "n_calls": 6,
+   "n_errors": 0,
+   "tokens_in": 136080,
+   "tokens_out": 1168,
+   "elapsed_s": 14.8
+  },
+  {
+   "id": "T-S3",
+   "dataset": "ssh",
+   "model": "anthropic:claude-sonnet-5-5",
+   "question": "Do the failed password attempts on the SSH server follow a daily rhythm? At what hour are they worst?",
+   "answer": "**No, the failed password attempts don't follow a daily rhythm.** They are spread across all 24 hours, and no hour stands out as the worst.\n\nI counted bursts (recurrences of a message, split by more than 30 minutes of quiet) by hour of day. I did not count raw lines per hour.\n\n- **Main pattern, \"Failed password for <*> from <IP>\"** (258 bursts, 140,768 lines): bursts run at about 7–18 per hour in every hour. The highest is 08:00 with 18 bursts, about 7% of the total. Next are 23:00 with 16, and 12:00 and 16:00 with 14 each. The lowest hours are 15:00 and 11:00 with 7 each. That is too flat to call a peak, and the tool's \"time-of-day pattern\" rule needs one hour to hold at least 30% of bursts.\n- **\"Failed password for invalid user\" pattern** (171 bursts, 19,848 lines): also flat, at 4–11 bursts per hour. Its highest hour is 23:00 with 11, then 19:00 and 20:00 with 10 each. That is a different peak hour from the main pattern, which again points to no daily cycle.\n- **No schedule:** the gaps between bursts are irregular. Only 27.6% of gaps fall within ±20% of the median for the main pattern, and 24.1% for the invalid-user pattern. The tool's reading is \"no regular schedule\" for both.\n- **Weekday:** there is a weak lean towards the weekend. For the main pattern, Saturday has 50 bursts and Sunday 41, against 25–36 on Tuesday to Thursday. Friday has 43 and Monday 36. For the invalid-user pattern, Saturday and Sunday have 34 each. This is a hint, not a rhythm.\n\nVolume is driven by multi-day campaigns, not by time of day. Daily \"failed password\" lines swing widely over the 28 days:\n- They peak at 31,843 lines on 2018-01-03, with 24,732 on 01-02 and 27,342 on 01-04.\n- There are other surges of 12,000–14,000 lines a day on Dec 10, Dec 12, Dec 17, Dec 30 and Jan 1.\n- They fall to quiet days of about 600–1,600 lines.\n- There are no lines at all from Dec 24 to Dec 28.\n\nIf you want to rate the risk, look at which days and which source IPs are active, not which hour. I can pull the top attacker IPs for the Jan 2–4 surge if that helps.",
+   "calls": [
+    {
+     "name": "describe_corpus",
+     "args": {}
+    },
+    {
+     "name": "find_patterns",
+     "args": {
+      "text": "failed password for user",
+      "dataset": "ssh"
+     }
+    },
+    {
+     "name": "periodicity",
+     "args": {
+      "dataset": "ssh",
+      "pattern_id": 400011
+     }
+    },
+    {
+     "name": "periodicity",
+     "args": {
+      "dataset": "ssh",
+      "pattern_id": 400007
+     }
+    },
+    {
+     "name": "trend",
+     "args": {
+      "dataset": "ssh",
+      "query_text": "failed password",
+      "bucket": "day"
+     }
+    }
+   ],
+   "errors": [],
+   "run_error": null,
+   "first_tool": "find_patterns",
+   "first_ok": false,
+   "need_ok": true,
+   "facts": 0,
+   "facts_total": 1,
+   "facts_missed": [
+    "failed password lines in the worst hour of day = 15357"
+   ],
+   "n_calls": 5,
+   "n_errors": 0,
+   "tokens_in": 99368,
+   "tokens_out": 1598,
+   "elapsed_s": 17.1
+  },
+  {
+   "id": "T-S4",
+   "dataset": "ssh",
+   "model": "anthropic:claude-sonnet-5-5",
+   "question": "What should the security team look at first on the SSH server over the last four weeks of logs?",
+   "answer": "**Start with the brute-force traffic against root and invalid usernames. Then check the successful logins, because those are the ones that could mean a breach.**\n\nThe ssh dataset is one internet-facing host, LabSZ. It covers 2017-12-10 to 2018-01-07, which is the last four weeks, and holds 655,147 lines. The security-ops team owns all 53 problem patterns.\n\n**1. Password guessing at scale**\n- The top-ranked patterns are all authentication failures:\n  - \"Failed password for <*> from <IP>\": 129,251 lines in 253 bursts.\n  - \"Disconnecting: Too many authentication failures\": 37,289 lines.\n  - \"message repeated N times: Failed password for root\": 36,959 lines.\n  - \"Invalid user <*> from <IP>\": 13,976 lines in 168 bursts.\n- The same pattern appears in all five weeks, so this is constant background pressure, not one incident.\n- Root is the main target. Root \"Failed password\" lines total 176,786.\n- Another 18,803 lines say \"reverse mapping … POSSIBLE BREAK-IN ATTEMPT!\". That is sshd flagging connections whose reverse DNS doesn't match.\n- Ignore the \"change vs previous period\" figures in the priority table. The data starts 2017-12-10, so there is no real earlier period to compare against.\n\n**2. Heavy attacker IPs, worth blocking or rate-limiting**\n\n| IP | Lines | Active |\n|---|---|---|\n| 59.63.188.30 | 57,539 | 2018-01-03 to 01-05 |\n| 183.63.110.206 | 52,020 | 2018-01-02 to 01-03 |\n| 183.238.178.195 | 43,557 | 2017-12-12 to 12-16 |\n| 183.192.189.131 | 35,020 | 2017-12-11 to 2018-01-03 |\n| 183.62.140.253 | 32,953 | 2017-12-10, about 6 hours |\n| 139.219.191.138 | 32,934 | 2017-12-30, about 7 hours |\n\nThere are 1,187 distinct IPs in total, so the traffic is spread widely. Block the top ones, but also add fail2ban-style rate limiting and disable root and password logins.\n\n**3. Successful logins, to verify**\n- There are 182 \"Accepted password\" lines, all for named users, from 42 IPs. None are for root.\n- **61.187.54.9** has 12 accepted logins. Its first contact, on 2018-01-02 at 16:14, was a failed attempt for user `curi`, followed by an accepted login a few seconds later. It then logged in repeatedly until 2018-01-03 14:20. The same account, `curi`, normally logs in from 137.189.x.x and 14.17.22.31.\n- **111.222.107.90** has 25 accepted logins as `hxu` between 2017-12-21 and 2018-01-07. The first one was accepted with no failure before it, and a later one followed a failure.\n- I can't tell from the logs whether these are legitimate users or compromised accounts. Confirm with the account owners and check what those sessions did.\n\n**Suggested order**\n1. Check the `curi` login from 61.187.54.9 and the `hxu` logins from 111.222.107.90 for account compromise.\n2. Block the top attacker IPs and rate-limit repeated failures.\n3. Turn off password authentication and root login over SSH.\n\nThese logs show no post-login activity, so what happened inside any session isn't visible here.",
+   "calls": [
+    {
+     "name": "describe_corpus",
+     "args": {}
+    },
+    {
+     "name": "top_patterns",
+     "args": {
+      "dataset": "ssh",
+      "limit": 15
+     }
+    },
+    {
+     "name": "top_entities",
+     "args": {
+      "dataset": "ssh",
+      "limit": 10
+     }
+    },
+    {
+     "name": "priority_table",
+     "args": {
+      "dataset": "ssh",
+      "limit": 10
+     }
+    },
+    {
+     "name": "search_logs",
+     "args": {
+      "dataset": "ssh",
+      "query_text": "Accepted",
+      "limit": 20
+     }
+    },
+    {
+     "name": "facet",
+     "args": {
+      "dataset": "ssh",
+      "query_text": "Accepted",
+      "dims": [
+       "pattern_id"
+      ]
+     }
+    },
+    {
+     "name": "top_entities",
+     "args": {
+      "dataset": "ssh",
+      "query_text": "Accepted",
+      "limit": 10
+     }
+    },
+    {
+     "name": "search_logs",
+     "args": {
+      "dataset": "ssh",
+      "query_text": "Accepted root",
+      "limit": 10
+     }
+    },
+    {
+     "name": "search_logs",
+     "args": {
+      "dataset": "ssh",
+      "query_text": "Accepted",
+      "entity": "ip:61.187.54.9",
+      "limit": 3
+     }
+    },
+    {
+     "name": "search_logs",
+     "args": {
+      "dataset": "ssh",
+      "query_text": "Accepted",
+      "entity": "ip:111.222.107.90",
+      "limit": 3
+     }
+    },
+    {
+     "name": "count_by",
+     "args": {
+      "dataset": "ssh",
+      "group_by": "node",
+      "query_text": "\"Failed password\" root"
+     }
+    },
+    {
+     "name": "search_logs",
+     "args": {
+      "dataset": "ssh",
+      "entity": "ip:61.187.54.9",
+      "limit": 8,
+      "exclude_text": "Accepted"
+     }
+    },
+    {
+     "name": "search_logs",
+     "args": {
+      "dataset": "ssh",
+      "entity": "ip:111.222.107.90",
+      "limit": 8,
+      "exclude_text": "Accepted"
+     }
+    }
+   ],
+   "errors": [],
+   "run_error": null,
+   "first_tool": "top_patterns",
+   "first_ok": true,
+   "need_ok": true,
+   "facts": 1,
+   "facts_total": 1,
+   "facts_missed": [],
+   "n_calls": 13,
+   "n_errors": 0,
+   "tokens_in": 257643,
+   "tokens_out": 2727,
+   "elapsed_s": 30.7
+  },
+  {
+   "id": "T-Z1",
+   "dataset": "zookeeper",
+   "model": "anthropic:claude-sonnet-5-5",
+   "question": "Which problems recurred most in the ZooKeeper ensemble between 2015-07-29 and 2015-08-26, which teams own them, and what should be investigated first?",
+   "answer": "**ZooKeeper problems, 2015-07-29 to 2015-08-26**\n\nTwo teams own all 11 problem patterns in this window. The ranking uses the burst-based priority score. A burst is a recurrence of a pattern after more than 30 minutes of quiet.\n\n**coordination-platform: 35 bursts across 7 patterns, 13,585 lines**\n- **\"Cannot open channel to N at election address /IP\"** (QuorumCnxManager, WARN) is the top coordination-platform item, scoring 86.4. It has 8 bursts, 2,584 lines, and is active in all 5 weeks.\n  - Its largest burst ran from 2015-08-24 15:26:57 to 2015-08-25 11:23:57, with 2,417 lines.\n  - That burst began right after the 4 ensemble servers started up and entered leader election (LOOKING).\n  - It was accompanied by 1,203 \"Notification time out\" lines.\n  - Peer 2 at 10.10.34.12:3888 was among those that could not be reached.\n  - Following began around 11:14 on 08-25.\n- **\"Unexpected exception causing shutdown while sock still open\"** (LearnerHandler, ERROR) has 7 bursts and 590 lines. It has the highest fault probability of any pattern here (p_fault 0.95).\n- **\"Exception when following the leader\"** (Follower) has 6 bursts.\n- **\"Connection broken for id N…\"** (RecvWorker) has 6 bursts. A separate variant of the same message, with a hex id, produced a single burst of 10,356 lines on 07-29. That burst is the largest line volume in the period.\n- **\"Unexpected exception, tries=N, connecting to /IP\"** (Learner) has 5 bursts.\n- **\"Exception when using channel… Broken pipe\"** (SendWorker) has 2 bursts.\n\n**client-connectivity: 30 bursts across 4 patterns, 1,864 lines**\n- **\"caught end of stream exception\"** (NIOServerCnxn, WARN) is the most frequent pattern overall, with 18 bursts and 1,670 lines. It ranks first, scoring 89.5. It was active in 3 weeks. Its fault probability (p_fault 0.58) is the lowest of the top patterns.\n- **\"Unexpected Exception:\"** (NIOServerCnxn, ERROR) has 9 bursts but only 27 lines.\n- **\"Exception causing close of session… ZooKeeperServer not running\"** has 2 bursts and 159 lines.\n- **\"…Connection reset by peer\"** has 1 burst and 8 lines.\n\n**Timing:** Warning volume was heavily front-loaded. Of 48,507 WARN lines in the window, 42,668 fell on 07-29, followed by 1,589 on 07-30 and 840 on 07-31. After that it was quiet, apart from smaller flare-ups on 08-10, 08-20, 08-24 and 08-25.\n\n**What to investigate first**\n1. **Quorum and election connectivity (coordination-platform).**\n   - Start with the \"Cannot open channel\" pattern and the 08-24 to 08-25 episode. Check why the election port 3888 on peer 2 (10.10.34.12) was unreachable after the restart. Possible causes are a peer that was down or slow to start, a network or firewall problem, or a wrong address in the config.\n   - Then look at the 07-29 storm, which started around 19:03 to 19:04: the \"Connection broken\", LearnerHandler shutdown and \"ZooKeeperServer not running\" lines. These point to a leader or follower failure and re-election.\n   - Compare the 07-29 storm with the 08-24 episode to see whether they share a cause.\n2. **Client-connectivity.** Look at the \"end of stream\" and \"Unexpected Exception\" lines only afterwards. They are the most frequent, but they are probably client disconnects that follow the server instability.\n\n**Caveats**\n- ZooKeeper logs carry no node or host field, so I can't say whether this is one bad server or the whole ensemble.\n- Every pattern is flagged \"new\", but this is probably an artifact. The data begins on 2015-07-29, so there is no earlier period to compare against.\n- The causal links above are hypotheses from timing and wording, not confirmed. Root cause, downtime and customer impact are not in these logs.",
+   "calls": [
+    {
+     "name": "top_patterns",
+     "args": {
+      "dataset": "zookeeper",
+      "start": "2015-07-29",
+      "end": "2015-08-26",
+      "limit": 15
+     }
+    },
+    {
+     "name": "priority_table",
+     "args": {
+      "dataset": "zookeeper",
+      "start": "2015-07-29",
+      "end": "2015-08-26",
+      "limit": 10
+     }
+    },
+    {
+     "name": "trend",
+     "args": {
+      "dataset": "zookeeper",
+      "start": "2015-07-29",
+      "end": "2015-08-26",
+      "bucket": "day",
+      "severity": "WARN"
+     }
+    },
+    {
+     "name": "burst_timeline",
+     "args": {
+      "dataset": "zookeeper",
+      "pattern_id": 200018,
+      "same_nodes": false
+     }
+    }
+   ],
+   "errors": [],
+   "run_error": null,
+   "first_tool": "top_patterns",
+   "first_ok": true,
+   "need_ok": true,
+   "facts": 2,
+   "facts_total": 2,
+   "facts_missed": [],
+   "n_calls": 4,
+   "n_errors": 0,
+   "tokens_in": 107657,
+   "tokens_out": 2125,
+   "elapsed_s": 18.9
+  },
+  {
+   "id": "T-Z2",
+   "dataset": "zookeeper",
+   "model": "anthropic:claude-sonnet-5-5",
+   "question": "The ZooKeeper servers kept logging \"Cannot open channel ... at election address\". How many times, since when, and to which peers?",
+   "answer": "The ZooKeeper logs contain **2,584** \"Cannot open channel to N at election address …:3888\" warnings.\n\n- **When:** The first one is at 2015-07-29 17:41:41.7. The last is at 2015-08-25 11:23:57.7. The log ends on the same day, so the warnings continue to the end of the data.\n- **Source:** All 2,584 lines are WARN from the `QuorumCnxManager` component, and all share one message pattern (200018).\n- **Peers:** The warnings name three peer election addresses, all on port 3888.\n\n| Peer address | Lines | First seen | Last seen |\n|---|---|---|---|\n| 10.10.34.13 (server 3) | 1,289 | 2015-07-29 17:41:41 | 2015-08-25 11:23:07 |\n| 10.10.34.12 (server 2) | 1,276 | 2015-07-29 17:41:41 | 2015-08-25 11:23:57 |\n| 10.10.34.11 | 19 | 2015-07-30 23:46:28 | 2015-08-10 18:25:25 |\n\nServers 2 and 3 were unreachable from the very first seconds of the log, with retries roughly every 0.2 to 1.6 seconds at the start. The attempts against 10.10.34.11 are rare by comparison and sit in a much shorter span.\n\nI matched peer numbers to IPs only for .12 (server 2) and .13 (server 3), from the sample lines. I didn't check which peer number goes with 10.10.34.11.\n\nThe tools returned no node value for these lines, so I can't say which server logged them.",
+   "calls": [
+    {
+     "name": "search_logs",
+     "args": {
+      "query_text": "\"Cannot open channel\" election address",
+      "dataset": "zookeeper",
+      "limit": 10
+     }
+    },
+    {
+     "name": "top_entities",
+     "args": {
+      "dataset": "zookeeper",
+      "query_text": "\"Cannot open channel\" election address",
+      "entity_type": "any",
+      "limit": 30
+     }
+    },
+    {
+     "name": "facet",
+     "args": {
+      "dataset": "zookeeper",
+      "query_text": "\"Cannot open channel\" election address",
+      "dims": [
+       "node",
+       "component",
+       "severity",
+       "pattern_id"
+      ]
+     }
+    }
+   ],
+   "errors": [],
+   "run_error": null,
+   "first_tool": "search_logs",
+   "first_ok": true,
+   "need_ok": true,
+   "facts": 2,
+   "facts_total": 2,
+   "facts_missed": [],
+   "n_calls": 3,
+   "n_errors": 0,
+   "tokens_in": 57517,
+   "tokens_out": 893,
+   "elapsed_s": 8.7
+  },
+  {
+   "id": "T-Z3",
+   "dataset": "zookeeper",
+   "model": "anthropic:claude-sonnet-5-5",
+   "question": "In ZooKeeper, what else tends to happen at the same time as \"caught end of stream exception\"?",
+   "answer": "In ZooKeeper, \"caught end of stream exception\" (pattern 200062, NIOServerCnxn) is part of a client-session teardown and reconnect sequence. I measured this over its 18 bursts, counting other patterns that start within ±300 s. The control is the same bursts shifted one day earlier.\n\n**Almost always present (18 of 18 bursts, lift ≈ 17.9 against a control share of 0.056):**\n- \"Closed socket connection for client /<IP> which had sessionid <HEX>\". This also appears on the same node in all 18 cases.\n- \"Processed session termination for sessionid: <HEX>\"\n- \"Expiring session <HEX>, timeout of <N>ms exceeded\"\n\n**Often present (13 of 18 bursts, 72%, lift ≈ 12.9):**\n- \"Accepted socket connection from /<IP>\"\n- \"Connection request from old client /<IP>; will be dropped if server is in r-o mode\"\n- \"Client attempting to establish new session at /<IP>\"\n- \"Established session <HEX> with negotiated timeout <N> for client /<IP>\"\n\nThese four lines are a client reconnecting and getting a new session.\n\n**Occasional (lower lift, small counts):**\n- \"Got zxid <HEX> expected <N>x1\": 5 of 18 bursts.\n- \"Creating new log file: log.<HEX>\": 4 of 18 bursts.\n- \"Unexpected Exception:\": 2 of 18 bursts.\n- Single cases of \"LOOKING\" and \"Notification time out\".\n- Single same-node cases of \"Exception causing close of session … ZooKeeperServer not running\" and \"Closed socket connection … (no session established for client)\".\n\n**Reading:** the usual picture is that a client connection drops. The server logs the end-of-stream exception, closes the socket, and expires and terminates the session. In most cases the client then reconnects and gets a new session.\n\nThis is an association in time, not proof of cause. The leader-election lines (LOOKING, notification time-out) appear in only one burst, so they are not a typical companion.",
+   "calls": [
+    {
+     "name": "find_patterns",
+     "args": {
+      "text": "caught end of stream exception",
+      "dataset": "zookeeper",
+      "k": 5
+     }
+    },
+    {
+     "name": "co_occurrence",
+     "args": {
+      "dataset": "zookeeper",
+      "pattern_a": 200062,
+      "scope": "dataset",
+      "window_s": 300,
+      "limit": 12
+     }
+    },
+    {
+     "name": "co_occurrence",
+     "args": {
+      "dataset": "zookeeper",
+      "pattern_a": 200062,
+      "scope": "node",
+      "window_s": 300,
+      "limit": 12
+     }
+    }
+   ],
+   "errors": [],
+   "run_error": null,
+   "first_tool": "find_patterns",
+   "first_ok": true,
+   "need_ok": true,
+   "facts": 1,
+   "facts_total": 1,
+   "facts_missed": [],
+   "n_calls": 3,
+   "n_errors": 0,
+   "tokens_in": 87164,
+   "tokens_out": 1085,
+   "elapsed_s": 11.9
+  },
+  {
+   "id": "T-Z4",
+   "dataset": "zookeeper",
+   "model": "anthropic:claude-sonnet-5-5",
+   "question": "How did the volume of WARN messages in ZooKeeper change week by week?",
+   "answer": "ZooKeeper logged 48,507 WARN lines between 2015-07-29 and 2015-08-25. Almost all of them fall in the first week.\n\n| Week starting (Monday) | WARN lines |\n|---|---|\n| 2015-07-27 | 45,097 |\n| 2015-08-03 | 16 |\n| 2015-08-10 | 374 |\n| 2015-08-17 | 577 |\n| 2015-08-24 | 2,443 |\n\n- **Week of 07-27:** This week held about 93% of all WARN lines. It is a partial week, because the data starts on Wednesday 07-29, so the burst happened within a few days.\n- **Week of 08-03:** Volume fell to almost nothing, with 16 lines.\n- **Weeks of 08-10 and 08-17:** Volume rose slowly, from 374 to 577.\n- **Week of 08-24:** Volume rose to 2,443, about 4 times the previous week. This is also a partial week, because the data ends on 08-25 at 11:23. It is far below the first week's peak.\n\nI haven't looked into what caused the first-week burst or the rise at the end. A daily breakdown and a look at the WARN patterns would show that.",
+   "calls": [
+    {
+     "name": "trend",
+     "args": {
+      "dataset": "zookeeper",
+      "severity": "WARN",
+      "bucket": "week"
+     }
+    }
+   ],
+   "errors": [],
+   "run_error": null,
+   "first_tool": "trend",
+   "first_ok": true,
+   "need_ok": true,
+   "facts": 1,
+   "facts_total": 1,
+   "facts_missed": [],
+   "n_calls": 1,
+   "n_errors": 0,
+   "tokens_in": 54377,
+   "tokens_out": 568,
+   "elapsed_s": 6.7
+  },
+  {
+   "id": "T-A1",
+   "dataset": "apache",
+   "model": "anthropic:claude-sonnet-5-5",
+   "question": "Based on the Apache web server error log from 2005-12-01 to 2006-03-01, what should we prioritise next?",
+   "answer": "**Priority 1: \"script not found or unable to stat\" (web-platform, httpd).** It is the top-ranked problem pattern, with a score of 89.5.\n\n- **Two variants.** Pattern 300042 is the bare message: 3,339 lines and 127 bursts, up from 29 in the previous period. Pattern 300033 is the `[client <IP>] … <PATH>` form: 2,207 lines and 77 bursts, up from 32. Together they are the largest and fastest-growing problem in the period.\n- **What it hits.** In 300033, almost all the lines name two paths. `/var/www/cgi-bin/awstats.pl` has 1,101 lines and `/var/www/cgi-bin/awstats` has 1,083.\n- **Timing.** The search term \"script not found\" has 0 lines in the weeks of 5 Dec to 26 Dec. It returns from the week of 2 Jan, at 259–1,017 lines per week through February. It is steady, not a one-off burst.\n- **Source.** 86 client IPs are involved. The biggest, 211.99.203.228, has only 80 lines, so no single client dominates.\n- **Likely cause.** This looks like scanning or probing for awstats, or a missing or misconfigured awstats CGI. That is my hypothesis, not something the logs prove.\n- **Action.** Either install or fix awstats, or block and ignore those requests.\n\n**Priority 2: mod_jk / jk2 (app-integration).**\n- `jk2_init() Can't find child <N> in scoreboard` (300022) ranks second with a score of 87.5. It has 415 lines and 69 bursts (up from 54), and it was active in 13 of the 14 weeks.\n- `mod_jk child workerEnv in error state` (300040) has 1,623 lines. Its bursts fell from 160 to 71, so it is improving, but it is still high in volume.\n- `script not found or unable to stat` under mod_jk (300046) has 263 lines and 24 bursts, up from 17.\n- All three are Apache–Tomcat connector faults, so look at the worker and scoreboard configuration together.\n\n**Lower priority:**\n- **Startup errors.** The `worker.jni` / `channel.jni` / `vm` errors (`config.update()` and `env.createBean2()`) have 11 lines each and are falling (11 bursts, from 16). Ranks 4–10 are all these startup errors. They fire together, so one jk2 configuration fix should clear them.\n- **Directory index forbidden.** Pattern 300020 has 1,650 lines but its bursts are falling (853, from 1,045). Its stored judgment is \"not a problem\" (p_fault 0.12), so don't spend time on it.\n\n**Team view.** web-platform has 17 problem patterns and 1,205 bursts, down from 1,331. app-integration has 3 patterns and 164 bursts, down from 231. Overall volume is falling, but the \"script not found\" patterns are growing against that trend.\n\n**Limits.**\n- Apache logs no host, so I can't say how widely a problem is spread.\n- Cost, downtime and customer impact are not in these logs.",
+   "calls": [
+    {
+     "name": "describe_corpus",
+     "args": {}
+    },
+    {
+     "name": "priority_table",
+     "args": {
+      "dataset": "apache",
+      "start": "2005-12-01",
+      "end": "2006-03-01",
+      "limit": 10
+     }
+    },
+    {
+     "name": "top_patterns",
+     "args": {
+      "dataset": "apache",
+      "start": "2005-12-01",
+      "end": "2006-03-01",
+      "rank_by": "lines",
+      "limit": 8
+     }
+    },
+    {
+     "name": "top_entities",
+     "args": {
+      "dataset": "apache",
+      "start": "2005-12-01",
+      "end": "2006-03-01",
+      "entity_type": "path",
+      "query_text": "script not found",
+      "limit": 5
+     }
+    },
+    {
+     "name": "top_entities",
+     "args": {
+      "dataset": "apache",
+      "start": "2005-12-01",
+      "end": "2006-03-01",
+      "entity_type": "ip",
+      "query_text": "script not found",
+      "limit": 5
+     }
+    },
+    {
+     "name": "trend",
+     "args": {
+      "dataset": "apache",
+      "start": "2005-12-01",
+      "end": "2006-03-01",
+      "query_text": "script not found",
+      "bucket": "week"
+     }
+    }
+   ],
+   "errors": [],
+   "run_error": null,
+   "first_tool": "priority_table",
+   "first_ok": true,
+   "need_ok": true,
+   "facts": 2,
+   "facts_total": 2,
+   "facts_missed": [],
+   "n_calls": 6,
+   "n_errors": 0,
+   "tokens_in": 107469,
+   "tokens_out": 1899,
+   "elapsed_s": 17.6
+  },
+  {
+   "id": "T-A2",
+   "dataset": "apache",
+   "model": "anthropic:claude-sonnet-5-5",
+   "question": "Which client IPs triggered the most \"Directory index forbidden\" errors on the Apache server?",
+   "answer": "The top client IPs for \"Directory index forbidden\" errors on the Apache server are below. The search found 6,745 matching lines in total, from 2005-06-09 to 2006-02-28. All of them come from one message pattern, `[client <ip>] Directory index forbidden by rule: /var/www/html/`.\n\n| Rank | Client IP | Lines | Activity window |\n|---|---|---|---|\n| 1 | 218.144.240.75 | 276 | one burst, 2005-07-21 03:37:11–03:37:27 |\n| 2 | 81.169.128.235 | 69 | 2005-06-26 to 2005-07-01 |\n| 3 | 63.199.49.133 | 68 | 2005-06-18 to 2005-07-27 |\n| 4 | 148.245.16.6 | 46 | one burst, 2005-11-22 06:03:46–06:04:07 |\n| 5 | 59.56.12.199 | 32 | one burst, 2005-06-21 22:16–22:17 |\n| 5 | 63.119.14.138 | 32 | 2005-06-18 to 2005-07-05 |\n\nMany other IPs follow with 23 lines each, for example 203.199.72.190, 208.62.55.75, 210.115.233.107 and 211.57.214.94. Each of those hit the server in a burst lasting a few seconds.\n\n218.144.240.75 stands out: 276 errors in about 16 seconds, which looks like an automated scan. The IPs from 81.169.128.235 down to 63.119.14.138 are spread over days or weeks, so they are repeat visitors.\n\nI only listed the top 15 IPs. The same IP extraction counted 4,201 matching lines, fewer than the 6,745 total, so the per-IP counts may not cover every line.",
+   "calls": [
+    {
+     "name": "top_entities",
+     "args": {
+      "dataset": "apache",
+      "query_text": "\"Directory index forbidden\"",
+      "match": "web",
+      "entity_type": "ip",
+      "limit": 15
+     }
+    },
+    {
+     "name": "search_logs",
+     "args": {
+      "dataset": "apache",
+      "query_text": "\"Directory index forbidden\"",
+      "limit": 3
+     }
+    }
+   ],
+   "errors": [],
+   "run_error": null,
+   "first_tool": "top_entities",
+   "first_ok": true,
+   "need_ok": true,
+   "facts": 2,
+   "facts_total": 2,
+   "facts_missed": [],
+   "n_calls": 2,
+   "n_errors": 0,
+   "tokens_in": 56687,
+   "tokens_out": 927,
+   "elapsed_s": 8.9
+  },
+  {
+   "id": "T-A3",
+   "dataset": "apache",
+   "model": "anthropic:claude-sonnet-5-5",
+   "question": "When did \"mod_jk child workerEnv in error state\" errors start on the Apache server, and are they getting worse?",
+   "answer": "**Short answer:** The errors started on 2005-06-17 at 04:03:46, and they are not getting steadily worse. A large surge in mid-November to early December 2005 has ended. The errors are at a low level now, but that level is higher than in the quiet weeks of December.\n\n**When they started**\n- The first \"mod_jk child workerEnv in error state\" line is 2005-06-17 04:03:46, logged at ERROR severity by `mod_jk` as \"workerEnv in error state 1\". The error number later goes to 2.\n- The corpus holds 4,349 matching lines in total, the last on 2006-01-25 07:33:59.\n- From June to early November the rate stayed low, at 0–8 lines per week. The one exception is 15 lines in the week of 2005-10-10.\n\n**Is it getting worse?**\n- **Surge:** The errors ramped up from about 2005-11-15 (36 lines/day). They rose to 439 on 11-20 and 500 on 11-21.\n- **Weekly totals:** The week of 11-14 had 899 lines, 11-21 had 961, 11-28 had 1,826 (the peak), and 12-05 had 491.\n- **Second wave:** There was a smaller dip and a second wave in early December. Daily counts were 409 on 12-03 and 472 on 12-04, then they fell to 0 on 12-07. The days between the two waves were about 26–59 lines on 11-24 to 11-27 (0 on 11-26) and 58 on 12-01.\n- **After the surge:** The weeks of 12-12, 12-19 and 12-26 had 1 line each. January shows a slight rise: 8 lines (week of 01-02), 21 (01-09), 19 (01-16) and 14 (01-23, partial week). That is still tiny compared with the surge, but above the December lull and above the typical summer rate of 2–8 per week.\n\nI haven't investigated what caused the November surge. I can look at what else was logged around 2005-11-15 if you want to check.",
+   "calls": [
+    {
+     "name": "search_logs",
+     "args": {
+      "query_text": "\"workerEnv in error state\"",
+      "dataset": "apache",
+      "match": "phrase",
+      "limit": 5
+     }
+    },
+    {
+     "name": "trend",
+     "args": {
+      "query_text": "\"workerEnv in error state\"",
+      "dataset": "apache"
+     }
+    },
+    {
+     "name": "trend",
+     "args": {
+      "query_text": "\"workerEnv in error state\"",
+      "dataset": "apache",
+      "bucket": "day",
+      "start": "2005-11-06",
+      "end": "2005-12-14"
+     }
+    }
+   ],
+   "errors": [],
+   "run_error": null,
+   "first_tool": "search_logs",
+   "first_ok": true,
+   "need_ok": true,
+   "facts": 2,
+   "facts_total": 2,
+   "facts_missed": [],
+   "n_calls": 3,
+   "n_errors": 0,
+   "tokens_in": 88763,
+   "tokens_out": 1054,
+   "elapsed_s": 12.7
+  },
+  {
+   "id": "T-H1",
+   "dataset": "hdfs",
+   "model": "anthropic:claude-sonnet-5-5",
+   "question": "What happened to HDFS block blk_-1608999687919862906, step by step?",
+   "answer": "Block `blk_-1608999687919862906` was written, replicated to 10 datanodes, read many times, and then deleted. The logs show no errors or warnings for it. All 269 lines are INFO, from 2008-11-09 20:35:18 to 21:38:40. The block is the `job.jar` for MapReduce job `job_200811092030_0001`.\n\n**1. Allocation and first write (20:35:18–20:35:19)**\n- The NameNode (`dfs.FSNamesystem`) allocated the block for `/mnt/hadoop/mapred/system/job_200811092030_0001/job.jar`.\n- Three datanodes started receiving it: 10.250.19.102, 10.250.10.6 and 10.250.14.224.\n- The `PacketResponder` threads (0, 1 and 2) terminated.\n- Each datanode logged \"Received block … of size 91178\".\n- The NameNode logged `addStoredBlock` for 10.250.10.6, 10.251.111.209 and 10.250.14.224.\n\n**2. Replication to more nodes (20:35:21–20:35:32)**\n- The NameNode asked 10.250.14.224 to replicate the block to 10.251.215.16 and 10.251.71.193. That node started a transfer thread and logged \"Transmitted block\".\n- Chained requests followed:\n  - 10.251.215.16 was asked to copy to 10.251.74.79 and 10.251.107.19 (20:35:24–26).\n  - 10.251.107.19 was asked to copy to 10.251.31.5 and 10.251.71.240 (20:35:27–28).\n  - 10.251.31.5 was asked to copy to 10.251.90.64 (20:35:30–31).\n- The block was added to the block map on each new node. The last one was 10.251.90.64 at 20:35:32.\n- That makes 10 replica holders in all. Every copy was 91178 bytes.\n\n**3. Heavy read traffic (20:35:23–20:36:26)**\n- There are 203 \"Served block … to /<client>\" lines. They come from the datanodes holding replicas, such as 10.250.10.6, 10.250.14.224, 10.251.111.209, 10.251.215.16, 10.251.74.79 and 10.251.107.19.\n- This is consistent with many task nodes fetching the job jar at job start. The first lines are at 20:35:23 and the last at 20:36:26.\n\n**4. Quiet period**\n- About 1 hour 2 minutes passes with no activity for this block.\n\n**5. Deletion (21:38:09–21:38:40)**\n- At 21:38:09 the NameSystem logged `NameSystem.delete` and added the block to the `invalidSet` of all 10 replica nodes. Those are the 10 nodes that had stored it.\n- From 21:38:10 to 21:38:40, `dfs.FSDataset` logged 10 \"Deleting block … file /mnt/hadoop/dfs/data/current/blk_-1608999687919862906\" lines. The last was at 21:38:40.\n- This matches normal cleanup after the job finished. The logs don't state that cause, so I'm inferring it.",
+   "calls": [
+    {
+     "name": "search_logs",
+     "args": {
+      "dataset": "hdfs",
+      "query_text": "blk_-1608999687919862906",
+      "limit": 50
+     }
+    },
+    {
+     "name": "facet",
+     "args": {
+      "dataset": "hdfs",
+      "query_text": "blk_-1608999687919862906",
+      "dims": [
+       "pattern_id",
+       "severity",
+       "component"
+      ],
+      "top": 20
+     }
+    },
+    {
+     "name": "search_logs",
+     "args": {
+      "dataset": "hdfs",
+      "query_text": "blk_-1608999687919862906",
+      "order": "recent",
+      "limit": 25
+     }
+    },
+    {
+     "name": "search_logs",
+     "args": {
+      "dataset": "hdfs",
+      "query_text": "blk_-1608999687919862906 -Served -Receiving -Received -addStoredBlock -terminating -replicate -transfer -Transmitted",
+      "limit": 50
+     }
+    },
+    {
+     "name": "search_logs",
+     "args": {
+      "dataset": "hdfs",
+      "query_text": "blk_-1608999687919862906",
+      "pattern_id": 500013
+     }
+    },
+    {
+     "name": "search_logs",
+     "args": {
+      "dataset": "hdfs",
+      "query_text": "blk_-1608999687919862906",
+      "pattern_id": 500014
+     }
+    },
+    {
+     "name": "search_logs",
+     "args": {
+      "dataset": "hdfs",
+      "query_text": "blk_-1608999687919862906 Served",
+      "order": "recent",
+      "limit": 1
+     }
+    }
+   ],
+   "errors": [],
+   "run_error": null,
+   "first_tool": "search_logs",
+   "first_ok": true,
+   "need_ok": true,
+   "facts": 2,
+   "facts_total": 2,
+   "facts_missed": [],
+   "n_calls": 7,
+   "n_errors": 0,
+   "tokens_in": 161597,
+   "tokens_out": 2022,
+   "elapsed_s": 19.6
+  },
+  {
+   "id": "T-H2",
+   "dataset": "hdfs",
+   "model": "anthropic:claude-sonnet-5-5",
+   "question": "Which HDFS errors or warnings are the most frequent, and are they limited to a few datanodes?",
+   "answer": "HDFS has no ERROR lines. It has only INFO and WARN, and the WARN lines (362,793 in total) are not limited to a few datanodes.\n\n**Most frequent warnings**\n\n| Pattern | Lines | Share of WARN |\n|---|---|---|\n| `Got exception while serving blk_… to /<IP>` (dfs.DataNode$DataXceiver, datanode-ops) | 356,207 | 98.2% |\n| `Unexpected error trying to delete block … BlockInfo not found in volumeMap` (dfs.FSDataset, storage-platform) | 5,545 | 1.5% |\n| `addStoredBlock: Redundant addStoredBlock request received` (dfs.FSNamesystem, namenode-platform) | 975 | 0.3% |\n| `PendingReplicationMonitor timed out block …` | 47 | <0.1% |\n| `Adding an already existing block …` (dfs.DataBlockScanner) | 10 | <0.1% |\n| `Failed to transfer blk_… to <IP> … Connection reset by peer` (dfs.DataNode$DataTransfer) | 9 | <0.1% |\n\n- **Serving exception:** the stored judgment (p_fault 0.76) labels it a network or I/O failure. The first one was logged on 2008-11-09 at 21:38:49, and it came in 8 bursts.\n- **Delete-block warning:** also judged a network or I/O failure (p_fault 0.78). It came in 18 bursts.\n- **Redundant addStoredBlock and \"already existing block\":** the stored judgment rates both \"not a problem\" (p_problem about 0.07).\n\n**Spread across datanodes**\n\nHDFS lines carry no node or host field, so I couldn't use the node-spread tool. I used the IP addresses inside the messages instead. The serving-exception warning mentions 202 distinct IPs in 670,527 mentions. The mentions include both datanode and client addresses, so 202 is not a datanode count.\n\nThe top IPs each appear in about 3,460–3,610 lines, and the counts fall off only slowly. They are all active over the same period, from 2008-11-09 21:38 to 2008-11-11 about 02:30. The warning is therefore cluster-wide, not tied to a few datanodes. The IP counts show no sign of a hot node.\n\nI couldn't check the spread of the delete-block warning, because its messages contain no IPs.\n\nAll of these patterns first appear on 2008-11-09, the first day of the log. So there is no earlier baseline, and the \"new\" label doesn't mean they began then.",
+   "calls": [
+    {
+     "name": "top_patterns",
+     "args": {
+      "dataset": "hdfs",
+      "problem_filter": "severity",
+      "rank_by": "lines",
+      "limit": 15
+     }
+    },
+    {
+     "name": "facet",
+     "args": {
+      "dataset": "hdfs",
+      "severity": "WARN",
+      "dims": [
+       "component",
+       "pattern_id",
+       "node"
+      ]
+     }
+    },
+    {
+     "name": "describe_corpus",
+     "args": {}
+    },
+    {
+     "name": "top_entities",
+     "args": {
+      "dataset": "hdfs",
+      "pattern_id": 500040,
+      "limit": 10
+     }
+    },
+    {
+     "name": "top_entities",
+     "args": {
+      "dataset": "hdfs",
+      "pattern_id": 500038,
+      "entity_type": "ip",
+      "limit": 5
+     }
+    },
+    {
+     "name": "search_logs",
+     "args": {
+      "dataset": "hdfs",
+      "severity": "ERROR",
+      "limit": 3
+     }
+    }
+   ],
+   "errors": [],
+   "run_error": null,
+   "first_tool": "top_patterns",
+   "first_ok": true,
+   "need_ok": true,
+   "facts": 1,
+   "facts_total": 1,
+   "facts_missed": [],
+   "n_calls": 6,
+   "n_errors": 0,
+   "tokens_in": 100202,
+   "tokens_out": 1521,
+   "elapsed_s": 16.0
+  },
+  {
+   "id": "T-H3",
+   "dataset": "hdfs",
+   "model": "anthropic:claude-sonnet-5-5",
+   "question": "In HDFS, what happens right before \"PendingReplicationMonitor timed out block\" events, and how often do they occur?",
+   "answer": "In HDFS, the \"PendingReplicationMonitor timed out block\" warning appears 47 times, in 7 bursts. It follows a wave of DataNode write-pipeline errors that starts roughly 12–13 minutes earlier. The link is an association in time, not a proven cause.\n\n**How often**\n- The pattern is 500054, a WARN from `dfs.PendingReplicationBlocks$PendingReplicationMonitor`, owned by storage-platform.\n- All 47 lines fall between 2008-11-10 10:49:36 and 2008-11-11 09:24:33, a span of about 22.6 hours.\n- Lines come in same-second batches of several blocks. For example, 5 lines at 21:24:35 and 4 or more at 22:29:35.\n- Hourly line counts:\n  - 2008-11-10: 10:00 had 1, 21:00 had 5, 22:00 had 8.\n  - 2008-11-11: 05:00 had 6, 07:00 had 16, 08:00 had 8, 09:00 had 3.\n  - Every other hour had none.\n- The biggest burst (16 lines) ran 07:14:34–07:29:33 on 2008-11-11.\n\n**What comes right before**\n\nI checked the 7 bursts against a 15-minute look-back. In the largest burst, the preceding activity started about 15 minutes earlier:\n- **06:59:43:** a WARN, \"NameSystem.addStoredBlock: Redundant addStoredBlock request received\" (pattern 500024), the first problem-level line.\n- **07:00:19 onward:** `writeBlock … Could not read from stream` errors.\n- **07:00:59 onward:** a cluster of write-pipeline errors:\n  - `Connection reset by peer`\n  - `EOFException`\n  - `InterruptedIOException`\n  - `PacketResponder … Interrupted`\n  - `ClosedByInterruptException`\n  - \"Changing block file offset\" lines\n- The timeouts then start at 07:14:34. That is about 13–14 minutes after the errors begin, consistent with the median lead times of 540–802 s (about 9–13 minutes).\n\nAcross all 7 bursts, the most common precursors each preceded only 2–3 of the 7 bursts, so they are suggestive, not consistent:\n- \"Changing block file offset of block…\" (pattern 500027) preceded 3 bursts, median lead 754 s.\n- `ClosedByInterruptException` (pattern 500051) preceded 3 bursts, median lead 760 s.\n- `Connection reset by peer`, `EOFException`, `SocketTimeoutException`, \"Received block\" and \"Receiving empty packet\" each preceded 2 bursts, with median leads of 540–802 s.\n- The same precursors did not appear in the same look-back window one day earlier, which is what the lift of 2–3 reflects.\n\n**Reading (hypothesis)**\n\nNetwork or I/O failures during block writes seem to leave blocks under-replicated. Their replication requests then expire in the pending-replication queue and the monitor logs a timeout. The stored judgment for this pattern also says \"network or I/O\", with p_problem 0.665.",
+   "calls": [
+    {
+     "name": "search_logs",
+     "args": {
+      "dataset": "hdfs",
+      "query_text": "PendingReplicationMonitor timed out block",
+      "match": "phrase",
+      "limit": 10
+     }
+    },
+    {
+     "name": "find_patterns",
+     "args": {
+      "text": "PendingReplicationMonitor timed out block",
+      "dataset": "hdfs",
+      "k": 5
+     }
+    },
+    {
+     "name": "precursors",
+     "args": {
+      "dataset": "hdfs",
+      "pattern_id": 500054,
+      "scope": "dataset",
+      "window_s": 900
+     }
+    },
+    {
+     "name": "trend",
+     "args": {
+      "dataset": "hdfs",
+      "query_text": "PendingReplicationMonitor timed out block",
+      "bucket": "hour"
+     }
+    },
+    {
+     "name": "burst_timeline",
+     "args": {
+      "dataset": "hdfs",
+      "pattern_id": 500054,
+      "same_nodes": false,
+      "before_s": 900
+     }
+    }
+   ],
+   "errors": [],
+   "run_error": null,
+   "first_tool": "search_logs",
+   "first_ok": true,
+   "need_ok": true,
+   "facts": 2,
+   "facts_total": 2,
+   "facts_missed": [],
+   "n_calls": 5,
+   "n_errors": 0,
+   "tokens_in": 96858,
+   "tokens_out": 1892,
+   "elapsed_s": 18.8
+  },
+  {
+   "id": "T-T1",
+   "dataset": "otel",
+   "model": "anthropic:claude-sonnet-5-5",
+   "question": "In the OpenTelemetry demo shop logs, which services and teams have the most error-level problems?",
+   "answer": "In the OTel demo shop logs, `frontend` has by far the most error-level lines, and `web-frontend` is the team with the most. These are log lines, not separate incidents.\n\nThere are 203,185 ERROR lines in total.\n\n**By service**\n\n| Service | ERROR lines |\n|---|---|\n| frontend | 174,711 |\n| payment | 23,984 |\n| email | 4,218 |\n| currency | 199 |\n| checkout | 40 |\n| quote | 22 |\n| accounting | 8 |\n| cart | 3 |\n\n**By owning team**\n\n| Team | ERROR lines |\n|---|---|\n| web-frontend (`frontend`) | 174,711 |\n| payments-team (`payment`, `currency`, `accounting`) | 24,191 |\n| fulfilment-team (`email`, `quote`) | 4,240 |\n| checkout-team (`checkout`, `cart`) | 43 |\n\n`frontend` alone accounts for about 86% of all ERROR lines, and `payment` for about 12%.\n\nA second view counts only patterns the stored judgment flags as real faults, and it includes lines of any severity. It gives the same top three: `frontend` at 175,115 lines, `payment` at 11,307 and `email` at 2,245. In that view `checkout` (2,149) and `cart` (794) also rank higher than they do on ERROR lines alone.",
+   "calls": [
+    {
+     "name": "count_by",
+     "args": {
+      "group_by": "component",
+      "dataset": "otel",
+      "severity": "ERROR"
+     }
+    },
+    {
+     "name": "count_by",
+     "args": {
+      "group_by": "team",
+      "dataset": "otel",
+      "severity": "ERROR"
+     }
+    },
+    {
+     "name": "rollup",
+     "args": {
+      "dataset": "otel",
+      "by": [
+       "team",
+       "component"
+      ],
+      "unit": "lines"
+     }
+    }
+   ],
+   "errors": [],
+   "run_error": null,
+   "first_tool": "count_by",
+   "first_ok": true,
+   "need_ok": true,
+   "facts": 0,
+   "facts_total": 2,
+   "facts_missed": [
+    "frontend error-or-fatal lines = 176880",
+    "payment error-or-fatal lines = 24219"
+   ],
+   "n_calls": 3,
+   "n_errors": 0,
+   "tokens_in": 56512,
+   "tokens_out": 744,
+   "elapsed_s": 7.8
+  },
+  {
+   "id": "T-T2",
+   "dataset": "otel",
+   "model": "anthropic:claude-sonnet-5-5",
+   "question": "Why are orders failing in the demo shop, and which service is the source?",
+   "answer": "**Short answer:** Most failed orders trace back to the **payment** service, which logs \"Visa cache full: cannot add new item.\" A smaller second failure comes from the **currency** service being unreachable. The frontend only reports these errors; it isn't where they start.\n\nThis covers the OTel demo slice, 2025-09-23 00:00–00:29. The slice holds 0.1 s of every minute, so line counts are for the sample, not the full traffic.\n\n**1. Payment: \"Visa cache full\" (largest cause)**\n- The frontend logs \"Failed to place order\" 21,821 times (pattern 600005). The same wording appears inside the other frontend error patterns, so this count overlaps with them.\n- The biggest error pattern, 26,122 lines, reads `failed to charge card: could not charge the card: rpc error: code = Unknown desc = Visa cache full: cannot add new item.` The same text appears in several other frontend error patterns.\n- The payment service logs the original error as \"Visa cache full: cannot add new item.\" (pattern 600010, 11,253 lines on 24 nodes). It logs 23,984 ERROR lines in total, across those 24 nodes.\n- It starts at 00:00:00 and runs through the whole window, so it is a persistent fault rather than a blip.\n- I could not follow a single request from payment through the frontend. The sampled trace ID I checked only contains the payment line.\n\n**2. Currency conversion (second failure path)**\n- The frontend also logs `failed to convert shipping cost to currency … code = Unavailable`. The detail is either `connection refused` or `connection reset by peer` / `EOF`.\n- There are further errors reading `failed to prepare order: failed to convert price of \"<ID>\" to USD`. For example, pattern 600040 has 6,190 lines and 600044 has 6,184. Both go through the same currency conversion.\n- That points to the **currency** service being unreachable or restarting. I did not find a direct crash message from it.\n- The currency service itself logs only 199 ERROR lines. They are OpenTelemetry exporter failures, `data refused due to high memory usage`, which suggests memory pressure on the telemetry collector. That is a hypothesis; the logs don't show it causing the order failures.\n\n**Minor and not the cause:** checkout logs \"failed to send order confirmation … email service: expected 200, got 500\". It is a warning-level message that checkout logs at ERROR, and it comes after the order step.\n\n**Source:** payment (\"Visa cache full\") is the primary source, owned by payments-team. The currency service is a secondary source. The frontend is only where the errors show up.",
+   "calls": [
+    {
+     "name": "describe_corpus",
+     "args": {}
+    },
+    {
+     "name": "find_patterns",
+     "args": {
+      "text": "order failed checkout error",
+      "dataset": "otel"
+     }
+    },
+    {
+     "name": "facet",
+     "args": {
+      "dataset": "otel",
+      "severity": "ERROR",
+      "dims": [
+       "component",
+       "pattern_id"
+      ],
+      "top": 12
+     }
+    },
+    {
+     "name": "search_logs",
+     "args": {
+      "dataset": "otel",
+      "query_text": "currency",
+      "component": "currency",
+      "limit": 10
+     }
+    },
+    {
+     "name": "search_logs",
+     "args": {
+      "dataset": "otel",
+      "query_text": "error",
+      "component": "shipping",
+      "limit": 10
+     }
+    },
+    {
+     "name": "top_patterns",
+     "args": {
+      "dataset": "otel",
+      "rank_by": "lines",
+      "limit": 15
+     }
+    },
+    {
+     "name": "search_logs",
+     "args": {
+      "dataset": "otel",
+      "component": "currency",
+      "severity": "ERROR",
+      "limit": 5
+     }
+    },
+    {
+     "name": "search_logs",
+     "args": {
+      "dataset": "otel",
+      "component": "payment",
+      "severity": "ERROR",
+      "limit": 3
+     }
+    },
+    {
+     "name": "request_timeline",
+     "args": {
+      "dataset": "otel",
+      "request_id": "a90db1869369d3795038dddba5416107"
+     }
+    },
+    {
+     "name": "search_logs",
+     "args": {
+      "dataset": "otel",
+      "component": "checkout",
+      "severity": "ERROR",
+      "limit": 4
+     }
+    }
+   ],
+   "errors": [],
+   "run_error": null,
+   "first_tool": "find_patterns",
+   "first_ok": true,
+   "need_ok": true,
+   "facts": 1,
+   "facts_total": 2,
+   "facts_missed": [
+    "Failed-to-place-order lines = 45800"
+   ],
+   "n_calls": 10,
+   "n_errors": 0,
+   "tokens_in": 197119,
+   "tokens_out": 2078,
+   "elapsed_s": 24.8
+  },
+  {
+   "id": "T-T3",
+   "dataset": "otel",
+   "model": "anthropic:claude-sonnet-5-5",
+   "question": "Follow trace 68a1dd0d5118a650745a1e0fcd04105f in the demo shop through the services. Where did it go wrong?",
+   "answer": "**The trace failed in the payment service, and the error then came back up to the frontend.** Four log lines carry this trace ID. They span about 52 ms, from 00:19:00.014 to 00:19:00.066 on 2025-09-23. All four were logged on one node, `gke-clickstack-demo-2-default-pool-a93db85f-67cb`.\n\n| Time | Service | Severity | What it logged |\n|---|---|---|---|\n| 00:19:00.014822 | frontend | TRACE | \"Checkout\" (the order starts, with an empty `currencyCode`). |\n| 00:19:00.054380 | payment | INFO | \"Charge request received.\" The request is for USD, units low 1016 and nanos 449999990, paid with a Visa card. |\n| 00:19:00.064622 | payment | ERROR | An error line with only the span and trace IDs and no message text. |\n| 00:19:00.066664 | frontend | ERROR | \"Failed to place order\", gRPC error code 13. The details read: \"failed to charge card: could not charge the card: rpc error: code = Unknown desc = Visa cache full: cannot add new item.\" |\n\n**Where it went wrong:** the charge step in the payment service. About 10 ms after it received the charge request, it logged an error. The frontend's error message gives the cause as \"Visa cache full: cannot add new item.\" The frontend's \"Failed to place order\" line comes about 2 ms after the payment error. That fits the payment failure being passed straight back to the user's checkout. It is my reading of the timing, not something the logs state outright.\n\n**Limits of this trace:**\n- No other service (cart, checkout, shipping or email) logged under this trace ID. I can't say whether other services were involved or whether the failure stopped the flow early.\n- The payment ERROR line has no text of its own. The cause comes only from the frontend's error details.\n- The frontend's error line is cut off in the output, so I haven't seen its full text.",
+   "calls": [
+    {
+     "name": "search_logs",
+     "args": {
+      "query_text": "68a1dd0d5118a650745a1e0fcd04105f",
+      "dataset": "otel",
+      "limit": 50
+     }
+    }
+   ],
+   "errors": [],
+   "run_error": null,
+   "first_tool": "search_logs",
+   "first_ok": true,
+   "need_ok": true,
+   "facts": 0,
+   "facts_total": 2,
+   "facts_missed": [
+    "lines of the trace = 11",
+    "services in the trace = 5"
+   ],
+   "n_calls": 1,
+   "n_errors": 0,
+   "tokens_in": 55257,
+   "tokens_out": 757,
+   "elapsed_s": 8.3
+  },
+  {
+   "id": "T-X1",
+   "dataset": null,
+   "model": "anthropic:claude-sonnet-5-5",
+   "question": "Which of the loaded systems had the most error-level log lines overall, and which team owns most of them?",
+   "answer": "**OpenTelemetry demo app (`otel`) had the most error-level lines: 203,185.** Across the five systems that log an ERROR severity, that is about 57% of the 358,663 total. The other four are:\n\n| System | ERROR lines |\n|---|---|\n| `bgl` | 112,355 |\n| `apache` | 42,312 |\n| `zookeeper` | 617 |\n| `openstack` | 194 |\n\n`ssh` has no log levels, and `hdfs` only has INFO and WARN, so neither appears.\n\n**The `web-frontend` team owns most of the `otel` errors: 174,711 lines, about 86%.** All of those come from the `frontend` component. The other owners are:\n\n- `payments-team`: 24,191 lines, mostly the `payment` component.\n- `fulfilment-team`: 4,240 lines.\n- `checkout-team`: 43 lines.\n\nThese are log lines, not incidents. The `otel` dataset is also a sample of 0.1 s of each minute over 30 minutes, so its counts cover only that sampled slice.",
+   "calls": [
+    {
+     "name": "describe_corpus",
+     "args": {}
+    },
+    {
+     "name": "count_by",
+     "args": {
+      "group_by": "dataset",
+      "severity": "ERROR"
+     }
+    },
+    {
+     "name": "count_by",
+     "args": {
+      "group_by": "team",
+      "severity": "ERROR",
+      "dataset": "otel"
+     }
+    },
+    {
+     "name": "count_by",
+     "args": {
+      "group_by": "component",
+      "severity": "ERROR",
+      "dataset": "otel",
+      "limit": 5
+     }
+    }
+   ],
+   "errors": [],
+   "run_error": null,
+   "first_tool": "count_by",
+   "first_ok": true,
+   "need_ok": true,
+   "facts": 0,
+   "facts_total": 1,
+   "facts_missed": [
+    "bgl FATAL+ERROR+SEVERE+FAILURE lines = 988783"
+   ],
+   "n_calls": 4,
+   "n_errors": 0,
+   "tokens_in": 90026,
+   "tokens_out": 670,
+   "elapsed_s": 8.5
+  }
+ ]
+}

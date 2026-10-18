@@ -5,7 +5,8 @@ from typing import Annotated, Literal, Optional
 
 from pydantic import Field
 
-from core import MAX_ROWS, DatasetOpt, all_teams, envelope, filters_sql, query, render, vocab_text
+from core import (MAX_ROWS, Component, DatasetOpt, Entity, Location, Node, PatternIdOpt, Severity, Status, Team, envelope,
+                  filter_hints, filters_sql, query, render)
 
 TREND_ROWS = 500  # a time series is long by nature; still capped and flagged
 GROUPS = {"dataset": "logs.dataset", "team": "coalesce(o.team, 'unowned')", "component": "logs.component",
@@ -17,16 +18,20 @@ Dataset = DatasetOpt
 GroupBy = Literal["dataset", "team", "component", "severity", "node", "location"]
 
 
-def _where(f: dict, query_text, status, team) -> tuple[str, dict, bool]:
+QueryText = Annotated[Optional[str], Field(
+    description='Optional words the message must contain (web syntax: words, "phrase", a OR b, -word). Numbers and '
+                'dotted ids are whole tokens (`503`, `10.0.0.7`).')]
+Since = Annotated[Optional[datetime], Field(description="Inclusive start time, 'YYYY-MM-DD HH:MM'; omit for the data's start.")]
+Until = Annotated[Optional[datetime], Field(description="Exclusive end time; omit for the data's end.")]
+
+
+def _where(f: dict, query_text, team) -> tuple[str, dict, bool]:
     """Common filters → (WHERE clause on `logs`, params, needs ownership join)."""
     where, params = filters_sql({k: v for k, v in f.items() if k != "team"})
     where = where.replace(" AND ", " AND logs.")  # qualify columns (the join also has dataset / component)
     if query_text:
         where += " AND logs.body @@ websearch_to_tsquery(%(q)s)"
         params["q"] = query_text
-    if status is not None:
-        where += " AND logs.status = %(status)s"
-        params["status"] = status
     if team is not None:
         where += " AND coalesce(o.team, 'unowned') = %(team)s"
         params["team"] = team
@@ -37,39 +42,46 @@ def count_by(
     group_by: Annotated[GroupBy, Field(description="Group the counts by dataset, owning team, component, severity, node "
                                                    "or full location path.")],
     dataset: Dataset = None,
-    start: Annotated[Optional[datetime], Field(description="Inclusive start time, e.g. '2005-11-02 00:00'.")] = None,
-    end: Annotated[Optional[datetime], Field(description="Exclusive end time.")] = None,
-    team: Annotated[Optional[str], Field(
-        description="Owning team (ownership table): " + all_teams() + " ('unowned' = unmapped component).")] = None,
-    component: Annotated[Optional[str], Field(description="Exact component, e.g. KERNEL, nova-api.")] = None,
-    severity: Annotated[Optional[str], Field(description="Exact severity, e.g. FATAL, ERROR.")] = None,
-    node: Annotated[Optional[str], Field(description="Exact node / host.")] = None,
-    status: Annotated[Optional[int], Field(description="OpenStack HTTP status, e.g. 500.")] = None,
-    query_text: Annotated[Optional[str], Field(
-        description='Full-text filter on the message (web-search syntax: words, "phrase", a OR b, -word). '
-                    'Numbers and dotted ids are whole tokens (`503`, `10.0.0.7`).')] = None,
+    start: Since = None,
+    end: Until = None,
+    team: Team = None,
+    component: Component = None,
+    severity: Severity = None,
+    node: Node = None,
+    location: Location = None,
+    entity: Entity = None,
+    status: Status = None,
+    query_text: QueryText = None,
     limit: Annotated[int, Field(ge=1, le=MAX_ROWS, description=f"Groups to return, largest first (max {MAX_ROWS}).")] = 20,
 ) -> dict:
-    """Exact number of log LINES per group (dataset / team / component / severity / node) over the whole corpus.
+    """How many log lines per team / component / severity / node / location / dataset? Exact totals, not samples.
 
-    Use it for "how much / which team / which component" questions. Counts cover every line matching the filters,
-    not a sample; `total_lines` is the sum over all groups and `groups_total` how many groups exist, so truncated=true
-    means only the largest groups are listed. Lines are not incidents: one fault can log thousands of lines.
+    Use when: "how much", "which team / component / node logs the most X", comparing groups, or a total for a filter
+    (e.g. how many requests failed with a status, how many ERROR lines per service).
+    Not for: several breakdowns of one search at once (facet), lines per time bucket (trend), recurrences of problems
+    (top_patterns: bursts, not lines), totals with subtotals (rollup).
+    Returns: rows {<group>, lines}, largest first; total_lines = sum over ALL groups; groups_total = distinct groups
+    (truncated when > limit).
+    Caveats: lines are not incidents: one fault can log thousands of lines; use bursts (top_patterns, rollup
+    unit='bursts') for how often something happened.
+    Example: count_by(group_by='component', dataset=<dataset>, severity='ERROR', start='<period start>')
+    Next: trend with the same filters for the time profile; search_logs for example lines of the largest group.
     """
     t0 = time.perf_counter()
-    f = dict(dataset=dataset, start=start, end=end, component=component, severity=severity, node=node, team=team)
-    where, params, join = _where(f, query_text, status, team)
+    f = dict(dataset=dataset, start=start, end=end, component=component, severity=severity, node=node,
+             location=location, entity=entity, status=status, team=team)
+    where, params, join = _where(f, query_text, team)
     expr = GROUPS[group_by]
     join = join or group_by == "team"
     frm = f"FROM logs {JOIN if join else ''} {where}"
     rows_sql = f"SELECT {expr} AS {group_by}, count(*) AS lines {frm} GROUP BY 1 ORDER BY 2 DESC, 1 LIMIT {limit}"
     sum_sql = f"SELECT count(*) AS total_lines, count(DISTINCT {expr}) AS groups_total {frm}"
     rows, s = query(rows_sql, params), query(sum_sql, params)[0]
-    return envelope("count_by", dict(group_by=group_by, query_text=query_text, status=status, limit=limit, **f),
-                    [render(rows_sql, params), render(sum_sql, params)], {**f, "status": status},
+    return envelope("count_by", dict(group_by=group_by, query_text=query_text, limit=limit, **f),
+                    [render(rows_sql, params), render(sum_sql, params)], f,
                     scope=f"{dataset or 'all datasets'}, {start or 'corpus start'} → {end or 'corpus end'}; unit = log lines",
                     rows=rows, t0=t0, total_lines=s["total_lines"], groups_total=s["groups_total"],
-                    truncated=s["groups_total"] > len(rows))
+                    truncated=s["groups_total"] > len(rows), **({"hints": filter_hints(f)} if not s["total_lines"] else {}))
 
 
 def trend(
@@ -78,26 +90,36 @@ def trend(
                     "weeks start on Monday. The bucket used is returned.")] = None,
     group_by: Annotated[Optional[GroupBy], Field(description="Optional: one series per dataset / team / component / severity / node / location.")] = None,
     dataset: Dataset = None,
-    start: Annotated[Optional[datetime], Field(description="Inclusive start time.")] = None,
-    end: Annotated[Optional[datetime], Field(description="Exclusive end time.")] = None,
-    team: Annotated[Optional[str], Field(description="Owning team, or 'unowned'.")] = None,
-    component: Annotated[Optional[str], Field(description="Exact component, e.g. KERNEL, nova-api.")] = None,
-    severity: Annotated[Optional[str], Field(description="Exact severity, e.g. FATAL, ERROR.")] = None,
-    node: Annotated[Optional[str], Field(description="Exact node / host.")] = None,
-    status: Annotated[Optional[int], Field(description="OpenStack HTTP status, e.g. 500.")] = None,
-    query_text: Annotated[Optional[str], Field(description='Full-text filter on the message (web-search syntax).')] = None,
+    start: Since = None,
+    end: Until = None,
+    team: Team = None,
+    component: Component = None,
+    severity: Severity = None,
+    node: Node = None,
+    location: Location = None,
+    entity: Entity = None,
+    status: Status = None,
+    pattern_id: PatternIdOpt = None,
+    query_text: QueryText = None,
     top_groups: Annotated[int, Field(ge=1, le=20, description="With group_by: keep the N largest groups.")] = 5,
 ) -> dict:
-    """Number of log LINES per time bucket (optionally one series per group), with empty buckets shown as 0.
+    """How did the number of matching log lines change over time? Lines per hour / day / week, zero-filled.
 
-    Use it for "is it rising / when did it start / week over week" questions. Rows are {bucket_start, [group], lines};
-    `bucket_start` is the start of the bucket (a partial first / last bucket is possible: see first_ts / last_ts).
-    The sum over all rows equals `total_lines` of count_by with the same filters. Lines are not incidents. Direction
-    (rising / falling) is not computed here: compare the numbers.
+    Use when: "is it rising", "when did it start / stop", "week over week", "at which hours / days does X peak",
+    for any filter or search text, optionally one series per team / component / node.
+    Not for: recurrences of one pattern over its life (pattern_history), problem bursts with a computed direction
+    (reliability_trend), a team x week matrix of bursts (heatmap), whether this window is unusual (rate_vs_baseline).
+    Returns: rows {bucket_start, [group], lines} with empty buckets as 0; total_lines; first_ts / last_ts of the
+    matches; the bucket used.
+    Caveats: lines, not incidents; direction is not computed here (compare the numbers or use reliability_trend);
+    the first / last bucket can be partial.
+    Example: trend(dataset=<dataset>, query_text='"failed password"', bucket='day')
+    Next: rate_vs_baseline for the peak window; search_logs in the peak bucket for example lines.
     """
     t0 = time.perf_counter()
-    f = dict(dataset=dataset, start=start, end=end, component=component, severity=severity, node=node, team=team)
-    where, params, join = _where(f, query_text, status, team)
+    f = dict(dataset=dataset, start=start, end=end, component=component, severity=severity, node=node,
+             location=location, entity=entity, status=status, pattern_id=pattern_id, team=team)
+    where, params, join = _where(f, query_text, team)
     join = join or group_by == "team"
     frm = f"FROM logs {JOIN if join else ''} {where}"
     span_sql = f"SELECT count(*) AS total_lines, min(logs.ts) AS first_ts, max(logs.ts) AS last_ts {frm}"
@@ -105,8 +127,8 @@ def trend(
     sqls = [render(span_sql, params)]
     scope = f"{dataset or 'all datasets'}, {start or 'corpus start'} → {end or 'corpus end'}; unit = log lines"
     if not span["total_lines"]:
-        return envelope("trend", dict(bucket=bucket, group_by=group_by, query_text=query_text, status=status, **f),
-                        sqls, {**f, "status": status}, scope, [], t0, bucket=bucket, total_lines=0, truncated=False)
+        return envelope("trend", dict(bucket=bucket, group_by=group_by, query_text=query_text, **f),
+                        sqls, f, scope, [], t0, bucket=bucket, total_lines=0, truncated=False, hints=filter_hints(f))
     days = (span["last_ts"] - span["first_ts"]).days
     b = bucket or ("week" if days > 60 else "day" if days > 3 else "hour")
     step = {"hour": "1 hour", "day": "1 day", "week": "7 days"}[b]
@@ -131,8 +153,8 @@ def trend(
     sqls.append(render(rows_sql, params))
     truncated = len(rows) > TREND_ROWS
     rows = rows[:TREND_ROWS]
-    return envelope("trend", dict(bucket=b, group_by=group_by, query_text=query_text, status=status, top_groups=top_groups, **f),
-                    sqls, {**f, "status": status}, scope, rows, t0, bucket=b, total_lines=span["total_lines"],
+    return envelope("trend", dict(bucket=b, group_by=group_by, query_text=query_text, top_groups=top_groups, **f),
+                    sqls, f, scope, rows, t0, bucket=b, total_lines=span["total_lines"],
                     first_ts=span["first_ts"].isoformat(sep=" "), last_ts=span["last_ts"].isoformat(sep=" "),
                     groups=groups if group_by else None, truncated=truncated,
                     **({"note": f"only the {top_groups} largest groups are shown; their lines are a subset of total_lines"}
@@ -144,28 +166,33 @@ def rate_vs_baseline(
     end: Annotated[datetime, Field(description="Window end (exclusive).")],
     dataset: Dataset = None,
     days: Annotated[int, Field(ge=1, le=60, description="Baseline = up to `days` days just before `start`.")] = 7,
-    query_text: Annotated[Optional[str], Field(description='Full-text filter on the message (web-search syntax).')] = None,
-    pattern_id: Annotated[Optional[int], Field(description="Log pattern (from search_logs / top_patterns).")] = None,
-    component: Annotated[Optional[str], Field(description="Exact component, e.g. KERNEL, nova-compute.")] = None,
-    severity: Annotated[Optional[str], Field(description="Exact severity, e.g. FATAL, ERROR.")] = None,
-    node: Annotated[Optional[str], Field(description="Exact node / host.")] = None,
-    midplane: Annotated[Optional[str], Field(description="BGL midplane, e.g. R43-M0.")] = None,
-    status: Annotated[Optional[int], Field(description="OpenStack HTTP status, e.g. 503.")] = None,
+    query_text: QueryText = None,
+    pattern_id: PatternIdOpt = None,
+    component: Component = None,
+    severity: Severity = None,
+    node: Node = None,
+    location: Location = None,
+    status: Status = None,
 ) -> dict:
-    """Is this rate unusual? Lines matching the filters in the window vs the same-length windows just before it.
+    """Is this rate unusual here? Matching lines in a window vs the same-length windows just before it.
 
-    Use it for the engineer's baseline step: "245 lines in this hour vs 47.9/h usual (5.1×); 5 of 168 previous hours
-    reached 245" or "0 lines in the previous 7 days → new here". The baseline is cut into windows of the SAME length as
-    the window (1 h window → hourly, 1 day → daily) and never reaches before the dataset's first log line:
-    `baseline_clipped` says it is shorter than asked, `no_baseline_data` that there is no earlier data to compare with
-    (then nothing can be called new or unusual). Units are log lines, not incidents.
+    Use when: you have an incident window and need "how unusual is this": the rate now vs the usual rate, how many
+    earlier windows reached it, or whether it never happened before (new here).
+    Not for: a time series (trend), whether a pattern is new in the whole dataset (pattern_history / whats_new).
+    Returns: window_lines and rate per hour; baseline_lines, baseline rate, ratio (window / usual), max per earlier
+    window, how many earlier windows were at or above the window; flags new_in_baseline (0 before → new here),
+    baseline_clipped (less history than asked), no_baseline_data (nothing earlier: cannot call it new or unusual).
+    Caveats: lines, not incidents; the baseline is cut into windows of the SAME length as the window.
+    Example: rate_vs_baseline(dataset=<dataset>, start='<incident hour start>', end='<+1 h>', severity='ERROR', days=7)
+    Next: get_context / burst_timeline at the window to explain the jump.
     """
     t0 = time.perf_counter()
     if end <= start:
         raise ValueError("end must be after start.")
     w = (end - start).total_seconds()
-    f = dict(dataset=dataset, component=component, severity=severity, node=node, midplane=midplane, pattern_id=pattern_id)
-    where, params, _ = _where(f, query_text, status, None)
+    f = dict(dataset=dataset, component=component, severity=severity, node=node, location=location, status=status,
+             pattern_id=pattern_id)
+    where, params, _ = _where(f, query_text, None)
     # Baseline never starts before the data does; only whole windows count (aligned back from `start`).
     data_sql = "SELECT min(ts) AS t FROM logs" + (" WHERE dataset = %(dataset)s" if dataset else "")
     data_start = query(data_sql, {"dataset": dataset})[0]["t"]
@@ -193,7 +220,7 @@ def rate_vs_baseline(
                     f"FROM b")
         row.update(query(base_sql, params)[0])
         sqls.append(render(base_sql, params))
-    filters = {**f, "query_text": query_text, "status": status}
+    filters = {**f, "query_text": query_text}
     scope = (f"{dataset or 'all datasets'}; window {start} → {end} ({w / 3600:g} h) vs {n_win} earlier windows of the same "
              f"length, {bstart} → {start}" + (f" (clipped: data starts {data_start}, {days} days asked)" if bstart > asked else "")
              + "; unit = log lines")

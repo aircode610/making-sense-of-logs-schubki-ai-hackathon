@@ -1,0 +1,287 @@
+# Role-free MCP benchmark (plan 012): questions as a person would ask any agent that has only our MCP server.
+# Written by Claude after seeing the data (dev only; the blind A/B of plan 013 and the human held-out set are the honest
+# tests). Facts: `sql` = hand-written reference query on raw logs, run fresh by bench/tool_use.py (match: number | date
+# 'YYYY-MM-DD HH:MM' | text); or a literal `value` checked by hand when written.
+# first: acceptable first substantive tools (discovery tools describe_corpus / list_values are skipped when scoring).
+# need: groups of tools; the run should use at least one tool of every group.
+
+- id: T-B1
+  dataset: bgl
+  question: Something failed on the R43-M0 midplane of the BGL supercomputer around 2005-08-19 13:56. What was it, and what happened just before and after?
+  first: [search_logs, get_context, burst_timeline, facet]
+  need: [[search_logs], [get_context, burst_timeline]]
+  facts:
+  - {fact: kernel panic lines on R43-M0 13:40-14:15, sql: "SELECT count(*) FROM logs WHERE dataset='bgl' AND node LIKE 'R43-M0-%' AND body @@ websearch_to_tsquery('kernel panic') AND ts >= '2005-08-19 13:40' AND ts < '2005-08-19 14:15'"}
+  - {fact: first panic, match: date, sql: "SELECT strftime(min(ts), '%Y-%m-%d %H:%M') FROM logs WHERE dataset='bgl' AND node LIKE 'R43-M0-%' AND body @@ websearch_to_tsquery('kernel panic') AND ts >= '2005-08-19 13:40' AND ts < '2005-08-19 14:15'"}
+- id: T-B2
+  dataset: bgl
+  question: How widespread was the 'data TLB error interrupt' problem on BGL in June 2005, and when did it start?
+  first: [search_logs, spread, count_by, facet, find_patterns]
+  need: [[search_logs, spread, count_by, facet]]
+  facts:
+  - {fact: lines in June, sql: "SELECT count(*) FROM logs WHERE dataset='bgl' AND body @@ websearch_to_tsquery('\"data TLB error interrupt\"') AND ts >= '2005-06-01' AND ts < '2005-07-01'"}
+  - {fact: nodes in June, sql: "SELECT count(DISTINCT node) FROM logs WHERE dataset='bgl' AND body @@ websearch_to_tsquery('\"data TLB error interrupt\"') AND ts >= '2005-06-01' AND ts < '2005-07-01'"}
+  - {fact: first in June, match: date, sql: "SELECT strftime(min(ts), '%Y-%m-%d %H:%M') FROM logs WHERE dataset='bgl' AND body @@ websearch_to_tsquery('\"data TLB error interrupt\"') AND ts >= '2005-06-01' AND ts < '2005-07-01'"}
+- id: T-B3
+  dataset: bgl
+  question: Which problems kept coming back on BGL from 2005-11-01 to 2005-11-29, and which teams own them?
+  first: [top_patterns, rollup, priority_table, heatmap]
+  need: [[top_patterns, priority_table, rollup]]
+  facts:
+  - {fact: bursts of ciod 'Link has been severed' in the period, value: 27}
+  - {fact: bursts of 'rts panic! - stopping execution' in the period, value: 33}
+- id: T-B4
+  dataset: bgl
+  question: If the BGL operations team can fix only one thing based on August 2005, which should it be and why?
+  first: [priority_table, top_patterns]
+  need: [[priority_table, top_patterns]]
+  facts:
+  - {fact: top priority, match: text, value: kernel terminated}
+- id: T-B5
+  dataset: bgl
+  question: Which recurring BGL problems got worse in October 2005 compared with September?
+  first: [top_patterns, rollup, reliability_trend, whats_new, trend]
+  need: [[top_patterns]]
+  facts:
+  - {fact: bursts of 'Kill job <N> timed out. Block freed.' in October (largest growth), value: 44}
+  - {fact: same pattern's bursts in the previous period, value: 29}
+- id: T-B6
+  dataset: bgl
+  question: On BGL, what usually shows up on a node shortly before a 'kernel panic'?
+  first: [search_logs, precursors, find_patterns, top_patterns, burst_timeline]
+  need: [[precursors, burst_timeline, get_context]]
+  facts:
+  - {fact: kernel panic lines in the whole corpus, sql: "SELECT count(*) FROM logs WHERE dataset='bgl' AND body @@ websearch_to_tsquery('\"kernel panic\"')"}
+  - {fact: most frequent precursor, match: text, value: correctable errors exceeds threshold}
+- id: T-B7
+  dataset: bgl
+  question: Is reliability on BGL improving between September and November 2005 (2005-09-01 to 2005-11-29)?
+  first: [reliability_trend, trend, count_by, rollup, heatmap]
+  need: [[reliability_trend, trend, count_by, heatmap]]
+  facts: []   # bursts and lines are both valid units here: no unit-specific number (selection metrics only)
+- id: T-B8
+  dataset: bgl
+  question: Did any kinds of messages appear on BGL from 2005-12-01 to 2005-12-08 that had never been seen before? Which look like real problems?
+  first: [whats_new, top_patterns, distinctive_terms]
+  need: [[whats_new]]
+  facts:
+  - {fact: message patterns first seen in the week, sql: "SELECT count(*) FROM patterns WHERE dataset='bgl' AND first_ts >= '2005-12-01' AND first_ts < '2005-12-08'"}
+  - {fact: biggest new one, match: text, value: integer alignment exceptions}
+- id: T-O1
+  dataset: openstack
+  question: What happened to OpenStack instance 9fafc51c-d0dd-41df-99e9-6c79d8334eaf, step by step across the nova services?
+  first: [request_timeline, search_logs, get_context]
+  need: [[request_timeline, search_logs, get_context]]
+  facts:
+  - {fact: lines carrying the instance id (structured field), value: 25}
+  - {fact: first line, match: date, sql: "SELECT strftime(min(ts), '%Y-%m-%d %H:%M') FROM logs WHERE dataset='openstack' AND body @@ websearch_to_tsquery('\"9fafc51c-d0dd-41df-99e9-6c79d8334eaf\"')"}
+- id: T-O2
+  dataset: openstack
+  question: Were any OpenStack VMs abnormally slow to start? Which ones, and how slow compared with normal?
+  first: [value_outliers, latency_profile, search_logs]
+  need: [[value_outliers]]
+  facts:
+  - {fact: slowest spawn seconds, value: 50.72}
+  - {fact: median spawn seconds, value: 19.74}
+- id: T-O3
+  dataset: openstack
+  question: Why did the OpenStack API return HTTP 503, when did it happen, and what happened around those requests?
+  first: [search_logs, count_by, facet, latency_profile]
+  need: [[search_logs], [get_context, request_timeline]]
+  facts:
+  - {fact: requests with status 503, sql: "SELECT count(*) FROM logs WHERE dataset='openstack' AND body @@ websearch_to_tsquery('\"status: 503\"')"}
+  - {fact: first 503, match: date, sql: "SELECT strftime(min(ts), '%Y-%m-%d %H:%M') FROM logs WHERE dataset='openstack' AND body @@ websearch_to_tsquery('\"status: 503\"')"}
+- id: T-O4
+  dataset: openstack
+  question: How many OpenStack API requests failed with a 4xx or 5xx status, and is latency different for failed requests?
+  first: [latency_profile, count_by, facet, search_logs]
+  need: [[latency_profile, count_by, facet]]
+  facts:
+  - {fact: timed nova-api requests, sql: "SELECT count(*) FROM logs WHERE dataset='openstack' AND body @@ websearch_to_tsquery('\"time:\"') AND body @@ websearch_to_tsquery('status')"}
+  - {fact: failed (>= 400) requests, sql: "SELECT count(*) FROM logs WHERE dataset='openstack' AND regexp_matches(body, 'status: [45]\\d\\d')"}
+- id: T-S1
+  dataset: ssh
+  question: On the SSH server, which IP addresses drove the failed root logins between 2018-01-01 and 2018-01-08, and how many attempts were there?
+  first: [top_entities, search_logs, facet, count_by]
+  need: [[top_entities, facet, search_logs]]
+  facts:
+  - {fact: failed root password lines in the week, sql: "SELECT count(*) FROM logs WHERE dataset='ssh' AND body @@ websearch_to_tsquery('\"Failed password for root\"') AND ts >= '2018-01-01' AND ts < '2018-01-08'"}
+  - {fact: top attacking IP, match: text, value: 59.63.188.30}
+- id: T-S2
+  dataset: ssh
+  question: Were there break-in attempts against the SSH server? How many, and on which day did they peak?
+  first: [search_logs, check_watchlist, trend, count_by, facet]
+  need: [[search_logs, check_watchlist, count_by, trend]]
+  facts:
+  - {fact: break-in attempt lines, sql: "SELECT count(*) FROM logs WHERE dataset='ssh' AND body @@ ts_phrase('POSSIBLE BREAK-IN ATTEMPT')"}
+  - {fact: peak day lines, sql: "SELECT max(n) FROM (SELECT date_trunc('day', ts), count(*) n FROM logs WHERE dataset='ssh' AND body @@ ts_phrase('POSSIBLE BREAK-IN ATTEMPT') GROUP BY 1)"}
+  - {fact: peak day, match: text, value: '2018-01-03'}
+- id: T-S3
+  dataset: ssh
+  question: Do the failed password attempts on the SSH server follow a daily rhythm? At what hour are they worst?
+  first: [periodicity, trend, count_by, heatmap, search_logs]
+  need: [[periodicity, trend, count_by, heatmap]]
+  facts:
+  - {fact: failed password lines in the worst hour of day, sql: "SELECT max(n) FROM (SELECT hour(ts), count(*) n FROM logs WHERE dataset='ssh' AND body @@ websearch_to_tsquery('\"Failed password\"') GROUP BY 1)"}
+- id: T-S4
+  dataset: ssh
+  question: What should the security team look at first on the SSH server over the last four weeks of logs?
+  first: [priority_table, top_patterns, top_entities, check_watchlist]
+  need: [[priority_table, top_patterns]]
+  facts:
+  - {fact: top attacking IP over the whole log, match: text, value: 59.63.188.30}
+- id: T-Z1
+  dataset: zookeeper
+  question: Which problems recurred most in the ZooKeeper ensemble between 2015-07-29 and 2015-08-26, which teams own them, and what should be investigated first?
+  first: [top_patterns, priority_table, rollup]
+  need: [[top_patterns, priority_table]]
+  facts:
+  - {fact: bursts of 'caught end of stream exception', value: 18}
+  - {fact: owner of that pattern, match: text, value: client-connectivity}
+- id: T-Z2
+  dataset: zookeeper
+  question: The ZooKeeper servers kept logging "Cannot open channel ... at election address". How many times, since when, and to which peers?
+  first: [search_logs, top_entities, facet, find_patterns]
+  need: [[search_logs, top_entities, facet]]
+  facts:
+  - {fact: lines, sql: "SELECT count(*) FROM logs WHERE dataset='zookeeper' AND body @@ websearch_to_tsquery('\"Cannot open channel\" \"election address\"')"}
+  - {fact: first, match: date, sql: "SELECT strftime(min(ts), '%Y-%m-%d %H:%M') FROM logs WHERE dataset='zookeeper' AND body @@ websearch_to_tsquery('\"Cannot open channel\" \"election address\"')"}
+- id: T-Z3
+  dataset: zookeeper
+  question: In ZooKeeper, what else tends to happen at the same time as "caught end of stream exception"?
+  first: [co_occurrence, search_logs, find_patterns, get_context, precursors]
+  need: [[co_occurrence, precursors, get_context]]
+  facts:
+  - {fact: companion pattern, match: text, value: Closed socket connection}
+- id: T-Z4
+  dataset: zookeeper
+  question: How did the volume of WARN messages in ZooKeeper change week by week?
+  first: [trend, heatmap, count_by, rollup]
+  need: [[trend, heatmap, count_by, rollup]]
+  facts:
+  - {fact: WARN lines in the busiest week, sql: "SELECT max(n) FROM (SELECT date_trunc('week', ts), count(*) n FROM logs WHERE dataset='zookeeper' AND severity='WARN' GROUP BY 1)"}
+- id: T-A1
+  dataset: apache
+  question: Based on the Apache web server error log from 2005-12-01 to 2006-03-01, what should we prioritise next?
+  first: [priority_table, top_patterns]
+  need: [[priority_table, top_patterns]]
+  facts:
+  - {fact: bursts of 'script not found or unable to stat' in the period, value: 127}
+  - {fact: top priority, match: text, value: script not found}
+- id: T-A2
+  dataset: apache
+  question: Which client IPs triggered the most "Directory index forbidden" errors on the Apache server?
+  first: [top_entities, search_logs, facet]
+  need: [[top_entities, facet]]
+  facts:
+  - {fact: top client, match: text, value: 218.144.240.75}
+  - {fact: its lines, sql: "SELECT count(*) FROM (SELECT unnest(entities) x FROM logs WHERE dataset='apache' AND body @@ websearch_to_tsquery('\"Directory index forbidden\"')) WHERE x = 'ip:218.144.240.75'"}
+- id: T-A3
+  dataset: apache
+  question: When did "mod_jk child workerEnv in error state" errors start on the Apache server, and are they getting worse?
+  first: [search_logs, pattern_history, trend, find_patterns]
+  need: [[search_logs, find_patterns], [pattern_history, trend]]
+  facts:
+  - {fact: lines, sql: "SELECT count(*) FROM logs WHERE dataset='apache' AND body @@ websearch_to_tsquery('\"workerEnv in error state\"')"}
+  - {fact: first, match: date, sql: "SELECT strftime(min(ts), '%Y-%m-%d %H:%M') FROM logs WHERE dataset='apache' AND body @@ websearch_to_tsquery('\"workerEnv in error state\"')"}
+- id: T-H1
+  dataset: hdfs
+  question: What happened to HDFS block blk_-1608999687919862906, step by step?
+  first: [request_timeline, search_logs]
+  need: [[request_timeline, search_logs]]
+  facts:
+  - {fact: lines of the block, sql: "SELECT count(*) FROM logs WHERE dataset='hdfs' AND body @@ websearch_to_tsquery('blk_-1608999687919862906')"}
+  - {fact: first, match: date, sql: "SELECT strftime(min(ts), '%Y-%m-%d %H:%M') FROM logs WHERE dataset='hdfs' AND body @@ websearch_to_tsquery('blk_-1608999687919862906')"}
+- id: T-H2
+  dataset: hdfs
+  question: Which HDFS errors or warnings are the most frequent, and are they limited to a few datanodes?
+  first: [top_patterns, priority_table, facet, count_by]
+  need: [[top_patterns, priority_table, count_by, facet]]
+  facts:
+  - {fact: Got-exception-while-serving lines, sql: "SELECT count(*) FROM logs WHERE dataset='hdfs' AND body @@ websearch_to_tsquery('\"Got exception while serving\"')"}
+- id: T-H3
+  dataset: hdfs
+  question: In HDFS, what happens right before "PendingReplicationMonitor timed out block" events, and how often do they occur?
+  first: [search_logs, precursors, find_patterns, get_context]
+  need: [[search_logs, find_patterns], [precursors, get_context, burst_timeline]]
+  facts:
+  - {fact: lines, sql: "SELECT count(*) FROM logs WHERE dataset='hdfs' AND body @@ websearch_to_tsquery('\"PendingReplicationMonitor timed out\"')"}
+  - {fact: first, match: date, sql: "SELECT strftime(min(ts), '%Y-%m-%d %H:%M') FROM logs WHERE dataset='hdfs' AND body @@ websearch_to_tsquery('\"PendingReplicationMonitor timed out\"')"}
+- id: T-T1
+  dataset: otel
+  question: In the OpenTelemetry demo shop logs, which services and teams have the most error-level problems?
+  first: [count_by, rollup, top_patterns, priority_table, facet]
+  need: [[count_by, rollup, facet, top_patterns]]
+  facts:
+  - {fact: frontend ERROR lines, sql: "SELECT count(*) FROM logs WHERE dataset='otel' AND component='frontend' AND severity = 'ERROR'"}
+  - {fact: payment ERROR lines, sql: "SELECT count(*) FROM logs WHERE dataset='otel' AND component='payment' AND severity = 'ERROR'"}
+- id: T-T2
+  dataset: otel
+  question: Why are orders failing in the demo shop, and which service is the source?
+  first: [search_logs, top_patterns, find_patterns, facet]
+  need: [[search_logs, find_patterns, top_patterns]]
+  facts:
+  - {fact: Failed-to-place-order lines, sql: "SELECT count(*) FROM logs WHERE dataset='otel' AND body @@ websearch_to_tsquery('\"Failed to place order\"')"}
+  - {fact: card charge failure, match: text, value: charge card}
+- id: T-T3
+  dataset: otel
+  question: Follow trace 68a1dd0d5118a650745a1e0fcd04105f in the demo shop through the services. Where did it go wrong?
+  first: [request_timeline, search_logs]
+  need: [[request_timeline, search_logs]]
+  facts:
+  - {fact: lines of the trace, sql: "SELECT count(*) FROM logs WHERE dataset='otel' AND request_id='68a1dd0d5118a650745a1e0fcd04105f'"}
+  - {fact: services in the trace, sql: "SELECT count(DISTINCT component) FROM logs WHERE dataset='otel' AND request_id='68a1dd0d5118a650745a1e0fcd04105f'"}
+- id: T-X1
+  dataset: null
+  question: Which of the loaded systems had the most error-level log lines overall, and which team owns most of them?
+  first: [count_by, rollup, describe_corpus, facet]
+  need: [[count_by, rollup]]
+  facts:
+  - {fact: bgl FATAL lines, sql: "SELECT count(*) FROM logs WHERE dataset='bgl' AND severity = 'FATAL'"}
+# ---- unseen datasets (plan 012): loaded after the descriptions were written; nothing was tuned on them
+- id: U-L1
+  dataset: linux
+  question: Which IP addresses were behind the failed logins on the Linux server (host combo), and how many authentication failures were logged?
+  first: [top_entities, search_logs, facet, find_patterns, count_by]
+  need: [[top_entities, facet]]
+  facts:
+  - {fact: authentication failure lines, sql: "SELECT count(*) FROM logs WHERE dataset='linux' AND body @@ websearch_to_tsquery('\"authentication failure\"')"}
+  - {fact: top IP, match: text, value: 219.150.28.34}
+- id: U-L2
+  dataset: linux
+  question: What were the most frequent problems on the Linux server over its whole log, and which should be fixed first?
+  first: [top_patterns, priority_table, rollup]
+  need: [[top_patterns, priority_table]]
+  facts:
+  - {fact: Out of Memory lines, sql: "SELECT count(*) FROM logs WHERE dataset='linux' AND body @@ websearch_to_tsquery('\"Out of Memory\"')"}
+  - {fact: OOM named, match: text, value: Out of Memory}
+- id: U-L3
+  dataset: linux
+  question: Was the rpc.statd service on the Linux server attacked? What do the logs show, how many times, and when did it start?
+  first: [search_logs, find_patterns, count_by, facet, list_values]
+  need: [[search_logs, find_patterns, facet]]
+  facts:
+  - {fact: gethostbyname error lines, sql: "SELECT count(*) FROM logs WHERE dataset='linux' AND body @@ websearch_to_tsquery('\"gethostbyname error\"')"}
+  - {fact: first, match: date, sql: "SELECT strftime(min(ts), '%Y-%m-%d %H:%M') FROM logs WHERE dataset='linux' AND body @@ websearch_to_tsquery('\"gethostbyname error\"')"}
+- id: U-H1
+  dataset: healthapp
+  question: Does the health app fail to save or sync health data? How often, and in which modules?
+  first: [search_logs, find_patterns, top_patterns, facet, priority_table]
+  need: [[search_logs, find_patterns, top_patterns, facet]]
+  facts:
+  - {fact: sync failed broadcasts, sql: "SELECT count(*) FROM logs WHERE dataset='healthapp' AND body @@ websearch_to_tsquery('sendSyncFailedBroadcast')"}
+  - {fact: saveOneDetailData failures, sql: "SELECT count(*) FROM logs WHERE dataset='healthapp' AND body @@ websearch_to_tsquery('\"saveOneDetailData fail\"')"}
+- id: U-H2
+  dataset: healthapp
+  question: Which modules of the health app log the most, and at what hours of the day is it busiest?
+  first: [count_by, facet, list_values, heatmap, trend, rollup]
+  need: [[count_by, facet, list_values, rollup], [heatmap, trend]]
+  facts:
+  - {fact: Step_LSC lines, sql: "SELECT count(*) FROM logs WHERE dataset='healthapp' AND component='Step_LSC'"}
+- id: U-H3
+  dataset: healthapp
+  question: Based on the last four weeks of the health app's logs, what should its team prioritise?
+  first: [priority_table, top_patterns]
+  need: [[priority_table, top_patterns]]
+  facts:
+  - {fact: top priority, match: text, value: sendSyncFailedBroadcast}

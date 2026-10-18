@@ -11,11 +11,11 @@ from typing import Annotated, Optional
 
 from pydantic import Field
 
-from core import Dataset, check_dataset, envelope, execute, filters_sql, query, render, tsquery_sql
+from core import Component, Dataset, Node, check_dataset, envelope, execute, filters_sql, query, render, tsquery_sql
 
 MAX_ROWS_WS = 2_000_000
-COLS = ("dataset, line_id, ts, component, severity, node, rack, midplane, location, request_id, instance_id, tenant_id, "
-        "status, latency_ms, entities, body, pattern_id")
+COLS = ("dataset, line_id, ts, component, severity, node, location, request_id, object_id, status, duration_ms, "
+        "entities, body, pattern_id")
 
 
 def _ensure_registry() -> None:
@@ -48,15 +48,21 @@ def create_focus_index(
     start: Annotated[datetime, Field(description="Window start (inclusive).")],
     end: Annotated[datetime, Field(description="Window end (exclusive).")],
     name: Annotated[Optional[str], Field(description="Short name (letters, digits, _); default derived from the window.")] = None,
-    component: Annotated[Optional[str], Field(description="Optional: only this component.")] = None,
-    node: Annotated[Optional[str], Field(description="Optional: only this node.")] = None,
+    component: Component = None,
+    node: Node = None,
     benchmark_text: Annotated[Optional[str], Field(
         description="A search you expect to repeat (used to measure the speed-up); default 'error'.")] = None,
 ) -> dict:
-    """Create a workspace: copy one investigation window into its own indexed SereneDB search table, then use
-    search_logs(workspace=name) / facet(workspace=name) on it. Returns rows copied, build time, and the measured time
-    of a typical search and count on the full corpus vs on the workspace, with break_even_queries = build time / time
-    saved per query (the brief's trade-off). Drop it with drop_focus_index when the investigation is done.
+    """Create a temporary, indexed copy of one investigation window (a workspace) to search it repeatedly and fast.
+
+    Use when: you will run many searches / facets over the same window of a large dataset during one investigation,
+    or the question is about the speed trade-off of building an index for a time range.
+    Not for: one-off searches (search_logs already uses the corpus index).
+    Returns: rows copied, build time, and the measured time of a typical search and count on the full corpus vs on the
+    workspace, with break_even_queries = build time / time saved per query.
+    Caveats: writes to the database (a new table); drop it with drop_focus_index when done. Max 2M lines.
+    Example: create_focus_index(dataset=<dataset>, start='<window start>', end='<window end>', name='incident1')
+    Next: search_logs(workspace='incident1') / facet(workspace='incident1'); then drop_focus_index('incident1').
     """
     t0 = time.perf_counter()
     check_dataset(dataset)
@@ -75,11 +81,11 @@ def create_focus_index(
     execute(f"DROP TABLE IF EXISTS {t} CASCADE", {})
     execute("DELETE FROM workspaces WHERE name = %(n)s", {"n": name})
     ddl = [f"CREATE TABLE {t} (dataset VARCHAR, line_id BIGINT, ts TIMESTAMP, component VARCHAR, severity VARCHAR, "
-           f"node VARCHAR, rack VARCHAR, midplane VARCHAR, location VARCHAR, request_id VARCHAR, instance_id VARCHAR, "
-           f"tenant_id VARCHAR, status INTEGER, latency_ms DOUBLE, entities VARCHAR[], body VARCHAR, pattern_id INTEGER) "
+           f"node VARCHAR, location VARCHAR, request_id VARCHAR, object_id VARCHAR, status INTEGER, duration_ms DOUBLE, "
+           f"entities VARCHAR[], body VARCHAR, pattern_id INTEGER) "
            f"WITH (storage = 'search', optimize_top_k = 'bm25(1.2, 0.75)')",
            f"CREATE INDEX {t}_idx ON {t} USING inverted (ts, body log_body_dict, dataset, component, severity, node, "
-           f"location location_dict, request_id, instance_id, status, latency_ms, entities, pattern_id)"]
+           f"location location_dict, request_id, object_id, status, duration_ms, entities, pattern_id)"]
     tb = time.perf_counter()
     for d in ddl:
         execute(d)
@@ -116,8 +122,15 @@ def create_focus_index(
 def drop_focus_index(
     name: Annotated[str, Field(description="Workspace name (see index_stats).")],
 ) -> dict:
-    """Remove a workspace (local focus index or remote-data index) and its table / view and index. Do it when the
-    investigation is over: workspaces cost disk and memory."""
+    """Remove a workspace (a focus index or a remote-data index) when the investigation is over.
+
+    Use when: a create_focus_index / remote_index workspace is no longer needed.
+    Not for: anything else: this deletes the workspace's table / view and index.
+    Returns: the removed workspace's name, kind, dataset, rows and build time.
+    Caveats: destructive for the workspace only (never touches the corpus).
+    Example: drop_focus_index(name='incident1')
+    Next: index_stats to confirm it is gone.
+    """
     t0 = time.perf_counter()
     _ensure_registry()
     r = query("SELECT * FROM workspaces WHERE name = %(n)s", {"n": name})
@@ -137,10 +150,17 @@ def drop_focus_index(
 
 
 def index_stats() -> dict:
-    """The inverted indexes SereneDB holds right now (corpus, pattern index, workspaces, OTel tables): documents,
-    deleted backlog, buffered (not yet searchable) docs, segments, size on disk and average commit time, from
-    sdb_indexes() and sdb_metrics; plus the workspace registry (window, rows, build time). Use it to check a workspace
-    exists, to report index cost, or when counts look stale (num_buffered_docs > 0 = recent writes not yet visible)."""
+    """Which indexes and workspaces exist right now, and how big / healthy are they?
+
+    Use when: checking that a workspace exists, reporting index cost (documents, size, segments, commit time), or when
+    counts look stale (buffered_docs > 0 = recent writes not yet searchable).
+    Not for: anything about the log contents.
+    Returns: one row per inverted index (docs, live docs, buffered docs, segments, bytes, avg commit ms) and the
+    workspace registry (window, rows, build time).
+    Caveats: operator information only.
+    Example: index_stats()
+    Next: drop_focus_index for workspaces no longer needed.
+    """
     t0 = time.perf_counter()
     _ensure_registry()
     sql = ("SELECT i.index_name, i.table_name, max(m.value) FILTER (WHERE m.metric = 'num_docs') AS docs, "
@@ -163,10 +183,17 @@ def explain_tool(
     args: Annotated[dict, Field(description="The tool's arguments as you would pass them.")],
     analyze: Annotated[bool, Field(description="Also run it (EXPLAIN ANALYZE) for per-operator timings.")] = False,
 ) -> dict:
-    """How SereneDB executes a tool's main query: the query plan (EXPLAIN, or EXPLAIN ANALYZE with timings) of the
-    first SQL statement the tool runs, with flags for the index features it uses: inverted-index scan
-    (IRESEARCH_SCAN), facet counts from the term dictionary (TsDict), WAND top-k pruning (Top: k, optimized) and
-    vector kNN (Score). For "is this answered by the index or a scan?" and performance questions."""
+    """How does the database execute this tool call? The query plan of a tool's main SQL, with index-usage flags.
+
+    Use when: a performance question ("is this served by the index or a scan?", "why is this slow?") or to show how
+    a result was computed.
+    Not for: the result itself (call the tool).
+    Returns: the plan (EXPLAIN, or EXPLAIN ANALYZE with timings when analyze=True) of the tool's first SQL statement
+    and flags: inverted_index_scan, term_dictionary_facets, wand_top_k, vector_knn, full_scan.
+    Caveats: analyze=True runs the query.
+    Example: explain_tool(tool='search_logs', args={'dataset': <dataset>, 'query_text': 'timeout'})
+    Next: create_focus_index if a repeated query scans a lot.
+    """
     t0 = time.perf_counter()
     import server
     fn = server.TOOLS.get(tool)

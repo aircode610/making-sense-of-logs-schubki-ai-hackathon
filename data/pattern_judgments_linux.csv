@@ -1,0 +1,787 @@
+dataset,component,template,pattern_id,p_fault,p_dump,p_corrected,kind,kind_confidence
+linux,network,Bringing up loopback interface: succeeded ,700001,0.02,0.08,0.08,not a problem,1
+linux,network,Setting network parameters: succeeded ,700002,0.02,0.11,0.09,not a problem,1
+linux,irqbalance,irqbalance startup succeeded,700003,0.01,0.03,0.03,not a problem,1
+linux,kernel, BIOS-<ID>: <HEX> - <HEX> (reserved),700004,0.03,0.84,0.01,not a problem,1
+linux,kernel, BIOS-<ID>: <HEX> - <HEX> (usable),700005,0.02,0.79,0.02,not a problem,1
+linux,kernel," DMA zone: <N> pages, LIFO batch:<N>",700006,0.03,0.57,0.02,not a problem,1
+linux,kernel," HighMem zone: <N> pages, LIFO batch:<N>",700007,0.04,0.57,0.03,not a problem,0.99
+linux,kernel," Normal zone: <N> pages, LIFO batch:<N>",700008,0.02,0.54,0.02,not a problem,1
+linux,kernel,<ID> HIGHMEM available.,700009,0.05,0.31,0.02,not a problem,0.94
+linux,kernel,<ID> LOWMEM available.,700010,0.03,0.22,0.02,not a problem,0.99
+linux,kernel,ACPI disabled because your bios is from <N> and too old,700011,0.48,0.04,0.02,system software failure,0.51
+linux,kernel,BIOS-provided physical RAM map:,700012,0.02,0.4,0.01,not a problem,1
+linux,kernel,Built <N> zonelists,700013,0.02,0.08,0.02,not a problem,1
+linux,kernel,"CPU <N> irqstacks, hard=<HEX> soft=<HEX>",700014,0.05,0.75,0.02,not a problem,0.95
+linux,kernel,"CPU: <ID> I cache: <ID>, <ID> D cache: <ID>",700015,0.02,0.73,0.02,not a problem,1
+linux,kernel,Calibrating delay loop... <N> BogoMIPS,700016,0.02,0.14,0.01,not a problem,1
+linux,kernel,Capability LSM initialized,700017,0.02,0.05,0.01,not a problem,1
+linux,kernel,Console: colour VGA+ <N>x2<N>,700018,0.02,0.3,0.02,not a problem,1
+linux,kernel,DMI <N> present.,700019,0.02,0.17,0.02,not a problem,1
+linux,kernel,"Dentry cache hash table entries: <N> (order: <N>, <N> bytes)",700020,0.02,0.75,0.01,not a problem,1
+linux,kernel,Detected <N> MHz processor.,700021,0.02,0.09,0.01,not a problem,1
+linux,kernel,Failure registering capabilities with the kernel,700022,0.91,0.06,0.02,system software failure,1
+linux,kernel,"Initializing CPU#<N>",700023,0.02,0.06,0.01,not a problem,1
+linux,kernel,"Inode-cache hash table entries: <N> (order: <N>, <N> bytes)",700024,0.02,0.64,0.01,not a problem,1
+linux,kernel,Kernel command line: ro root=LABEL=/ rhgb quiet,700025,0.02,0.52,0.01,not a problem,1
+linux,kernel,"Linux version <N> (bhcompile@bugs.build.redhat.com) (gcc version <N> <HEX> (Red Hat Linux <N>)) #<N> Sat May <N> <N> EDT <N>",700026,0.02,0.13,0.01,not a problem,0.99
+linux,kernel,"Memory: <HEX>k/<HEX>k available (<N>k kernel code, <N>k reserved, <N>k data, <N>k init, <N>k highmem)",700027,0.02,0.47,0.01,not a problem,1
+linux,kernel,"Mount-cache hash table entries: <N> (order: <N>, <N> bytes)",700028,0.02,0.2,0.02,not a problem,1
+linux,kernel,On node <N> totalpages: <N>,700029,0.03,0.59,0.02,not a problem,1
+linux,kernel,PID hash table entries: <N> (order <N>: <N> bytes),700030,0.02,0.38,0.02,not a problem,1
+linux,kernel,SELinux: Initializing.,700031,0.02,0.05,0.02,not a problem,1
+linux,kernel,SELinux: Starting in permissive mode,700032,0.02,0.05,0.02,not a problem,1
+linux,kernel,Security Scaffold v1.<N> initialized,700033,0.02,0.09,0.01,not a problem,1
+linux,kernel,"There is already a security framework initialized, register_security failed.",700034,0.77,0.05,0.03,system software failure,0.99
+linux,kernel,Using tsc for high-res timesource,700035,0.02,0.07,0.02,not a problem,1
+linux,kernel,You can enable it with acpi=force,700036,0.08,0.07,0.03,not a problem,0.45
+linux,kernel,"klogd <N>, log source = <PATH> started.",700037,0.02,0.06,0.02,not a problem,1
+linux,kernel,mapped <ID>/<ID> trampoline to <ID>.,700038,0.03,0.08,0.04,not a problem,0.96
+linux,kernel,selinux_register_security: Registering secondary module capability,700039,0.02,0.1,0.02,not a problem,0.99
+linux,kernel,zapping low mappings.,700040,0.1,0.09,0.13,not a problem,0.59
+linux,nfslock,rpc.statd startup succeeded,700041,0.02,0.04,0.05,not a problem,1
+linux,portmap,portmap startup succeeded,700042,0.02,0.05,0.04,not a problem,1
+linux,rpc.statd,Version <N> Starting,700043,0.02,0.09,0.01,not a problem,1
+linux,syslog,klogd startup succeeded,700044,0.02,0.05,0.04,not a problem,1
+linux,syslog,syslogd startup succeeded,700045,0.01,0.05,0.04,not a problem,1
+linux,syslogd,<N>: restart.,700046,0.07,0.11,0.05,not a problem,0.94
+linux,kernel,ACPI: ACPI tables contain no PCI IRQ routing entries,700047,0.16,0.05,0.02,not a problem,0.42
+linux,kernel,ACPI: Interpreter disabled.,700048,0.25,0.06,0.02,not a problem,0.74
+linux,kernel,ACPI: Subsystem revision <HEX>,700049,0.02,0.2,0.02,not a problem,1
+linux,kernel,CPU: <ID> cache: <ID>,700050,0.03,0.77,0.02,not a problem,1
+linux,kernel,CPU: Intel Pentium III (Coppermine) stepping <N>,700051,0.02,0.37,0.01,not a problem,1
+linux,kernel,Checking 'hlt' instruction... OK.,700052,0.02,0.18,0.05,not a problem,1
+linux,kernel,"Dquot-cache hash table entries: <N> (order <N>, <N> bytes)",700053,0.02,0.62,0.02,not a problem,1
+linux,kernel,Enabling fast FPU save and restore... done.,700054,0.02,0.07,0.04,not a problem,1
+linux,kernel,Enabling unmasked SIMD FPU exception support... done.,700055,0.02,0.06,0.06,not a problem,1
+linux,kernel,Initializing Cryptographic API,700056,0.02,0.07,0.01,not a problem,1
+linux,kernel,Intel machine check architecture supported.,700057,0.02,0.09,0.03,not a problem,1
+linux,kernel,"Intel machine check reporting enabled on CPU#<N>.",700058,0.02,0.04,0.03,not a problem,1
+linux,kernel,Linux Plug and Play Support v0.<N> (c) Adam Belay,700059,0.02,0.19,0.01,not a problem,0.99
+linux,kernel,Linux agpgart interface v0.<N> (c) Dave Jones,700060,0.02,0.11,0.01,not a problem,1
+linux,kernel,NET: Registered protocol family <N>,700061,0.02,0.09,0.01,not a problem,1
+linux,kernel,PCI: Invalid ACPI-PCI IRQ routing table,700062,0.47,0.08,0.02,system software failure,0.94
+linux,kernel,"PCI: PCI BIOS revision <N> entry at <N>xfc0ce, last bus=<N>",700063,0.03,0.11,0.02,not a problem,1
+linux,kernel,PCI: Probing PCI hardware,700064,0.02,0.05,0.02,not a problem,1
+linux,kernel,PCI: Probing PCI hardware (bus <N>),700065,0.02,0.05,0.01,not a problem,1
+linux,kernel,PCI: Using IRQ router PIIX/ICH [<N>] at <N>f.<N>,700066,0.03,0.05,0.02,not a problem,1
+linux,kernel,PCI: Using configuration type <N>,700067,0.03,0.09,0.02,not a problem,1
+linux,kernel,POSIX conformance testing by UNIFIX,700068,0.03,0.09,0.02,not a problem,0.99
+linux,kernel,Real Time Clock Driver v1.<N>,700069,0.03,0.33,0.01,not a problem,1
+linux,kernel,SELinux: Registering netfilter hooks,700070,0.02,0.06,0.02,not a problem,1
+linux,kernel,"Total HugeTLB memory allocated, <N>",700071,0.03,0.51,0.02,not a problem,0.99
+linux,kernel,Transparent bridge - <N>e.<N>,700072,0.05,0.42,0.04,not a problem,0.96
+linux,kernel,VFS: Disk quotas dquot_<N>,700073,0.09,0.37,0.05,not a problem,0.75
+linux,kernel,agpgart: Detected an Intel <ID> E Chipset.,700074,0.02,0.04,0.02,not a problem,1
+linux,kernel,agpgart: Maximum main memory to use for agp memory: <ID>,700075,0.03,0.47,0.02,not a problem,1
+linux,kernel,apm: BIOS version <N> Flags <N>x0<N> (Driver version <N>ac),700076,0.03,0.52,0.02,not a problem,1
+linux,kernel,audit(<N>): initialized,700077,0.02,0.18,0.02,not a problem,1
+linux,kernel,audit: initializing netlink socket (disabled),700078,0.07,0.1,0.02,not a problem,0.96
+linux,kernel,isapnp: No Plug & Play device found,700079,0.23,0.07,0.02,not a problem,0.76
+linux,kernel,isapnp: Scanning for PnP cards...,700080,0.03,0.06,0.01,not a problem,1
+linux,kernel,mtrr: v2.<N> (<HEX>),700081,0.03,0.77,0.03,not a problem,0.99
+linux,kernel,pci_hotplug: PCI Hot Plug PCI Core version: <N>,700082,0.02,0.27,0.02,not a problem,1
+linux,kernel,usbcore: registered new driver hub,700083,0.02,0.04,0.02,not a problem,1
+linux,kernel,usbcore: registered new driver usbfs,700084,0.02,0.04,0.02,not a problem,1
+linux,random,Initializing random number generator: succeeded,700085,0.02,0.09,0.04,not a problem,1
+linux,rc,Starting pcmcia: succeeded,700086,0.02,0.09,0.07,not a problem,1
+linux,rpcidmapd,rpc.idmapd startup succeeded,700087,0.02,0.04,0.04,not a problem,1
+linux,bluetooth,hcid startup succeeded,700088,0.02,0.05,0.04,not a problem,1
+linux,bluetooth,sdpd startup succeeded,700089,0.01,0.05,0.04,not a problem,1
+linux,hcid,HCI daemon ver <N> started,700090,0.01,0.05,0.01,not a problem,1
+linux,kernel,RAMDISK driver initialized: <N> RAM disks of <ID> size <N> blocksize,700091,0.02,0.05,0.01,not a problem,1
+linux,kernel,"Serial: <N> driver $Revision: <N> $ <N> ports, IRQ sharing enabled",700092,0.02,0.15,0.02,not a problem,1
+linux,kernel,Uniform Multi-Platform E-IDE driver Revision: <N>alpha2,700093,0.03,0.41,0.02,not a problem,0.99
+linux,kernel,agpgart: AGP aperture is <ID> @ <HEX>,700094,0.03,0.28,0.02,not a problem,1
+linux,kernel,agpgart: detected <ID> dedicated video ram.,700095,0.02,0.06,0.02,not a problem,1
+linux,kernel,ttyS0 at I/O <N>x3f8 (irq = <N>) is a <ID>,700096,0.03,0.09,0.02,not a problem,1
+linux,kernel,ttyS1 at I/O <N>x2f8 (irq = <N>) is a <ID>,700097,0.03,0.08,0.02,not a problem,1
+linux,sdpd,sdpd v1.<N> started ,700098,0.01,0.05,0.01,not a problem,1
+linux,apmd,"Version <N> (APM BIOS <N>, Linux driver <N>ac)",700099,0.02,0.35,0.01,not a problem,1
+linux,apmd,apmd startup succeeded,700100,0.01,0.05,0.03,not a problem,1
+linux,kernel," ide0: BM-DMA at <N>xffa0-<N>xffa7, BIOS settings: hda:DMA, hdb:pio",700101,0.03,0.49,0.02,not a problem,1
+linux,kernel,ICH: IDE controller at PCI slot <N>f.<N>,700102,0.03,0.11,0.02,not a problem,1
+linux,kernel,ICH: chipset revision <N>,700103,0.02,0.56,0.02,not a problem,1
+linux,kernel,ICH: not <N>%% native mode: will probe irqs later,700104,0.08,0.15,0.1,not a problem,0.94
+linux,kernel,ide: Assuming <N>MHz system bus speed for PIO modes; override with idebus=xx,700105,0.04,0.07,0.06,not a problem,0.96
+linux,netfs,Mounting other filesystems: succeeded,700106,0.02,0.1,0.08,not a problem,1
+linux,apmd,Charge: * * * (-<N>% unknown),700107,0.1,0.4,0.06,not a problem,0.92
+linux,autofs,automount startup succeeded,700108,0.01,0.04,0.05,not a problem,1
+linux,kernel, hda: hda1 hda2 hda3,700109,0.04,0.3,0.02,not a problem,0.97
+linux,kernel," ide1: BM-DMA at <N>xffa8-<N>xffaf, BIOS settings: hdc:DMA, hdd:pio",700110,0.04,0.5,0.02,not a problem,1
+linux,kernel,Uniform CD-ROM driver Revision: <N>,700111,0.02,0.37,0.02,not a problem,1
+linux,kernel,Using cfq io scheduler,700112,0.02,0.1,0.01,not a problem,1
+linux,kernel,drivers<PATH>: v2.<N>:USB HID core driver,700113,0.03,0.24,0.02,not a problem,0.96
+linux,kernel,"hda: <HEX> sectors (<N> MB) w/<N>KiB Cache, CHS=<N><PATH>, UDMA(<N>)",700114,0.03,0.24,0.04,not a problem,1
+linux,kernel,"hda: IBM-DTLA-<HEX>, ATA DISK drive",700115,0.03,0.11,0.02,not a problem,1
+linux,kernel,hda: max request size: <N>KiB,700116,0.04,0.49,0.03,not a problem,0.99
+linux,kernel,"hdc: ATAPI <ID> CD-ROM drive, <N>kB Cache",700117,0.02,0.15,0.01,not a problem,1
+linux,kernel,hdc: Disabling (U)DMA for SAMSUNG CD-ROM SN-<N> (blacklisted),700118,0.17,0.06,0.22,not a problem,0.81
+linux,kernel,"hdc: SAMSUNG CD-ROM SN-<N>, ATAPI CD/DVD-ROM drive",700119,0.03,0.22,0.01,not a problem,1
+linux,kernel,ide-floppy driver <N>.newide,700120,0.04,0.18,0.03,not a problem,0.96
+linux,kernel,"ide0 at <N>x1f0-<N>x1f7,<N>x3f6 on irq <N>",700121,0.03,0.15,0.02,not a problem,1
+linux,kernel,ide1 at <N>x1<N>x1<N>x3<N> on irq <N>,700122,0.04,0.13,0.02,not a problem,0.99
+linux,kernel,usbcore: registered new driver hid,700123,0.02,0.04,0.02,not a problem,1
+linux,kernel,usbcore: registered new driver hiddev,700124,0.02,0.03,0.01,not a problem,1
+linux,smartd,Configuration file <PATH> parsed. ,700125,0.02,0.05,0.02,not a problem,1
+linux,smartd,"Device: <PATH>, found in smartd database. ",700126,0.02,0.06,0.02,not a problem,1
+linux,smartd,"Device: <PATH>, is SMART capable. Adding to ""monitor"" list. ",700127,0.02,0.04,0.02,not a problem,1
+linux,smartd,"Device: <PATH>, opened ",700128,0.03,0.08,0.02,not a problem,1
+linux,smartd,Home page is <URL> ,700129,0.01,0.09,0.01,not a problem,1
+linux,smartd,Monitoring <N> ATA and <N> SCSI devices ,700130,0.02,0.09,0.01,not a problem,1
+linux,smartd,Opened configuration file <PATH> ,700131,0.02,0.04,0.01,not a problem,1
+linux,smartd,smartd has fork()ed into background mode. New PID=<N>. ,700132,0.02,0.03,0.02,not a problem,1
+linux,smartd,smartd startup succeeded,700133,0.01,0.04,0.03,not a problem,1
+linux,smartd,smartd version <N> Copyright (C) <N> Bruce Allen ,700134,0.02,0.14,0.01,not a problem,1
+linux,kernel,"IP: routing cache hash table of <N> buckets, <N>Kbytes",700135,0.02,0.23,0.02,not a problem,1
+linux,kernel,input: AT Translated Set <N> keyboard on <ID>/serio0,700136,0.03,0.07,0.01,not a problem,1
+linux,kernel,input: ImPS/<N> Logitech Wheel Mouse on <ID>/serio1,700137,0.03,0.16,0.02,not a problem,1
+linux,kernel,"md: md driver <N> MAX_MD_DEVS=<N>, MD_SB_DISKS=<N>",700138,0.02,0.55,0.02,not a problem,1
+linux,kernel,mice: PS/<N> mouse device common for all mice,700139,0.03,0.11,0.02,not a problem,0.99
+linux,kernel,serio: <ID> AUX port at <N>x6<N>x6<N> irq <N>,700140,0.04,0.13,0.02,not a problem,1
+linux,kernel,serio: <ID> KBD port at <N>x6<N>x6<N> irq <N>,700141,0.04,0.14,0.02,not a problem,1
+linux,kernel,<ID>-fs: INFO: recovery required on readonly filesystem.,700142,0.31,0.05,0.14,network or I/O failure,0.47
+linux,kernel,<ID>-fs: hda2: orphan cleanup on readonly fs,700143,0.12,0.06,0.61,not a problem,0.75
+linux,kernel,<ID>-fs: write access will be enabled during recovery.,700144,0.16,0.05,0.27,not a problem,0.76
+linux,kernel,Freeing initrd memory: <N>k freed,700145,0.02,0.06,0.02,not a problem,1
+linux,kernel,Initializing IPsec netlink socket,700146,0.02,0.06,0.01,not a problem,1
+linux,kernel,RAMDISK: Compressed image found at block <N>,700147,0.03,0.07,0.03,not a problem,1
+linux,kernel,TCP: Hash tables configured (established <N> bind <N>),700148,0.02,0.1,0.02,not a problem,1
+linux,kernel,VFS: Mounted root (ext2 filesystem).,700149,0.02,0.03,0.02,not a problem,1
+linux,kernel,checking if image is initramfs...it isn't (no cpio magic); looks like an initrd,700150,0.05,0.07,0.06,not a problem,0.95
+linux,kernel,kjournald starting. Commit interval <N> seconds,700151,0.02,0.05,0.02,not a problem,1
+linux,kernel,md: ... autorun DONE.,700152,0.03,0.13,0.16,not a problem,1
+linux,kernel,md: Autodetecting RAID arrays.,700153,0.02,0.05,0.04,not a problem,1
+linux,kernel,md: autorun ...,700154,0.08,0.17,0.11,not a problem,0.84
+linux,rc,Starting hpoj: succeeded,700155,0.02,0.12,0.08,not a problem,1
+linux,kernel,<ID>-fs: hda2: <N> orphan inodes deleted,700156,0.1,0.05,0.54,not a problem,0.94
+linux,kernel,<ID>-fs: mounted filesystem with ordered data mode.,700157,0.02,0.04,0.02,not a problem,1
+linux,kernel,<ID>-fs: recovery complete.,700158,0.1,0.04,0.83,not a problem,0.97
+linux,kernel,Freeing unused kernel memory: <N>k freed,700159,0.02,0.05,0.02,not a problem,1
+linux,kernel,SELinux: Disabled at runtime.,700160,0.11,0.08,0.02,not a problem,0.47
+linux,kernel,Disabled Privacy Extensions on device <HEX>(lo),700161,0.14,0.11,0.06,not a problem,0.92
+linux,kernel,IPv6 over IPv4 tunneling driver,700162,0.04,0.21,0.02,not a problem,0.81
+linux,kernel,PCI: Found IRQ <N> for device <N>f.<N>,700163,0.03,0.05,0.02,not a problem,1
+linux,kernel,SELinux: Unregistering netfilter hooks,700164,0.08,0.06,0.04,not a problem,0.86
+linux,kernel,USB Universal Host Controller Interface driver v2.<N>,700165,0.03,0.24,0.02,not a problem,0.99
+linux,kernel,"<ID> FS on hda2, internal journal",700166,0.06,0.12,0.13,not a problem,0.95
+linux,kernel,hub <N>: <N> ports detected,700167,0.02,0.09,0.02,not a problem,1
+linux,kernel,hub <N>: USB hub found,700168,0.02,0.05,0.01,not a problem,1
+linux,kernel,uhci_hcd <N>f.<N>: UHCI Host Controller,700169,0.04,0.16,0.02,not a problem,1
+linux,kernel,"uhci_hcd <N>f.<N>: irq <N>, io base <HEX>",700170,0.05,0.33,0.02,not a problem,1
+linux,kernel,"uhci_hcd <N>f.<N>: new USB bus registered, assigned bus number <N>",700171,0.02,0.04,0.01,not a problem,1
+linux,kernel,"<ID> FS on hda1, internal journal",700172,0.07,0.12,0.15,not a problem,0.9
+linux,kernel,Adding <HEX>k swap on <PATH> Priority:<N> extents:<N>,700173,0.02,0.06,0.02,not a problem,1
+linux,kernel,cdrom: open failed.,700174,0.9,0.06,0.02,network or I/O failure,0.95
+linux,kernel,device-mapper: <N>-ioctl (<N>) initialised: dm@uk.sistina.com,700175,0.02,0.06,0.02,not a problem,1
+linux,kernel,IA-<N> Microcode Update Driver: v1.<N> <tigran@veritas.com>,700176,0.03,0.27,0.03,not a problem,0.96
+linux,kernel,SCSI subsystem initialized,700177,0.02,0.04,0.01,not a problem,1
+linux,kernel,microcode: <ID> already at revision <N>x8 (current=<N>x8),700178,0.02,0.07,0.07,not a problem,1
+linux,kernel,microcode: No suitable data for cpu <N>,700179,0.34,0.07,0.03,system software failure,0.55
+linux,kernel,"parport0: PC-style at <N>x3<N> (<N>x7<N>) [PCSPP,TRISTATE,EPP]",700180,0.03,0.22,0.02,not a problem,1
+linux,kernel,parport0: irq <N> detected,700181,0.04,0.07,0.03,not a problem,1
+linux,kernel,FDC <N> is a National Semiconductor <ID>,700182,0.03,0.14,0.02,not a problem,1
+linux,kernel,Floppy drive(s): fd0 is <N>.<ID>,700183,0.04,0.34,0.03,not a problem,1
+linux,kernel,inserting floppy driver for <N>,700184,0.03,0.07,0.02,not a problem,0.97
+linux,kernel,<N>c5<N>x: Donald Becker and others. www.scyld.com<PATH>,700185,0.03,0.23,0.03,not a problem,0.92
+linux,kernel,PCI: Found IRQ <N> for device <N>c.<N>,700186,0.03,0.05,0.02,not a problem,1
+linux,kernel,<N>c.<N>: <N>Com PCI <HEX> Tornado at <N>xec8<N>. Vers <ID>.<N>,700187,0.05,0.14,0.03,not a problem,0.99
+linux,kernel,Bluetooth: <ID> socket layer initialized,700188,0.02,0.05,0.01,not a problem,1
+linux,kernel,Bluetooth: <ID> ver <N>,700189,0.03,0.21,0.02,not a problem,1
+linux,kernel,Bluetooth: Core ver <N>,700190,0.02,0.17,0.02,not a problem,1
+linux,kernel,Bluetooth: HCI device and connection manager initialized,700191,0.02,0.04,0.01,not a problem,1
+linux,kernel,Bluetooth: HCI socket layer initialized,700192,0.02,0.04,0.01,not a problem,1
+linux,kernel,Bluetooth: RFCOMM TTY layer initialized,700193,0.02,0.04,0.02,not a problem,1
+linux,kernel,Bluetooth: RFCOMM socket layer initialized,700194,0.02,0.04,0.01,not a problem,1
+linux,kernel,Bluetooth: RFCOMM ver <N>,700195,0.02,0.14,0.02,not a problem,1
+linux,kernel,ip_tables: (C) <N> Netfilter core team,700196,0.02,0.12,0.02,not a problem,0.99
+linux,kernel,lp0: using parport0 (polling).,700197,0.03,0.05,0.03,not a problem,1
+linux,kernel,process `syslogd' is using obsolete setsockopt SO_BSDCOMPAT,700198,0.05,0.04,0.02,not a problem,0.59
+linux,kernel,lp0: console ready,700199,0.02,0.08,0.03,not a problem,1
+linux,cups,cupsd startup succeeded,700200,0.01,0.04,0.04,not a problem,1
+linux,sshd, succeeded,700201,0.02,0.16,0.21,not a problem,1
+linux,xinetd,xinetd startup succeeded,700202,0.01,0.04,0.03,not a problem,1
+linux,sendmail,sendmail startup succeeded,700203,0.02,0.04,0.04,not a problem,1
+linux,xinetd,No such internal service: services/stream - DISABLING,700204,0.46,0.07,0.27,system software failure,0.26
+linux,sendmail,sm-client startup succeeded,700205,0.02,0.04,0.04,not a problem,1
+linux,xinetd,Service telnet failed to start and is deactivated.,700206,0.87,0.04,0.04,job or application failure,0.82
+linux,xinetd,Started working: <N> available services,700207,0.02,0.06,0.03,not a problem,1
+linux,xinetd,bind failed (Address already in use (errno = <N>)). service = telnet,700208,0.77,0.07,0.02,network or I/O failure,0.79
+linux,xinetd,xinetd Version <N> started with libwrap loadavg options compiled in.,700209,0.02,0.05,0.01,not a problem,1
+linux,privoxy,Jun <N> <N> Privoxy(-<HEX>) Info: loading configuration file '<PATH>':,700210,0.02,0.05,0.01,not a problem,1
+linux,spamassassin,spamd startup succeeded,700211,0.01,0.04,0.03,not a problem,1
+linux,gpm,*** info [startup.c(<N>)]: ,700212,0.03,0.16,0.02,not a problem,1
+linux,gpm,Started gpm successfully. Entered daemon mode.,700213,0.02,0.04,0.02,not a problem,1
+linux,privoxy,privoxy startup succeeded,700214,0.01,0.05,0.03,not a problem,1
+linux,udev,creating device node '<PATH>',700215,0.03,0.13,0.02,not a problem,1
+linux,IIim,htt startup succeeded,700216,0.02,0.11,0.06,not a problem,1
+linux,gpm,*** info [mice.c(<N>)]: ,700217,0.04,0.21,0.03,not a problem,1
+linux,gpm,gpm startup succeeded,700218,0.01,0.04,0.03,not a problem,1
+linux,gpm,imps2: Auto-detected intellimouse PS/<N>,700219,0.03,0.07,0.08,not a problem,1
+linux,su(pam_unix),session closed for user htt,700220,0.03,0.03,0.01,not a problem,1
+linux,su(pam_unix),session opened for user htt by (uid=<N>),700221,0.02,0.08,0.01,not a problem,1
+linux,htt_server,started.,700222,0.02,0.11,0.02,not a problem,1
+linux,canna, succeeded,700223,0.02,0.22,0.27,not a problem,1
+linux,crond,crond startup succeeded,700224,0.01,0.04,0.03,not a problem,1
+linux,xfs,xfs startup succeeded,700225,0.01,0.04,0.04,not a problem,1
+linux,anacron,anacron startup succeeded,700226,0.01,0.04,0.03,not a problem,1
+linux,atd,atd startup succeeded,700227,0.02,0.05,0.04,not a problem,1
+linux,rc,Starting readahead: succeeded,700228,0.02,0.11,0.09,not a problem,1
+linux,readahead,Starting background readahead: ,700229,0.02,0.07,0.02,not a problem,1
+linux,messagebus,messagebus startup succeeded,700230,0.01,0.05,0.03,not a problem,1
+linux,httpd,httpd startup succeeded,700231,0.02,0.04,0.03,not a problem,1
+linux,squid,Squid Parent: child process <N> started,700232,0.02,0.04,0.01,not a problem,1
+linux,named,named startup succeeded,700233,0.01,0.07,0.04,not a problem,1
+linux,snmpd,snmpd startup succeeded,700234,0.01,0.04,0.03,not a problem,1
+linux,snmpd,NET-SNMP version <N> ,700235,0.02,0.23,0.02,not a problem,1
+linux,ntpd,ntpd <N>@<N>-r Thu Mar <N> <N> EST <N> (<N>),700236,0.06,0.14,0.06,not a problem,0.97
+linux,ntpd,ntpd startup succeeded,700237,0.01,0.03,0.04,not a problem,1
+linux,ntpd,kernel time sync status <N>,700238,0.06,0.76,0.04,not a problem,0.97
+linux,ntpd,precision = <N> usec,700239,0.02,0.88,0.02,not a problem,1
+linux,ntpd,frequency initialized <N> PPM from <PATH>,700240,0.02,0.08,0.04,not a problem,1
+linux,ntpd,"configure: keyword ""authenticate"" unknown, line ignored",700241,0.11,0.08,0.13,not a problem,0.92
+linux,mysqld,Starting MySQL: succeeded,700242,0.02,0.06,0.05,not a problem,1
+linux,mdmonitor,mdadm succeeded,700243,0.02,0.06,0.19,not a problem,1
+linux,rsyncd,"rsyncd version <N> starting, listening on port <N> ",700244,0.02,0.04,0.01,not a problem,1
+linux,mdmpd,mdmpd failed,700245,0.93,0.08,0.02,job or application failure,0.7
+linux,udev,removing device node '<PATH>',700246,0.05,0.1,0.04,not a problem,0.99
+linux,ntpd,kernel time sync disabled <N>,700247,0.34,0.23,0.04,not a problem,0.56
+linux,ntpd,"synchronized to LOCAL(<N>), stratum=<N>",700248,0.03,0.08,0.07,not a problem,1
+linux,ntpd,kernel time sync enabled <N>,700249,0.02,0.17,0.03,not a problem,1
+linux,named,"listening on IPv4 interface eth0, <IP>#<N>",700250,0.02,0.09,0.01,not a problem,1
+linux,named,"listening on IPv4 interface eth0:<N>, <IP>#<N>",700251,0.02,0.11,0.01,not a problem,1
+linux,named,"listening on IPv4 interface lo, <IP>#<N>",700252,0.02,0.09,0.01,not a problem,1
+linux,named,loading configuration from '<PATH>',700253,0.03,0.07,0.02,not a problem,1
+linux,named,starting BIND <N> -u named -t <PATH>,700254,0.02,0.06,0.01,not a problem,1
+linux,named,using <N> CPU,700255,0.02,0.16,0.02,not a problem,1
+linux,named,"couldn't add command channel <IP>#<N>: not found",700256,0.68,0.09,0.02,network or I/O failure,0.8
+linux,named,"couldn't add command channel ::<N>#<N>: not found",700257,0.71,0.09,0.02,network or I/O failure,0.73
+linux,named,running,700258,0.03,0.47,0.04,not a problem,1
+linux,xinetd,file descriptor of service comsat has been closed,700259,0.35,0.06,0.07,network or I/O failure,0.44
+linux,xinetd,select reported EBADF but no bad file descriptors were found,700260,0.28,0.07,0.06,network or I/O failure,0.41
+linux,su(pam_unix),session closed for user cyrus,700261,0.03,0.04,0.01,not a problem,1
+linux,su(pam_unix),session opened for user cyrus by (uid=<N>),700262,0.02,0.07,0.01,not a problem,1
+linux,logrotate,ALERT exited abnormally with [<N>],700263,0.88,0.09,0.03,job or application failure,0.97
+linux,su(pam_unix),session opened for user news by (uid=<N>),700264,0.02,0.07,0.01,not a problem,1
+linux,su(pam_unix),session closed for user news,700265,0.03,0.03,0.01,not a problem,1
+linux,sysctl,kernel.core_uses_pid = <N> ,700266,0.03,0.95,0.02,not a problem,1
+linux,sshd(pam_unix),authentication failure; logname= uid=<N> euid=<N> tty=NODEVssh ruser= <*> ,700267,0.2,0.06,0.02,not a problem,0.7
+linux,sshd(pam_unix),check pass; user unknown,700268,0.04,0.18,0.09,not a problem,0.99
+linux,ftpd,connection from <IP> () at Sat Jun <N> <N> <N> ,700269,0.02,0.05,0.01,not a problem,1
+linux,sshd(pam_unix),authentication failure; logname= uid=<N> euid=<N> tty=NODEVssh ruser= <*> user=root,700270,0.18,0.06,0.02,not a problem,0.64
+linux,ftpd,connection from <IP> () at Sun Jun <N> <N> <N> ,700271,0.02,0.05,0.01,not a problem,1
+linux,sshd(pam_unix),authentication failure; logname= uid=<N> euid=<N> tty=NODEVssh ruser= <*> user=test,700272,0.18,0.05,0.02,not a problem,0.56
+linux,sshd(pam_unix),authentication failure; logname= uid=<N> euid=<N> tty=NODEVssh ruser= rhost=<IP> user=guest,700273,0.18,0.06,0.02,not a problem,0.65
+linux,cups,cupsd shutdown succeeded,700274,0.02,0.04,0.07,not a problem,1
+linux,sshd(pam_unix),session opened for user test by (uid=<N>),700275,0.02,0.05,0.01,not a problem,1
+linux,sshd(pam_unix),session closed for user test,700276,0.03,0.04,0.01,not a problem,1
+linux,ftpd,connection from <IP> (mail.net-star.com.tw) at Mon Jun <N> <N> <N> ,700277,0.02,0.06,0.01,not a problem,1
+linux,gdm(pam_unix),bad username [;;],700278,0.13,0.12,0.02,not a problem,0.62
+linux,gdm-binary,Couldn't authenticate user,700279,0.49,0.06,0.02,job or application failure,0.39
+linux,gdm(pam_unix),bad username [],700280,0.12,0.11,0.02,not a problem,0.49
+linux,ftpd,connection from <IP> (host-<N>.STSK.macomnet.net) at Mon Jun <N> <N> <N> ,700281,0.02,0.06,0.01,not a problem,1
+linux,rpc.statd,gethostbyname error for ^X÷ÿ¿^X÷ÿ¿^Z÷ÿ¿^Z÷ÿ¿%<N>x%<N>x%<N>x%<N>x%<N>x%<N>x%<N>x%<N>x%<N>x%<N>x%hn%<N>x%hn\<N>\<N>\<N>\<N>\<N>\<N>\<N>\<N>\<N>\<N>\<N>\<N>\<N>\<N>\<N>\<N>\<N>\<N>\<N>\<N>\<N>\<N>\<N>\<N>\<N>\<N>\<N>\<N>\<N>\<N>\<N>\<N>\<N>\<N>\<N>\<N>\<N>\<N>\<N>\<N>\<N>\<N>\<N>\<N>\<N>\<N>\<N>\<N>\<N>\<N>\<N>\<N>\<N>\<N>\<N>\<N>\<N>\<N>\<N>\<N>\<N>\<N>\<N>\<N>\<N>\<N>\<N>\<N>\<N>\<N>\<N>\<N>\<N>\<N>\<N>\<N>\<N>\<N>\<N>\<N>\<N>\<N>\<N>\<N>\<N>\<N>\<N>\<N>\<N>\<N>\<N>\<N>\<N>\<N>\<N>\<N>\<N>\<N>\<N>\<N>\<N>\<N>\<N>\<N>\<N>\<N>\<N>\<N>\<N>\<N>\<N>\<N>\<N>\<N>\<N>\<N>\<N>\<N>\<N>\<N>\<N>\<N>\<N>\<N>\<N>\<N>\<N>\<N>\<N>\<N>\<N>\<N>\<N>\<N>\<N>\<N>\<N>\<N>\<N>\<N>\<N>\<N>\<N>\<N>\<N>\<N>\<N>\<N>\<N>\<N>\<N>\<N>\<N>\<N>\<N>\<N>\<N>\<N>\<N>\<N>\<N>\<N>\<N>\<N>\<N>\<N>\<N>\<N>\<N>\<N>\<N>\<N>\<N>\<N>\<N>\<N>\<N>\<N>\<N>\<N>\<N>\<N>\<N>\<N>\<N>\<N>\<N>\<N>\<N>\<N>\<N>\<N>\<N>\<N>\<N>\<N>\<N>\<N>\<N>\<N>\<N>\<N>\<N>\<N>\<N>\<N>\<N>\<N>\<N>\<N>\<N>\<N>\<N>\<N>\<N>\<N>\<N>\<N>\<N>\<N>\<N>\<N>\<N>\<N>\<N>,700282,0.54,0.08,0.02,network or I/O failure,0.6
+linux,ftpd,connection from <IP> (<N>.tampabay.res.rr.com) at Mon Jun <N> <N> <N> ,700283,0.02,0.05,0.01,not a problem,1
+linux,ftpd,connection from <IP> (<N>.bflony.adelphia.net) at Fri Jun <N> <N> <N> ,700284,0.02,0.06,0.01,not a problem,1
+linux,ftpd,connection from <IP> (lns-vlq-<N>-tou-<N>.adsl.proxad.net) at Fri Jun <N> <N> <N> ,700285,0.02,0.05,0.01,not a problem,1
+linux,ftpd,connection from <IP> (lns-vlq-<N>-tou-<N>.adsl.proxad.net) at Sat Jun <N> <N> <N> ,700286,0.03,0.06,0.01,not a problem,1
+linux,ftpd,User unknown timed out after <N> seconds at Sat Jun <N> <N> <N> ,700287,0.39,0.04,0.03,job or application failure,0.79
+linux,ftpd,connection from <IP> () at Mon Jun <N> <N> <N> ,700288,0.02,0.05,0.01,not a problem,1
+linux,snmpd,Received SNMP packet(s) from <IP> ,700289,0.03,0.04,0.02,not a problem,1
+linux,ftpd,connection from <IP> () at Wed Jun <N> <N> <N> ,700290,0.02,0.05,0.01,not a problem,1
+linux,ftpd,connection from <IP> () at Fri Jun <N> <N> <N> ,700291,0.02,0.06,0.01,not a problem,1
+linux,klogind,Authentication failed from <IP> (<IP>): Permission denied in replay cache code ,700292,0.38,0.06,0.03,system software failure,0.36
+linux,klogind,Authentication failed from <IP> (<IP>): Software caused connection abort ,700293,0.85,0.08,0.02,network or I/O failure,0.91
+linux,klogind,Kerberos authentication failed ,700294,0.8,0.07,0.02,job or application failure,0.5
+linux,ftpd,connection from <IP> () at Fri Jul <N> <N> <N> ,700295,0.02,0.06,0.01,not a problem,1
+linux,ftpd,connection from <IP> (dsl-Chn-static-<IP>.touchtelindia.net) at Sun Jul <N> <N> <N> ,700296,0.02,0.05,0.01,not a problem,1
+linux,ftpd,connection from <IP> (<IP>.sh.interxion.inode.at) at Sun Jul <N> <N> <N> ,700297,0.02,0.07,0.01,not a problem,1
+linux,ftpd,connection from <IP> (adsl-<N>.dsl.<ID>.pacbell.net) at Mon Jul <N> <N> <N> ,700298,0.02,0.05,0.01,not a problem,1
+linux,ftpd,connection from <IP> () at Tue Jul <N> <N> <N> ,700299,0.02,0.06,0.01,not a problem,1
+linux,ftpd,connection from <IP> () at Wed Jul <N> <N> <N> ,700300,0.02,0.05,0.01,not a problem,1
+linux,login(pam_unix),Jul <N> <N> combo -- root[<N>]: ROOT LOGIN ON tty2,700301,0.02,0.03,0.01,not a problem,1
+linux,login(pam_unix),session opened for user root by LOGIN(uid=<N>),700302,0.02,0.05,0.01,not a problem,1
+linux,login(pam_unix),session closed for user root,700303,0.03,0.04,0.01,not a problem,1
+linux,ftpd,connection from <IP> () at Thu Jul <N> <N> <N> ,700304,0.02,0.05,0.01,not a problem,1
+linux,ftpd,connection from <IP> () at Sat Jul <N> <N> <N> ,700305,0.02,0.06,0.01,not a problem,1
+linux,ftpd,connection from <IP> (host<IP>.maximumasp.com) at Sat Jul <N> <N> <N> ,700306,0.02,0.06,0.01,not a problem,1
+linux,ftpd,connection from <IP> () at Sun Jul <N> <N> <N> ,700307,0.02,0.05,0.01,not a problem,1
+linux,ftpd,connection from <IP> (dsl-<N>.arcor-ip.net) at Sun Jul <N> <N> <N> ,700308,0.02,0.06,0.01,not a problem,1
+linux,gdm(pam_unix),authentication failure; logname= uid=<N> euid=<N> tty=:<N> ruser= rhost= ,700309,0.27,0.06,0.02,not a problem,0.49
+linux,gdm(pam_unix),check pass; user unknown,700310,0.05,0.2,0.11,not a problem,0.97
+linux,ftpd,connection from <IP> (aml-sfh-<N>b.adsl.wanadoo.nl) at Sun Jul <N> <N> <N> ,700311,0.03,0.06,0.01,not a problem,1
+linux,ftpd,connection from <IP> (host8.topspot.net) at Sun Jul <N> <N> <N> ,700312,0.02,0.05,0.01,not a problem,1
+linux,ftpd,connection from <IP> (<N>.dsl.in-addr.zen.co.uk) at Sun Jul <N> <N> <N> ,700313,0.02,0.06,0.01,not a problem,1
+linux,ftpd,connection from <IP> () at Mon Jul <N> <N> <N> ,700314,0.02,0.05,0.01,not a problem,1
+linux,ftpd,"ANONYMOUS FTP LOGIN FROM <IP>, (anonymous)",700315,0.02,0.06,0.01,not a problem,1
+linux,named,notify question section contains no SOA,700316,0.15,0.11,0.01,not a problem,0.81
+linux,ftpd,getpeername (ftpd): Transport endpoint is not connected,700317,0.58,0.09,0.03,network or I/O failure,0.97
+linux,xinetd,warning: can't get client address: Connection reset by peer,700318,0.56,0.05,0.04,network or I/O failure,0.97
+linux,privoxy,Jul <N> <N> Privoxy(-<HEX>) Info: loading configuration file '<PATH>':,700319,0.02,0.05,0.01,not a problem,1
+linux,telnetd,ttloop: peer died: Invalid or incomplete multibyte or wide character,700320,0.76,0.07,0.03,job or application failure,0.55
+linux,ftpd,connection from <IP> () at Tue Aug <N> <N> <N> ,700321,0.02,0.06,0.01,not a problem,1
+linux,sshd(pam_unix),session opened for user root by (uid=<N>),700322,0.02,0.05,0.01,not a problem,1
+linux,sshd(pam_unix),session closed for user root,700323,0.03,0.04,0.01,not a problem,1
+linux,mysqld,Stopping MySQL: succeeded,700324,0.03,0.05,0.07,not a problem,1
+linux,login(pam_unix),Aug <N> <N> combo -- root[<N>]: ROOT LOGIN ON tty2,700325,0.02,0.03,0.01,not a problem,1
+linux,gpm,*** info [client.c(<N>)]: ,700326,0.03,0.19,0.02,not a problem,1
+linux,gpm,Connecting at fd <N>,700327,0.02,0.08,0.02,not a problem,0.99
+linux,gpm,Closing,700328,0.08,0.16,0.05,not a problem,0.95
+linux,gpm,Request on <N> (console <N>),700329,0.04,0.13,0.02,not a problem,0.99
+linux,ftpd,connection from <IP> () at Wed Aug <N> <N> <N> ,700330,0.02,0.05,0.01,not a problem,1
+linux,login,"FAILED LOGIN <N> FROM (null) FOR , Authentication failure",700331,0.28,0.07,0.02,job or application failure,0.44
+linux,login(pam_unix),bad username [ ],700332,0.1,0.12,0.02,not a problem,0.77
+linux,login(pam_unix),bad username [],700333,0.07,0.12,0.02,not a problem,0.77
+linux,ftpd,connection from <IP> () at Sat Aug <N> <N> <N> ,700334,0.02,0.07,0.01,not a problem,1
+linux,ftpd,connection from <IP> (<ID>-<N>.<ID>.interbusiness.it) at Sun Aug <N> <N> <N> ,700335,0.02,0.06,0.01,not a problem,1
+linux,ftpd,User unknown timed out after <N> seconds at Sun Aug <N> <N> <N> ,700336,0.38,0.04,0.03,job or application failure,0.77
+linux,sshd(pam_unix),<N> more authentication failures; logname= uid=<N> euid=<N> tty=NODEVssh ruser= rhost=ned.gcdtech.com user=root,700337,0.13,0.07,0.02,not a problem,0.62
+linux,sshd(pam_unix),service(sshd) ignoring max retries; <N> > <N>,700338,0.11,0.09,0.32,not a problem,0.82
+linux,telnetd,ttloop: read: Connection reset by peer,700339,0.49,0.08,0.04,network or I/O failure,0.96
+linux,ftpd,connection from <IP> (<ID>.dip.t-dialin.net) at Sun Aug <N> <N> <N> ,700340,0.02,0.06,0.01,not a problem,1
+linux,login(pam_unix),authentication failure; logname=LOGIN uid=<N> euid=<N> tty=tty2 ruser= rhost= user=root,700341,0.26,0.05,0.02,not a problem,0.56
+linux,login,"FAILED LOGIN <N> FROM (null) FOR root, Authentication failure",700342,0.34,0.06,0.01,not a problem,0.39
+linux,login(pam_unix),authentication failure; logname=LOGIN uid=<N> euid=<N> tty=tty2 ruser= rhost= ,700343,0.21,0.06,0.02,not a problem,0.62
+linux,login(pam_unix),check pass; user unknown,700344,0.05,0.16,0.07,not a problem,0.96
+linux,login,"FAILED LOGIN <N> FROM (null) FOR nf, Authentication failure",700345,0.25,0.05,0.02,not a problem,0.36
+linux,login,"FAILED LOGIN SESSION FROM (null) FOR root, Authentication failure",700346,0.4,0.06,0.01,not a problem,0.37
+linux,login(pam_unix),<N> more authentication failures; logname=LOGIN uid=<N> euid=<N> tty=tty2 ruser= rhost= user=root,700347,0.13,0.06,0.02,not a problem,0.65
+linux,ftpd,connection from <IP> (<ID>-<N>.adsl.static.ebtnet.net) at Tue Aug <N> <N> <N> ,700348,0.02,0.06,0.01,not a problem,1
+linux,sshd(pam_unix),authentication failure; logname= uid=<N> euid=<N> tty=NODEVssh ruser= rhost=<IP> user=amanda,700349,0.2,0.06,0.02,not a problem,0.66
+linux,/sbin/mingetty,tty2: invalid character <N>x1b in login name,700350,0.17,0.06,0.03,not a problem,0.47
+linux,ftpd,connection from <IP> () at Fri Aug <N> <N> <N> ,700351,0.02,0.04,0.01,not a problem,1
+linux,ftpd,connection from <IP> (ark.dbstream.co.jp) at Sat Aug <N> <N> <N> ,700352,0.02,0.05,0.01,not a problem,1
+linux,ftpd,connection from <IP> (iis.willowtec.com) at Tue Aug <N> <N> <N> ,700353,0.02,0.06,0.01,not a problem,1
+linux,ftpd,connection from <IP> (<ID>.klik.bydgoszcz.pl) at Fri Aug <N> <N> <N> ,700354,0.02,0.06,0.01,not a problem,1
+linux,ftpd,connection from <IP> (host-<N>.apid.com) at Mon Aug <N> <N> <N> ,700355,0.02,0.05,0.01,not a problem,1
+linux,ftpd,connection from <IP> (<ID>-<N>.<ID>.interbusiness.it) at Tue Aug <N> <N> <N> ,700356,0.02,0.08,0.01,not a problem,1
+linux,ftpd,connection from <IP> () at Thu Aug <N> <N> <N> ,700357,0.02,0.06,0.01,not a problem,1
+linux,ftpd,connection from <IP> (ip-<N>.evc.net) at Sat Aug <N> <N> <N> ,700358,0.02,0.06,0.01,not a problem,1
+linux,ftpd,User unknown timed out after <N> seconds at Sat Aug <N> <N> <N> ,700359,0.41,0.04,0.03,job or application failure,0.82
+linux,ftpd,connection from <IP> (ip-<N>.evc.net) at Sun Aug <N> <N> <N> ,700360,0.02,0.06,0.01,not a problem,1
+linux,ftpd,connection from <IP> (<HEX>.fln.virtua.com.br) at Sun Aug <N> <N> <N> ,700361,0.02,0.04,0.01,not a problem,1
+linux,ftpd,connection from <IP> () at Fri Sep <N> <N> <N> ,700362,0.02,0.05,0.01,not a problem,1
+linux,sshd(pam_unix),authentication failure; logname= uid=<N> euid=<N> tty=NODEVssh ruser= rhost=<IP> user=webmaster,700363,0.19,0.06,0.02,not a problem,0.66
+linux,ftpd,connection from <IP> (ASte-Genev-Bois-<N>.<ID>-<N>.abo.wanadoo.fr) at Sun Sep <N> <N> <N> ,700364,0.02,0.06,0.01,not a problem,1
+linux,ftpd,connection from <IP> () at Mon Sep <N> <N> <N> ,700365,0.02,0.05,0.01,not a problem,1
+linux,ftpd,connection from <IP> (ip-<N>.evhr.net) at Tue Sep <N> <N> <N> ,700366,0.02,0.06,0.01,not a problem,1
+linux,ftpd,connection from <IP> (static-<N>.nwrk.east.verizon.net) at Tue Sep <N> <N> <N> ,700367,0.02,0.05,0.01,not a problem,1
+linux,ftpd,connection from <IP> (mail2.systemsevolution.com) at Wed Sep <N> <N> <N> ,700368,0.02,0.07,0.01,not a problem,1
+linux,ftpd,connection from <IP> (ALyon-<N>.<ID>-<N>.abo.wanadoo.fr) at Mon Sep <N> <N> <N> ,700369,0.02,0.06,0.01,not a problem,1
+linux,ftpd,connection from <IP> () at Tue Sep <N> <N> <N> ,700370,0.02,0.06,0.01,not a problem,1
+linux,sshd(pam_unix),authentication failure; logname= uid=<N> euid=<N> tty=NODEVssh ruser= rhost=yang.<ID>.nctu.edu.tw user=nobody,700371,0.16,0.06,0.02,not a problem,0.6
+linux,sshd(pam_unix),authentication failure; logname= uid=<N> euid=<N> tty=NODEVssh ruser= rhost=<IP> user=nobody,700372,0.2,0.07,0.02,not a problem,0.66
+linux,ftpd,connection from <IP> (ALyon-<N>.<ID>-<N>.abo.wanadoo.fr) at Wed Sep <N> <N> <N> ,700373,0.02,0.07,0.01,not a problem,1
+linux,ftpd,User unknown timed out after <N> seconds at Wed Sep <N> <N> <N> ,700374,0.43,0.03,0.03,job or application failure,0.79
+linux,ftpd,connection from <IP> (<N>.dsl.telesp.net.br) at Thu Sep <N> <N> <N> ,700375,0.02,0.06,0.01,not a problem,1
+linux,ftpd,User unknown timed out after <N> seconds at Thu Sep <N> <N> <N> ,700376,0.38,0.03,0.03,job or application failure,0.77
+linux,ftpd,connection from <IP> (<ID>-<N>.<ID>.interbusiness.it) at Thu Sep <N> <N> <N> ,700377,0.02,0.06,0.01,not a problem,1
+linux,ftpd,connection from <IP> () at Thu Sep <N> <N> <N> ,700378,0.02,0.05,0.01,not a problem,1
+linux,privoxy,Sep <N> <N> Privoxy(-<HEX>) Info: loading configuration file '<PATH>':,700379,0.02,0.05,0.01,not a problem,1
+linux,sshd(pam_unix),authentication failure; logname= uid=<N> euid=<N> tty=NODEVssh ruser= rhost=<ID>.<ID>.pa.comcast.net user=webmaster,700380,0.18,0.06,0.02,not a problem,0.62
+linux,ftpd,connection from <IP> (<ID>-<N>.d4.club-internet.fr) at Thu Sep <N> <N> <N> ,700381,0.02,0.06,0.01,not a problem,1
+linux,ftpd,connection from <IP> (pc3.digi-aube-unet.ocn.ne.jp) at Thu Sep <N> <N> <N> ,700382,0.02,0.08,0.01,not a problem,1
+linux,ftpd,connection from <IP> (cpe-<N>.houston.res.rr.com) at Tue Sep <N> <N> <N> ,700383,0.02,0.06,0.01,not a problem,1
+linux,ftpd,connection from <IP> (<ID>.dip0.t-ipconnect.de) at Tue Sep <N> <N> <N> ,700384,0.02,0.05,0.01,not a problem,1
+linux,login(pam_unix),Sep <N> <N> combo -- root[<N>]: ROOT LOGIN ON tty2,700385,0.02,0.04,0.01,not a problem,1
+linux,sendmail,sendmail shutdown failed,700386,0.95,0.05,0.02,job or application failure,0.92
+linux,sendmail,sm-client shutdown succeeded,700387,0.02,0.05,0.07,not a problem,1
+linux,init,Switching to runlevel: <N>,700388,0.02,0.05,0.01,not a problem,1
+linux,shutdown,shutting down for system reboot,700389,0.03,0.06,0.01,not a problem,1
+linux,messagebus,messagebus -TERM succeeded,700390,0.07,0.08,0.24,not a problem,0.95
+linux,atd,atd shutdown succeeded,700391,0.02,0.05,0.06,not a problem,1
+linux,privoxy,privoxy shutdown succeeded,700392,0.02,0.04,0.04,not a problem,1
+linux,xfs,terminating ,700393,0.76,0.15,0.03,job or application failure,0.3
+linux,xfs,xfs shutdown succeeded,700394,0.02,0.04,0.09,not a problem,1
+linux,FreeWnn,jserver shutdown succeeded,700395,0.03,0.04,0.06,not a problem,1
+linux,canna,Stopping Canna server: succeeded,700396,0.03,0.05,0.06,not a problem,1
+linux,cannaserver,irw_killserver:cannaserver end ,700397,0.13,0.26,0.05,not a problem,0.54
+linux,gpm,gpm shutdown succeeded,700398,0.02,0.04,0.06,not a problem,1
+linux,httpd,httpd shutdown succeeded,700399,0.02,0.05,0.05,not a problem,1
+linux,squid,Stopping squid: ,700400,0.07,0.1,0.02,not a problem,0.86
+linux,squid,.,700401,0.1,0.43,0.05,not a problem,0.92
+linux,last,message repeated <N> times,700402,0.06,0.14,0.04,not a problem,0.99
+linux,squid,"",700403,0.08,0.4,0.04,not a problem,0.95
+linux,squid,Squid Parent: child process <N> exited with status <N>,700404,0.16,0.04,0.05,not a problem,0.66
+linux,rc,Stopping squid: succeeded,700405,0.03,0.09,0.08,not a problem,1
+linux,sshd,sshd -TERM succeeded,700406,0.07,0.07,0.21,not a problem,0.91
+linux,smartd,smartd is exiting (exit status <N>) ,700407,0.17,0.04,0.03,not a problem,0.59
+linux,smartd,smartd received signal <N>: Terminated ,700408,0.69,0.05,0.02,job or application failure,0.92
+linux,spamassassin,spamd shutdown succeeded,700409,0.02,0.04,0.06,not a problem,1
+linux,smartd,smartd shutdown succeeded,700410,0.02,0.04,0.06,not a problem,1
+linux,named,named shutdown succeeded,700411,0.03,0.06,0.06,not a problem,1
+linux,snmpd,Received TERM or STOP signal... shutting down... ,700412,0.1,0.03,0.02,not a problem,0.64
+linux,snmpd,snmpd shutdown succeeded,700413,0.02,0.04,0.05,not a problem,1
+linux,xinetd,Exiting...,700414,0.14,0.07,0.02,not a problem,0.82
+linux,apmd,Exiting,700415,0.27,0.11,0.02,not a problem,0.42
+linux,crond,crond shutdown succeeded,700416,0.02,0.05,0.05,not a problem,1
+linux,xinetd,xinetd shutdown succeeded,700417,0.02,0.04,0.06,not a problem,1
+linux,apmd,apmd shutdown succeeded,700418,0.02,0.05,0.06,not a problem,1
+linux,dd,<N>+<N> records in,700419,0.03,0.16,0.02,not a problem,1
+linux,dd,<N>+<N> records out,700420,0.05,0.18,0.03,not a problem,0.96
+linux,ntpd,ntpd exiting on signal <N>,700421,0.5,0.04,0.02,job or application failure,0.95
+linux,ntpd,ntpd shutdown succeeded,700422,0.02,0.04,0.05,not a problem,1
+linux,random,Saving random seed: succeeded,700423,0.02,0.13,0.06,not a problem,1
+linux,rpc.statd,"Caught signal <N>, un-registering and exiting.",700424,0.31,0.03,0.11,job or application failure,0.61
+linux,kernel,Kernel log daemon terminating.,700425,0.55,0.03,0.02,system software failure,0.86
+linux,kernel,Kernel logging (proc) stopped.,700426,0.74,0.05,0.02,system software failure,0.99
+linux,nfslock,rpc.statd shutdown succeeded,700427,0.03,0.04,0.11,not a problem,1
+linux,portmap,portmap shutdown succeeded,700428,0.03,0.05,0.07,not a problem,1
+linux,exiting,on signal <N>,700429,0.17,0.12,0.02,job or application failure,0.4
+linux,syslog,klogd shutdown succeeded,700430,0.02,0.04,0.07,not a problem,1
+linux,network,Bringing up interface eth0: succeeded ,700431,0.02,0.07,0.08,not a problem,1
+linux,named,shutting down,700432,0.08,0.13,0.02,not a problem,0.96
+linux,named,exiting,700433,0.13,0.18,0.02,not a problem,0.86
+linux,named,"no longer listening on <IP>#<N>",700434,0.44,0.06,0.04,network or I/O failure,0.39
+linux,sendmail,sm-client shutdown failed,700435,0.93,0.06,0.02,job or application failure,0.9
+linux,su(pam_unix),session opened for user test by root(uid=<N>),700436,0.02,0.06,0.01,not a problem,1
+linux,su(pam_unix),session closed for user test,700437,0.03,0.03,0.01,not a problem,1
+linux,init,open(<PATH>): No such file or directory,700438,0.47,0.12,0.02,network or I/O failure,0.94
+linux,ftpd,connection from <IP> () at Sat Oct <N> <N> <N> ,700439,0.02,0.06,0.01,not a problem,1
+linux,ftpd,connection from <IP> (ulm9-<HEX>.pool.mediaWays.net) at Mon Oct <N> <N> <N> ,700440,0.02,0.06,0.01,not a problem,1
+linux,ftpd,connection from <IP> () at Fri Oct <N> <N> <N> ,700441,0.02,0.05,0.01,not a problem,1
+linux,sshd(pam_unix),authentication failure; logname= uid=<N> euid=<N> tty=NODEVssh ruser= rhost=coldea.teleson.ro user=guest,700442,0.21,0.06,0.02,not a problem,0.59
+linux,passwd(pam_unix),password changed for test,700443,0.02,0.05,0.02,not a problem,1
+linux,sshd(pam_unix),<N> more authentication failure; logname= uid=<N> euid=<N> tty=NODEVssh ruser= rhost=bozesan.teleson.ro user=test,700444,0.12,0.07,0.02,not a problem,0.73
+linux,sshd(pam_unix),authentication failure; logname= uid=<N> euid=<N> tty=NODEVssh ruser= rhost=maior.teleson.ro user=info,700445,0.2,0.07,0.02,not a problem,0.59
+linux,sshd(pam_unix),authentication failure; logname= uid=<N> euid=<N> tty=NODEVssh ruser= rhost=maior.teleson.ro user=webmaster,700446,0.21,0.06,0.02,not a problem,0.59
+linux,sshd(pam_unix),authentication failure; logname= uid=<N> euid=<N> tty=NODEVssh ruser= rhost=kulab-<N>.cpc.ku.ac.th user=amanda,700447,0.17,0.06,0.02,not a problem,0.6
+linux,passwd(pam_unix),authentication failure; logname=test uid=<N> euid=<N> tty= ruser= rhost= user=test,700448,0.15,0.06,0.02,not a problem,0.76
+linux,wall,wall: user test broadcasted <N> lines (<N> chars),700449,0.02,0.07,0.01,not a problem,1
+linux,ftpd,connection from <IP> (user-<N>cm1iq.cable.mindspring.com) at Wed Oct <N> <N> <N> ,700450,0.02,0.06,0.01,not a problem,1
+linux,sshd(pam_unix),<N> more authentication failure; logname= uid=<N> euid=<N> tty=NODEVssh ruser= rhost=<IP> user=test,700451,0.08,0.08,0.02,not a problem,0.77
+linux,ftpd,connection from <IP> () at Wed Oct <N> <N> <N> ,700452,0.02,0.05,0.01,not a problem,1
+linux,ftpd,connection from <IP> (sym.gdsz.cncnet.net) at Thu Oct <N> <N> <N> ,700453,0.02,0.06,0.01,not a problem,1
+linux,ftpd,connection from <IP> (<ID>.dip.t-dialin.net) at Fri Oct <N> <N> <N> ,700454,0.02,0.06,0.01,not a problem,1
+linux,ftpd,connection from <IP> (p<IP>.tisdip.tiscali.de) at Fri Oct <N> <N> <N> ,700455,0.03,0.07,0.01,not a problem,1
+linux,sshd(pam_unix),authentication failure; logname= uid=<N> euid=<N> tty=NODEVssh ruser= rhost=<IP> user=postfix,700456,0.17,0.05,0.02,not a problem,0.66
+linux,ftpd,connection from <IP> () at Sun Oct <N> <N> <N> ,700457,0.02,0.07,0.01,not a problem,1
+linux,ftpd,connection from <IP> () at Mon Oct <N> <N> <N> ,700458,0.03,0.05,0.01,not a problem,1
+linux,ftpd,connection from <IP> (<ID>.dip0.t-ipconnect.de) at Fri Oct <N> <N> <N> ,700459,0.02,0.06,0.01,not a problem,1
+linux,ftpd,connection from <IP> (<N>-cable.canals.ro) at Sat Oct <N> <N> <N> ,700460,0.02,0.05,0.01,not a problem,1
+linux,fingerd,Client hung up - probable port-scan ,700461,0.22,0.05,0.02,network or I/O failure,0.73
+linux,rsyncd,rsync error: error in rsync protocol data stream (code <N>) at io.c(<N>) ,700462,0.78,0.05,0.02,network or I/O failure,0.79
+linux,rsyncd,rsync: connection unexpectedly closed (<N> bytes read so far) ,700463,0.77,0.05,0.03,network or I/O failure,0.97
+linux,cups-lpd,Connection from <N>-cable.canals.ro (<IP>),700464,0.03,0.1,0.01,not a problem,0.97
+linux,in.rexecd,connect from <N>-cable.canals.ro,700465,0.03,0.13,0.01,not a problem,0.94
+linux,ftpd,connection from <IP> (<N>-cable.canals.ro) at Sun Oct <N> <N> <N> ,700466,0.02,0.05,0.01,not a problem,1
+linux,snmpd,[smux_accept] accepted fd <N> from <IP> ,700467,0.02,0.06,0.02,not a problem,1
+linux,cups-lpd,Unable to get command line from client!,700468,0.66,0.07,0.02,job or application failure,0.5
+linux,klogind,Authentication failed from <IP> (<N>-cable.canals.ro): Software caused connection abort ,700469,0.76,0.08,0.02,network or I/O failure,0.94
+linux,rshd,Connection from <IP> on illegal port,700470,0.06,0.09,0.02,network or I/O failure,0.54
+linux,rlogind,Connection from <IP> on illegal port,700471,0.07,0.06,0.02,network or I/O failure,0.35
+linux,sshd(pam_unix),<N> more authentication failure; logname= uid=<N> euid=<N> tty=NODEVssh ruser= rhost=<N>-cable.canals.ro user=root,700472,0.13,0.08,0.02,not a problem,0.69
+linux,sshd(pam_unix),authentication failure; logname= uid=<N> euid=<N> tty=NODEVssh ruser= rhost=customer-<N>.uninet-ide.com.mx user=fax,700473,0.21,0.07,0.02,not a problem,0.59
+linux,squid,^[[<ID>[ ^[[<N>;<N>m,700474,0.06,0.64,0.04,not a problem,0.94
+linux,sendmail,sendmail shutdown succeeded,700475,0.02,0.04,0.06,not a problem,1
+linux,sysctl,kernel.sysrq = <N> ,700476,0.03,0.9,0.03,not a problem,1
+linux,sysctl,net.ipv4.conf.default.rp_filter = <N> ,700477,0.03,0.95,0.02,not a problem,1
+linux,privoxy,Oct <N> <N> Privoxy(-<HEX>) Info: loading configuration file '<PATH>':,700478,0.02,0.05,0.01,not a problem,1
+linux,ftpd,connection from <IP> (dslb-<N>.pools.arcor-ip.net) at Sat Nov <N> <N> <N> ,700479,0.02,0.09,0.01,not a problem,1
+linux,ftpd,connection from <IP> (ASte-Genev-Bois-<N>.<ID>-<N>.abo.wanadoo.fr) at Mon Nov <N> <N> <N> ,700480,0.02,0.06,0.01,not a problem,1
+linux,ftpd,connection from <IP> () at Mon Nov <N> <N> <N> ,700481,0.02,0.06,0.01,not a problem,1
+linux,ftpd,connection from <IP> (<ID>.dip.t-dialin.net) at Tue Nov <N> <N> <N> ,700482,0.02,0.07,0.01,not a problem,1
+linux,kernel,"",700483,0.11,0.4,0.06,not a problem,0.55
+linux,kernel,hda: DMA timeout retry,700484,0.35,0.1,0.44,network or I/O failure,0.95
+linux,kernel,hda: dma_timer_expiry: dma status == <N>x2<N>,700485,0.66,0.37,0.05,network or I/O failure,0.9
+linux,kernel,hda: drive not ready for command,700486,0.8,0.08,0.03,network or I/O failure,0.89
+linux,kernel,hda: status timeout: status=<N>xd0 { Busy },700487,0.77,0.24,0.04,network or I/O failure,0.99
+linux,kernel,hda: timeout waiting for DMA,700488,0.88,0.08,0.03,network or I/O failure,0.96
+linux,kernel,ide0: reset: success,700489,0.03,0.09,0.73,not a problem,1
+linux,ftpd,connection from <IP> () at Fri Nov <N> <N> <N> ,700490,0.02,0.06,0.01,not a problem,1
+linux,ftpd,connection from <IP> (merton.whererwerunning.com) at Sat Nov <N> <N> <N> ,700491,0.02,0.05,0.01,not a problem,1
+linux,ftpd,connection from <IP> (<ID>.dip0.t-ipconnect.de) at Sun Nov <N> <N> <N> ,700492,0.02,0.05,0.01,not a problem,1
+linux,ftpd,connection from <IP> (dslb-<N>.pools.arcor-ip.net) at Mon Nov <N> <N> <N> ,700493,0.02,0.06,0.01,not a problem,1
+linux,ftpd,connection from <IP> (<ID>.adsl.alicedsl.de) at Mon Nov <N> <N> <N> ,700494,0.02,0.07,0.01,not a problem,1
+linux,kernel,Out of Memory: Killed process <N> <*>,700495,0.94,0.04,0.03,job or application failure,0.77
+linux,ftpd,connection from <IP> (bdsl.<IP>.gte.net) at Fri Nov <N> <N> <N> ,700496,0.02,0.06,0.01,not a problem,1
+linux,kernel,spurious <ID> interrupt: <ID>.,700497,0.17,0.06,0.06,system software failure,0.33
+linux,ftpd,connection from <IP> (<ID>-<N>.in-addr.btopenworld.com) at Sat Nov <N> <N> <N> ,700498,0.02,0.06,0.01,not a problem,1
+linux,kernel, [<<HEX>>] <*>,700499,0.16,0.44,0.04,system software failure,0.75
+linux,kernel,Call Trace:,700500,0.26,0.4,0.03,system software failure,0.71
+linux,kernel,"httpd: page allocation failure. order:<N>, mode:<N>xd2",700501,0.81,0.09,0.03,system software failure,0.99
+linux,kernel,VM: killing process httpd,700502,0.79,0.05,0.07,job or application failure,0.96
+linux,kernel,"httpd: page allocation failure. order:<N>, mode:<N>x1d2",700503,0.8,0.09,0.03,system software failure,0.99
+linux,kernel,"httpd: page allocation failure. order:<N>, mode:<N>x5<N>",700504,0.78,0.09,0.03,system software failure,0.99
+linux,kernel, [<<HEX>>] ext3_get_inode_loc+<N>x4f/<N>x2<N> [ext3],700505,0.19,0.32,0.03,system software failure,0.61
+linux,kernel, [<<HEX>>] ext3_mark_inode_dirty+<N>x1<N>x2<N> [ext3],700506,0.08,0.32,0.03,not a problem,0.52
+linux,kernel, [<<HEX>>] ext3_reserve_inode_write+<N>x2<N>x8<N> [ext3],700507,0.15,0.38,0.03,system software failure,0.49
+linux,kernel, [<<HEX>>] journal_start+<N>x7<N>x9e [jbd],700508,0.07,0.47,0.03,not a problem,0.52
+linux,kernel, [<<HEX>>] ext3_dirty_inode+<N>x4f/<N>x5f [ext3],700509,0.1,0.33,0.03,system software failure,0.37
+linux,kernel, [<<HEX>>] ext3_file_write+<N>x1<N>x8<N> [ext3],700510,0.11,0.37,0.03,not a problem,0.33
+linux,kernel,"sendmail: page allocation failure. order:<N>, mode:<N>x1d2",700511,0.78,0.07,0.03,system software failure,0.99
+linux,kernel,VM: killing process sendmail,700512,0.79,0.05,0.07,job or application failure,0.96
+linux,ftpd,connection from <IP> (<N>.<ID>.ipd.brasiltelecom.net.br) at Thu Nov <N> <N> <N> ,700513,0.02,0.05,0.01,not a problem,1
+linux,kernel,"sendmail: page allocation failure. order:<N>, mode:<N>x5<N>",700514,0.77,0.08,0.03,system software failure,0.99
+linux,kernel, [<<HEX>>] ext3_get_inode_loc+<N>x1<N>x2<N> [ext3],700515,0.19,0.38,0.03,system software failure,0.55
+linux,ftpd,connection from <IP> (pc1.ayaha-hs-unet.ocn.ne.jp) at Fri Nov <N> <N> <N> ,700516,0.02,0.07,0.01,not a problem,1
+linux,ftpd,connection from <IP> () at Sat Nov <N> <N> <N> ,700517,0.02,0.05,0.01,not a problem,1
+linux,ftpd,connection from <IP> (mnpl-<N>.dsl.iowatelecom.net) at Thu Dec <N> <N> <N> ,700518,0.02,0.05,0.01,not a problem,1
+linux,ftpd,connection from <IP> (ARennes-<N>.<ID>-<N>.abo.wanadoo.fr) at Fri Dec <N> <N> <N> ,700519,0.02,0.07,0.01,not a problem,1
+linux,ftpd,connection from <IP> (<N>.cust.telepacific.net) at Sat Dec <N> <N> <N> ,700520,0.02,0.05,0.01,not a problem,1
+linux,kernel,printk: <N> messages suppressed.,700521,0.09,0.09,0.04,not a problem,0.82
+linux,gdm,Master rebooting...,700522,0.06,0.06,0.02,not a problem,0.95
+linux,messagebus,messagebus shutdown failed,700523,0.95,0.06,0.02,job or application failure,0.76
+linux,FreeWnn,jserver shutdown failed,700524,0.93,0.06,0.02,job or application failure,0.94
+linux,xfs,xfs shutdown failed,700525,0.94,0.06,0.02,network or I/O failure,0.61
+linux,mysqld,Stopping MySQL: failed,700526,0.92,0.06,0.02,job or application failure,0.99
+linux,squid,^[[<ID>[ ^[[<N>;<N>mOK,700527,0.03,0.61,0.16,not a problem,0.99
+linux,named,named shutdown failed,700528,0.93,0.08,0.02,job or application failure,0.94
+linux,nfslock,rpc.statd shutdown failed,700529,0.92,0.05,0.02,job or application failure,0.57
+linux,portmap,portmap shutdown failed,700530,0.94,0.07,0.02,job or application failure,0.54
+linux,privoxy,Dec <N> <N> Privoxy(-<HEX>) Info: loading configuration file '<PATH>':,700531,0.02,0.05,0.01,not a problem,1
+linux,ftpd,connection from <IP> () at Wed Dec <N> <N> <N> ,700532,0.02,0.06,0.01,not a problem,1
+linux,ftpd,connection from <IP> () at Fri Dec <N> <N> <N> ,700533,0.02,0.05,0.01,not a problem,1
+linux,login(pam_unix),Dec <N> <N> combo -- root[<N>]: ROOT LOGIN ON tty3,700534,0.02,0.03,0.01,not a problem,1
+linux,gdm(pam_unix),bad username [\],700535,0.13,0.11,0.02,not a problem,0.56
+linux,telnetd,ttloop: read: Connection timed out,700536,0.58,0.1,0.03,network or I/O failure,0.99
+linux,login(pam_unix),Dec <N> <N> combo -- root[<N>]: ROOT LOGIN ON tty2,700537,0.02,0.03,0.01,not a problem,1
+linux,syslog,syslogd shutdown succeeded ,700538,0.02,0.04,0.06,not a problem,1
+linux,ftpd,connection from <IP> (<ID>.dip0.t-ipconnect.de) at Fri Jan <N> <N> <N> ,700539,0.02,0.05,0.01,not a problem,1
+linux,ftpd,connection from <IP> (www.zajelgate.net) at Sun Jan <N> <N> <N> ,700540,0.02,0.06,0.01,not a problem,1
+linux,ftpd,connection from <IP> (<ID>-<ID>.nagano.ocn.ne.jp) at Mon Jan <N> <N> <N> ,700541,0.02,0.06,0.01,not a problem,1
+linux,ftpd,connection from <IP> () at Mon Jan <N> <N> <N> ,700542,0.02,0.05,0.01,not a problem,1
+linux,ftpd,connection from <IP> (<ID>.dip0.t-ipconnect.de) at Tue Jan <N> <N> <N> ,700543,0.02,0.06,0.01,not a problem,1
+linux,ftpd,connection from <IP> (<ID>.dip.t-dialin.net) at Wed Jan <N> <N> <N> ,700544,0.02,0.06,0.01,not a problem,1
+linux,ftpd,connection from <IP> (<N>.<ID>.ipd.brasiltelecom.net.br) at Wed Jan <N> <N> <N> ,700545,0.02,0.06,0.01,not a problem,1
+linux,ftpd,connection from <IP> (AFontenayssB-<N>.<ID>-<N>.abo.wanadoo.fr) at Thu Jan <N> <N> <N> ,700546,0.02,0.05,0.01,not a problem,1
+linux,ftpd,connection from <IP> () at Fri Jan <N> <N> <N> ,700547,0.02,0.06,0.01,not a problem,1
+linux,ftpd,connection from <IP> () at Sat Jan <N> <N> <N> ,700548,0.02,0.05,0.01,not a problem,1
+linux,sshd(pam_unix),authentication failure; logname= uid=<N> euid=<N> tty=NODEVssh ruser= rhost=connect.borran.com user=adm,700549,0.2,0.06,0.01,not a problem,0.61
+linux,sshd(pam_unix),authentication failure; logname= uid=<N> euid=<N> tty=NODEVssh ruser= rhost=pppzss.shenzhen.gd.cn user=nobody,700550,0.22,0.06,0.02,not a problem,0.57
+linux,ftpd,connection from <IP> () at Wed Jan <N> <N> <N> ,700551,0.02,0.07,0.01,not a problem,1
+linux,ftpd,connection from <IP> () at Thu Jan <N> <N> <N> ,700552,0.02,0.07,0.01,not a problem,1
+linux,ftpd,connection from <IP> (<N>.ded.tie.cl) at Thu Jan <N> <N> <N> ,700553,0.02,0.06,0.01,not a problem,1
+linux,ftpd,connection from <IP> (<N>.ded.tie.cl) at Mon Jan <N> <N> <N> ,700554,0.02,0.05,0.01,not a problem,1
+linux,ftpd,connection from <IP> (<N>.getnet.net) at Wed Jan <N> <N> <N> ,700555,0.03,0.05,0.01,not a problem,1
+linux,kernel,Kernel command line: ro root=LABEL=/ rhgb quiet audit=<N>,700556,0.02,0.55,0.01,not a problem,1
+linux,kernel,audit: enabled (after initialization),700557,0.02,0.09,0.02,not a problem,1
+linux,kernel,audit: initializing netlink socket (enabled),700558,0.02,0.1,0.02,not a problem,1
+linux,kernel,SELinux: Completing initialization.,700559,0.02,0.04,0.03,not a problem,1
+linux,kernel,SELinux: Setting up existing superblocks.,700560,0.03,0.06,0.03,not a problem,1
+linux,kernel,"SELinux: initialized (dev , type <*> uses genfs_contexts",700561,0.02,0.06,0.03,not a problem,1
+linux,kernel,"SELinux: initialized (dev , type devpts), uses transition SIDs",700562,0.02,0.06,0.02,not a problem,1
+linux,kernel,"SELinux: initialized (dev , type hugetlbfs), not configured for labeling",700563,0.08,0.06,0.04,not a problem,0.8
+linux,kernel,"SELinux: initialized (dev , type mqueue), not configured for labeling",700564,0.1,0.06,0.04,not a problem,0.71
+linux,kernel,"SELinux: initialized (dev hda2, type ext3), uses xattr",700565,0.02,0.06,0.01,not a problem,1
+linux,kernel,"SELinux: initialized (dev ram0, type ext2), uses xattr",700566,0.02,0.05,0.01,not a problem,1
+linux,kernel,"security: <N> classes, <HEX> rules",700567,0.02,0.35,0.02,not a problem,0.99
+linux,kernel,"security: <N> users, <N> roles, <N> types, <N> bools",700568,0.02,0.35,0.01,not a problem,1
+linux,kernel,"SELinux: initialized (dev , type pipefs), uses task SIDs",700569,0.02,0.06,0.02,not a problem,1
+linux,kernel,"SELinux: initialized (dev , type sockfs), uses task SIDs",700570,0.02,0.05,0.02,not a problem,1
+linux,kernel,"SELinux: initialized (dev , type tmpfs), uses transition SIDs",700571,0.02,0.06,0.02,not a problem,1
+linux,kernel,audit(<N>): avc: denied { add_name } for pid=<N> exe=<PATH> name=rhgb-socket scontext=system_u:system_r:kernel_t tcontext=system_u:object_r:ramfs_t tclass=dir,700572,0.45,0.09,0.03,system software failure,0.76
+linux,kernel,audit(<N>): avc: denied { create } for pid=<N> exe=<PATH> name=<ID>.<N>.log scontext=system_u:system_r:kernel_t tcontext=system_u:object_r:ramfs_t tclass=file,700573,0.54,0.1,0.02,system software failure,0.65
+linux,kernel,audit(<N>): avc: denied { create } for pid=<N> exe=<PATH> name=rhgb-socket scontext=system_u:system_r:kernel_t tcontext=system_u:object_r:ramfs_t tclass=sock_file,700574,0.49,0.09,0.03,system software failure,0.68
+linux,kernel,audit(<N>): avc: denied { execute } for pid=<N> path=<PATH> dev=hda2 ino=<HEX> scontext=system_u:system_r:kernel_t tcontext=system_u:object_r:file_t tclass=chr_file,700575,0.39,0.08,0.03,system software failure,0.52
+linux,kernel,audit(<N>): avc: denied { getattr } for pid=<N> exe=<PATH> path=<PATH> dev=hda2 ino=<HEX> scontext=system_u:system_r:kernel_t tcontext=system_u:object_r:file_t tclass=fifo_file,700576,0.37,0.09,0.03,system software failure,0.54
+linux,kernel,audit(<N>): avc: denied { name_bind } for pid=<N> exe=<PATH> scontext=system_u:system_r:kernel_t <*> tclass=tcp_socket,700577,0.51,0.09,0.02,system software failure,0.49
+linux,kernel,audit(<N>): avc: denied { read write } for pid=<N> exe=<PATH> name=initctl dev=hda2 ino=<HEX> scontext=system_u:system_r:kernel_t tcontext=system_u:object_r:file_t tclass=fifo_file,700578,0.44,0.08,0.02,system software failure,0.8
+linux,kernel,audit(<N>): avc: denied { search } for pid=<N> exe=<PATH> dev= ino=<N> scontext=system_u:system_r:kernel_t tcontext=system_u:object_r:ramfs_t tclass=dir,700579,0.39,0.09,0.02,system software failure,0.68
+linux,kernel,audit(<N>): avc: denied { search } for pid=<N> exe=<PATH> name=net dev= ino=<HEX> scontext=system_u:system_r:kernel_t tcontext=system_u:object_r:sysctl_net_t tclass=dir,700580,0.45,0.08,0.03,system software failure,0.71
+linux,kernel,audit(<N>): avc: denied { setattr } for pid=<N> exe=<PATH> name=/ dev= ino=<N> scontext=system_u:system_r:kernel_t tcontext=system_u:object_r:ramfs_t tclass=dir,700581,0.42,0.1,0.03,system software failure,0.71
+linux,kernel,audit(<N>): avc: denied { setattr } for pid=<N> exe=<PATH> name=rhgb-socket dev= ino=<N> scontext=system_u:system_r:kernel_t tcontext=system_u:object_r:ramfs_t tclass=sock_file,700582,0.48,0.09,0.03,system software failure,0.76
+linux,kernel,audit(<N>): avc: denied { syslog_console } for pid=<N> exe=<PATH> scontext=system_u:system_r:kernel_t tcontext=system_u:system_r:kernel_t tclass=system,700583,0.42,0.11,0.02,system software failure,0.59
+linux,kernel,audit(<N>): avc: denied { write } for pid=<N> exe=<PATH> dev= ino=<N> scontext=system_u:system_r:kernel_t tcontext=system_u:object_r:ramfs_t tclass=dir,700584,0.48,0.1,0.03,system software failure,0.74
+linux,kernel,audit(<N>): avc: denied { write } for pid=<N> exe=<PATH> name=<N> dev= ino=<HEX> scontext=system_u:system_r:kernel_t tcontext=system_u:object_r:proc_t tclass=file,700585,0.36,0.1,0.02,system software failure,0.62
+linux,kernel,audit(<N>): avc: denied { write } for pid=<N> exe=<PATH> path=<PATH> dev= ino=<N> scontext=system_u:system_r:kernel_t tcontext=system_u:object_r:ramfs_t tclass=file,700586,0.47,0.09,0.02,system software failure,0.65
+linux,kernel,audit(<N>): item=<N> inode=<N> dev=<N>,700587,0.03,0.35,0.02,not a problem,0.97
+linux,kernel,audit(<N>): item=<N> name=/initrd inode=<N> dev=<N>,700588,0.04,0.26,0.02,not a problem,0.99
+linux,kernel,audit(<N>): item=<N> name=<PATH>,700589,0.04,0.35,0.02,not a problem,0.97
+linux,kernel,audit(<N>): item=<N> name=<PATH> inode=<HEX> dev=<N>,700590,0.03,0.41,0.02,not a problem,0.99
+linux,kernel,audit(<N>): item=<N> name=<PATH> inode=<N> dev=<N>,700591,0.04,0.29,0.02,not a problem,0.97
+linux,kernel,audit(<N>): syscall=<N> exit=<HEX> a0=<HEX> a1=<N> a2=<HEX> a3=<HEX> items=<N> pid=<N> loginuid=<N> uid=<N> gid=<N> euid=<N> suid=<N> fsuid=<N> egid=<N> sgid=<N> fsgid=<N>,700592,0.26,0.46,0.04,not a problem,0.81
+linux,kernel,audit(<N>): syscall=<N> exit=<HEX> a0=<ID> a1=<N> a2=<N> a3=<N> items=<N> pid=<N> loginuid=<N> uid=<N> gid=<N> euid=<N> suid=<N> fsuid=<N> egid=<N> sgid=<N> fsgid=<N>,700593,0.2,0.5,0.03,not a problem,0.84
+linux,kernel,audit(<N>): syscall=<N> exit=<N> a0=<HEX> a1=<N> a2=<N>b6 a3=<N>b6 items=<N> pid=<N> loginuid=<N> uid=<N> gid=<N> euid=<N> suid=<N> fsuid=<N> egid=<N> sgid=<N> fsgid=<N>,700594,0.03,0.42,0.02,not a problem,0.99
+linux,kernel,audit(<N>): syscall=<N> exit=<N> a0=<HEX> a1=<N>c0 a2=<HEX> a3=<N>c0 items=<N> pid=<N> loginuid=<N> uid=<N> gid=<N> euid=<N> suid=<N> fsuid=<N> egid=<N> sgid=<N> fsgid=<N>,700595,0.03,0.43,0.03,not a problem,0.97
+linux,kernel,audit(<N>): syscall=<N> exit=<N> a0=<HEX> a1=<N>c0 a2=<N> a3=<N> items=<N> pid=<N> loginuid=<N> uid=<N> gid=<N> euid=<N> suid=<N> fsuid=<N> egid=<N> sgid=<N> fsgid=<N>,700596,0.03,0.44,0.03,not a problem,0.97
+linux,kernel,audit(<N>): syscall=<N> exit=<N> a0=<ID> a1=<N> a2=<N> a3=<N> items=<N> pid=<N> loginuid=<N> uid=<N> gid=<N> euid=<N> suid=<N> fsuid=<N> egid=<N> sgid=<N> fsgid=<N>,700597,0.22,0.45,0.03,not a problem,0.91
+linux,kernel,audit(<N>): syscall=<N> exit=<N> a0=<N> a1=<HEX> a2=<N> a3=<N> items=<N> pid=<N> loginuid=<N> uid=<N> gid=<N> euid=<N> suid=<N> fsuid=<N> egid=<N> sgid=<N> fsgid=<N>,700598,0.03,0.45,0.03,not a problem,0.97
+linux,kernel,audit(<N>): syscall=<N> exit=<N> a0=<N> a1=<HEX> a2=b a3=b items=<N> pid=<N> loginuid=<N> uid=<N> gid=<N> euid=<N> suid=<N> fsuid=<N> egid=<N> sgid=<N> fsgid=<N>,700599,0.3,0.43,0.03,not a problem,0.69
+linux,kernel,audit(<N>): syscall=<N> exit=<N> a0=<N> a1=<ID> a2=<N> a3=<ID> items=<N> pid=<N> loginuid=<N> uid=<N> gid=<N> euid=<N> suid=<N> fsuid=<N> egid=<N> sgid=<N> fsgid=<N>,700600,0.03,0.48,0.03,not a problem,0.97
+linux,kernel,audit(<N>): syscall=<N> exit=<N> a0=<N> a1=<N> a2=<N> a3=<N> items=<N> pid=<N> loginuid=<N> uid=<N> gid=<N> euid=<N> suid=<N> fsuid=<N> egid=<N> sgid=<N> fsgid=<N>,700601,0.03,0.45,0.03,not a problem,0.99
+linux,kernel,audit(<N>): avc: denied { getattr } for pid=<N> exe=<PATH> path=<PATH> dev= ino=<N> scontext=system_u:system_r:kernel_t tcontext=system_u:object_r:devpts_t tclass=chr_file,700602,0.43,0.09,0.03,system software failure,0.73
+linux,kernel,audit(<N>): avc: denied { read write } for pid=<N> exe=<PATH> name=<N> dev= ino=<N> scontext=system_u:system_r:kernel_t tcontext=system_u:object_r:devpts_t tclass=chr_file,700603,0.42,0.1,0.03,system software failure,0.65
+linux,kernel,audit(<N>): avc: denied { search } for pid=<N> exe=<PATH> dev= ino=<N> scontext=system_u:system_r:kernel_t tcontext=system_u:object_r:devpts_t tclass=dir,700604,0.47,0.11,0.03,system software failure,0.66
+linux,kernel,audit(<N>): syscall=<N> exit=<N> a0=<HEX> a1=<HEX> a2=<HEX> a3=<HEX> items=<N> pid=<N> loginuid=<N> uid=<N> gid=<N> euid=<N> suid=<N> fsuid=<N> egid=<N> sgid=<N> fsgid=<N>,700605,0.03,0.45,0.03,not a problem,0.99
+linux,kernel,audit(<N>): syscall=<N> exit=<N> a0=<HEX> a1=<N> a2=<N> a3=<N> items=<N> pid=<N> loginuid=<N> uid=<N> gid=<N> euid=<N> suid=<N> fsuid=<N> egid=<N> sgid=<N> fsgid=<N>,700606,0.21,0.48,0.03,not a problem,0.94
+linux,kernel,audit(<N>): avc: denied { ioctl } for pid=<N> exe=<PATH> path=<PATH> dev= ino=<N> scontext=system_u:system_r:kernel_t tcontext=system_u:object_r:devpts_t tclass=chr_file,700607,0.53,0.08,0.03,system software failure,0.8
+linux,kernel,audit(<N>): avc: denied { setattr } for pid=<N> exe=<PATH> name=<N> dev= ino=<N> scontext=system_u:system_r:kernel_t tcontext=system_u:object_r:devpts_t tclass=chr_file,700608,0.42,0.08,0.02,system software failure,0.75
+linux,kernel,audit(<N>): syscall=<N> exit=<N> a0=<N> a1=<N> a2=<HEX> a3=<HEX> items=<N> pid=<N> loginuid=<N> uid=<N> gid=<N> euid=<N> suid=<N> fsuid=<N> egid=<N> sgid=<N> fsgid=<N>,700609,0.03,0.48,0.02,not a problem,0.99
+linux,kernel,audit(<N>): avc: denied { write } for pid=<N> exe=<PATH> name=ip_forward dev= ino=<HEX> scontext=system_u:system_r:kernel_t tcontext=system_u:object_r:sysctl_net_t tclass=file,700610,0.5,0.09,0.02,system software failure,0.81
+linux,kernel,audit(<N>): avc: denied { write } for pid=<N> exe=<PATH> name=rhgb-socket dev= ino=<N> scontext=system_u:system_r:kernel_t tcontext=system_u:object_r:ramfs_t tclass=sock_file,700611,0.49,0.11,0.02,system software failure,0.57
+linux,kernel,audit(<N>): syscall=<N> exit=<N> a0=<N> a1=<ID> a2=<HEX> a3=<HEX> items=<N> pid=<N> loginuid=<N> uid=<N> gid=<N> euid=<N> suid=<N> fsuid=<N> egid=<N> sgid=<N> fsgid=<N>,700612,0.04,0.47,0.03,not a problem,0.97
+linux,kernel,audit(<N>): avc: denied { getattr } for pid=<N> exe=<PATH> path=<PATH> dev= ino=<HEX> scontext=system_u:system_r:kernel_t tcontext=system_u:object_r:sysctl_net_t tclass=file,700613,0.43,0.1,0.02,system software failure,0.7
+linux,kernel,audit(<N>): syscall=<N> exit=<N> a0=<N> a1=<HEX> a2=<HEX> a3=<HEX> items=<N> pid=<N> loginuid=<N> uid=<N> gid=<N> euid=<N> suid=<N> fsuid=<N> egid=<N> sgid=<N> fsgid=<N>,700614,0.03,0.46,0.02,not a problem,0.99
+linux,kernel,audit(<N>): avc: denied { getattr } for pid=<N> exe=<PATH> path=<PATH>:<N>f.<N><PATH> dev= ino=<N> scontext=system_u:system_r:kernel_t tcontext=system_u:object_r:sysfs_t tclass=file,700615,0.28,0.08,0.03,system software failure,0.64
+linux,kernel,audit(<N>): avc: denied { read } for pid=<N> exe=<PATH> name=bNumConfigurations dev= ino=<N> scontext=system_u:system_r:kernel_t tcontext=system_u:object_r:sysfs_t tclass=file,700616,0.41,0.07,0.02,system software failure,0.71
+linux,kernel,audit(<N>): item=<N> name=/sys/<PATH>:<N>f.<N><PATH> inode=<N> dev=<N>,700617,0.03,0.41,0.02,not a problem,0.99
+linux,kernel,audit(<N>): syscall=<N> exit=<N> a0=<HEX> a1=<ID> a2=<HEX> a3=<HEX> items=<N> pid=<N> loginuid=<N> uid=<N> gid=<N> euid=<N> suid=<N> fsuid=<N> egid=<N> sgid=<N> fsgid=<N>,700618,0.03,0.45,0.03,not a problem,0.99
+linux,kernel,audit(<N>): avc: denied { mounton } for pid=<N> exe=<PATH> path=<PATH> dev= ino=<HEX> scontext=system_u:system_r:kernel_t tcontext=system_u:object_r:proc_t tclass=dir,700619,0.52,0.1,0.03,system software failure,0.65
+linux,kernel,audit(<N>): avc: denied { getattr } for pid=<N> exe=<PATH> path=/sys dev= ino=<N> scontext=system_u:system_r:kernel_t tcontext=system_u:object_r:sysfs_t tclass=dir,700620,0.4,0.1,0.03,system software failure,0.68
+linux,kernel,audit(<N>): avc: denied { read } for pid=<N> exe=<PATH> name=devices dev= ino=<N> scontext=system_u:system_r:kernel_t tcontext=system_u:object_r:usbdevfs_t tclass=file,700621,0.32,0.09,0.03,system software failure,0.64
+linux,kernel,audit(<N>): item=<N> name=/sys inode=<N> dev=<N>,700622,0.03,0.29,0.02,not a problem,0.97
+linux,kernel,audit(<N>): avc: denied { create } for pid=<N> exe=<PATH> name=log scontext=system_u:system_r:kernel_t tcontext=system_u:object_r:file_t tclass=sock_file,700623,0.53,0.09,0.02,system software failure,0.64
+linux,kernel,audit(<N>): avc: denied { getattr } for pid=<N> exe=<PATH> path=<PATH> dev= ino=<N> scontext=system_u:system_r:kernel_t tcontext=system_u:object_r:usbdevfs_t tclass=file,700624,0.32,0.08,0.02,system software failure,0.56
+linux,kernel,audit(<N>): avc: denied { getattr } for pid=<N> exe=<PATH> path=<PATH> dev=hda2 ino=<HEX> scontext=system_u:system_r:kernel_t tcontext=system_u:object_r:file_t tclass=sock_file,700625,0.43,0.1,0.03,system software failure,0.66
+linux,kernel,audit(<N>): avc: denied { read } for pid=<N> exe=<PATH> name=device-mapper dev= ino=<N> scontext=system_u:system_r:kernel_t tcontext=system_u:object_r:sysfs_t tclass=dir,700626,0.35,0.09,0.02,system software failure,0.74
+linux,kernel,audit(<N>): avc: denied { unlink } for pid=<N> exe=<PATH> name=control dev=hda2 ino=<HEX> scontext=system_u:system_r:kernel_t tcontext=system_u:object_r:file_t tclass=chr_file,700627,0.51,0.1,0.03,system software failure,0.66
+linux,kernel,audit(<N>): avc: denied { write } for pid=<N> exe=<PATH> name=log dev=hda2 ino=<HEX> scontext=system_u:system_r:kernel_t tcontext=system_u:object_r:file_t tclass=sock_file,700628,0.49,0.11,0.02,system software failure,0.73
+linux,kernel,audit(<N>): item=<N> inode=<HEX> dev=<N>,700629,0.04,0.33,0.02,not a problem,0.99
+linux,kernel,audit(<N>): syscall=<N> exit=<HEX> a0=<N> a1=<ID> a2=<HEX> a3=<N> items=<N> pid=<N> loginuid=<N> uid=<N> gid=<N> euid=<N> suid=<N> fsuid=<N> egid=<N> sgid=<N> fsgid=<N>,700630,0.22,0.5,0.03,not a problem,0.68
+linux,kernel,audit(<N>): syscall=<N> exit=<N> a0=<HEX> a1=<N> a2=<ID> a3=<HEX> items=<N> pid=<N> loginuid=<N> uid=<N> gid=<N> euid=<N> suid=<N> fsuid=<N> egid=<N> sgid=<N> fsgid=<N>,700631,0.03,0.36,0.03,not a problem,0.97
+linux,kernel,audit(<N>): syscall=<N> exit=<N> a0=<HEX> a1=<N> a2=<N> a3=<HEX> items=<N> pid=<N> loginuid=<N> uid=<N> gid=<N> euid=<N> suid=<N> fsuid=<N> egid=<N> sgid=<N> fsgid=<N>,700632,0.15,0.45,0.04,not a problem,0.94
+linux,kernel,audit(<N>): syscall=<N> exit=<N> a0=<N> a1=<HEX> a2=<HEX> a3=<N> items=<N> pid=<N> loginuid=<N> uid=<N> gid=<N> euid=<N> suid=<N> fsuid=<N> egid=<N> sgid=<N> fsgid=<N>,700633,0.03,0.43,0.03,not a problem,0.97
+linux,kernel,audit(<N>): avc: denied { check_context } for pid=<N> exe=<PATH> scontext=system_u:system_r:kernel_t tcontext=system_u:object_r:security_t tclass=security,700634,0.42,0.09,0.03,system software failure,0.62
+linux,kernel,audit(<N>): avc: denied { create } for pid=<N> exe=<PATH> name=control scontext=system_u:system_r:kernel_t tcontext=system_u:object_r:file_t tclass=chr_file,700635,0.47,0.1,0.02,system software failure,0.76
+linux,kernel,audit(<N>): syscall=<N> exit=<N> a0=<HEX> a1=<N> a2=a3f a3=<N> items=<N> pid=<N> loginuid=<N> uid=<N> gid=<N> euid=<N> suid=<N> fsuid=<N> egid=<N> sgid=<N> fsgid=<N>,700636,0.03,0.44,0.02,not a problem,0.99
+linux,kernel,audit(<N>): syscall=<N> exit=<N> a0=<N> a1=<HEX> a2=<N>c a3=<HEX> items=<N> pid=<N> loginuid=<N> uid=<N> gid=<N> euid=<N> suid=<N> fsuid=<N> egid=<N> sgid=<N> fsgid=<N>,700637,0.13,0.47,0.03,not a problem,0.92
+linux,kernel,audit(<N>): avc: denied { getattr } for pid=<N> exe=<PATH> path=<PATH> dev=hda2 ino=<HEX> scontext=system_u:system_r:kernel_t tcontext=system_u:object_r:lvm_control_t tclass=chr_file,700638,0.47,0.1,0.03,system software failure,0.69
+linux,kernel,audit(<N>): avc: denied { relabelfrom } for pid=<N> exe=<PATH> name=control dev=hda2 ino=<HEX> scontext=system_u:system_r:kernel_t tcontext=system_u:object_r:file_t tclass=chr_file,700639,0.44,0.09,0.02,system software failure,0.82
+linux,kernel,audit(<N>): avc: denied { relabelto } for pid=<N> exe=<PATH> name=control dev=hda2 ino=<HEX> scontext=system_u:system_r:kernel_t tcontext=system_u:object_r:lvm_control_t tclass=chr_file,700640,0.43,0.11,0.02,system software failure,0.81
+linux,kernel,audit(<N>): avc: denied { relabelto } for pid=<N> exe=<PATH> name=device-mapper dev=hda2 ino=<HEX> scontext=system_u:system_r:kernel_t tcontext=system_u:object_r:device_t tclass=chr_file,700641,0.34,0.1,0.03,system software failure,0.69
+linux,kernel,audit(<N>): avc: denied { setattr } for pid=<N> exe=<PATH> name=device-mapper dev=hda2 ino=<HEX> scontext=system_u:system_r:kernel_t tcontext=system_u:object_r:file_t tclass=chr_file,700642,0.43,0.11,0.03,system software failure,0.8
+linux,kernel,audit(<N>): item=<N> name=<PATH> inode=<HEX> dev=<N>a:<N>f,700643,0.03,0.31,0.02,not a problem,0.99
+linux,kernel,audit(<N>): syscall=<N> exit=<N> a0=<HEX> a1=<HEX> a2=<HEX> a3=<N>b items=<N> pid=<N> loginuid=<N> uid=<N> gid=<N> euid=<N> suid=<N> fsuid=<N> egid=<N> sgid=<N> fsgid=<N>,700644,0.04,0.42,0.03,not a problem,0.97
+linux,kernel,audit(<N>): syscall=<N> exit=<N> a0=<ID> a1=<HEX> a2=<HEX> a3=<N> items=<N> pid=<N> loginuid=<N> uid=<N> gid=<N> euid=<N> suid=<N> fsuid=<N> egid=<N> sgid=<N> fsgid=<N>,700645,0.03,0.45,0.03,not a problem,0.97
+linux,kernel,audit(<N>): syscall=<N> exit=<N> a0=<ID> a1=<N> a2=<N> a3=a3f items=<N> pid=<N> loginuid=<N> uid=<N> gid=<N> euid=<N> suid=<N> fsuid=<N> egid=<N> sgid=<N> fsgid=<N>,700646,0.03,0.46,0.03,not a problem,0.97
+linux,kernel,audit(<N>): avc: denied { getattr } for pid=<N> exe=<PATH> path=<PATH> dev= ino=<N> scontext=system_u:system_r:kernel_t tcontext=system_u:object_r:devpts_t tclass=dir,700647,0.39,0.08,0.02,system software failure,0.71
+linux,kernel,audit(<N>): avc: denied { read } for pid=<N> exe=<PATH> dev= ino=<N> scontext=system_u:system_r:kernel_t tcontext=system_u:object_r:devpts_t tclass=dir,700648,0.41,0.08,0.02,system software failure,0.71
+linux,kernel,audit(<N>): syscall=<N> exit=<N> a0=<HEX> a1=<ID> a2=<N> a3=<ID> items=<N> pid=<N> loginuid=<N> uid=<N> gid=<N> euid=<N> suid=<N> fsuid=<N> egid=<N> sgid=<N> fsgid=<N>,700649,0.03,0.39,0.03,not a problem,0.97
+linux,kernel,audit(<N>): avc: denied { getattr } for pid=<N> exe=<PATH> path=<PATH> dev= ino=<HEX> scontext=system_u:system_r:kernel_t tcontext=system_u:object_r:sysctl_modprobe_t tclass=file,700650,0.36,0.1,0.03,system software failure,0.65
+linux,kernel,audit(<N>): avc: denied { relabelfrom } for pid=<N> exe=<PATH> name=mtab dev=hda2 ino=<N> scontext=system_u:system_r:kernel_t tcontext=system_u:object_r:file_t tclass=file,700651,0.41,0.09,0.03,system software failure,0.79
+linux,kernel,audit(<N>): avc: denied { relabelto } for pid=<N> exe=<PATH> name=ld.so.cache dev=hda2 ino=<N> scontext=system_u:system_r:kernel_t tcontext=system_u:object_r:ld_so_cache_t tclass=file,700652,0.44,0.09,0.03,system software failure,0.76
+linux,kernel,audit(<N>): avc: denied { relabelto } for pid=<N> exe=<PATH> name=mtab dev=hda2 ino=<N> scontext=system_u:system_r:kernel_t tcontext=system_u:object_r:etc_runtime_t tclass=file,700653,0.41,0.12,0.03,system software failure,0.75
+linux,kernel,audit(<N>): syscall=<N> exit=<N> a0=<HEX> a1=<HEX> a2=<HEX> a3=<N> items=<N> pid=<N> loginuid=<N> uid=<N> gid=<N> euid=<N> suid=<N> fsuid=<N> egid=<N> sgid=<N> fsgid=<N>,700654,0.03,0.43,0.03,not a problem,0.99
+linux,kernel,audit(<N>): syscall=<N> exit=<N> a0=<HEX> a1=<HEX> a2=<ID> a3=<N> items=<N> pid=<N> loginuid=<N> uid=<N> gid=<N> euid=<N> suid=<N> fsuid=<N> egid=<N> sgid=<N> fsgid=<N>,700655,0.03,0.42,0.03,not a problem,0.99
+linux,kernel,"SELinux: initialized (dev hda1, type ext3), uses xattr",700656,0.02,0.05,0.02,not a problem,1
+linux,kernel,audit(<N>): avc: denied { getattr } for pid=<N> exe=<PATH> path=<PATH> dev= ino=<HEX> scontext=system_u:system_r:kernel_t tcontext=system_u:object_r:sysctl_hotplug_t tclass=file,700657,0.25,0.08,0.03,system software failure,0.68
+linux,kernel,audit(<N>): avc: denied { write } for pid=<N> exe=<PATH> name=hotplug dev= ino=<HEX> scontext=system_u:system_r:kernel_t tcontext=system_u:object_r:sysctl_hotplug_t tclass=file,700658,0.38,0.1,0.03,system software failure,0.84
+linux,kernel,audit(<N>): avc: denied { write } for pid=<N> exe=<PATH> name=modprobe dev= ino=<HEX> scontext=system_u:system_r:kernel_t tcontext=system_u:object_r:sysctl_modprobe_t tclass=file,700659,0.43,0.11,0.02,system software failure,0.81
+linux,kernel,audit(<N>): avc: denied { relabelto } for pid=<N> exe=<PATH> name=vcs1 dev=hda2 ino=<HEX> scontext=system_u:system_r:kernel_t tcontext=system_u:object_r:tty_device_t tclass=chr_file,700660,0.42,0.1,0.03,system software failure,0.77
+linux,kernel,audit(<N>): avc: denied { syslog_read } for pid=<N> exe=<PATH> scontext=system_u:system_r:kernel_t tcontext=system_u:system_r:kernel_t tclass=system,700661,0.39,0.1,0.02,system software failure,0.59
+linux,kernel,audit(<N>): avc: denied { unlink } for pid=<N> exe=<PATH> name=log dev=hda2 ino=<HEX> scontext=system_u:system_r:kernel_t tcontext=system_u:object_r:file_t tclass=sock_file,700662,0.52,0.09,0.02,system software failure,0.71
+linux,kernel,audit(<N>): avc: denied { unlink } for pid=<N> exe=<PATH> name=vcsa1 dev=hda2 ino=<HEX> scontext=system_u:system_r:kernel_t tcontext=system_u:object_r:tty_device_t tclass=chr_file,700663,0.48,0.11,0.02,system software failure,0.76
+linux,kernel,audit(<N>): syscall=<N> exit=<N> a0=<HEX> a1=<ID> a2=<HEX> a3=<N> items=<N> pid=<N> loginuid=<N> uid=<N> gid=<N> euid=<N> suid=<N> fsuid=<N> egid=<N> sgid=<N> fsgid=<N>,700664,0.03,0.44,0.03,not a problem,0.97
+linux,kernel,audit(<N>): syscall=<N> exit=<N> a0=<ID> a1=<HEX> a2=<HEX> a3=<N>f items=<N> pid=<N> loginuid=<N> uid=<N> gid=<N> euid=<N> suid=<N> fsuid=<N> egid=<N> sgid=<N> fsgid=<N>,700665,0.03,0.44,0.03,not a problem,0.97
+linux,kernel,audit(<N>): avc: denied { read } for pid=<N> exe=<PATH> name=<N>c.<N> dev= ino=<N> scontext=system_u:system_r:kernel_t tcontext=system_u:object_r:sysfs_t tclass=lnk_file,700666,0.27,0.12,0.03,system software failure,0.68
+linux,kernel,audit(<N>): syscall=<N> exit=<N> a0=<ID> a1=<HEX> a2=<ID> a3=<ID> items=<N> pid=<N> loginuid=<N> uid=<N> gid=<N> euid=<N> suid=<N> fsuid=<N> egid=<N> sgid=<N> fsgid=<N>,700667,0.04,0.4,0.03,not a problem,0.97
+linux,kernel,audit(<N>): avc: denied { read } for pid=<N> exe=<PATH> name=parport dev= ino=<HEX> scontext=system_u:system_r:kernel_t tcontext=system_u:object_r:sysctl_dev_t tclass=dir,700668,0.34,0.09,0.02,system software failure,0.62
+linux,kernel,audit(<N>): avc: denied { search } for pid=<N> exe=<PATH> name=dev dev= ino=<HEX> scontext=system_u:system_r:kernel_t tcontext=system_u:object_r:sysctl_dev_t tclass=dir,700669,0.33,0.12,0.03,system software failure,0.6
+linux,kernel,audit(<N>): item=<N> name=<PATH>:<N>c.<N>/resource inode=<N> dev=<N>,700670,0.03,0.36,0.02,not a problem,0.99
+linux,kernel,audit(<N>): syscall=<N> exit=<N> a0=<HEX> a1=<N> a2=<HEX> a3=<N> items=<N> pid=<N> loginuid=<N> uid=<N> gid=<N> euid=<N> suid=<N> fsuid=<N> egid=<N> sgid=<N> fsgid=<N>,700671,0.3,0.45,0.03,not a problem,0.77
+linux,kernel,audit(<N>): avc: denied { getattr } for pid=<N> exe=<PATH> path=<PATH> dev= ino=<HEX> scontext=system_u:system_r:kernel_t tcontext=system_u:object_r:sysctl_dev_t tclass=dir,700672,0.29,0.1,0.02,system software failure,0.6
+linux,kernel,audit(<N>): avc: denied { read } for pid=<N> exe=<PATH> name=autoprobe dev= ino=<HEX> scontext=system_u:system_r:kernel_t tcontext=system_u:object_r:sysctl_dev_t tclass=file,700673,0.33,0.09,0.03,system software failure,0.64
+linux,kernel,audit(<N>): avc: denied { read } for pid=<N> exe=<PATH> name=hotplug dev= ino=<HEX> scontext=system_u:system_r:kernel_t tcontext=system_u:object_r:sysctl_hotplug_t tclass=file,700674,0.33,0.09,0.03,system software failure,0.69
+linux,kernel,audit(<N>): avc: denied { read } for pid=<N> exe=<PATH> name=modprobe dev= ino=<HEX> scontext=system_u:system_r:kernel_t tcontext=system_u:object_r:sysctl_modprobe_t tclass=file,700675,0.45,0.1,0.03,system software failure,0.71
+linux,kernel,audit(<N>): avc: denied { relabelfrom } for pid=<N> exe=<PATH> name=fd0 dev=hda2 ino=<HEX> scontext=system_u:system_r:kernel_t tcontext=system_u:object_r:file_t tclass=blk_file,700676,0.39,0.1,0.03,system software failure,0.65
+linux,kernel,audit(<N>): avc: denied { relabelto } for pid=<N> exe=<PATH> name=fd0 dev=hda2 ino=<HEX> scontext=system_u:system_r:kernel_t tcontext=system_u:object_r:removable_device_t tclass=blk_file,700677,0.35,0.09,0.03,system software failure,0.66
+linux,kernel,audit(<N>): avc: denied { create } for pid=<N> exe=<PATH> scontext=system_u:system_r:kernel_t tcontext=system_u:system_r:kernel_t tclass=packet_socket,700678,0.53,0.15,0.02,system software failure,0.51
+linux,kernel,audit(<N>): syscall=<N> exit=<N> a0=<HEX> a1=<N> a2=<ID> a3=<N> items=<N> pid=<N> loginuid=<N> uid=<N> gid=<N> euid=<N> suid=<N> fsuid=<N> egid=<N> sgid=<N> fsgid=<N>,700679,0.27,0.48,0.03,not a problem,0.87
+linux,kernel,audit(<N>): syscall=<N> exit=<N> a0=<N> a1=<HEX> a2=<N> a3=a items=<N> pid=<N> loginuid=<N> uid=<N> gid=<N> euid=<N> suid=<N> fsuid=<N> egid=<N> sgid=<N> fsgid=<N>,700680,0.2,0.42,0.03,not a problem,0.86
+linux,kernel,audit(<N>): avc: denied { ioctl } for pid=<N> exe=<PATH> path=socket:[<N>] dev= ino=<N> scontext=system_u:system_r:kernel_t tcontext=system_u:system_r:kernel_t tclass=packet_socket,700681,0.46,0.1,0.03,system software failure,0.5
+linux,kernel,audit(<N>): syscall=<N> exit=<N> a0=<N> a1=<N> a2=<HEX> a3=<N> items=<N> pid=<N> loginuid=<N> uid=<N> gid=<N> euid=<N> suid=<N> fsuid=<N> egid=<N> sgid=<N> fsgid=<N>,700682,0.03,0.48,0.02,not a problem,0.97
+linux,privoxy,Jan <N> <N> Privoxy(-<HEX>) Info: loading configuration file '<PATH>':,700683,0.02,0.05,0.01,not a problem,1
+linux,kernel,audit(<N>): avc: denied { getattr } for pid=<N> exe=<PATH> path=<PATH> dev= ino=<N> scontext=system_u:system_r:kernel_t tcontext=system_u:object_r:rpc_pipefs_t tclass=dir,700684,0.45,0.1,0.03,system software failure,0.69
+linux,kernel,audit(<N>): avc: denied { ioctl } for pid=<N> exe=<PATH> path=socket:[<N>] dev= ino=<N> scontext=system_u:system_r:kernel_t tcontext=system_u:system_r:kernel_t tclass=socket,700685,0.48,0.12,0.03,system software failure,0.61
+linux,kernel,audit(<N>): avc: denied { name_bind } for pid=<N> exe=<PATH> scontext=system_u:system_r:kernel_t tcontext=system_u:object_r:portmap_port_t tclass=udp_socket,700686,0.5,0.1,0.03,system software failure,0.5
+linux,kernel,audit(<N>): avc: denied { read } for pid=<N> exe=<PATH> name=kmsg dev= ino=<HEX> scontext=system_u:system_r:kernel_t tcontext=system_u:object_r:proc_kmsg_t tclass=file,700687,0.41,0.08,0.02,system software failure,0.68
+linux,kernel,audit(<N>): avc: denied { read } for pid=<N> exe=<PATH> name=nfs dev= ino=<N> scontext=system_u:system_r:kernel_t tcontext=system_u:object_r:rpc_pipefs_t tclass=dir,700688,0.49,0.09,0.02,system software failure,0.69
+linux,kernel,audit(<N>): avc: denied { relabelfrom } for pid=<N> exe=<PATH> name=ptal-mlcd dev=hda2 ino=<HEX> scontext=system_u:system_r:kernel_t tcontext=system_u:object_r:file_t tclass=dir,700689,0.42,0.1,0.03,system software failure,0.79
+linux,kernel,audit(<N>): avc: denied { relabelto } for pid=<N> exe=<PATH> name=ptal dev=hda2 ino=<HEX> scontext=system_u:system_r:kernel_t tcontext=system_u:object_r:etc_t tclass=dir,700690,0.45,0.13,0.03,system software failure,0.81
+linux,kernel,audit(<N>): avc: denied { relabelto } for pid=<N> exe=<PATH> name=ptal-mlcd dev=hda2 ino=<HEX> scontext=system_u:system_r:kernel_t tcontext=system_u:object_r:var_run_t tclass=dir,700691,0.44,0.11,0.03,system software failure,0.8
+linux,kernel,audit(<N>): avc: denied { search } for pid=<N> exe=<PATH> dev= ino=<N> scontext=system_u:system_r:kernel_t tcontext=system_u:object_r:rpc_pipefs_t tclass=dir,700692,0.47,0.1,0.03,system software failure,0.69
+linux,kernel,audit(<N>): avc: denied { search } for pid=<N> exe=<PATH> name=rpc dev= ino=<HEX> scontext=system_u:system_r:kernel_t tcontext=system_u:object_r:sysctl_rpc_t tclass=dir,700693,0.49,0.1,0.02,system software failure,0.7
+linux,kernel,audit(<N>): avc: denied { setattr } for pid=<N> exe=<PATH> name=log dev=hda2 ino=<HEX> scontext=system_u:system_r:kernel_t tcontext=system_u:object_r:file_t tclass=sock_file,700694,0.46,0.1,0.03,system software failure,0.74
+linux,kernel,audit(<N>): avc: denied { syslog_mod } for pid=<N> exe=<PATH> scontext=system_u:system_r:kernel_t tcontext=system_u:system_r:kernel_t tclass=system,700695,0.45,0.1,0.03,system software failure,0.76
+linux,kernel,audit(<N>): syscall=<N> exit=<HEX> a0=<HEX> a1=<N> a2=<N> a3=<HEX> items=<N> pid=<N> loginuid=<N> uid=<N> gid=<N> euid=<N> suid=<N> fsuid=<N> egid=<N> sgid=<N> fsgid=<N>,700696,0.23,0.46,0.04,not a problem,0.8
+linux,kernel,audit(<N>): syscall=<N> exit=<N> a0=<HEX> a1=<N>b6 a2=<HEX> a3=<N>b6 items=<N> pid=<N> loginuid=<N> uid=<N> gid=<N> euid=<N> suid=<N> fsuid=<N> egid=<N> sgid=<N> fsgid=<N>,700697,0.04,0.37,0.03,not a problem,0.97
+linux,kernel,audit(<N>): syscall=<N> exit=<N> a0=<ID> a1=<HEX> a2=<HEX> a3=<N>c items=<N> pid=<N> loginuid=<N> uid=<N> gid=<N> euid=<N> suid=<N> fsuid=<N> egid=<N> sgid=<N> fsgid=<N>,700698,0.03,0.43,0.03,not a problem,0.99
+linux,kernel,audit(<N>): syscall=<N> exit=<N> a0=<N> a1=<HEX> a2=<ID> a3=<N> items=<N> pid=<N> loginuid=<N> uid=<N> gid=<N> euid=<N> suid=<N> fsuid=<N> egid=<N> sgid=<N> fsgid=<N>,700699,0.03,0.5,0.03,not a problem,0.99
+linux,kernel,audit(<N>): syscall=<N> exit=<N> a0=<N> a1=<ID> a2=<HEX> a3=<N> items=<N> pid=<N> loginuid=<N> uid=<N> gid=<N> euid=<N> suid=<N> fsuid=<N> egid=<N> sgid=<N> fsgid=<N>,700700,0.03,0.45,0.03,not a problem,0.97
+linux,PAM-rootok,"pam_check_access failed, user does not have proper access: system_u:system_r:kernel_t",700701,0.38,0.06,0.02,system software failure,0.76
+linux,kernel,audit(<N>): avc: denied { compute_av } for pid=<N> exe=<PATH> scontext=system_u:system_r:kernel_t tcontext=system_u:object_r:security_t tclass=security,700702,0.46,0.11,0.03,system software failure,0.65
+linux,kernel,audit(<N>): avc: denied { getattr } for pid=<N> exe=<PATH> path=<PATH> dev= ino=<HEX> scontext=system_u:system_r:kernel_t tcontext=system_u:object_r:sysctl_dev_t tclass=file,700703,0.3,0.09,0.03,system software failure,0.52
+linux,kernel,audit(<N>): avc: denied { name_bind } for pid=<N> exe=<PATH> scontext=system_u:system_r:kernel_t tcontext=system_u:object_r:amanda_port_t tclass=udp_socket,700704,0.5,0.11,0.02,system software failure,0.35
+linux,kernel,audit(<N>): avc: denied { name_bind } for pid=<N> exe=<PATH> scontext=system_u:system_r:kernel_t tcontext=system_u:object_r:biff_port_t tclass=udp_socket,700705,0.48,0.1,0.02,system software failure,0.37
+linux,kernel,audit(<N>): avc: denied { name_bind } for pid=<N> exe=<PATH> scontext=system_u:system_r:kernel_t tcontext=system_u:object_r:inetd_port_t tclass=udp_socket,700706,0.51,0.1,0.02,system software failure,0.47
+linux,kernel,audit(<N>): avc: denied { name_bind } for pid=<N> exe=<PATH> scontext=system_u:system_r:kernel_t tcontext=system_u:object_r:ipp_port_t tclass=udp_socket,700707,0.47,0.09,0.02,system software failure,0.4
+linux,kernel,audit(<N>): avc: denied { name_bind } for pid=<N> exe=<PATH> scontext=system_u:system_r:kernel_t tcontext=system_u:object_r:tftp_port_t tclass=udp_socket,700708,0.48,0.1,0.02,system software failure,0.37
+linux,kernel,audit(<N>): syscall=<N> exit=<N> a0=<N> a1=<HEX> a2=<N> a3=<HEX> items=<N> pid=<N> loginuid=<N> uid=<N> gid=<N> euid=<N> suid=<N> fsuid=<N> egid=<N> sgid=<N> fsgid=<N>,700709,0.03,0.45,0.03,not a problem,0.97
+linux,kernel,audit(<N>): syscall=<N> exit=<N> a0=<N> a1=<HEX> a2=<N>a a3=<HEX> items=<N> pid=<N> loginuid=<N> uid=<N> gid=<N> euid=<N> suid=<N> fsuid=<N> egid=<N> sgid=<N> fsgid=<N>,700710,0.17,0.45,0.04,not a problem,0.91
+linux,kernel,audit(<N>): syscall=<N> exit=<N> a0=<N> a1=<ID> a2=<HEX> a3=<ID> items=<N> pid=<N> loginuid=<N> uid=<N> gid=<N> euid=<N> suid=<N> fsuid=<N> egid=<N> sgid=<N> fsgid=<N>,700711,0.04,0.47,0.03,not a problem,0.97
+linux,kernel,audit(<N>): avc: denied { compute_user } for pid=<N> exe=<PATH> scontext=system_u:system_r:kernel_t tcontext=system_u:object_r:security_t tclass=security,700712,0.48,0.12,0.03,system software failure,0.73
+linux,kernel,audit(<N>): avc: denied { noatsecure } for pid=<N> exe=<PATH> scontext=system_u:system_r:kernel_t tcontext=user_u:sysadm_r:sysadm_t tclass=process,700713,0.41,0.08,0.02,system software failure,0.66
+linux,kernel,audit(<N>): avc: denied { rlimitinh } for pid=<N> exe=<PATH> scontext=system_u:system_r:kernel_t tcontext=user_u:sysadm_r:sysadm_t tclass=process,700714,0.46,0.09,0.03,system software failure,0.7
+linux,kernel,audit(<N>): avc: denied { setexec } for pid=<N> exe=<PATH> scontext=system_u:system_r:kernel_t tcontext=system_u:system_r:kernel_t tclass=process,700715,0.51,0.13,0.03,system software failure,0.75
+linux,kernel,audit(<N>): avc: denied { siginh } for pid=<N> exe=<PATH> scontext=system_u:system_r:kernel_t tcontext=user_u:sysadm_r:sysadm_t tclass=process,700716,0.43,0.09,0.02,system software failure,0.65
+linux,kernel,audit(<N>): avc: denied { transition } for pid=<N> exe=<PATH> path=<PATH> dev=hda2 ino=<HEX> scontext=system_u:system_r:kernel_t tcontext=user_u:sysadm_r:sysadm_t tclass=process,700717,0.47,0.1,0.02,system software failure,0.75
+linux,kernel,audit(<N>): avc: denied { write } for pid=<N> exe=<PATH> name=exec dev= ino=<HEX> scontext=system_u:system_r:kernel_t tcontext=system_u:system_r:kernel_t tclass=file,700718,0.48,0.11,0.02,system software failure,0.75
+linux,kernel,audit(<N>): syscall=<N> exit=<HEX> a0=<N> a1=<HEX> a2=<N>e a3=<HEX> items=<N> pid=<N> loginuid=<N> uid=<N> gid=<N> euid=<N> suid=<N> fsuid=<N> egid=<N> sgid=<N> fsgid=<N>,700719,0.39,0.49,0.04,not a problem,0.68
+linux,kernel,audit(<N>): syscall=<N> exit=<N> a0=<ID> a1=<N> a2=fff a3=<HEX> items=<N> pid=<N> loginuid=<N> uid=<N> gid=<N> euid=<N> suid=<N> fsuid=<N> egid=<N> sgid=<N> fsgid=<N>,700720,0.34,0.43,0.03,not a problem,0.84
+linux,kernel,audit(<N>): avc: denied { getattr } for pid=<N> exe=<PATH> path=/initrd dev= ino=<N> scontext=system_u:system_r:kernel_t tcontext=system_u:object_r:ramfs_t tclass=dir,700721,0.38,0.1,0.03,system software failure,0.68
+linux,kernel,audit(<N>): avc: denied { getattr } for pid=<N> exe=<PATH> path=<PATH> dev= ino=<HEX> scontext=system_u:system_r:kernel_t tcontext=user_u:sysadm_r:sysadm_t tclass=file,700722,0.45,0.09,0.02,system software failure,0.62
+linux,kernel,audit(<N>): avc: denied { read } for pid=<N> exe=<PATH> name=exe dev= ino=<HEX> scontext=system_u:system_r:kernel_t tcontext=user_u:sysadm_r:sysadm_t tclass=lnk_file,700723,0.47,0.1,0.02,system software failure,0.69
+linux,kernel,audit(<N>): avc: denied { read } for pid=<N> exe=<PATH> name=stat dev= ino=<HEX> scontext=system_u:system_r:kernel_t tcontext=user_u:sysadm_r:sysadm_t tclass=file,700724,0.45,0.1,0.02,system software failure,0.65
+linux,kernel,audit(<N>): avc: denied { search } for pid=<N> exe=<PATH> name=<N> dev= ino=<HEX> scontext=system_u:system_r:kernel_t tcontext=user_u:sysadm_r:sysadm_t tclass=dir,700725,0.44,0.09,0.02,system software failure,0.69
+linux,kernel,audit(<N>): syscall=<N> exit=<N> a0=<ID> a1=<ID> a2=<HEX> a3=<ID> items=<N> pid=<N> loginuid=<N> uid=<N> gid=<N> euid=<N> suid=<N> fsuid=<N> egid=<N> sgid=<N> fsgid=<N>,700726,0.04,0.43,0.04,not a problem,0.99
+linux,kernel,audit(<N>): syscall=<N> exit=<N> a0=<ID> a1=<N> a2=<N>b6 a3=<N>b6 items=<N> pid=<N> loginuid=<N> uid=<N> gid=<N> euid=<N> suid=<N> fsuid=<N> egid=<N> sgid=<N> fsgid=<N>,700727,0.22,0.47,0.03,not a problem,0.89
+linux,kernel,audit(<N>): avc: denied { name_bind } for pid=<N> exe=<PATH> scontext=system_u:system_r:kernel_t tcontext=system_u:object_r:dns_port_t tclass=udp_socket,700728,0.49,0.09,0.02,system software failure,0.36
+linux,kernel,audit(<N>): avc: denied { name_bind } for pid=<N> exe=<PATH> scontext=system_u:system_r:kernel_t tcontext=system_u:object_r:snmp_port_t tclass=udp_socket,700729,0.52,0.09,0.02,system software failure,0.35
+linux,kernel,audit(<N>): avc: denied { name_bind } for pid=<N> exe=<PATH> scontext=system_u:system_r:kernel_t tcontext=system_u:object_r:ntp_port_t tclass=udp_socket,700730,0.49,0.1,0.02,system software failure,0.44
+linux,kernel,audit(<N>): avc: denied { remove_name } for pid=<N> exe=<PATH> name=rhgb-socket dev= ino=<N> scontext=system_u:system_r:kernel_t tcontext=system_u:object_r:ramfs_t tclass=dir,700731,0.49,0.1,0.03,system software failure,0.74
+linux,kernel,audit(<N>): avc: denied { unlink } for pid=<N> exe=<PATH> name=<ID>.<N>.log dev= ino=<N> scontext=system_u:system_r:kernel_t tcontext=system_u:object_r:ramfs_t tclass=file,700732,0.49,0.09,0.03,system software failure,0.59
+linux,kernel,audit(<N>): avc: denied { unlink } for pid=<N> exe=<PATH> name=rhgb-socket dev= ino=<N> scontext=system_u:system_r:kernel_t tcontext=system_u:object_r:ramfs_t tclass=sock_file,700733,0.49,0.09,0.03,system software failure,0.66
+linux,kernel,audit(<N>): avc: denied { getattr } for pid=<N> exe=<PATH> name=vcsa5 dev=hda2 ino=<HEX> scontext=system_u:system_r:kernel_t tcontext=system_u:object_r:tty_device_t tclass=chr_file,700734,0.38,0.1,0.03,system software failure,0.7
+linux,kernel,audit(<N>): syscall=<N> exit=<N> a0=<ID> a1=<HEX> a2=<HEX> a3=ff items=<N> pid=<N> loginuid=<N> uid=<N> gid=<N> euid=<N> suid=<N> fsuid=<N> egid=<N> sgid=<N> fsgid=<N>,700735,0.2,0.49,0.04,not a problem,0.8
+linux,kernel,audit(<N>): avc: denied { unlink } for pid=<N> exe=<PATH> name=.gdmfifo dev=hda2 ino=<HEX> scontext=system_u:system_r:kernel_t tcontext=system_u:object_r:file_t tclass=fifo_file,700736,0.48,0.11,0.03,system software failure,0.79
+linux,kernel,audit(<N>): syscall=<N> exit=<N> a0=<HEX> a1=<N> a2=<ID> a3=<N>b0 items=<N> pid=<N> loginuid=<N> uid=<N> gid=<N> euid=<N> suid=<N> fsuid=<N> egid=<N> sgid=<N> fsgid=<N>,700737,0.04,0.44,0.03,not a problem,0.97
+linux,kernel,audit(<N>): avc: denied { create } for pid=<N> exe=<PATH> name=.gdmfifo scontext=system_u:system_r:kernel_t tcontext=system_u:object_r:file_t tclass=fifo_file,700738,0.49,0.11,0.02,system software failure,0.75
+linux,kernel,audit(<N>): syscall=<N> exit=<N> a0=<HEX> a1=<N>b0 a2=<N> a3=<N> items=<N> pid=<N> loginuid=<N> uid=<N> gid=<N> euid=<N> suid=<N> fsuid=<N> egid=<N> sgid=<N> fsgid=<N>,700739,0.03,0.47,0.03,not a problem,0.99
+linux,kernel,audit(<N>): avc: denied { setattr } for pid=<N> exe=<PATH> name=.gdmfifo dev=hda2 ino=<HEX> scontext=system_u:system_r:kernel_t tcontext=system_u:object_r:file_t tclass=fifo_file,700740,0.49,0.11,0.03,system software failure,0.77
+linux,kernel,audit(<N>): syscall=<N> exit=<N> a0=<HEX> a1=<N>b0 a2=<ID> a3=<N>b0 items=<N> pid=<N> loginuid=<N> uid=<N> gid=<N> euid=<N> suid=<N> fsuid=<N> egid=<N> sgid=<N> fsgid=<N>,700741,0.03,0.43,0.03,not a problem,0.97
+linux,kernel,audit(<N>): avc: denied { compute_relabel } for pid=<N> exe=<PATH> scontext=system_u:system_r:kernel_t tcontext=system_u:object_r:security_t tclass=security,700742,0.43,0.11,0.03,system software failure,0.73
+linux,kernel,audit(<N>): avc: denied { ioctl } for pid=<N> exe=<PATH> path=<PATH> dev= ino=<N> scontext=system_u:system_r:kernel_t tcontext=root:object_r:devpts_t tclass=chr_file,700743,0.51,0.08,0.03,system software failure,0.76
+linux,kernel,audit(<N>): avc: denied { read write } for pid=<N> exe=<PATH> name=<N> dev= ino=<N> scontext=system_u:system_r:kernel_t tcontext=root:object_r:devpts_t tclass=chr_file,700744,0.41,0.08,0.03,system software failure,0.68
+linux,kernel,audit(<N>): avc: denied { relabelfrom } for pid=<N> exe=<PATH> name=<N> dev= ino=<N> scontext=system_u:system_r:kernel_t tcontext=system_u:object_r:devpts_t tclass=chr_file,700745,0.42,0.12,0.03,system software failure,0.75
+linux,kernel,audit(<N>): avc: denied { relabelto } for pid=<N> exe=<PATH> name=<N> dev= ino=<N> scontext=system_u:system_r:kernel_t tcontext=root:object_r:devpts_t tclass=chr_file,700746,0.44,0.09,0.03,system software failure,0.71
+linux,kernel,audit(<N>): avc: denied { siginh } for pid=<N> exe=<PATH> scontext=system_u:system_r:kernel_t tcontext=root:sysadm_r:sysadm_t tclass=process,700747,0.43,0.1,0.03,system software failure,0.69
+linux,kernel,audit(<N>): avc: denied { transition } for pid=<N> exe=<PATH> path=<PATH> dev=hda2 ino=<HEX> scontext=system_u:system_r:kernel_t tcontext=root:sysadm_r:sysadm_t tclass=process,700748,0.46,0.09,0.02,system software failure,0.77
+linux,kernel,audit(<N>): syscall=<N> exit=<N> a0=<N> a1=<N>e a2=<N> a3=<HEX> items=<N> pid=<N> loginuid=<N> uid=<N> gid=<N> euid=<N> suid=<N> fsuid=<N> egid=<N> sgid=<N> fsgid=<N>,700749,0.03,0.46,0.03,not a problem,0.97
+linux,kernel,audit(<N>): avc: denied { noatsecure } for pid=<N> exe=<PATH> scontext=system_u:system_r:kernel_t tcontext=root:sysadm_r:sysadm_t tclass=process,700750,0.41,0.11,0.02,system software failure,0.7
+linux,kernel,audit(<N>): avc: denied { rlimitinh } for pid=<N> exe=<PATH> scontext=system_u:system_r:kernel_t tcontext=root:sysadm_r:sysadm_t tclass=process,700751,0.45,0.09,0.03,system software failure,0.74
+linux,kernel,audit(<N>): avc: denied { setattr } for pid=<N> exe=<PATH> name=<N> dev= ino=<N> scontext=system_u:system_r:kernel_t tcontext=root:object_r:devpts_t tclass=chr_file,700752,0.43,0.08,0.02,system software failure,0.76
+linux,sshd,"Warning! Could not relabel with system_u:object_r:devpts_t, not relabeling. ",700753,0.52,0.05,0.07,system software failure,0.46
+linux,ftpd,connection from <IP> (<N>.getnet.net) at Thu Jan <N> <N> <N> ,700754,0.02,0.05,0.01,not a problem,1
+linux,unix_chkpwd,check pass; user unknown,700755,0.06,0.14,0.11,not a problem,0.86
+linux,sshd(pam_unix),authentication failure; logname= uid=<N> euid=<N> tty=NODEVssh ruser= rhost=jwhp5.chem.ncsu.edu user=ftp,700756,0.18,0.06,0.02,not a problem,0.69
+linux,ftpd,connection from <IP> () at Tue Jan <N> <N> <N> ,700757,0.02,0.05,0.01,not a problem,1
+linux,ftpd,"ANONYMOUS FTP LOGIN FROM <IP>, <N>.adsl.skynet.be (Sgpuser@home.com)",700758,0.02,0.06,0.01,not a problem,1
+linux,ftpd,connection from <IP> (<N>.adsl.skynet.be) at Wed Feb <N> <N> <N> ,700759,0.02,0.06,0.01,not a problem,1
+linux,ftpd,connection from <IP> () at Mon Feb <N> <N> <N> ,700760,0.02,0.05,0.01,not a problem,1
+linux,ftpd,User unknown timed out after <N> seconds at Mon Feb <N> <N> <N> ,700761,0.36,0.03,0.03,job or application failure,0.74
+linux,ftpd,connection from <IP> () at Tue Feb <N> <N> <N> ,700762,0.02,0.07,0.01,not a problem,1
+linux,ftpd,connection from <IP> (mail.nrms.org) at Fri Feb <N> <N> <N> ,700763,0.02,0.07,0.01,not a problem,1
+linux,ftpd,connection from <IP> (host-<N>.users.bzimage.us) at Fri Feb <N> <N> <N> ,700764,0.02,0.05,0.01,not a problem,1
+linux,ftpd,connection from <IP> (<ID>.dip0.t-ipconnect.de) at Sat Feb <N> <N> <N> ,700765,0.02,0.06,0.01,not a problem,1
+linux,ftpd,connection from <IP> () at Sat Feb <N> <N> <N> ,700766,0.02,0.06,0.01,not a problem,1
+linux,ftpd,connection from <IP> (<ID>.actionhosting.ca) at Sat Feb <N> <N> <N> ,700767,0.02,0.06,0.01,not a problem,1
+linux,ftpd,setsockopt (IP_TOS): Operation not supported,700768,0.47,0.11,0.03,network or I/O failure,0.74
+linux,ftpd,connection from <IP> () at Sun Feb <N> <N> <N> ,700769,0.02,0.06,0.01,not a problem,1
+linux,ftpd,connection from <IP> (<ID>-<N>.khi.dancom.net.pk) at Mon Feb <N> <N> <N> ,700770,0.02,0.06,0.01,not a problem,1
+linux,ftpd,connection from <IP> () at Fri Feb <N> <N> <N> ,700771,0.02,0.06,0.01,not a problem,1
+linux,ftpd,connection from <IP> () at Wed Feb <N> <N> <N> ,700772,0.02,0.05,0.01,not a problem,1
+linux,ftpd,connection from <IP> (<IP>.res-cmts.sm.ptd.net) at Wed Feb <N> <N> <N> ,700773,0.02,0.05,0.01,not a problem,1
+linux,sshd(pam_unix),authentication failure; logname= uid=<N> euid=<N> tty=NODEVssh ruser= rhost=<IP> user=fax,700774,0.14,0.06,0.02,not a problem,0.65
+linux,sshd(pam_unix),authentication failure; logname= uid=<N> euid=<N> tty=NODEVssh ruser= rhost=<N>.red-<N>.staticip.rima-tde.net user=fax,700775,0.16,0.07,0.02,not a problem,0.62
+linux,ftpd,connection from <IP> () at Thu Feb <N> <N> <N> ,700776,0.02,0.07,0.01,not a problem,1
+linux,ftpd,connection from <IP> (P6c6<N>.p.pppool.de) at Thu Feb <N> <N> <N> ,700777,0.02,0.06,0.01,not a problem,1
+linux,ftpd,connection from <IP> (P6c6<N>.p.pppool.de) at Fri Feb <N> <N> <N> ,700778,0.02,0.07,0.01,not a problem,1
+linux,ftpd,connection from <IP> (<N>.rev.gaoland.net) at Fri Feb <N> <N> <N> ,700779,0.02,0.06,0.01,not a problem,1
+linux,ftpd,"ANONYMOUS FTP LOGIN FROM <IP>, <N>.rev.gaoland.net (anonymous)",700780,0.02,0.04,0.01,not a problem,1
+linux,ftpd,connection from <IP> (P6c2c.p.pppool.de) at Fri Feb <N> <N> <N> ,700781,0.02,0.07,0.01,not a problem,1
+linux,ftpd,connection from <IP> (<ID>.p.pppool.de) at Fri Feb <N> <N> <N> ,700782,0.02,0.07,0.01,not a problem,1
+linux,ftpd,connection from <IP> (mx.dyn.com.ar) at Fri Feb <N> <N> <N> ,700783,0.02,0.06,0.01,not a problem,1
+linux,ftpd,connection from <IP> (mx.dyn.com.ar) at Sat Feb <N> <N> <N> ,700784,0.02,0.07,0.01,not a problem,1
+linux,ftpd,connection from <IP> (<ID>.neoplus.adsl.tpnet.pl) at Sun Feb <N> <N> <N> ,700785,0.02,0.05,0.01,not a problem,1
+linux,ftpd,connection from <IP> (alpu2nts.alpura.com) at Sun Feb <N> <N> <N> ,700786,0.02,0.06,0.01,not a problem,1

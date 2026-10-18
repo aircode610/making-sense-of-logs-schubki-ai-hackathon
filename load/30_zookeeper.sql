@@ -1,3 +1,4 @@
+-- requires: data/raw/zookeeper/Zookeeper.log
 -- Load Zookeeper (Loghub, 74,380 lines, one ensemble member, 2015-07-29 → 2015-08-27) via the generic loader (plan 011).
 -- Line: 2015-07-29 17:41:41,536 - INFO  [main:QuorumPeerConfig@101] - Reading configuration from: /etc/zookeeper/conf/zoo.cfg
 --        date time,ms - LEVEL [thread:Class@line] - message      → component = Java class, location = class/thread.
@@ -19,15 +20,15 @@ SELECT line_id,
        nullif(r.severity, '')                                                  AS severity,
        NULL::VARCHAR                                                           AS node,
        CASE WHEN r.class <> '' THEN r.class || '/' || regexp_replace(r.thread, '[/\s]', '_', 'g') END AS location,
-       NULL::INTEGER AS status, NULL::DOUBLE AS latency_ms,
+       NULL::INTEGER AS status, NULL::DOUBLE AS duration_ms,
        CASE WHEN r.ts = '' THEN line ELSE r.body END                           AS body,
        NULL::VARCHAR AS label,
+       NULL::VARCHAR AS object_id,
        NULL::VARCHAR AS request_id
 FROM p;
 \set ds zookeeper
 \set pbase 200000
 \set title 'Zookeeper coordination service logs (one ensemble member)'
 \set description 'Loghub Zookeeper: Java log4j lines from a ZooKeeper ensemble member, 2015-07-29 to 2015-08-27. component = Java class, location = class/thread. Leader election, quorum connections, client sessions.'
-\set location_hint 'class/thread'
-\set id_fields ''
+\set location_meaning 'Java class/thread, e.g. QuorumCnxManager/QuorumPeer[myid=1]_0.0.0.0_2181 (filter one class with its name alone)'
 \ir lib/stage_to_logs.sql

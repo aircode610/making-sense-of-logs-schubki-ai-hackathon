@@ -1,3 +1,4 @@
+-- requires: data/raw/hdfs/HDFS.log
 -- Load HDFS_v1 (Loghub, 11,175,629 lines, 1.58 GB, a Hadoop cluster's HDFS over ~39 hours, 2008-11-09/11) via the
 -- generic loader (plan 011): the scale test of the pipeline. Optional: only when data/raw/hdfs/HDFS.log exists
 -- (scripts/download_data.sh hdfs).
@@ -20,17 +21,17 @@ SELECT line_id,
        nullif(r.component, '')                                                AS component,
        nullif(r.severity, '')                                                 AS severity,
        NULL::VARCHAR AS node, NULL::VARCHAR AS location,
-       NULL::INTEGER AS status, NULL::DOUBLE AS latency_ms,
+       NULL::INTEGER AS status, NULL::DOUBLE AS duration_ms,
        CASE WHEN r.ts = '' THEN line ELSE r.body END                          AS body,
        NULL::VARCHAR AS label,
+       NULL::VARCHAR AS object_id,
        nullif(regexp_extract(r.body, '(blk_-?\d+)', 1), '')                   AS request_id
 FROM p;
 \set ds hdfs
 \set pbase 500000
 \set title 'HDFS_v1 Hadoop file system logs (scale test, 11M lines)'
 \set description 'Loghub HDFS_v1: HDFS NameNode / DataNode logs of a Hadoop cluster over about 39 hours from 2008-11-09. request_id = the HDFS block id (blk_...), which follows one block across replicas; client and datanode IPs inside messages are entities (ip:...). Block-level anomaly labels exist for evaluation only.'
-\set location_hint ''
-\set id_fields 'request_id (HDFS block id blk_...)'
+\set request_meaning 'HDFS block id (blk_…): the whole life of one block across datanodes (allocate, receive, replicate, delete)'
 \ir lib/stage_to_logs.sql
 INSERT INTO labels
 SELECT 'hdfs', row_number() OVER (), "BlockId"

@@ -8,11 +8,11 @@ from typing import Annotated, Literal, Optional
 
 from pydantic import Field
 
-from core import MAX_ROWS, Dataset, DatasetOpt, check_dataset, envelope, query, render
+from core import MAX_ROWS, Dataset, DatasetOpt, check_dataset, durations_in, envelope, query, render
 from outliers import VALUE
 
-Start = Annotated[Optional[datetime], Field(description="Inclusive start time (default: the dataset's first line).")]
-End = Annotated[Optional[datetime], Field(description="Exclusive end time (default: after the dataset's last line).")]
+Start = Annotated[Optional[datetime], Field(description="Inclusive start (default: the dataset's first line).")]
+End = Annotated[Optional[datetime], Field(description="Exclusive end (default: after its last line).")]
 Unit = Annotated[Literal["bursts", "lines"], Field(
     description="'bursts' = recurrences of a pattern (> 30 min apart), the incident-like unit; 'lines' = log entries.")]
 # Same rule as priority_table / top_patterns: stored Jev p_problem (max(fault × (1 − dump), threat), load/96) AND the
@@ -40,10 +40,11 @@ def _source(unit: str, problem_only: bool, dataset, start, end) -> tuple[str, st
     return frm, ts, params
 
 
-DIM = {"bursts": {"team": "coalesce(o.team, 'unowned')", "component": "p.component", "severity": "p.severity",
-                  "dataset": "b.dataset"},
-       "lines": {"team": "coalesce(o.team, 'unowned')", "component": "l.component", "severity": "l.severity",
-                 "dataset": "l.dataset"}}
+# NULL component / level (formats without levels) is its own labelled group, never silently dropped
+DIM = {"bursts": {"team": "coalesce(o.team, 'unowned')", "component": "coalesce(p.component, '(none)')",
+                  "severity": "coalesce(p.severity, '(not logged)')", "dataset": "b.dataset"},
+       "lines": {"team": "coalesce(o.team, 'unowned')", "component": "coalesce(l.component, '(none)')",
+                 "severity": "coalesce(l.severity, '(not logged)')", "dataset": "l.dataset"}}
 
 
 def rollup(
@@ -56,10 +57,18 @@ def rollup(
     problem_only: Annotated[bool, Field(description="Only patterns the stored Jev judgment calls a real fault.")] = True,
     limit: Annotated[int, Field(ge=1, le=200, description="Rows to return (subtotals first).")] = 60,
 ) -> dict:
-    """Totals with subtotals in ONE query (GROUP BY ROLLUP): per team, per team × component, … and the grand total,
-    in bursts (recurrences) or lines. The whole-corpus aggregation the brief asks for: e.g. "node-platform 268 problem
-    bursts, of which KERNEL 240". Each row has `level` (0 = finest … n = grand total) and NULL = 'all' for rolled-up
-    columns. Default problem_only=True: real-fault patterns only (stored Jev judgment).
+    """How many problems per team, and per component within each team, with subtotals and a grand total?
+
+    Use when: "which team has the most problems", "break it down by team and component", the whole-corpus or
+    whole-period summary for a lead or manager, in bursts (recurrences) or lines, in ONE query (GROUP BY ROLLUP).
+    Not for: a ranked list of individual problems (top_patterns), lines per group without the problem filter
+    (count_by), a time profile (heatmap / trend).
+    Returns: rows with the grouping columns (NULL = 'all' at that level), the count, and `level` (0 = finest … the
+    first row is the grand total).
+    Caveats: problem_only=True (default) counts only problem patterns (stored Jev judgment + problem-level lines);
+    bursts are recurrences, not confirmed incidents.
+    Example: rollup(dataset=<dataset>, start='<period start>', end='<period end>', by=['team', 'component'])
+    Next: top_patterns(team=…) for the largest team's problems; heatmap for its weekly profile.
     """
     t0 = time.perf_counter()
     check_dataset(dataset)
@@ -98,9 +107,17 @@ def heatmap(
     problem_only: Annotated[bool, Field(description="Only real-fault patterns (stored Jev judgment).")] = True,
     top_rows: Annotated[int, Field(ge=1, le=30, description="Keep the N largest rows.")] = 10,
 ) -> dict:
-    """A matrix (SQL PIVOT) of bursts or lines: rows = teams / components / severities, columns = weeks, days, months,
-    hours of day or weekdays. Shows at a glance which team's problems grow week over week, or at which hour faults
-    cluster. rows = one dict per matrix row with one key per column (missing = 0).
+    """When and where do problems cluster? A matrix of bursts or lines: teams / components / levels x weeks / days /
+    months / hours of day / weekdays.
+
+    Use when: "which team's problems grow week over week", "at what hour do faults cluster", a compact overview of
+    many groups over time.
+    Not for: one series (trend), a computed improving / worsening verdict (reliability_trend).
+    Returns: one row per matrix row with one key per column (missing = 0) plus a row total; `columns` lists the
+    column keys.
+    Caveats: keeps the `top_rows` largest rows; problem_only=True counts problem patterns only.
+    Example: heatmap(dataset=<dataset>, rows='team', cols='week', unit='bursts')
+    Next: top_patterns(team=…, start=<hot week>) for what drove a hot cell.
     """
     t0 = time.perf_counter()
     check_dataset(dataset)
@@ -139,10 +156,15 @@ def reliability_trend(
     bucket: Annotated[Literal["day", "week"], Field(description="Bucket of the series.")] = "week",
     by_team: Annotated[bool, Field(description="Also the slope per owning team.")] = True,
 ) -> dict:
-    """Is reliability improving? Problem bursts (real-fault patterns, stored Jev judgment) per bucket over the period,
-    zero-filled, with the least-squares slope (bursts per bucket per bucket, regr_slope), first-half vs second-half
-    mean, and per team the same slope. `reading` = fixed rule: slope < 0 and second-half mean < first-half mean →
-    'improving', both > → 'worsening', else 'no clear change'. Counts recurrences, not incidents or impact.
+    """Is reliability getting better or worse? Problem bursts per week (or day) with a computed slope and verdict.
+
+    Use when: "are we improving", "is it getting worse", "trend of problems over the quarter", per team as well.
+    Not for: lines of an arbitrary search over time (trend), a priority list (priority_table).
+    Returns: problem bursts per bucket (zero-filled), least-squares slope, first-half vs second-half mean, total, per
+    team the slope and bursts, and `reading` (improving / worsening / no clear change) with its fixed rule.
+    Caveats: counts recurrences of problem patterns (stored Jev judgment), not incidents, downtime or impact.
+    Example: reliability_trend(dataset=<dataset>, start='<period start>', end='<period end>', bucket='week')
+    Next: team_risk(team) for the worst slope; top_patterns(rank_by='growth') for what grew.
     """
     t0 = time.perf_counter()
     check_dataset(dataset)
@@ -187,18 +209,31 @@ BINS = ("CASE WHEN v < 0.1 THEN '< 0.1 s' WHEN v < 0.5 THEN '0.1-0.5 s' WHEN v <
         "WHEN v < 30 THEN '5-30 s' ELSE '>= 30 s' END")
 
 
+def registry_duration(dataset: str) -> str:
+    from core import registry
+    return registry().get(dataset, {}).get("duration_meaning") or "not logged in this dataset"
+
+
 def latency_profile(
     dataset: Dataset,
     start: Start = None,
     end: End = None,
     group_by: Annotated[Literal["component", "pattern", "status"], Field(
-        description="One profile per component, per pattern (each kind of timed operation) or per HTTP status.")] = "component",
+        description="One profile per component, per pattern (each kind of timed operation) or per status code.")] = "component",
     bucket: Annotated[Optional[Literal["hour", "day"]], Field(description="Optional: one profile per group and time bucket.")] = None,
     limit: Annotated[int, Field(ge=1, le=MAX_ROWS, description="Rows to return, slowest p95 first.")] = 20,
 ) -> dict:
-    """Latency and error rate: per group (and optionally per hour / day) the count of timed operations, p50 / p95 / p99
-    and max duration in seconds, and the error rate (lines with problem severity or HTTP ≥ 500 among all lines of the
-    group), plus a duration histogram over everything. Durations = request latency or 'Took N seconds' messages.
+    """How long do operations take and how often do they fail? Duration percentiles and error rate per group.
+
+    Use when: "how slow is X", "p95 latency per service", "is latency different for failed requests", "did it get
+    slower over the day" (bucket), in datasets that log durations: {durations}.
+    Not for: individual abnormal operations (value_outliers), error counts without durations (count_by).
+    Returns: per group (component, pattern or status; optionally per hour / day): timed operations, p50 / p95 / p99 /
+    max in seconds, lines, error_rate (problem level or status >= 500 among the group's lines), plus a duration
+    histogram over everything.
+    Caveats: only lines that carry a duration are timed; error_rate counts lines.
+    Example: latency_profile(dataset=<dataset with durations>, group_by='status')
+    Next: value_outliers for the slowest single operations; request_timeline for one slow request.
     """
     t0 = time.perf_counter()
     check_dataset(dataset)
@@ -224,22 +259,29 @@ def latency_profile(
     f = dict(dataset=dataset, start=start, end=end)
     return envelope("latency_profile", dict(group_by=group_by, bucket=bucket, limit=limit, **f),
                     [render(sql, params), render(hist_sql, params)], f,
-                    scope=f"{dataset}, {start or 'corpus start'} → {end or 'corpus end'}; duration = request latency or "
-                          f"'Took N seconds'; error = problem severity or HTTP ≥ 500",
+                    scope=f"{dataset}, {start or 'corpus start'} → {end or 'corpus end'}; duration = "
+                          + (registry_duration(dataset)) + "; error = problem severity or status ≥ 500",
                     rows=rows[:limit], t0=t0, total_matches=sum(h["n"] for h in hist), truncated=len(rows) > limit,
                     histogram=hist)
 
 
 def team_risk(
     dataset: Dataset,
-    team: Annotated[str, Field(description="Owning team (see list_values field='team').")],
+    team: Annotated[str, Field(description="Owning team (list_values(field='team') or describe_corpus lists them).")],
     start: Start = None,
     end: End = None,
 ) -> dict:
-    """One team's risk in measured terms: its problem patterns of the period from the computed priority ranking
-    (rank, score, bursts, change vs the previous period, nodes, weeks), its burst totals now vs before, and its weekly
-    problem-burst trend with slope. For "which team carries the most risk / is it getting better" follow-ups.
-    Says nothing about cost, downtime or customers (not in the logs).
+    """How much risk does one team carry, and is it getting better? One team's problems in measured terms.
+
+    Use when: the question names one team: "how is team X doing", "what should team X fix first", "is team X
+    improving".
+    Not for: comparing all teams (rollup / priority_table team_rollup), the whole dataset's direction
+    (reliability_trend).
+    Returns: the team's problem items from the computed priority ranking (rank, score, bursts, change, nodes, weeks),
+    its burst totals now vs the previous period, and its weekly problem-burst slope.
+    Caveats: ranks are among the top 50 items of all teams; nothing about cost, downtime or customers.
+    Example: team_risk(dataset=<dataset>, team=<team>, start='<period start>')
+    Next: pattern_history / spread(pattern_id) for the team's top item.
     """
     t0 = time.perf_counter()
     from patterns import priority_table
@@ -258,3 +300,6 @@ def team_risk(
                     rows=items, t0=t0, total_matches=roll["problem_patterns"], truncated=roll["problem_patterns"] > len(items),
                     rollup=roll, team_slope=slope, priority_evidence_id=pt["evidence_id"],
                     unknown="Cost, downtime, customer impact and root cause are not in these logs.")
+
+
+latency_profile.__doc__ = latency_profile.__doc__.replace("{durations}", durations_in())

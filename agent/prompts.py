@@ -39,8 +39,8 @@ RECIPES = {
         "1. Anchor: search_logs for the error text with time / node / component filters (order='time' to see where it "
         "started; highlight=true to quote the matching part). 0 or very few hits: match='fuzzy' or 'synonyms', or "
         "suggest_terms. Note total_matches, first_ts, last_ts, distinct_nodes, the pattern_id and a line_id.\n"
-        "2. Context: get_context on that line_id (scope 'node' first; then 'midplane' / 'rack' / 'location' or "
-        "'request' / 'instance'; severity='FATAL'/'ERROR' if the window is flooded). For one request / VM / session "
+        "2. Context: get_context on that line_id (scope 'node' first; then 'location' (location_level for a coarser group) or "
+        "'request' / 'object'; severity='FATAL'/'ERROR' if the window is flooded). For one request / VM / session "
         "end to end: request_timeline.\n"
         "3. Which came first: burst_timeline(pattern_id, at=the incident time) = the sequence of patterns on the same "
         "nodes, earliest first.\n"
@@ -52,7 +52,7 @@ RECIPES = {
         "IPs / paths / ids dominate (security and web logs); facet = breakdown of the matches by component / severity "
         "/ node.\n"
         "Slow / latency / 'abnormal VM' questions (no error logged): value_outliers first, then a flagged line_id as "
-        "the anchor for get_context scope 'instance' or request_timeline.\n"
+        "the anchor for get_context scope 'object' or request_timeline.\n"
         "Evidence needed: the error lines, before/after events, component + node, total count with scope, first error, "
         "spread, new vs recurring, rate vs the usual rate."),
     "lead": (

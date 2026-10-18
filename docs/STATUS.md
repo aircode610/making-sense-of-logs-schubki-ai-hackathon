@@ -1,10 +1,19 @@
 # Status (read first; keep short and current)
 
-_Last updated: 2026-10-17, plan 009 done (eval: ours vs baseline), plans 053–055 done (OpenStack patterns, Jev judgments, `value_outliers`, `rate_vs_baseline`; 8 MCP tools)._
+_Last updated: 2026-10-18 (plan 012); before: 2026-10-17, plan 009 done (eval: ours vs baseline), plans 053–055 done (OpenStack patterns, Jev judgments, `value_outliers`, `rate_vs_baseline`; 8 MCP tools)._
 
 - **Plan 010 done:** eval fit for iteration: judge sees full evidence (claims supported ours 0.92 / baseline 0.71
   after re-judging), failures score 0, `--compare/--reuse-baseline/--rejudge/--repeat`, E6 ranking golden facts,
   tool-vs-LLM seconds (tools ≈ 1 %), `bench/replay_tools.py`. Noise floor: E1 ±0.05, rubric ±0.06 (`docs/EVAL.md`).
+
+- **Plan 012 (Amirali, in review):** the MCP server as a stand-alone API any agent can dig with, on any dataset.
+  Generic columns (`location`, `object_id`, `duration_ms`), per-dataset meanings + real examples → one field guide in
+  the server instructions; 40 descriptions in one template (Use when / Not for / Returns / Caveats / Example / Next);
+  result hints; role playbooks as MCP prompts. **Every tool on every dataset vs independent SQL: 39 tools x 9 datasets
+  pass** (+ 3 remote). Unseen Linux + HealthApp loaded with zero code change. Role-free benchmark (`bench/tool_use.py`,
+  plain agent with only the server): Sonnet facts 0.83 → 0.96, Opus 0.925 → 0.925, unseen datasets 0.90 / 1.0;
+  Claude Code headless 10 q, 0 tool errors. Fixed: NULL-severity Jev prompts (SSH fault judgments were empty),
+  single-dimension facet. Next: plan 013 blind A/B. Details `plans/012-…` §7.
 
 - **Plan 011 (Amirali, in review):** SereneDB full-capability tools, generalized. 7 datasets (BGL, OpenStack,
   Zookeeper, Apache, OpenSSH, HDFS 11M, OTel slice of the 1 B-record remote Parquet) through one generic loader; 40 MCP

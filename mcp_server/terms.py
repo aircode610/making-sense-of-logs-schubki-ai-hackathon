@@ -7,11 +7,9 @@ from typing import Annotated, Literal, Optional
 
 from pydantic import Field
 
-from core import (MATCH_HELP, MAX_ROWS, Dataset, DatasetOpt, MatchMode, check_dataset, envelope, filters_sql, query,
+from core import (MATCH_HELP, MAX_ROWS, Component, Dataset, DatasetOpt, End, Entity, Location, MatchMode, Node,
+                  PatternIdOpt, Severity, Start, check_dataset, envelope, filter_hints, filters_sql, query,
                   render, tsquery_sql)
-
-Start = Annotated[Optional[datetime], Field(description="Inclusive start time.")]
-End = Annotated[Optional[datetime], Field(description="Exclusive end time.")]
 DIMS = {"component": "component", "severity": "severity", "node": "node", "location": "location",
         "pattern_id": "pattern_id", "status": "status", "dataset": "dataset"}
 
@@ -30,33 +28,49 @@ def _where(dataset, start, end, query_text, match, component=None, severity=None
 
 def facet(
     dataset: DatasetOpt = None,
-    query_text: Annotated[Optional[str], Field(description="Optional full-text filter (see match).")] = None,
+    query_text: Annotated[Optional[str], Field(description="Optional words the lines must contain (see match).")] = None,
     match: Annotated[MatchMode, Field(description=MATCH_HELP)] = "web",
     start: Start = None,
     end: End = None,
-    component: Annotated[Optional[str], Field(description="Exact component filter.")] = None,
-    severity: Annotated[Optional[str], Field(description="Exact severity filter.")] = None,
-    location: Annotated[Optional[str], Field(description="Location path at any level, e.g. 'R02/R02-M1'.")] = None,
+    component: Component = None,
+    severity: Severity = None,
+    node: Node = None,
+    location: Location = None,
+    entity: Entity = None,
+    pattern_id: PatternIdOpt = None,
     dims: Annotated[list[Literal["component", "severity", "node", "location", "pattern_id", "status", "dataset"]], Field(
         description="Breakdowns to compute in ONE pass, e.g. ['component', 'severity', 'node'].")] = ["component", "severity", "node"],
     top: Annotated[int, Field(ge=1, le=20, description="Values per breakdown, most lines first.")] = 8,
     workspace: Annotated[Optional[str], Field(description="Use a focus index (create_focus_index) instead of the corpus.")] = None,
 ) -> dict:
-    """Breakdown of all lines matching a search / filter by several dimensions at once: "of 49,651 matching lines,
-    99.9 % APP, all FAILURE, 1,024 nodes; top nodes …". One GROUPING SETS query over the inverted index (exact
-    counts over every match, not a sample). rows = {dim, value, lines, share}; `distinct` = how many values each
-    dimension has (a value list is cut to `top`). Lines are not incidents.
+    """Where do the matching lines come from? One search broken down by component, severity, node, location,
+    pattern, status and dataset at once.
+
+    Use when: you have a search or filter and want its shape in one call: "of 49,651 matching lines, 99.9 % from one
+    component, all at one level, spread over 1,024 nodes; top nodes …".
+    Not for: one grouping with team ownership (count_by group_by='team'), lines over time (trend), extracted values
+    such as IPs or paths (top_entities).
+    Returns: rows {dim, value, lines, share} for each requested breakdown (cut to `top` values); total_matches over
+    all lines; `distinct` = how many values each breakdown has. Exact counts over every match.
+    Caveats: lines are not incidents.
+    Example: facet(dataset=<dataset>, query_text='timeout', dims=['component', 'node', 'pattern_id'])
+    Next: search_logs with the dominant value as a filter; pattern_history for a dominant pattern_id.
     """
     t0 = time.perf_counter()
-    where, params, f = _where(dataset, start, end, query_text, match, component, severity, location=location)
+    where, params, f = _where(dataset, start, end, query_text, match, component, severity, node, location, pattern_id,
+                              entity)
     cols = [DIMS[d] for d in dims]
     sets = ", ".join(f"({c})" for c in cols)
     dim_case = " ".join(f"WHEN grouping({c}) = 0 THEN '{d}'" for d, c in zip(dims, cols))
     val = "coalesce(" + ", ".join(f"CASE WHEN grouping({c}) = 0 THEN {c}::VARCHAR END" for c in cols) + ")"
     from workspace import source_table
     tbl = source_table(workspace)
-    sql = (f"SELECT CASE {dim_case} END AS dim, {val} AS value, count(*) AS lines FROM {tbl} {where} "
-           f"GROUP BY GROUPING SETS ({sets})")
+    if len(cols) == 1:  # one grouping set is planned as a plain GROUP BY, where grouping() does not bind (SereneDB)
+        sql = (f"SELECT '{dims[0]}' AS dim, {cols[0]}::VARCHAR AS value, count(*) AS lines FROM {tbl} {where} "
+               f"GROUP BY {cols[0]}")
+    else:
+        sql = (f"SELECT CASE {dim_case} END AS dim, {val} AS value, count(*) AS lines FROM {tbl} {where} "
+               f"GROUP BY GROUPING SETS ({sets})")
     allrows = query(sql, params)
     tot_sql = f"SELECT count(*) AS n FROM {tbl} {where}"
     total = query(tot_sql, params)[0]["n"]
@@ -70,7 +84,7 @@ def facet(
                     [render(sql, params), render(tot_sql, params)], f,
                     scope=f"{dataset or 'all datasets'}, {start or 'corpus start'} → {end or 'corpus end'}; unit = log lines",
                     rows=rows, t0=t0, total_matches=total, distinct=distinct,
-                    truncated=any(distinct[d] > top for d in dims))
+                    truncated=any(distinct[d] > top for d in dims), **({"hints": filter_hints(f)} if not total else {}))
 
 
 def distinctive_terms(
@@ -81,16 +95,23 @@ def distinctive_terms(
         description="'before' = the `baseline_days` just before the window (what changed?), 'rest' = the whole dataset "
                     "outside the window, 'none' = just the loudest words of the window (tag cloud).")] = "before",
     baseline_days: Annotated[int, Field(ge=1, le=90, description="Length of the 'before' baseline in days.")] = 7,
-    node: Annotated[Optional[str], Field(description="Optional: only this node / host (both sides).")] = None,
-    component: Annotated[Optional[str], Field(description="Optional: only this component (both sides).")] = None,
+    node: Node = None,
+    component: Component = None,
     min_lines: Annotated[int, Field(ge=1, description="A term must appear in at least this many window lines.")] = 5,
     limit: Annotated[int, Field(ge=1, le=MAX_ROWS, description="Terms to return.")] = 20,
 ) -> dict:
-    """Significant terms: the words that are over-represented in a time window compared with a baseline, read from the
-    inverted index's term dictionary (document counts per term, no scan). Answers "what is different about this
-    incident window?" / "what's new this period?" without an LLM: e.g. 'severed', 'ciod' 30× more frequent than usual.
-    Per term: window_lines, baseline_lines (lines containing it), lift = window_lines − expected from the baseline
-    rate, ratio of rates, new_term (absent from the baseline). Words, not causes: label any reading as a hypothesis.
+    """What is different about this time window? Words over-represented in the window compared with a baseline.
+
+    Use when: an incident window or a period looks odd and you do not yet know what to search for ("what changed?",
+    "what's unusual this week?"); the words point to the messages worth searching.
+    Not for: new kinds of messages (whats_new: patterns first seen), counts of a known search (count_by / trend).
+    Returns: per term: window_lines, baseline_lines (lines containing it), lift = window_lines minus the expected
+    from the baseline rate, ratio of rates, new_term (absent from the baseline). From the index's term dictionary,
+    no scan.
+    Caveats: words, not causes: label any reading as a hypothesis; very common words are filtered by lift, not by a
+    stop list.
+    Example: distinctive_terms(dataset=<dataset>, start='<incident start>', end='<incident end>', baseline='before')
+    Next: search_logs(query_text=<term>) in the window for the lines behind the top terms.
     """
     t0 = time.perf_counter()
     check_dataset(dataset)
@@ -135,23 +156,32 @@ def distinctive_terms(
 
 def top_entities(
     dataset: Dataset,
-    entity_type: Annotated[Literal["ip", "path", "uuid", "url", "any"], Field(
-        description="Which extracted values: IPv4 addresses, file paths, UUIDs, URLs, or any.")] = "ip",
-    query_text: Annotated[Optional[str], Field(description="Optional full-text filter on the message (see match).")] = None,
+    entity_type: Annotated[str, Field(
+        description="Which kind of extracted value: ip, path, uuid, url, … or 'any' (kinds per dataset: field guide).")] = "any",
+    query_text: Annotated[Optional[str], Field(description="Optional words the lines must contain (see match).")] = None,
     match: Annotated[MatchMode, Field(description=MATCH_HELP)] = "web",
     start: Start = None,
     end: End = None,
-    pattern_id: Annotated[Optional[int], Field(description="Optional: only lines of this pattern.")] = None,
+    pattern_id: PatternIdOpt = None,
     limit: Annotated[int, Field(ge=1, le=MAX_ROWS, description="Values to return, most lines first.")] = 15,
 ) -> dict:
-    """Which concrete values (IP addresses, file paths, VM / request UUIDs, URLs) appear most in the matching lines,
-    with lines, first / last time, nodes and patterns per value. The values were extracted from every message at load
-    time (column `entities`), so this is an exact count, e.g. "59.63.188.30 appears in 57,539 failed-login lines".
-    Use the value with search_logs(entity='ip:…') to drill down.
+    """Which IPs / paths / ids / URLs appear most in these lines? Who or what is behind the messages.
+
+    Use when: "which IP addresses / clients / files / VMs / users drive X", attacks, scans, a noisy client, or which
+    object ids are involved; values were extracted from every message at load time (column `entities`).
+    Not for: grouping by component / node / severity (count_by / facet), the values of a structured field
+    (list_values).
+    Returns: per value: lines, first / last time, nodes, patterns; total_matches = distinct values; mentions = all
+    mentions. Exact counts over every matching line.
+    Caveats: a value appears only if the message text contains it; lines are not incidents.
+    Example: top_entities(dataset=<dataset>, entity_type='ip', query_text='"authentication failure"')
+    Next: search_logs(entity='ip:…') to drill into one value; trend(entity='ip:…') for its time profile.
     """
     t0 = time.perf_counter()
     where, params, f = _where(dataset, start, end, query_text, match, pattern_id=pattern_id)
-    pref = "" if entity_type == "any" else entity_type + ":"
+    if not entity_type.replace("_", "").isalnum():
+        raise ValueError("entity_type: a kind such as ip, path, uuid, url, or 'any'.")
+    pref = "" if entity_type == "any" else entity_type.rstrip(":") + ":"
     params["pref"] = pref + "%"
     sql = (f"SELECT e AS entity, count(*) AS lines, min(ts) AS first_ts, max(ts) AS last_ts, "
            f"count(DISTINCT node) AS nodes, count(DISTINCT pattern_id) AS patterns "
@@ -173,9 +203,16 @@ def check_watchlist(
     start: Annotated[datetime, Field(description="Window start (inclusive).")],
     end: Annotated[datetime, Field(description="Window end (exclusive).")],
 ) -> dict:
-    """Saved searches ("watches", table watchlist, data/watchlist.csv): which of them fired in the window, with lines
-    in the window vs the previous window of the same length. Use it for "did any of the known problems come back?" /
-    a quick health check of a period. A watch is a fixed query (name, text, match mode); quiet watches are listed too.
+    """Did any of the known, saved problem searches fire in this window? A quick health check against a watchlist.
+
+    Use when: "did any of the known problems come back", "anything from our usual suspects this week", a routine check
+    of a period; watches are fixed searches configured per dataset (data/watchlist.csv).
+    Not for: problems nobody has saved yet (top_patterns, whats_new), a single search (search_logs).
+    Returns: one row per watch (name, query, match mode): window_lines, previous_lines (previous window of the same
+    length), first_ts, fired; total_matches = watches that fired. Quiet watches are listed too.
+    Caveats: datasets without configured watches return no rows; lines, not incidents.
+    Example: check_watchlist(dataset=<dataset>, start='<week start>', end='<week end>')
+    Next: search_logs(query_text=<watch query>) for a fired watch; trend for its profile.
     """
     t0 = time.perf_counter()
     check_dataset(dataset)

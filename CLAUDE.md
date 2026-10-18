@@ -35,7 +35,8 @@ Then, as needed: `docs/ROLES.md` (**what each role asks, evidence, answer**) · 
    data: the dataset's own loader file (`load/3x_<name>.sql` = one parse query + `\ir lib/stage_to_logs.sql`), the
    `datasets` registry row it writes, and config rows (`data/ownership.csv` incl. `*` defaults, `data/watchlist.csv`,
    `data/remote_sources.csv`). A new dataset must need no code change; every new tool or rule is tested on at least one
-   extra Loghub dataset (`bench/check_tools.py` runs on every loaded dataset).
+   extra Loghub dataset (`bench/check_tools.py` runs every tool on every loaded dataset; `bench/lint_generic.py` fails
+   on dataset values in code and on incomplete tool descriptions).
 
 ## Workflow
 - **Held-out (`eval/heldout/**`) is never read, searched or written by Claude** (`docs/HELDOUT.md`); only
