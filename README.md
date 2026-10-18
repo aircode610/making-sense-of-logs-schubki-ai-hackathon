@@ -27,17 +27,21 @@ Needs [Docker](https://docs.docker.com/get-docker/), [uv](https://docs.astral.sh
 git clone https://github.com/aircode610/making-sense-of-logs-schubki-ai-hackathon
 cd making-sense-of-logs-schubki-ai-hackathon
 docker compose up -d     # SereneDB 26.10.1 on localhost:7890
+uv sync                  # Python 3.12 + the server's dependencies (optional: `uv run` also does it on first start)
 claude                   # approve the MCP server "logs" when asked
 ```
-Then tell Claude: **"Load the base corpus"**. This downloads BGL and OpenStack from the brief's Zenodo links and loads
-them with our loader (`load/`). It takes 72 s on a clean clone.
+Then tell Claude: **"Load the base corpus"**. BGL and OpenStack are downloaded from the brief's Zenodo links and
+loaded by our loader (`load/`) in 72 s.
 
-Other ways to connect:
-- From any folder: run `claude mcp add -s user logs -- uv run --directory "$PWD" python mcp_server/server.py` in the repo.
-- Any other MCP client: use the stdio command `uv run --directory <repo> python mcp_server/server.py`.
-- The same loader without Claude: `uv run python -m loader load base`.
+| Also | Command |
+|---|---|
+| Our own agent, the eval | `uv sync --extra agent` and `ANTHROPIC_API_KEY` in `.env` (copy `.env.example`) |
+| Jev on your own new logs | `TYPESAFE_API_KEY` in `.env` (without it, problems are judged by log level) |
+| Use the server from any folder | `claude mcp add -s user logs -- uv run --directory "$PWD" python mcp_server/server.py` (run in the repo) |
+| Any other MCP client | stdio command `uv run --directory <repo> python mcp_server/server.py` |
+| Load without Claude | `uv run python -m loader load base` |
 
-Apple Silicon runs the amd64 image under emulation. It works, but slower.
+Apple Silicon runs the amd64 image under emulation: it works, slower.
 
 ## Run it
 Ask in plain words:
@@ -69,23 +73,32 @@ The full list with inputs and outputs is in [`docs/TOOLS.md`](docs/TOOLS.md), ge
 - **Limits:** results return at most 50 rows, and the totals are always exact over all matches.
 
 ## Worked investigation
-[`docs/INVESTIGATION.md`](docs/INVESTIGATION.md) covers a new fault in BGL in November 2005: "Link has been severed",
-12,996 lines on 1,024 nodes, ranked 1st by the computed priority. It is seen by all three roles, with the tool calls,
-the SQL and the results. It also has whole-corpus counts by team for BGL and OpenStack. 62 of 62 numbers trace to a
-query. The evidence page ([`report.html`](docs/investigation/report.html)) opens offline.
+[`docs/INVESTIGATION.md`](docs/INVESTIGATION.md) · evidence page [`docs/investigation/report.html`](docs/investigation/report.html) (opens offline)
+
+**Topic:** the rank-1 problem in BGL, November 2005: a new fault, *"ciod: … Link has been severed"*.
+
+| Role | Evidence (tools) | Answer | Next step |
+|---|---|---|---|
+| Engineer | full-text search, burst timeline, top IPs | 12,996 lines on 1,024 nodes, all to one host; 64 job launches failed 21 min before | check host 172.16.96.116 at 05:30–05:40 |
+| Team lead | top patterns, rollup by team, trend, owner | 451 problem bursts (node-platform 283); this fault: 31 bursts, owner disputed | both teams triage it together |
+| Manager | priority ranking, reliability trend | rank 1 of 133 (score 97.8); problem bursts per week 69.6 → 119.3 | name one owner now |
+| Whole corpus | count by team, per dataset | BGL 4,747,963 lines · OpenStack 207,820 lines | |
+
+- **Checked:** 20 tool calls, 1.8 s in SereneDB, 62 / 62 numbers traced to a query, 17 / 17 steps re-run identically.
+- **Not established:** the cause (the host's own logs are not in the corpus), and any cost or downtime.
 
 ## Evaluation
-**Claude Code with our MCP vs plain Claude Code on the raw log files** (same model, 50 questions with frozen answer
-keys, blind Opus judge that checks claims with SQL): we win **30 to 15** (base corpus 18 to 4), with fewer wrong claims
-(116 vs 186), more golden facts (0.64 vs 0.46) and **14 s vs 86 s per answer** (on BGL / HDFS 14 s vs 168 s; plain
-Claude Code timed out once at 25 min). Plain Claude Code wins engineer questions on small logs (9 to 8), where grep
-reads every line. Every answer and verdict is in the [dashboard](docs/dashboard.html). Re-run with
-`uv run python -m eval.cc_ab`; results in `eval/results/cc-20261018-205503.md`.
+50 questions with frozen answer keys, 9 datasets, 3 roles, a blind Opus judge in both answer orders.
+Every answer and verdict: [dashboard](docs/dashboard.html).
 
-**Our own LangGraph agent vs the brief's reference ReAct agent** (both with our tools, same 50 questions and judge):
-on the base corpus we win **13 to 2**, on engineer questions **10 to 2**, and over all 50 questions **16 to 12**. We make fewer wrong claims (53 vs 69). We lose on manager questions on small extra
-datasets (2 to 6). Re-run with `uv run python -m eval.ab --arms product,baseline`; results in
-`eval/results/ab-20261018-193248.md`.
+| | Claude Code + our MCP vs plain Claude Code | Our agent vs the brief's reference agent |
+|---|---|---|
+| Wins (all 50) | **30 – 15** | **16 – 12** |
+| Wins on BGL + OpenStack | **18 – 4** | **13 – 2** |
+| Wrong claims | **116 vs 186** | **53 vs 69** |
+| Seconds per answer | **14 vs 86** | 44 vs 22 |
+| Where it loses | engineer questions on small logs (8 – 9) | manager questions on small datasets (2 – 6) |
+| Re-run | `uv run python -m eval.cc_ab` | `uv run python -m eval.ab --arms product,baseline` |
 
 ## Known limitations
 - The logs hold no cost, downtime or customer impact, so answers say so instead of estimating them.

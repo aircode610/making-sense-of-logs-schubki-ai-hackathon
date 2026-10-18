@@ -186,6 +186,26 @@ async function rounded(file, rx = 28) {
   s.addText("real alerts in the top 10: 1 → 5", { x: 5.45, y: 3.85, w: 3.8, h: 0.5, fontSize: 14, bold: true, fontFace: BODY, color: DEEP, margin: 0 });
   s.addNotes("Why it's cheaper. Reading all of BGL with a large model is around 177 million tokens, every time you ask; that is an estimate from the file size. Jev, a small model for typed judgments, runs inside SereneDB and judges each kind of message once: 1,126 patterns in 20 seconds for about two cents, stored and reused by every answer. That single step moved real alerts in the top ten from one to five. An answer with Claude Code plus our server costs about 5 cents.");
 
+  // 8b · how Jev drives decisions
+  s = slide("Cost");
+  title(s, "Jev", "How Jev helps us decide");
+  const dec = [
+    [fa.FaFilter, "Is it a real problem?", "776 → 538", "kinds of message with error lines that Jev keeps as real faults"],
+    [fa.FaSortAmountDown, "What comes first?", "1 → 5", "real alerts in the manager's top 10"],
+    [fa.FaUserShield, "Is it an attack?", "54 / 109", "SSH patterns flagged as threats, though SSH logs have no level"],
+    [fa.FaUsers, "Who owns it?", "4", "owners disputed; 1,114 inferred for new logs"],
+  ];
+  for (let i = 0; i < 4; i++) {
+    const [ic, h, n, l] = dec[i], x = 0.5 + (i % 2) * 4.6, y = 1.45 + Math.floor(i / 2) * 1.62;
+    card(s, x, y, 4.4, 1.5, i % 3 ? MIST : PALE);
+    await dot(s, ic, x + 0.25, y + 0.25, 0.5);
+    s.addText(h, { x: x + 0.9, y: y + 0.25, w: 3.3, h: 0.5, fontSize: 15, bold: true, fontFace: HEAD, color: INK, margin: 0, valign: "middle" });
+    s.addText(n, { x: x + 0.25, y: y + 0.85, w: 1.75, h: 0.5, fontSize: 21, bold: true, fontFace: HEAD, color: VIOLET, margin: 0, valign: "middle" });
+    s.addText(l, { x: x + 2.05, y: y + 0.82, w: 2.2, h: 0.58, fontSize: 10.5, fontFace: BODY, color: INK2, margin: 0, valign: "middle" });
+  }
+  s.addText("Probabilities, not guesses: p_problem = max(fault × (1 − dump), threat)", { x: 0.5, y: 4.72, w: 9, h: 0.25, fontSize: 11.5, bold: true, fontFace: BODY, color: DEEP, margin: 0 });
+  s.addNotes("How Jev helps us decide. Jev answers typed questions about each kind of message, with calibrated probabilities. Is it a real problem? Of 776 BGL message kinds with error-level lines, Jev keeps 538 as real faults and drops routine register dumps. What comes first? That moves real alerts in the manager's top 10 from one to five. Is it an attack? On SSH logs, which have no severity at all, Jev flags 54 of 109 patterns as security events. Who owns it? Jev checks the ownership table, flags 4 disputed owners, and inferred 1,114 owners for logs we had never seen. The full list of questions and choices is in the Jev tab of every session report.");
+
   // 9 · loading
   s = slide("Loading");
   title(s, "Loading", "One sentence loads your logs");
