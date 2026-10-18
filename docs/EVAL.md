@@ -19,14 +19,14 @@ same base tools), on the same question set. Small, scripted, re-runnable (`eval/
 
 Rules
 - Held-out questions and a held-out BGL time slice are scored only by `eval/run_heldout.py` (`HELDOUT.md`).
-- Per-tool p50/p95 latency comes from `bench/` (`PERFORMANCE.md`) and is reported with E8.
+- Per-tool p50/p95 latency comes from `src/bench/` (`PERFORMANCE.md`) and is reported with E8.
 - Labels (BGL alert category, OpenStack anomaly ids) are for evaluation only; tools must not hand them to the agent as answers.
 - Golden SQL answers are written and checked by hand once, stored in `eval/golden.yaml`.
 - Keep it cheap: question set ≤ 30 (10 per role); re-run after each milestone; record the table in `STATUS.md`.
 - Honest reporting: if the baseline wins on something, we say so.
 
 ## Harness (plan 009) — how to run and what each number means
-`.venv/bin/python -m eval.run_eval [--ids …] [--no-judge]` runs **ours** and the **baseline** (`create_agent`, same MCP
+`.venv/bin/python -m evals.run_eval [--ids …] [--no-judge]` runs **ours** and the **baseline** (`create_agent`, same MCP
 tools, plain role prompt) on `eval/dev_questions.yaml` (18 questions, 6 per role, golden facts from hand-written SQL
 stored by `eval/build_golden.py`) as LangSmith experiments `ours-<sha>` / `baseline-<sha>` on dataset `logs-dev-<hash>`;
 report in `eval/results/<time>.md/.json`. The held-out set runs through the same suite via the held-out runner (humans
@@ -54,7 +54,7 @@ rows 9+ were marked unsupported).
    eval/results/<last>.json` replays every recorded tool call: must be 100 % identical-or-same-rows; prints p50/p95 per
    tool. No LLM cost. (End-to-end latency is dominated by the LLM: tools are ~1 % of seconds per answer, row "inside tools".)
 2. **Agent / prompts / new tools, fast check** (no judge, baseline reused):
-   `.venv/bin/python -m eval.run_eval --systems ours --no-judge --reuse-baseline eval/results/<ref>.json --compare eval/results/<ref>.json`
+   `.venv/bin/python -m evals.run_eval --systems ours --no-judge --reuse-baseline eval/results/<ref>.json --compare eval/results/<ref>.json`
 3. **Full check** (judge + pairwise new vs old): same without `--no-judge`. Keep the change if the deltas beat the
    noise below and the regression list is empty (or explained).
 - Judge or golden facts changed? `--rejudge <x>.json` re-scores stored answers without running the agent; `--compare`
@@ -69,7 +69,7 @@ rows 9+ were marked unsupported).
   real test; write it before heavy tuning.
 
 ## Blind A/B with answer keys (plan 013)
-`.venv/bin/python -m eval.ab [--ids ...] [--reuse <runs.json>] [--concurrency 1]` compares two toolsets of the same
+`.venv/bin/python -m evals.ab [--ids ...] [--reuse <runs.json>] [--concurrency 1]` compares two toolsets of the same
 agent. Ground truth = `eval/answer_keys/<id>.yaml` (frozen; rules in its README). Judge = Opus agent + read-only `sql`
 (DB role `logs_manager`), blinded answers, X/Y seeded, both orders; only order-consistent wins count. Per arm: claim
 accuracy, found_problem (0-2), rubric, E1, and **time split** wall = llm + tool (client) + other, plus tool db (server
@@ -77,7 +77,7 @@ accuracy, found_problem (0-2), rubric, E1, and **time split** wall = llm + tool 
 exported (401 otherwise). First result: `eval/results/ab-20261018-144958.md`.
 
 ## Claude Code with our MCP vs plain Claude Code (plan 018) — the headline comparison
-`.venv/bin/python -m eval.cc_ab` runs headless Claude Code (`--bare`, Sonnet 5.5, empty temp dir) twice per question:
+`.venv/bin/python -m evals.cc_ab` runs headless Claude Code (`--bare`, Sonnet 5.5, empty temp dir) twice per question:
 with only our MCP server (pinned to the dataset), and with nothing but Bash / Read / Grep / Glob over the dataset's raw
 log files (BGL's inline ground-truth label column cut, OpenStack files renamed, label files left out). Same 50 keys,
 same blind both-orders Opus judge as `eval/ab.py`. Result `eval/results/cc-20261018-205503.md`:

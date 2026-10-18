@@ -7,6 +7,8 @@ Then, as needed: `docs/ROLES.md` (**what each role asks, evidence, answer**) · 
 checklist; verbatim original `docs/BRIEF.md`) · `docs/PERFORMANCE.md` (DB internals) · `docs/EVAL.md` (how we prove it) ·
 `docs/INVESTIGATION.md` (worked investigation) · `docs/HELDOUT.md` (private eval plan) · `docs/DECISIONS.md`.
 
+## Layout: code in `src/` (mcp_server, loader, agent, evals, bench, scripts, sql, formats); `data/config` + `data/jev` committed, `data/raw` never; eval data in `eval/`.
+
 ## Mode: HACKATHON (not production)
 - **Minimal code that gets results.** Scripts over frameworks, one file over five, no abstractions "for later",
   no tests beyond the eval harness. Iterate on code until the result is there; delete what doesn't earn its place.
@@ -26,15 +28,15 @@ checklist; verbatim original `docs/BRIEF.md`) · `docs/PERFORMANCE.md` (DB inter
 6. **Same agent + same corpus for all three roles**; roles differ in questions, evidence and actions, not length.
 7. Confidences shown to users are computed (Jev probabilities / rules), never LLM self-reported.
 8. **Performance is a feature.** Load and query optimally using database internals (sort order + zonemaps, inverted and
-   ART indexes, rollups, streaming). Measure every change (`EXPLAIN ANALYZE`, `bench/`), record it in `docs/PERFORMANCE.md`.
+   ART indexes, rollups, streaming). Measure every change (`EXPLAIN ANALYZE`, `src/bench/`), record it in `docs/PERFORMANCE.md`.
 9. **Polished final answers:** the agent uses a strong model (not Haiku/Flash). Jev stays for fast typed judgments.
 10. **Public repo: never commit keys.** Keys live in `.env` (gitignored); `.env.example` lists names only.
 11. **Generalize everything (plan 011).** Tune on BGL / OpenStack, but no dataset names, components, severities or
    other dataset-specific values in tool, agent, eval-harness or loader-library code paths. Dataset knowledge lives in
-   data: the dataset's own loader file (`load/3x_<name>.sql` = one parse query + `\ir lib/stage_to_logs.sql`), the
-   `datasets` registry row it writes, and config rows (`data/ownership.csv` incl. `*` defaults, `data/watchlist.csv`,
-   `data/remote_sources.csv`). A new dataset must need no code change; every new tool or rule is tested on at least one
-   extra Loghub dataset (`bench/check_tools.py` runs every tool on every loaded dataset; `bench/lint_generic.py` fails
+   data: the dataset's own loader file (`src/sql/3x_<name>.sql` = one parse query + `\ir lib/stage_to_logs.sql`), the
+   `datasets` registry row it writes, and config rows (`data/config/ownership.csv` incl. `*` defaults, `data/config/watchlist.csv`,
+   `data/config/remote_sources.csv`). A new dataset must need no code change; every new tool or rule is tested on at least one
+   extra Loghub dataset (`src/bench/check_tools.py` runs every tool on every loaded dataset; `src/bench/lint_generic.py` fails
    on dataset values in code and on incomplete tool descriptions).
 
 ## Workflow
@@ -50,7 +52,7 @@ SereneDB (docker, local) · Python 3.12 + `uv` · **LangGraph** (agent) · **Lan
 **MCP** (our tools; FastMCP) · `langchain-mcp-adapters` (agent uses the same MCP tools Claude uses) ·
 **Jev / TypeSafe** (typed judgments, in SQL via `ai_system_one` or SDK) · agent + prose LLM = a **strong** model via
 `init_chat_model(AGENT_MODEL)` (default `anthropic:claude-opus-5-5`) · **data loaded by SereneDB itself in docker**
-(`read_csv`/`COPY` from `/data`, SQL in `load/`) · UI: Streamlit unless we decide otherwise.
+(`read_csv`/`COPY` from `/data`, SQL in `src/sql/`) · UI: Streamlit unless we decide otherwise.
 
 ## Docs & tools for the coding agent (use them, don't guess)
 | Need | Use |
@@ -68,6 +70,6 @@ SereneDB (docker, local) · Python 3.12 + `uv` · **LangGraph** (agent) · **Lan
   then `./docker/secrets.sh` after **every** (re)start (AI secrets are not persisted).
   SQL: `psql -h localhost -p 7890 -U postgres -d postgres` (trust auth). OTLP/HTTP `:4318` (`otel:otel`).
   Image is amd64-only (emulated on Apple Silicon: slower; keep loads lean). `./data` is mounted read-only at `/data`.
-- Data: `./scripts/download_data.sh` → `data/raw/BGL.log`, `data/raw/openstack/*.log` (gitignored).
-  Ownership table: `data/ownership.csv` (committed, fictional, documented in README).
+- Data: `./src/scripts/download_data.sh` → `data/raw/BGL.log`, `data/raw/openstack/*.log` (gitignored).
+  Ownership table: `data/config/ownership.csv` (committed, fictional, documented in README).
 - Claude's Bash on Amirali's Mac does not load `~/.zshrc`; read keys from `.env` (never print them).

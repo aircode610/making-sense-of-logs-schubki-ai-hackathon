@@ -31,14 +31,15 @@ uv sync                  # Python 3.12 + the server's dependencies (optional: `u
 claude                   # approve the MCP server "logs" when asked
 ```
 Then tell Claude: **"Load the base corpus"**. BGL and OpenStack are downloaded from the brief's Zenodo links and
-loaded by our loader (`load/`) in 72 s.
+loaded by our loader (`src/sql/`) in 72 s. To also run the Jev step live instead of using its committed
+outputs: `uv run python -m loader load base --fresh` (needs `TYPESAFE_API_KEY`).
 
 | Also | Command |
 |---|---|
 | Our own agent, the eval | `uv sync --extra agent` and `ANTHROPIC_API_KEY` in `.env` (copy `.env.example`) |
 | Jev on your own new logs | `TYPESAFE_API_KEY` in `.env` (without it, problems are judged by log level) |
-| Use the server from any folder | `claude mcp add -s user logs -- uv run --directory "$PWD" python mcp_server/server.py` (run in the repo) |
-| Any other MCP client | stdio command `uv run --directory <repo> python mcp_server/server.py` |
+| Use the server from any folder | `claude mcp add -s user logs -- uv run --directory "$PWD" python src/mcp_server/server.py` (run in the repo) |
+| Any other MCP client | stdio command `uv run --directory <repo> python src/mcp_server/server.py` |
 | Load without Claude | `uv run python -m loader load base` |
 
 Apple Silicon runs the amd64 image under emulation: it works, slower.
@@ -54,7 +55,7 @@ Or use a prompt: `/mcp__logs__worked_investigation` (one topic, all three roles)
 re-runs the query. To load your own logs, tell Claude *"Load ~/logs/app.log"* (the format is detected automatically).
 
 ## Tools
-One MCP server ([`mcp_server/`](mcp_server/)) with **44 tools, 5 prompts, 6 resources** and argument completions.
+One MCP server ([`src/mcp_server/`](src/mcp_server/)) with **44 tools, 5 prompts, 6 resources** and argument completions.
 The full list with inputs and outputs is in [`docs/TOOLS.md`](docs/TOOLS.md), generated from the server itself.
 
 | Need | Main tools |
@@ -98,7 +99,7 @@ Every answer and verdict: [dashboard](docs/dashboard.html).
 | Wrong claims | **116 vs 186** | **53 vs 69** |
 | Seconds per answer | **14 vs 86** | 44 vs 22 |
 | Where it loses | engineer questions on small logs (8 – 9) | manager questions on small datasets (2 – 6) |
-| Re-run | `uv run python -m eval.cc_ab` | `uv run python -m eval.ab --arms product,baseline` |
+| Re-run | `uv run python -m evals.cc_ab` | `uv run python -m evals.ab --arms product,baseline` |
 
 ## Known limitations
 - The logs hold no cost, downtime or customer impact, so answers say so instead of estimating them.
@@ -108,6 +109,19 @@ Every answer and verdict: [dashboard](docs/dashboard.html).
 - New log files without a `TYPESAFE_API_KEY` judge problems by log level only, which is less accurate.
 - Line counts are not incident counts: tools count recurrences ("bursts") separately.
 - The tools show what happened, not why: causes are labelled as hypotheses.
+
+## Repository layout
+| Path | What |
+|---|---|
+| `src/mcp_server/` | the MCP server: 44 tools, prompts, resources, session report |
+| `src/loader/` · `src/sql/` | loading: download, format detection, SQL parsers, per-dataset build, live Jev |
+| `src/formats/` | 76 lnav log format definitions (format detection) |
+| `src/agent/` · `src/evals/` · `src/bench/` | our LangGraph agent, the evaluation harness, checks and benchmarks |
+| `src/scripts/` | Jev / embedding generators, dashboard and report builders, data download |
+| `data/config/` · `data/jev/` | inputs (ownership, catalog, severity map …) · committed Jev outputs (`--fresh` ignores them) |
+| `data/raw/` | downloaded logs (never committed) |
+| `eval/` | questions, answer keys, results |
+| `docs/` · `plans/` | documentation, dashboard, slides · one plan per piece of work |
 
 More detail (data, schema, agent, roles, performance, huge datasets): [`docs/TECHNICAL.md`](docs/TECHNICAL.md).
 

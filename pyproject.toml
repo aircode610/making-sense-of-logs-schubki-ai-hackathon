@@ -1,4 +1,5 @@
-# Plan 016: `uv run` installs what the MCP server + loader need on first start (no venv / pip step for users).
+# src layout: code in src/ (packages mcp_server, loader, agent, evals, bench, scripts; SQL in src/sql, lnav formats in
+# src/formats); data/ holds config + committed Jev outputs only. Plan 016: `uv run` installs what the MCP server + loader need on first start (no venv / pip step for users).
 # Our own agent, eval harness and benches: `uv sync --extra agent` (same pins as requirements.txt).
 [project]
 name = "making-sense-of-logs"
@@ -24,5 +25,17 @@ agent = [
     "pyarrow==26.0.0",
 ]
 
-[tool.uv]
-package = false
+[project.scripts]
+logs-mcp = "mcp_server.server:main"
+logs-loader = "loader.__main__:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/mcp_server", "src/loader", "src/agent", "src/evals", "src/bench", "src/scripts"]
+
+[tool.hatch.build.targets.wheel.force-include]
+"src/sql" = "sql"
+"src/formats" = "formats"

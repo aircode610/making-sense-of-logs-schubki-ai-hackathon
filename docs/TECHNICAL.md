@@ -1,5 +1,7 @@
 # Technical reference (the full former README)
 
+_Layout (src/ restructure): code is in `src/` (`src/mcp_server`, `src/loader`, `src/sql` = the former `load/`, `src/agent`, `src/evals` = the former `eval/` code, `src/bench`, `src/scripts`, `src/formats`); config in `data/config/`, committed Jev outputs in `data/jev/`. Older paths below map 1:1._
+
 SchubKI National AI Hackathon 2026 · SereneDB challenge · Team: Amirali, Konark.
 
 > **SereneDB counts, Jev judges, the LLM explains — and every sentence is checked against the query that produced it.**
@@ -31,14 +33,14 @@ claude                        # in this folder: approve the project MCP server `
 ```
 Then, in Claude: **"Load the base corpus"**. Claude calls `load_logs(source='base')`: BGL and OpenStack are downloaded
 exactly as the brief says (`curl -L "https://zenodo.org/records/8196385/files/<file>?download=1"`, into `data/raw/`),
-parsed by SereneDB with our loaders ([`load/`](../load/)), and get their stored Jev judgments (committed CSVs, so no key).
+parsed by SereneDB with our loaders ([`src/sql/`](../src/sql/)), and get their stored Jev judgments (committed CSVs, so no key).
 Measured on a clean clone (MacBook, Apple Silicon, emulated amd64 image): **72 s** from the request to both datasets
 loaded (BGL 4,747,963 lines, OpenStack 207,820 lines), 34 s when the raw files are already downloaded. Then ask the
 three roles' questions (examples below). `setup_status` shows the database, the loaded datasets and a running load.
 
 **Your own logs:** "Load ~/logs/app.log" → `load_logs(source='~/logs/app.log')`: the file is streamed into SereneDB
 from wherever it is (`COPY … FROM STDIN`), its format detected from the 76 vendored
-[lnav format definitions](../formats/lnav/) (≥ 95 % of a 2,000-line sample, else nothing is loaded and the closest formats
+[lnav format definitions](../src/formats/lnav/) (≥ 95 % of a 2,000-line sample, else nothing is loaded and the closest formats
 are listed: no guessed timestamps), only that dataset is built (other datasets untouched), and it becomes the active
 dataset. With `TYPESAFE_API_KEY` in `.env` its patterns are judged by Jev inside SereneDB during the load (Proxifier,
 21,329 lines: 1.6 s without Jev, 15 s with Jev + embeddings; live judgments vs the committed ones: correlation 0.996,
@@ -57,8 +59,8 @@ Options (`.env`, all optional; copy `.env.example`): `TYPESAFE_API_KEY` (Jev on 
 (embeddings for semantic pattern search on new data), `ANTHROPIC_API_KEY` (our own agent). The server registers the
 keys in SereneDB itself on start (no `docker/secrets.sh` step). Another port: `SERENEDB_PORT=7891 docker compose up -d`
 and `PGPORT=7891`. From any folder (user scope):
-`claude mcp add -s user logs -- uv run --quiet --directory "$PWD" python mcp_server/server.py` (run in the repo).
-Any other MCP client: stdio command `uv run --directory <repo> python mcp_server/server.py` (DB via `PGHOST` /
+`claude mcp add -s user logs -- uv run --quiet --directory "$PWD" python src/mcp_server/server.py` (run in the repo).
+Any other MCP client: stdio command `uv run --directory <repo> python src/mcp_server/server.py` (DB via `PGHOST` /
 `PGPORT` / `PGUSER` / `PGDATABASE`, default `localhost:7890`; `LOGS_DATASET=<name>` = the dataset active at start;
 `LOGS_DATASET='*'` = the multi-dataset server where every tool takes `dataset`, used by our eval harness;
 `LOGS_DB_ROLE=logs_manager` or `team_<team>` = database-enforced access, see Roles).
@@ -73,22 +75,22 @@ uv run python -m loader load ~/logs/app.log --name app  # any file
 uv run python -m loader status | remove <name> | reload # reload = drop + rebuild every dataset whose raw file exists
 ./load/reload.sh                                        # reload + checks (every tool vs independent SQL)
 ```
-How a dataset is built (one code path for the MCP tool, the CLI and the full reload): `load/00_schema.sql` +
-`load/01_derived.sql` once (tables, dictionaries, generic mask + entity macros) → the dataset's loader (`load/10_bgl`,
+How a dataset is built (one code path for the MCP tool, the CLI and the full reload): `src/sql/00_schema.sql` +
+`src/sql/01_derived.sql` once (tables, dictionaries, generic mask + entity macros) → the dataset's loader (`src/sql/10_bgl`,
 `20_openstack`, `30_zookeeper`, …, or a generated one from format detection; each hand-written one is one parse query
-+ `\ir lib/stage_to_logs.sql`) → `VACUUM` refresh → [`load/lib/build_dataset.sql`](../load/lib/build_dataset.sql) for that
++ `\ir lib/stage_to_logs.sql`) → `VACUUM` refresh → [`src/sql/lib/build_dataset.sql`](../src/sql/lib/build_dataset.sql) for that
 dataset only (example values, episodes / bursts / patterns, stored Jev judgments + traits + areas, pattern index,
-then [`lib/ownership_dataset.sql`](../load/lib/ownership_dataset.sql): curated owners + Konark's inference chain, plan
-057) → macros, roles. The SQL files are run by [`loader/sqlrun.py`](../loader/sqlrun.py) (the psql features they use:
+then [`lib/ownership_dataset.sql`](../src/sql/lib/ownership_dataset.sql): curated owners + Konark's inference chain, plan
+057) → macros, roles. The SQL files are run by [`loader/sqlrun.py`](../src/loader/sqlrun.py) (the psql features they use:
 `\set`, `\ir`, `\if`); `psql -f` runs them too. A per-dataset build equals the old whole-corpus build (all derived
 tables identical on 8 datasets, plan 016). Everything AI-generated for our datasets is committed
 (`data/pattern_judgments_*.csv`, `pattern_traits_*.csv`, `component_areas_*.csv`, `pattern_vectors*.parquet`,
-`burst_summaries.csv`); regenerate with `scripts/judge_patterns.sh <ds>`, `judge_traits.py`, `judge_areas.py`,
+`burst_summaries.csv`); regenerate with `src/scripts/judge_patterns.sh <ds>`, `judge_traits.py`, `judge_areas.py`,
 `embed_patterns.py`, `summarize_bursts.py` (all run their AI calls inside SereneDB). A new format that lnav does not
-know = a hand-written `load/3x_<name>.sql` (parse query into `stage` + `\ir lib/stage_to_logs.sql`, one sentence per
+know = a hand-written `src/sql/3x_<name>.sql` (parse query into `stage` + `\ir lib/stage_to_logs.sql`, one sentence per
 filled field, e.g. `\set request_meaning 'trace id …'`) + a row in `data/catalog.csv`; no tool, agent or eval code
-changes (CLAUDE.md rule 11; `bench/lint_generic.py` enforces it). Or replay any dataset as OpenTelemetry into
-SereneDB's built-in OTLP receiver: `uv run python scripts/otlp_replay.py <dataset> 2000`.
+changes (CLAUDE.md rule 11; `src/bench/lint_generic.py` enforces it). Or replay any dataset as OpenTelemetry into
+SereneDB's built-in OTLP receiver: `uv run python src/scripts/otlp_replay.py <dataset> 2000`.
 
 ### Our own agent (second path; the brief accepts an existing agent such as Claude)
 `uv sync --extra agent` once; needs `ANTHROPIC_API_KEY` in `.env` (LangSmith tracing if `LANGSMITH_*` are set):
@@ -102,7 +104,7 @@ uv run python -m agent.run --baseline --role manager "…"                      
 ```
 Each run prints the answer card + evidence (SQL) + the LangSmith trace URL, and saves `runs/agent/<time>-<kind>-<role>.json`.
 
-The same questions as SQL (table macros, `load/98_macros.sql`): `logs_count`, `logs_search`, `problem_patterns`,
+The same questions as SQL (table macros, `src/sql/98_macros.sql`): `logs_count`, `logs_search`, `problem_patterns`,
 `team_problem_bursts`, `pattern_weeks`, `top_values`, `nearest_before`, e.g.
 `SELECT * FROM problem_patterns('bgl', TIMESTAMP '2005-11-01', TIMESTAMP '2005-11-29');`
 
@@ -128,7 +130,7 @@ one level scale for every format, the OpenTelemetry SeverityNumber (TRACE 1, DEB
 FATAL 21–24) mapped from the raw `severity` word by `data/severity_map.csv` (OTel data model, RFC 5424, Java logging,
 lnav words; e.g. BGL SEVERE → 18, FAILURE → 21, Apache NOTICE → 10, OpenStack CRITICAL → 22); NULL when the format
 has no level (SSH, Linux, HealthApp). Informational: the problem rule still uses the raw level (DECISIONS H22).
-See [`data/README.md`](../data/README.md). Ownership (fictional, documented per row): [`data/ownership.csv`](../data/ownership.csv).
+See [`data/README.md`](../data/README.md). Ownership (fictional, documented per row): [`data/config/ownership.csv`](../data/config/ownership.csv).
 **Ownership table (plan 057):** `ownership(dataset, component, team, description, area, area_source, area_confidence,
 source, confidence, disputed_by, dispute_confidence)`, one row per component that has an owner. `source` = `curated`
 (1.0) / `curated default` (`*` row, 0.95) / `jev owner_hint` (Jev picks among the dataset's curated teams) / `rule: …`
@@ -137,7 +139,7 @@ rows always win; `disputed_by` flags a curated owner contradicted by confident J
 component's lines; inferred owners below 0.6 are not stored (the component stays `unowned`).
 
 ## Tools (44 in one MCP server, plus prompts and resources)
-MCP server [`mcp_server/`](../mcp_server/) (FastMCP), written to be handed to ANY agent (Claude Code, our agent, another
+MCP server [`mcp_server/`](../src/mcp_server/) (FastMCP), written to be handed to ANY agent (Claude Code, our agent, another
 LLM) with a free-form question (plan 012): no roles in the server, nothing dataset-specific in its code.
 - **Descriptions follow one template**: the question the tool answers, *Use when*, *Not for* (names the better
   sibling tool), *Returns*, *Caveats*, *Example*, *Next* (which ids to pass on). Shared parameters (node, location,
@@ -156,11 +158,11 @@ LLM) with a free-form question (plan 012): no roles in the server, nothing datas
   `logs://ownership/{dataset}`, `logs://session/latest` (every call so far with its SQL, totals, truncation) and
   `logs://session/{sid}/step/{n}` (one step in full). Tools return ≤ 50 rows; the full evidence trail is a resource.
 - Full reference (purpose, inputs, outputs of every tool): [`docs/TOOLS.md`](TOOLS.md), generated by
-  `scripts/tools_doc.py` from the live server.
-- Checked: `bench/check_tools.py` runs every tool on every loaded dataset against independent SQL (tool × dataset
-  matrix); `bench/lint_generic.py` (no dataset values in code, template complete, definitions ≤ 36k tokens);
-  `bench/tool_use.py` (role-free benchmark: a plain agent with only this server, Opus and Sonnet) and
-  `bench/claude_code_run.py` (Claude Code itself, headless, with only this server).
+  `src/scripts/tools_doc.py` from the live server.
+- Checked: `src/bench/check_tools.py` runs every tool on every loaded dataset against independent SQL (tool × dataset
+  matrix); `src/bench/lint_generic.py` (no dataset values in code, template complete, definitions ≤ 36k tokens);
+  `src/bench/tool_use.py` (role-free benchmark: a plain agent with only this server, Opus and Sonnet) and
+  `src/bench/claude_code_run.py` (Claude Code itself, headless, with only this server).
 
 Every tool is a fixed, parameterized SereneDB query: the LLM only fills typed fields (dataset names are an enum of the
 loaded datasets). Every result is an **envelope**: `tool`,
@@ -186,7 +188,7 @@ Numbers and dotted ids are whole search tokens (`503`, `172.16.96.116`); typed v
 `entities` (`ip:…`, `path:…`, `uuid:…`, `url:…`). Latency per tool: [`docs/PERFORMANCE.md`](PERFORMANCE.md).
 
 ## Roles (database-enforced access)
-`load/99_roles.py` creates `logs_engineer`, `logs_lead` (may create focus indexes), `logs_manager` (read-only, no
+`src/sql/99_roles.py` creates `logs_engineer`, `logs_lead` (may create focus indexes), `logs_manager` (read-only, no
 workspace) and one `team_<team>` role per team in the ownership table. SereneDB has PostgreSQL roles and grants but no
 row-level-security policies, so a team role reads views named `logs`, `patterns`, `bursts`, … in its own schema that
 contain only its components; with `LOGS_DB_ROLE=team_web_platform` the unchanged tools see only that team's rows and
@@ -257,9 +259,9 @@ both systems, because the optional OTel slice was not loaded for this run.
 ```bash
 uv sync --extra agent
 uv run python -m loader load base     # + zookeeper apache ssh hdfs linux healthapp for the other questions
-uv run python -m eval.ab --arms product,baseline --ids D-E01,D-L04   # smoke test, 2 questions
-uv run python -m eval.ab --arms product,baseline                     # all 50
-uv run python scripts/build_dashboard.py                             # rebuild docs/dashboard.html
+uv run python -m evals.ab --arms product,baseline --ids D-E01,D-L04   # smoke test, 2 questions
+uv run python -m evals.ab --arms product,baseline                     # all 50
+uv run python src/scripts/build_dashboard.py                             # rebuild docs/dashboard.html
 ```
 
 ### Earlier: 25 dev questions with deterministic metrics (`eval.run_eval`, LangSmith experiments)
@@ -297,7 +299,7 @@ The engineer gets its first burst and the 21 minutes before it, the lead gets re
 owner, and the manager gets the computed top 3 with a decision. Plus whole-corpus counts by team for BGL and
 OpenStack, and OpenStack's slow VMs. 20 tool calls; 62 / 62 numbers in the answer found in a result; 17 / 17 read
 steps give the same result on re-run. Evidence: [`docs/investigation/report.html`](investigation/report.html)
-(static export of the session report: `scripts/export_report.py <session> <out.html>`).
+(static export of the session report: `src/scripts/export_report.py <session> <out.html>`).
 
 ## Working with huge datasets (optional award)
 | What | Data actually queried | Time | Notes |

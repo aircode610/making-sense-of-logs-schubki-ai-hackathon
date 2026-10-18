@@ -3,22 +3,12 @@
 .env.*
 !.env.example
 
-# data (download with scripts/download_data.sh); the ownership table is committed
-data/*
-!data/ownership.csv
-!data/pattern_judgments_*.csv
-!data/pattern_traits_*.csv
-!data/pattern_vectors.parquet
-!data/pattern_vectors_*.parquet
-!data/burst_summaries.csv
-!data/watchlist.csv
-!data/remote_sources.csv
-!data/ownership_rules.csv
-!data/severity_map.csv
-!data/area_teams.csv
-!data/component_areas_*.csv
-!data/catalog.csv
-!data/README.md
+# data/: config/ (inputs, committed), jev/ (committed Jev outputs of the base corpus + small catalog sets),
+# raw/ (downloaded logs: never committed). Fresh machine: `uv run python -m loader load base --fresh` judges live.
+data/raw/
+data/*.csv
+data/*.parquet
+src/sql/gen/
 
 # third-party doc dumps (re-fetch with scripts/refresh_docs.sh; use the typesafe-docs MCP instead)
 
@@ -29,7 +19,6 @@ __pycache__/
 .DS_Store
 runs/**/cache/
 *.log
-!data/raw/*.log
 
 # heldout eval data: never visible to Claude, shared privately (plan 001)
 eval/heldout/
@@ -37,7 +26,6 @@ eval/heldout/
 # agent run outputs (answer cards + evidence ledgers, plan 007)
 runs/agent/
 runs/sessions/
-load/gen/.*.tmp.sql
 runs/cc_ab/
 
 # Office lock files

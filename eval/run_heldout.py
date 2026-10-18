@@ -17,11 +17,11 @@ VENV_PY = ROOT / ".venv/bin/python"
 if Path(sys.prefix).resolve() != (ROOT / ".venv").resolve() and VENV_PY.exists():  # run as plain `python3 …`
     import os
     os.execv(str(VENV_PY), [str(VENV_PY), *sys.argv])
-sys.path.insert(0, str(ROOT))
+sys.path.insert(0, str(ROOT / "src"))
 
 import yaml
 
-from eval.run_eval import ROWS, run_suite
+from evals.run_eval import ROWS, run_suite
 
 DEFAULT = ROOT / "eval/heldout/questions.yaml"
 OUT = ROOT / "eval/heldout/out"

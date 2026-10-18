@@ -602,7 +602,7 @@ wheels = [
 [[package]]
 name = "making-sense-of-logs"
 version = "0.16.0"
-source = { virtual = "." }
+source = { editable = "." }
 dependencies = [
     { name = "mcp" },
     { name = "psycopg", extra = ["binary"] },

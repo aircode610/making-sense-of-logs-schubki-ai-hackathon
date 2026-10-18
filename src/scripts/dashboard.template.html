@@ -1,0 +1,236 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Eval Dashboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Urbanist:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #ffffff; --surface: #ffffff; --mist: #f0f2f5; --pale: #f1ecfd; --line: #e3e6ec; --ink: #11121d; --ink-2: #3a3f55;
+  --muted: #6b7386; --accent: #6a4bd8; --brand-a: #a162f0; --brand-b: #3e318c;
+  --s-a: #2a78d6; --s-b: #eb6834; --s-tie: #b9bec9; --s-inc: #dde0e6; --ok: #15803d;
+  --sans: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; --display: "Urbanist", var(--sans);
+  --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; color-scheme: light;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #17171a; --surface: #202024; --mist: #26262b; --pale: #2a2540; --line: rgba(255,255,255,.1); --ink: #f0efec; --ink-2: #c3c2b7;
+  --muted: #9097a8; --accent: #a58cff; --s-a: #3987e5; --s-b: #d95926; --s-tie: #5b606b; --s-inc: #3a3e46; --ok: #22c55e; color-scheme: dark; } }
+:root[data-theme="dark"] {
+  --bg: #17171a; --surface: #202024; --mist: #26262b; --pale: #2a2540; --line: rgba(255,255,255,.1); --ink: #f0efec; --ink-2: #c3c2b7;
+  --muted: #9097a8; --accent: #a58cff; --s-a: #3987e5; --s-b: #d95926; --s-tie: #5b606b; --s-inc: #3a3e46; --ok: #22c55e; color-scheme: dark; }
+* { box-sizing: border-box; }
+html, body { margin: 0; background: var(--bg); color: var(--ink); font: 15px/1.55 var(--sans); }
+.wrap { max-width: 1000px; margin: 0 auto; padding: 24px 16px 64px; }
+h1, h2, h3 { font-family: var(--display); letter-spacing: -.01em; line-height: 1.2; margin: 0; }
+h1 { font-size: 28px; font-weight: 700; }
+h2 { font-size: 18px; font-weight: 650; margin: 28px 0 10px; }
+.muted { color: var(--muted); font-size: 13px; }
+code, pre { font-family: var(--mono); font-size: 13px; }
+pre { background: var(--mist); padding: 14px 16px; border-radius: 14px; white-space: pre-wrap; word-break: break-word; margin: 8px 0; }
+.top { display: flex; align-items: center; gap: 10px; margin-bottom: 18px; }
+.mark { width: 24px; height: 24px; border-radius: 7px; background: linear-gradient(135deg, var(--brand-a), var(--brand-b)); }
+.brand { font-family: var(--display); font-weight: 600; }
+.brand span { color: var(--muted); font-weight: 500; }
+.btn { border: 1px solid var(--line); background: var(--surface); color: var(--ink); border-radius: 10px; padding: 5px 11px; cursor: pointer; font: inherit; font-size: 13px; }
+#theme { margin-left: auto; }
+.switch { display: inline-flex; background: var(--mist); border-radius: 12px; padding: 4px; gap: 4px; margin: 14px 0 0; flex-wrap: wrap; }
+.switch button { border: 0; background: transparent; color: var(--ink-2); border-radius: 9px; padding: 7px 12px; cursor: pointer; font: inherit; font-size: 14px; }
+.switch button[aria-pressed="true"] { background: var(--surface); color: var(--ink); font-weight: 600; box-shadow: 0 1px 3px rgba(0,0,0,.08); }
+.tabs { display: flex; gap: 2px; border-bottom: 1px solid var(--line); margin: 18px 0 20px; overflow-x: auto; }
+.tabs button { border: 0; background: none; color: var(--muted); padding: 10px 14px; cursor: pointer; font: inherit; font-size: 14.5px; border-bottom: 2px solid transparent; margin-bottom: -1px; white-space: nowrap; }
+.tabs button[aria-selected="true"] { color: var(--ink); border-bottom-color: var(--accent); font-weight: 600; }
+[role="tabpanel"][hidden] { display: none; }
+.tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 12px; }
+.tile { background: var(--mist); border-radius: 16px; padding: 16px 18px; }
+.tile.hero { background: linear-gradient(135deg, var(--brand-a), var(--brand-b)); color: #fff; }
+.tile .k { font-size: 13px; color: var(--muted); }
+.tile.hero .k { color: #ede7ff; }
+.tile .v { font-family: var(--display); font-size: 30px; font-weight: 700; margin-top: 2px; line-height: 1.15; }
+.tile .v small { font-size: 15px; font-weight: 500; opacity: .75; }
+.say { background: var(--pale); border-radius: 14px; padding: 12px 16px; margin-top: 14px; font-size: 14.5px; color: var(--ink-2); }
+.legend { display: flex; gap: 14px; flex-wrap: wrap; font-size: 13px; color: var(--ink-2); margin-bottom: 8px; }
+.sw { display: inline-block; width: 11px; height: 11px; border-radius: 3px; margin-right: 6px; vertical-align: -1px; }
+.bar-row { display: grid; grid-template-columns: 200px minmax(0,1fr) 56px; gap: 10px; align-items: center; margin: 7px 0; font-size: 14px; }
+.bar-row .lbl { color: var(--ink-2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.track { display: flex; gap: 2px; height: 24px; }
+.seg { height: 100%; position: relative; }
+.seg:first-child { border-radius: 6px 0 0 6px; } .seg:last-child { border-radius: 0 6px 6px 0; } .seg:only-child { border-radius: 6px; }
+.seg span { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 600; color: #fff; }
+.seg.light span { color: var(--ink); }
+.val { font-size: 13px; color: var(--muted); font-variant-numeric: tabular-nums; }
+#tip { position: fixed; pointer-events: none; background: var(--ink); color: var(--bg); font-size: 12.5px; padding: 5px 9px; border-radius: 8px; opacity: 0; z-index: 10; }
+table { width: 100%; border-collapse: collapse; font-size: 14px; }
+th, td { text-align: left; padding: 8px; border-bottom: 1px solid var(--line); }
+th { font-weight: 600; color: var(--muted); font-size: 12.5px; }
+td.n, th.n { text-align: right; font-variant-numeric: tabular-nums; }
+.better { color: var(--ok); font-weight: 600; }
+.filters { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 8px; }
+select, input { font: inherit; font-size: 14px; border: 1px solid var(--line); border-radius: 10px; padding: 6px 9px; background: var(--surface); color: var(--ink); }
+.q { border: 1px solid var(--line); border-radius: 14px; margin: 8px 0; background: var(--surface); }
+.q > summary { cursor: pointer; padding: 11px 14px; display: grid; grid-template-columns: minmax(0,1fr) auto; gap: 10px; list-style: none; align-items: center; }
+.q > summary::-webkit-details-marker { display: none; }
+.q .meta { font-size: 12.5px; color: var(--muted); }
+.pill { font-size: 12px; padding: 3px 10px; border-radius: 99px; font-weight: 600; white-space: nowrap; }
+.pill.a { background: color-mix(in srgb, var(--s-a) 16%, transparent); color: var(--s-a); }
+.pill.b { background: color-mix(in srgb, var(--s-b) 16%, transparent); color: var(--s-b); }
+.pill.t { background: var(--mist); color: var(--muted); }
+.qbody { padding: 0 14px 14px; }
+.reason { font-size: 14px; color: var(--ink-2); margin-bottom: 10px; }
+.cols { display: grid; grid-template-columns: minmax(0,1fr) minmax(0,1fr); gap: 12px; }
+.ans h3 { font-size: 14px; margin-bottom: 2px; }
+.ans pre { max-height: 320px; overflow: auto; font-family: var(--sans); font-size: 13px; }
+.step { display: grid; grid-template-columns: 110px minmax(0,1fr); gap: 14px; padding: 12px 0; border-bottom: 1px solid var(--line); align-items: center; }
+.step .num { font-family: var(--display); font-size: 22px; font-weight: 700; color: var(--accent); }
+@media (max-width: 720px) { .cols { grid-template-columns: minmax(0,1fr); } .bar-row { grid-template-columns: 96px minmax(0,1fr) 44px; } .step { grid-template-columns: 80px minmax(0,1fr); } .pill { white-space: normal; text-align: center; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+<div class="top"><div class="mark"></div><div class="brand">Making Sense of Logs <span>· eval dashboard</span></div>
+<button class="btn" id="theme" aria-label="Toggle theme">Theme</button></div>
+
+<h1>Is it better, and by how much?</h1>
+<div class="muted">50 questions with frozen answer keys · 9 log datasets · 3 roles · blind Opus judge, both answer orders</div>
+<div class="switch" id="switch" role="group" aria-label="Comparison"></div>
+
+<div class="tabs" role="tablist" id="tabs">
+  <button role="tab" id="t-overview" aria-controls="p-overview">Overview</button>
+  <button role="tab" id="t-breakdown" aria-controls="p-breakdown">Breakdown</button>
+  <button role="tab" id="t-questions" aria-controls="p-questions">Questions</button>
+  <button role="tab" id="t-history" aria-controls="p-history">History</button>
+  <button role="tab" id="t-run" aria-controls="p-run">Run it</button>
+</div>
+
+<section role="tabpanel" id="p-overview" aria-labelledby="t-overview"></section>
+<section role="tabpanel" id="p-breakdown" aria-labelledby="t-breakdown"></section>
+<section role="tabpanel" id="p-questions" aria-labelledby="t-questions">
+  <div class="filters">
+    <select id="f-role"><option value="">All roles</option><option>engineer</option><option>lead</option><option>manager</option></select>
+    <select id="f-ds"></select>
+    <select id="f-res"></select>
+    <input id="f-q" placeholder="Search" size="16">
+  </div>
+  <div class="muted" id="count"></div>
+  <div id="qs"></div>
+</section>
+<section role="tabpanel" id="p-history" aria-labelledby="t-history"></section>
+<section role="tabpanel" id="p-run" aria-labelledby="t-run">
+  <h2 style="margin-top:0">Run the evaluation yourself</h2>
+  <pre>docker compose up -d
+uv run python -m loader load base            # + zookeeper apache ssh hdfs linux healthapp
+uv sync --extra agent                        # ANTHROPIC_API_KEY in .env
+
+uv run python -m evals.cc_ab                  # Claude Code + our MCP vs plain Claude Code
+uv run python -m evals.ab --arms product,baseline   # our agent vs the reference agent
+uv run python scripts/build_dashboard.py     # rebuild this page</pre>
+  <h2>How it is judged</h2>
+  <div class="tiles">
+    <div class="tile"><div class="k">Answer keys</div><div>the true answer, its SQL and the traps, from raw SQL and labels</div></div>
+    <div class="tile"><div class="k">Blind</div><div>tool names and ids stripped; random, seeded answer order</div></div>
+    <div class="tile"><div class="k">Twice</div><div>judged in both orders; only agreeing verdicts count as wins</div></div>
+    <div class="tile"><div class="k">Checked</div><div>the judge verifies claims with read-only SQL</div></div>
+  </div>
+  <p class="muted">Files: <code>eval/dev_questions.yaml</code> · <code>eval/answer_keys/</code> · <code>eval/cc_ab.py</code> · <code>eval/ab.py</code> · <code>eval/results/</code></p>
+</section>
+<p class="muted" id="foot"></p>
+</div>
+<div id="tip" role="tooltip"></div>
+
+<script>
+const D = /*DATA*/null;
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({"&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;"}[c]));
+const fmt = (v, d = 2) => v == null ? "—" : (+(+v).toFixed(d)).toLocaleString();
+const get = k => { try { return localStorage.getItem(k); } catch (e) { return null; } };
+const put = (k, v) => { try { localStorage.setItem(k, v); } catch (e) {} };
+
+const t0 = get("dash-theme"); if (t0) document.documentElement.dataset.theme = t0;
+$("#theme").onclick = () => {
+  const cur = document.documentElement.dataset.theme || (matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
+  document.documentElement.dataset.theme = cur === "dark" ? "light" : "dark"; put("dash-theme", document.documentElement.dataset.theme);
+};
+
+const keys = Object.keys(D.comps);
+let C = D.comps[keys.includes(get("dash-comp")) ? get("dash-comp") : keys[0]];
+$("#switch").innerHTML = keys.map(k => `<button data-k="${k}">${esc(D.comps[k].title)}</button>`).join("");
+$("#switch").onclick = e => { const b = e.target.closest("button"); if (b) { C = D.comps[b.dataset.k]; put("dash-comp", b.dataset.k); render(); } };
+
+const tabs = [...document.querySelectorAll('[role="tab"]')];
+function show(id) {
+  tabs.forEach(t => { const on = t.id === id; t.setAttribute("aria-selected", on); t.tabIndex = on ? 0 : -1;
+    document.getElementById(t.getAttribute("aria-controls")).hidden = !on; });
+  put("dash-tab", id);
+  try { history.replaceState(null, "", "#" + id.slice(2)); } catch (e) {}
+}
+tabs.forEach((t, i) => { t.onclick = () => show(t.id);
+  t.onkeydown = e => { const d = e.key === "ArrowRight" ? 1 : e.key === "ArrowLeft" ? -1 : 0; if (d) { const n = tabs[(i + d + tabs.length) % tabs.length]; n.focus(); show(n.id); } }; });
+
+function bar(label, tl, A, B) {
+  const K = [[A, "var(--s-a)"], [B, "var(--s-b)"], ["tie", "var(--s-tie)"], ["inconsistent", "var(--s-inc)"]];
+  const n = K.reduce((s, [k]) => s + (tl[k] || 0), 0) || 1;
+  const nm = k => k === A ? C.names[0] + " wins" : k === B ? C.names[1] + " wins" : k === "tie" ? "tie" : "judge disagreed";
+  const segs = K.filter(([k]) => tl[k]).map(([k, c]) => `<div class="seg ${k === "tie" || k === "inconsistent" ? "light" : ""}" style="flex:${tl[k]};background:${c}" data-tip="${esc(label)}: ${tl[k]} ${esc(nm(k))}">${tl[k] / n > .07 ? `<span>${tl[k]}</span>` : ""}</div>`).join("");
+  return `<div class="bar-row"><div class="lbl" title="${esc(label)}">${esc(label)}</div><div class="track">${segs}</div><div class="val">${tl[A] || 0}–${tl[B] || 0}</div></div>`;
+}
+const legend = () => `<div class="legend"><span><i class="sw" style="background:var(--s-a)"></i>${esc(C.names[0])}</span><span><i class="sw" style="background:var(--s-b)"></i>${esc(C.names[1])}</span><span><i class="sw" style="background:var(--s-tie)"></i>tie</span><span><i class="sw" style="background:var(--s-inc)"></i>judge disagreed with itself</span></div>`;
+
+function say(A, SA, SB) {
+  if (A === "mcp") return `Same Claude Code, same model: with our server it wins more, makes fewer wrong claims and answers ${fmt(SB.wall_s / SA.wall_s, 0)}× faster. Plain Claude Code still wins some engineer questions on small logs, where grep can read every line.`;
+  return `Our agent wins on the brief's base corpus and on engineer questions. The reference agent wins more manager questions on the small extra datasets, and is about twice as fast.`;
+}
+function table(SA, SB) {
+  const R = [["claim_accuracy", "Claim accuracy", 1, 3], ["claims_wrong", "Wrong claims", -1, 0], ["found_problem", "Found the key's answer (0–2)", 1, 2],
+    ["E1", "Golden facts mentioned", 1, 2], ["rubric", "Role rubric (1–5)", 1, 2], ["wall_s", "Seconds per answer", -1, 1]];
+  return `<table><tr><th></th><th class="n">${esc(C.names[0])}</th><th class="n">${esc(C.names[1])}</th></tr>` + R.map(([k, l, dir, d]) => {
+    const a = SA[k], b = SB[k], w = a != null && b != null && a !== b ? ((a > b) === (dir > 0) ? "a" : "b") : "";
+    return `<tr><td>${l}</td><td class="n ${w === "a" ? "better" : ""}">${fmt(a, d)}</td><td class="n ${w === "b" ? "better" : ""}">${fmt(b, d)}</td></tr>`; }).join("") + "</table>";
+}
+
+function render() {
+  const [A, B] = C.arms, SA = C.stats[A], SB = C.stats[B], t = C.tally, base = C.slices["Base corpus (BGL + OpenStack)"];
+  document.querySelectorAll("#switch button").forEach(b => b.setAttribute("aria-pressed", D.comps[b.dataset.k] === C));
+  $("#p-overview").innerHTML = `
+    <div class="tiles">
+      <div class="tile hero"><div class="k">Wins</div><div class="v">${t[A]} <small>vs</small> ${t[B]}</div><div class="k">${esc(C.names[0])} vs ${esc(C.names[1])}</div></div>
+      <div class="tile"><div class="k">On BGL + OpenStack</div><div class="v">${base[A]} <small>vs</small> ${base[B]}</div></div>
+      <div class="tile"><div class="k">Wrong claims</div><div class="v">${SA.claims_wrong} <small>vs</small> ${SB.claims_wrong}</div></div>
+      <div class="tile"><div class="k">Seconds per answer</div><div class="v">${fmt(SA.wall_s, 0)} <small>vs</small> ${fmt(SB.wall_s, 0)}</div></div>
+    </div>
+    <div class="say">${say(A, SA, SB)}</div>
+    <h2>Wins</h2>${legend()}${bar("All 50 questions", t, A, B)}${Object.entries(C.slices).map(([k, v]) => bar(k, v, A, B)).join("")}
+    <h2>Scores</h2>${table(SA, SB)}`;
+  $("#p-breakdown").innerHTML = `${legend()}<h2 style="margin-top:6px">By role</h2>${Object.entries(C.roles).map(([k, v]) => bar(k, v, A, B)).join("")}
+    <h2>By dataset</h2>${Object.entries(C.datasets).map(([k, v]) => bar(k, v, A, B)).join("")}`;
+  $("#f-ds").innerHTML = `<option value="">All datasets</option>` + Object.keys(C.datasets).map(d => `<option>${esc(d)}</option>`).join("");
+  $("#f-res").innerHTML = `<option value="">All results</option><option value="${A}">${esc(C.names[0])} wins</option><option value="${B}">${esc(C.names[1])} wins</option><option value="tie">Tie</option><option value="inconsistent">Judge disagreed</option>`;
+  renderQs();
+  $("#p-history").innerHTML = `<p class="muted" style="margin-top:0">Every committed 50-question run, oldest first.</p>` +
+    `<div class="step"><div class="num">1 → 5</div><div><b>Jev judges each kind of message</b><div class="muted">real alerts in the priority top 10, before vs after · plans/006</div></div></div>` +
+    D.hist.map(h => `<div class="step"><div class="num">${h.wins[0]}–${h.wins[1]}</div><div><b>${esc(h.a)} vs ${esc(h.b)}</b><div class="muted">wrong claims ${h.wrong[0]} vs ${h.wrong[1]} · ${esc(h.file)}</div></div></div>`).join("");
+  $("#foot").textContent = `Source: eval/results/${C.file} · git ${C.git} · ${C.model} · judge ${C.judge}`;
+}
+function renderQs() {
+  const [A, B] = C.arms, r = $("#f-role").value, d = $("#f-ds").value, s = $("#f-res").value, q = $("#f-q").value.toLowerCase();
+  const rows = C.rows.filter(x => (!r || x.role === r) && (!d || x.dataset === d) && (!s || x.result === s) && (!q || (x.question + x.id).toLowerCase().includes(q)));
+  const pill = x => x === A ? `<span class="pill a">${esc(C.names[0])}</span>` : x === B ? `<span class="pill b">${esc(C.names[1])}</span>` : `<span class="pill t">${x === "inconsistent" ? "disagreed" : esc(x)}</span>`;
+  const side = (x, n) => `<div class="ans"><h3>${esc(n)}</h3><div class="muted">${fmt(x.s, 0)} s · ${x.tools} tool calls · wrong claims ${fmt(x.wrong, 1)}</div><pre>${esc(x.answer)}</pre></div>`;
+  $("#count").textContent = `${rows.length} of ${C.rows.length} questions · open one to compare the answers`;
+  $("#qs").innerHTML = rows.map(x => `<details class="q"><summary><span>${esc(x.question)}<div class="meta">${esc(x.id)} · ${esc(x.role)} · ${esc(x.dataset)}</div></span>${pill(x.result)}</summary>
+    <div class="qbody"><div class="reason"><b>Judge:</b> ${esc(x.reason)}</div><div class="cols">${side(x.a, C.names[0])}${side(x.b, C.names[1])}</div></div></details>`).join("");
+}
+["#f-role", "#f-ds", "#f-res"].forEach(s => $(s).onchange = renderQs);
+$("#f-q").oninput = renderQs;
+
+const tip = $("#tip");
+document.addEventListener("mousemove", e => { const s = e.target.closest("[data-tip]"); if (!s) { tip.style.opacity = 0; return; }
+  tip.textContent = s.dataset.tip; tip.style.opacity = 1; tip.style.left = Math.min(e.clientX + 12, innerWidth - 260) + "px"; tip.style.top = (e.clientY + 14) + "px"; });
+
+render();
+const want = "t-" + location.hash.slice(1), saved = get("dash-tab");
+show(tabs.some(t => t.id === want) ? want : tabs.some(t => t.id === saved) ? saved : "t-overview");
+</script>
+</body>
+</html>

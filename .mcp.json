@@ -3,7 +3,7 @@
     "logs": {
       "type": "stdio",
       "command": "uv",
-      "args": ["run", "--quiet", "--directory", ".", "python", "mcp_server/server.py"]
+      "args": ["run", "--quiet", "--directory", ".", "python", "src/mcp_server/server.py"]
     },
     "serenedb-docs": {
       "type": "http",
