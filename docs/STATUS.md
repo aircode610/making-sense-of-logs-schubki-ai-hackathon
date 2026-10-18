@@ -1,10 +1,18 @@
 # Status (read first; keep short and current)
 
-_Last updated: 2026-10-18 (plan 012); before: 2026-10-17, plan 009 done (eval: ours vs baseline), plans 053–055 done (OpenStack patterns, Jev judgments, `value_outliers`, `rate_vs_baseline`; 8 MCP tools)._
+_Last updated: 2026-10-18 (plan 013); before: 2026-10-17, plan 009 done (eval: ours vs baseline), plans 053–055 done (OpenStack patterns, Jev judgments, `value_outliers`, `rate_vs_baseline`; 8 MCP tools)._
 
 - **Plan 010 done:** eval fit for iteration: judge sees full evidence (claims supported ours 0.92 / baseline 0.71
   after re-judging), failures score 0, `--compare/--reuse-baseline/--rejudge/--repeat`, E6 ranking golden facts,
   tool-vs-LLM seconds (tools ≈ 1 %), `bench/replay_tools.py`. Noise floor: E1 ±0.05, rubric ±0.06 (`docs/EVAL.md`).
+
+- **Plan 013 done (blind A/B of the toolsets):** same agent, only the MCP tools differ (plan-010 8 tools vs plan-011
+  40), one tool-neutral prompt, an Opus judge with read-only SQL grading against **50 frozen answer keys** (built by
+  context-free agents from raw SQL + labels; 25 new questions so every dataset has ≥ 3, incl. 6 false-premise).
+  **New 19 · old 11 · tie 13** (engineer 11-4); wrong claims 53 vs 64, found the real problem 1.58 vs 1.40. Speed:
+  44.4 vs 41.0 s per answer, **LLM 91 %**, SereneDB < 1 % (~50 ms per query), MCP overhead ~0.5 s per call; new
+  tools are not faster (more calls, +34 % tokens). Fixed: `corpus()` prompt had silently fallen back since plan 012.
+  Details `plans/013-…` §7.
 
 - **Plan 012 (Amirali, in review):** the MCP server as a stand-alone API any agent can dig with, on any dataset.
   Generic columns (`location`, `object_id`, `duration_ms`), per-dataset meanings + real examples → one field guide in

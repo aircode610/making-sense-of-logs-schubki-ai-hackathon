@@ -67,3 +67,11 @@ rows 9+ were marked unsupported).
   > 0.06** to count; per-question changes are noisier than these means (a 3-rep mean can still drop on one question).
 - Dev questions were written after seeing the data: tuning on them overfits. The human-written private set is the
   real test; write it before heavy tuning.
+
+## Blind A/B with answer keys (plan 013)
+`.venv/bin/python -m eval.ab [--ids ...] [--reuse <runs.json>] [--concurrency 1]` compares two toolsets of the same
+agent. Ground truth = `eval/answer_keys/<id>.yaml` (frozen; rules in its README). Judge = Opus agent + read-only `sql`
+(DB role `logs_manager`), blinded answers, X/Y seeded, both orders; only order-consistent wins count. Per arm: claim
+accuracy, found_problem (0-2), rubric, E1, and **time split** wall = llm + tool (client) + other, plus tool db (server
+`elapsed_ms`) and per-tool calls / ms. Shell note: unset `ANTHROPIC_BASE_URL` / `ANTHROPIC_AUTH_TOKEN` if a proxy is
+exported (401 otherwise). First result: `eval/results/ab-20261018-144958.md`.
