@@ -252,6 +252,30 @@ PatternIdOpt = Annotated[Optional[int], Field(
     description="Log pattern id (a kind of message; rows of most tools carry one).")]
 
 
+def is_problem(j: str, problem_lines: str, error_lines: str, ds: str) -> str:
+    """SQL condition "this pattern is a problem" (DECISIONS H18 + plan 016 fallback). Judged dataset: problem-level lines
+    (error-or-worse, WARN, 5xx, or no level) AND stored Jev p_problem >= 0.5. Dataset never judged (added without an AI
+    key): at least one explicit error-or-worse / WARN / 5xx line (a line with no level cannot be judged without Jev);
+    results say so via judged_note. j = pattern_judgments alias; the others are SQL expressions."""
+    return (f"(CASE WHEN EXISTS (SELECT 1 FROM pattern_judgments jx WHERE jx.dataset = {ds}) "
+            f"THEN {problem_lines} > 0 AND {j}.p_problem >= 0.5 ELSE {error_lines} > 0 END)")
+
+
+def judged(dataset: Optional[str]) -> bool:
+    """Whether the dataset's patterns carry Jev judgments (False → problem tools use the level rule)."""
+    return dataset is None or bool(query("SELECT 1 AS x FROM pattern_judgments WHERE dataset = %(d)s LIMIT 1",
+                                         {"d": dataset}))
+
+
+def judged_note(dataset: Optional[str]) -> list[str]:
+    """[] or the hint every problem-ranking result carries for an unjudged dataset."""
+    if judged(dataset):
+        return []
+    return [f"{dataset} has no Jev judgments (added without an AI key): problem = a pattern with error-or-worse / "
+            "WARN / 5xx lines, not a judged real fault (diagnostic dumps and corrected errors may be included; lines "
+            "without a level are not counted). Say so in the answer."]
+
+
 def filters_sql(f: dict) -> tuple[str, dict]:
     """Equality / time-range filters → (`AND ...` clause, bound params). Only non-None values are applied."""
     clauses, params = [], {}

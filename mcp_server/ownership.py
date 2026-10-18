@@ -29,8 +29,8 @@ def owner_of(
     Caveats: teams outside the curated table come from data/area_teams.csv and are generic, not a real org chart;
     an inferred owner below 0.6 confidence is never stored (the component shows as unowned); a dispute is a flag
     to check the table, not a correction.
-    Example: owner_of(dataset, component) with a component from list_values(dataset, 'component').
-    Next: ownership_gaps(dataset) for every unowned / inferred / disputed component; top_patterns(team=…) for that
+    Example: owner_of(dataset=<dataset>, component=<a value from list_values(field='component')>)
+    Next: ownership_gaps() for every unowned / inferred / disputed component; top_patterns(team=…) for that
     team's recurring problems.
     """
     t0 = time.perf_counter()
@@ -42,7 +42,7 @@ def owner_of(
     rows = query(sql, p)
     hints = []
     if not rows:
-        hints.append(f"No lines with component {component!r} in {dataset}; valid values: list_values(dataset, "
+        hints.append(f"No lines with component {component!r} in {dataset}; valid values: list_values(field="
                      "'component').")
     elif rows[0]["team"] is None:
         rows[0]["team"] = "unowned"
@@ -74,8 +74,8 @@ def ownership_gaps(
     confident Jev hints), team, source, confidence, disputed_by, lines, patterns; plus totals per kind with their
     share of the dataset's lines.
     Caveats: components with a curated owner and no dispute are not listed; lines are log entries, not incidents.
-    Example: ownership_gaps(dataset)
-    Next: owner_of(dataset, component) for the evidence of one row; top_patterns(team=…) to see what an uncertain
+    Example: ownership_gaps(dataset=<dataset>, min_confidence=0.8)
+    Next: owner_of(component) for the evidence of one row; top_patterns(team=…) to see what an uncertain
     team would own.
     """
     t0 = time.perf_counter()

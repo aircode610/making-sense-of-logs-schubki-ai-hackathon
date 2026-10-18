@@ -52,8 +52,14 @@ def similar_patterns(
     # pattern_id is selected with emb on purpose: projecting the vector column alone returned no rows (plan 011)
     src = query("SELECT pattern_id, emb FROM pattern_index WHERE dataset = %(d)s AND pattern_id = %(p)s",
                 {"d": dataset, "p": pattern_id})
-    if not src or src[0]["emb"] is None:
-        raise ValueError("No stored embedding for this pattern (scripts/embed_patterns.py).")
+    if not src:
+        raise ValueError(f"No pattern {pattern_id} in {dataset} (pattern ids come from search_logs / top_patterns rows).")
+    if src[0]["emb"] is None:  # dataset added without an embedding key (plan 016): say so, point to the lexical path
+        return envelope("similar_patterns", dict(dataset=dataset, pattern_id=pattern_id, k=k, any_dataset=any_dataset),
+                        [], dict(dataset=dataset, pattern_id=pattern_id), scope=f"{dataset}; no template embeddings",
+                        rows=[], t0=t0, total_matches=0, truncated=False,
+                        hints=["This dataset has no template embeddings (added without GOOGLE_API_KEY): use "
+                               "find_patterns(text=<words of the template>, mode='lexical') for look-alike patterns."])
     v = _vec_literal(src[0]["emb"])
     filt = "" if any_dataset else f"WHERE dataset @@ {lit(dataset)}"
     # two steps (vector first, then a constant probe) so the IVF index serves the kNN

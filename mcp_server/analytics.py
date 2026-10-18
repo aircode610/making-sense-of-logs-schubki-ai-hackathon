@@ -8,7 +8,8 @@ from typing import Annotated, Literal, Optional
 
 from pydantic import Field
 
-from core import MAX_ROWS, Dataset, DatasetOpt, check_dataset, durations_in, envelope, query, render
+from core import (MAX_ROWS, Dataset, DatasetOpt, check_dataset, durations_in, envelope, is_problem, judged_note, query,
+                  render)
 from outliers import VALUE
 
 Start = Annotated[Optional[datetime], Field(description="Inclusive start (default: the dataset's first line).")]
@@ -17,7 +18,7 @@ Unit = Annotated[Literal["bursts", "lines"], Field(
     description="'bursts' = recurrences of a pattern (> 30 min apart), the incident-like unit; 'lines' = log entries.")]
 # Same rule as priority_table / top_patterns: stored Jev p_problem (max(fault × (1 − dump), threat), load/96) AND the
 # pattern has problem-level lines (error-or-worse, WARN, HTTP 5xx or no level).
-PROBLEM_J = "j.p_problem >= 0.5 AND p.problem_lines > 0"
+PROBLEM_J = is_problem("j", "p.problem_lines", "p.error_lines", "p.dataset")  # unjudged dataset: level rule (plan 016)
 OWN = "LEFT JOIN ownership o ON o.dataset = {t}.dataset AND o.component = {t}.component"
 
 
@@ -88,6 +89,7 @@ def rollup(
                     scope=f"{dataset or 'all datasets'}, {start or 'corpus start'} → {end or 'corpus end'}; unit = {unit}"
                           + ("; problem patterns only (Jev)" if problem_only else ""),
                     rows=rows[:limit], t0=t0, total_matches=rows[0][unit] if rows else 0, truncated=truncated,
+                    hints=judged_note(dataset) if problem_only and dataset else [],
                     note="level = number of rolled-up columns; the first row is the grand total")
 
 
@@ -146,7 +148,8 @@ def heatmap(
                     [render(top_sql, params), render(col_sql, params), render(sql, params)], f,
                     scope=f"{dataset}, {start or 'corpus start'} → {end or 'corpus end'}; cell = {unit}"
                           + ("; problem patterns only (Jev)" if problem_only else ""),
-                    rows=out, t0=t0, total_matches=sum(r["total"] for r in out), truncated=False, columns=colnames)
+                    rows=out, t0=t0, total_matches=sum(r["total"] for r in out), truncated=False, columns=colnames,
+                    hints=judged_note(dataset) if problem_only else [])
 
 
 def reliability_trend(
@@ -208,7 +211,7 @@ def reliability_trend(
     return envelope("reliability_trend", dict(bucket=bucket, by_team=by_team, **f), sqls, f,
                     scope=f"{dataset}, {lo} → {hi}; problem bursts (Jev real-fault patterns) per {bucket}",
                     rows=series, t0=t0, total_matches=st["total"], truncated=False, stats=st, teams=teams,
-                    reading=reading,
+                    reading=reading, hints=judged_note(dataset),
                     reading_rule="slope < 0 and second-half mean < first-half mean → improving; both > → worsening; "
                                  "only when the half means differ by > 2·sqrt((a+b)/buckets_per_half) and > 20 %; "
                                  "else no clear change")
@@ -316,7 +319,7 @@ def team_risk(
                     dict(dataset=dataset, team=team, start=s, end=e),
                     scope=pt["scope"] + f"; team {team}; ranks are among the top 50 items of all teams",
                     rows=items, t0=t0, total_matches=roll["problem_patterns"], truncated=roll["problem_patterns"] > len(items),
-                    rollup=roll, team_slope=slope, priority_evidence_id=pt["evidence_id"],
+                    rollup=roll, team_slope=slope, priority_evidence_id=pt["evidence_id"], hints=judged_note(dataset),
                     unknown="Cost, downtime, customer impact and root cause are not in these logs.")
 
 

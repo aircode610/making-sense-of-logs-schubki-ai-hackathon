@@ -122,11 +122,11 @@ CREATE TABLE pattern_templates (
 );
 
 -- Typed values in a message, generic across formats (plan 011): IPv4, UUID, filesystem path, URL.
-CREATE OR REPLACE MACRO extract_entities(b) AS list_distinct(list_concat(
+CREATE OR REPLACE MACRO extract_entities(b) AS list_sort(list_distinct(list_concat(
     list_transform(regexp_extract_all(coalesce(b, ''), '(?:^|[^\d.])(\d{1,3}(?:\.\d{1,3}){3})(?:[^\d.]|$)', 1), x -> 'ip:' || x),
     list_transform(regexp_extract_all(coalesce(b, ''), '[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}'), x -> 'uuid:' || lower(x)),
     list_transform(regexp_extract_all(coalesce(b, ''), '(?:^|[\s=:(\[''"])((?:/[\w.\-]+){2,})', 1), x -> 'path:' || x),
-    list_transform(regexp_extract_all(coalesce(b, ''), 'https?://[^\s"''<>]+'), x -> 'url:' || x)));
+    list_transform(regexp_extract_all(coalesce(b, ''), 'https?://[^\s"''<>]+'), x -> 'url:' || x))));  -- sorted: list_distinct order varies run to run
 
 -- Generic template mask for new datasets (plan 011; BGL / OpenStack keep their own masks so pattern ids and stored
 -- judgments stay valid). Most specific first, then merge runs of masks and squeeze spaces.

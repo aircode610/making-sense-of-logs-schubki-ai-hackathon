@@ -8,7 +8,7 @@ from typing import Annotated, Literal, Optional
 
 from pydantic import Field
 
-from core import (MAX_ROWS, Dataset, ObjectId, RequestId, check_dataset, envelope, filters_sql, query, render,
+from core import (MAX_ROWS, Dataset, ObjectId, RequestId, check_dataset, envelope, filters_sql, judged_note, query, render,
                   tsquery_sql)
 
 PatternId = Annotated[int, Field(description="Log pattern id: a kind of message (from search_logs rows, top_patterns, "
@@ -218,7 +218,9 @@ def whats_new(
     t0 = time.perf_counter()
     check_dataset(dataset)
     params = {"d": dataset, "s": start, "e": end}
-    pf = "AND j.p_problem >= 0.5" if problem_only else ""
+    # judged: Jev alone (as before); never-judged dataset: problem-level lines (plan 016)
+    pf = ("AND (j.p_problem >= 0.5 OR (p.error_lines > 0 AND NOT EXISTS (SELECT 1 FROM pattern_judgments jx "
+          "WHERE jx.dataset = p.dataset)))") if problem_only else ""
     sql = (f"SELECT p.pattern_id, p.template, p.component, coalesce(o.team, 'unowned') AS team, p.first_ts, "
            f"(SELECT count(*) FROM bursts b WHERE b.dataset = p.dataset AND b.pattern_id = p.pattern_id AND b.start_ts < %(e)s) AS bursts, "
            f"(SELECT count(*) FROM logs l WHERE l.dataset = p.dataset AND l.pattern_id = p.pattern_id AND l.ts < %(e)s) AS lines, "
@@ -231,7 +233,7 @@ def whats_new(
                     [render(sql, params)], dict(dataset=dataset, start=start, end=end),
                     scope=f"{dataset}, patterns first seen {start} → {end} (first occurrence in the whole dataset); "
                           f"counts within the period", rows=rows[:limit], t0=t0, total_matches=len(rows),
-                    truncated=len(rows) > limit)
+                    truncated=len(rows) > limit, hints=judged_note(dataset) if problem_only else [])
 
 
 def _episodes_key(scope: str) -> tuple[str, str]:
