@@ -3,6 +3,12 @@
 Type each block into Claude Code, started with `claude` in the repo (approve the `logs` server when asked).
 Every step was tested; numbers you should see are given for BGL so you know it worked.
 
+## 0 · Start from zero (optional)
+```bash
+src/scripts/clean_slate.sh        # empty database, no old session reports (--raw: also re-download the logs)
+claude                            # a NEW session, not /resume
+```
+
 ## 0 · Setup and loading
 ```text
 What is the setup status?

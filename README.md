@@ -43,6 +43,11 @@ included: `uv run python -m loader load base --fresh` (about 2 min; needs a key,
 
 Apple Silicon runs the amd64 image under emulation: it works, slower.
 
+**Start from zero** (e.g. before a demo): `src/scripts/clean_slate.sh` deletes this project's database volume and local
+run files and starts an empty SereneDB (`--raw` also deletes downloaded logs). Needed because Docker names the volume
+after the folder: a new clone with the same folder name reuses the old, already loaded database. Then start a **new**
+`claude` session (not `/resume`).
+
 ## Keys (`.env`)
 **None are needed to try it:** the base corpus loads with its committed Jev outputs, and every tool works.
 Keys only matter when you load data **live** (`--fresh`, your own log files, other Loghub sets) or run our agent / the eval.
