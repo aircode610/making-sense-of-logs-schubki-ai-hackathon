@@ -14,6 +14,8 @@ run load/20_openstack.sql
 [ -f data/raw/zookeeper/Zookeeper.log ] && run load/30_zookeeper.sql
 [ -f data/raw/apache/Apache.log ] && run load/31_apache.sql
 [ -f data/raw/ssh/SSH.log ] && run load/32_ssh.sql
+[ -f data/raw/hdfs/HDFS.log ] && run load/33_hdfs.sql
+[ "${LOAD_OTEL:-0}" = "1" ] && run load/40_otel_demo.sql   # remote slice over HTTPS (needs internet)
 for f in load/90_publish.sql load/94_ownership.sql load/95_patterns_episodes.sql load/96_pattern_judgments.sql \
          load/97_pattern_vectors.sql load/98_macros.sql; do
   run "$f"

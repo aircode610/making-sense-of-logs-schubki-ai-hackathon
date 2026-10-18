@@ -15,7 +15,7 @@ fi
 wc -l data/raw/BGL.log data/raw/openstack/*.log   # expect BGL 4,747,963; OpenStack 207,820 total
 
 # Extra Loghub datasets (plan 011: generality test; small, different formats). `--all` or name them:
-#   scripts/download_data.sh zookeeper apache ssh
+#   scripts/download_data.sh zookeeper apache ssh      (+ hdfs: 1.5 GB, 11M lines, the scale test)
 extra() {  # name, zenodo file
   [ -d "data/raw/$1" ] && return
   mkdir -p "data/raw/$1"
@@ -29,6 +29,12 @@ for ds in "$@"; do
     zookeeper) extra zookeeper Zookeeper.tar.gz ;;
     apache) extra apache Apache.tar.gz ;;
     ssh) extra ssh SSH.tar.gz ;;
+    hdfs)  # 1.5 GB zip, 11M lines: the scale test (not part of --all)
+      if [ ! -f data/raw/hdfs/HDFS.log ]; then
+        mkdir -p data/raw/hdfs
+        curl -L -o data/raw/hdfs/HDFS_v1.zip "https://zenodo.org/records/8196385/files/HDFS_v1.zip?download=1"
+        unzip -o -q data/raw/hdfs/HDFS_v1.zip -d data/raw/hdfs && rm data/raw/hdfs/HDFS_v1.zip
+      fi ;;
     *) echo "unknown dataset $ds" >&2; exit 1 ;;
   esac
 done

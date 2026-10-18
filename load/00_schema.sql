@@ -100,12 +100,15 @@ CREATE OR REPLACE MACRO extract_entities(b) AS list_distinct(list_concat(
 -- Generic template mask for new datasets (plan 011; BGL / OpenStack keep their own masks so pattern ids and stored
 -- judgments stay valid). Most specific first, then merge runs of masks and squeeze spaces.
 CREATE OR REPLACE MACRO mask_template(b) AS regexp_replace(regexp_replace(regexp_replace(regexp_replace(
-    regexp_replace(regexp_replace(regexp_replace(regexp_replace(regexp_replace(
+    regexp_replace(regexp_replace(regexp_replace(regexp_replace(regexp_replace(regexp_replace(regexp_replace(regexp_replace(
         coalesce(b, ''),
+        '([_=:])-(\d)', '\1\2', 'g'),                         -- signed ids (blk_-123 = blk_123 as a template)
         '[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}', '<UUID>', 'g'),
         'https?://[^\s"''<>]+', '<URL>', 'g'),
         '\d{1,3}(\.\d{1,3}){3}(:\d+)?', '<IP>', 'g'),
         '([0-9A-Fa-f]{2}:){3,}[0-9A-Fa-f]{1,2}', '<MAC>', 'g'),
+        '\b[A-Z0-9]*(?:[A-Z][A-Z0-9]*[0-9]|[0-9][A-Z0-9]*[A-Z])[A-Z0-9]*\b', '<ID>', 'g'),   -- L9ECAV7KIM, 2ZYFJ3GM2N
+        '\b[A-Za-z]+[0-9]{2,}[A-Za-z0-9]*\b', '<ID>', 'g'),                                    -- conn21234, worker17
         '(/[\w.\-<>]+){2,}/?', '<PATH>', 'g'),
         '(^|[^A-Za-z])(0x)?[0-9a-fA-F]{6,}', '\1<HEX>', 'g'),
         '(^|[^A-Za-z<])\d+(\.\d+)*', '\1<N>', 'g'),

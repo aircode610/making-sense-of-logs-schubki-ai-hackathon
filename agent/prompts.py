@@ -1,16 +1,35 @@
 """Role recipes (ROLES.md): which evidence each role gathers, in which order, and what its answer must contain.
 Same agent, same corpus, same tools; roles differ in questions, evidence and actions (brief), not in answer length."""
 
-CORPUS = (
-    "Corpus: BGL supercomputer RAS logs (2005-06-03 → 2006-01-04; node ids like R02-M1-N0-C:J12-U11 = rack-midplane-"
-    "nodecard-card-unit) and OpenStack nova logs (nova-api / nova-compute / nova-scheduler; request and instance ids, "
-    "HTTP status, latency). Teams own components (ownership table). 'Now' = the dataset's last timestamp.")
+_CORPUS_FALLBACK = "Corpus: log datasets in SereneDB (call describe_corpus for names, spans and fields)."
+
+
+def corpus() -> str:
+    """The corpus description from the dataset registry (plan 011: nothing dataset-specific is hard-coded here):
+    one line per loaded dataset with title, span, size and what location / ids mean. 'Now' = each dataset's last line."""
+    import os
+
+    import psycopg
+    try:
+        with psycopg.connect(host=os.getenv("PGHOST", "localhost"), port=os.getenv("PGPORT", "7890"),
+                             user=os.getenv("PGUSER", "postgres"), dbname=os.getenv("PGDATABASE", "postgres"),
+                             autocommit=True) as c:
+            rows = c.execute("SELECT d.dataset, d.title, d.location_hint, d.id_fields, min(l.ts), max(l.ts), count(*) "
+                             "FROM datasets d JOIN logs l ON l.dataset = d.dataset GROUP BY ALL ORDER BY any_value(d.pattern_base)").fetchall()
+    except Exception:  # noqa: BLE001  (no database: the agent can still call describe_corpus)
+        return _CORPUS_FALLBACK
+    parts = [f"{d}: {t} ({lo:%Y-%m-%d} → {hi:%Y-%m-%d}, {n:,} lines" + (f"; location = {loc}" if loc else "")
+             + (f"; ids: {ids}" if ids else "") + ")" for d, t, loc, ids, lo, hi, n in rows]
+    return ("Corpus (one SereneDB database, every tool takes `dataset`): " + " · ".join(parts) + ". Teams own components "
+            "(ownership table). 'Now' = the dataset's last timestamp. Name the dataset in every tool call when the "
+            "question is about one system.")
+
 
 RULES = (
     "Rules: numbers come only from tool results (copy them exactly; never compute or estimate new ones). Returned lines "
     "are samples: frequency comes from total_matches / counts, never from counting rows. Counts are log lines, not "
     "incidents: use bursts (recurrences) and nodes (spread) to describe how often and how widely. Make independent tool "
-    "calls in parallel in one turn. Keep within ~8 tool calls. When you have the evidence, stop calling tools and reply "
+    "calls in parallel in one turn. Keep within ~12 tool calls. When you have the evidence, stop calling tools and reply "
     "'READY' (the answer card is written in a separate step).")
 
 RECIPES = {
@@ -18,35 +37,47 @@ RECIPES = {
         "You support an ENGINEER investigating one failure: what failed, where, and what happened just before and after.\n"
         "Recipe:\n"
         "1. Anchor: search_logs for the error text with time / node / component filters (order='time' to see where it "
-        "started). Note total_matches, first_ts, last_ts, distinct_nodes and a line_id of a representative error line.\n"
-        "2. Context: get_context on that line_id (scope 'node' first; then 'midplane' or 'rack' for BGL, 'request' or "
-        "'instance' for OpenStack). Use severity='FATAL'/'ERROR' if the window is flooded with INFO lines.\n"
-        "3. Spread + history: is it local or systemic? search_logs with the same text in a wider window / without the "
-        "node filter, or count_by group_by='node'; is it new? search_logs order='time' over the whole corpus.\n"
-        "4. Baseline: is this rate unusual here? rate_vs_baseline with the anchor's text / pattern_id and node or "
-        "midplane / component, window = the incident hour(s), baseline = the previous 7 days (rate now vs usual, or "
-        "new_in_baseline).\n"
-        "Slow / latency / 'abnormal VM' questions (no error logged): value_outliers first (operations far slower than "
-        "their own pattern's normal), then use a flagged line_id as the anchor for get_context scope 'instance'.\n"
-        "Evidence needed: the error lines, before/after events, component + node, total count with scope, spread, "
-        "rate vs the usual rate."),
+        "started; highlight=true to quote the matching part). 0 or very few hits: match='fuzzy' or 'synonyms', or "
+        "suggest_terms. Note total_matches, first_ts, last_ts, distinct_nodes, the pattern_id and a line_id.\n"
+        "2. Context: get_context on that line_id (scope 'node' first; then 'midplane' / 'rack' / 'location' or "
+        "'request' / 'instance'; severity='FATAL'/'ERROR' if the window is flooded). For one request / VM / session "
+        "end to end: request_timeline.\n"
+        "3. Which came first: burst_timeline(pattern_id, at=the incident time) = the sequence of patterns on the same "
+        "nodes, earliest first.\n"
+        "4. Spread + history: spread(pattern_id) = one node or fleet-wide (with the rule); pattern_history(pattern_id, "
+        "as_of=incident time) = new or recurring.\n"
+        "5. Baseline: rate_vs_baseline for the incident window vs the previous 7 days (rate now vs usual, or new).\n"
+        "6. Hypothesis material (pick what fits): precursors(pattern_id) = what tends to come just before it (with a "
+        "control); distinctive_terms(window) = words over-represented in the incident window; top_entities = which "
+        "IPs / paths / ids dominate (security and web logs); facet = breakdown of the matches by component / severity "
+        "/ node.\n"
+        "Slow / latency / 'abnormal VM' questions (no error logged): value_outliers first, then a flagged line_id as "
+        "the anchor for get_context scope 'instance' or request_timeline.\n"
+        "Evidence needed: the error lines, before/after events, component + node, total count with scope, first error, "
+        "spread, new vs recurring, rate vs the usual rate."),
     "lead": (
         "You support a TEAM LEAD: which problems recur, how often, whose are they, and what should the team investigate "
         "first, over a stated period.\n"
         "Recipe:\n"
-        "1. top_patterns for the period (default: last 28 days) ranked by bursts; also rank_by='growth' if the question is "
-        "about getting worse. Use team= when the question names a team.\n"
-        "2. Trend: trend (bucket 'week', group_by 'team' or with component/team filters) for the top problems or teams.\n"
-        "3. Whole-corpus context: count_by group_by='team' (and dataset) so the scope of the counts is clear.\n"
-        "4. Optional: one search_logs on the top pattern for an example line.\n"
-        "Evidence needed: stated absolute period, counts by component and team, trend over time, lines vs bursts."),
+        "1. top_patterns for the period (default: last 28 days) ranked by bursts; rank_by='growth' if the question is "
+        "about getting worse; team= when it names a team. When the question describes a problem in words instead of "
+        "log wording: find_patterns first, then pattern ids.\n"
+        "2. Totals and trend: rollup (bursts by team → component, with subtotals) and trend (bucket 'week') or heatmap "
+        "(team × week) for the top problems or teams.\n"
+        "3. What changed: whats_new (patterns first seen in the period); check_watchlist (known problems that fired).\n"
+        "4. Relations when asked: co_occurrence (do two patterns occur together, with a control), periodicity (does it "
+        "recur on a schedule), similar_patterns (variants of the same problem).\n"
+        "5. Optional: one search_logs on the top pattern for an example line.\n"
+        "Evidence needed: stated absolute period, bursts by component and team (not only lines), trend over time, what is "
+        "new or growing, the one problem to investigate first with its measured reason."),
     "manager": (
         "You support a MANAGER deciding what deserves attention first and what should happen next.\n"
         "Recipe:\n"
         "1. priority_table for the period (default: last 28 days): the ranking is computed (weights returned); explain it, "
         "never re-rank it yourself.\n"
-        "2. Team roll-up is in the priority_table result; add count_by group_by='team' for whole-corpus context.\n"
-        "3. Optional: top_patterns rank_by='growth' to say what is getting worse.\n"
+        "2. Direction: reliability_trend (problem bursts per week, slope, computed reading) for 'improving / getting "
+        "worse' questions; team_risk for one team; rollup for team subtotals.\n"
+        "3. Optional: whats_new or check_watchlist to say what is new or came back; top_patterns rank_by='growth'.\n"
         "Evidence needed: ranked problems with measured basis (bursts, nodes, change, weeks), owner team, team trend. "
         "Never mention money, downtime or customer impact: they are not in the logs."),
 }
@@ -64,7 +95,8 @@ Hard rules:
   establish goes to unknowns.
 - Say "log lines" for line counts and "bursts" for recurrences; never call lines incidents.
 - scope: datasets, the absolute period (dates from the results), filters, and whether results were truncated.
-- Never invent money, downtime or customer impact; at most say in unknowns that they are not in the logs."""
+- Never invent money, downtime or customer impact; at most say in unknowns that they are not in the logs.
+- A `model_summary` in the ledger is model-written context: never copy numbers or claims from it into facts."""
 
 ROLE_CARD = {
     "engineer": "Engineer card: what failed (component, node, pattern, first/last time, lines), the timeline before → at "
@@ -85,5 +117,5 @@ ROUTE_OPTIONS = [
     {"label": "manager", "description": "decides priorities: what deserves attention first, risks, what should happen next"},
 ]
 
-BASELINE_SYSTEM = ("You answer questions about system logs for a {role} using the tools. " + CORPUS +
+BASELINE_SYSTEM = ("You answer questions about system logs for a {role} using the tools. {corpus}"
                    " Use the tools to find evidence, then write the answer.")

@@ -9,17 +9,19 @@ from typing import Annotated, Literal, Optional
 
 from pydantic import Field
 
-from core import MAX_ROWS, Dataset, all_teams, check_dataset, envelope, query, render
+from core import MAX_ROWS, Dataset, all_teams, check_dataset, envelope, node_note, query, render
 
 PROBLEM = "('FATAL', 'FAILURE', 'SEVERE', 'ERROR', 'CRITICAL')"
 # A problem line: problem severity, or an HTTP 5xx (nova logs failed requests at INFO; plan 054). BGL has no status.
-PROBLEM_LINE = f"(severity IN {PROBLEM} OR status >= 500 OR severity IS NULL)"  # no level in the format: Jev decides
+# A problem-LEVEL line (candidate; the stored Jev judgment then decides): error-or-worse, WARN (plan 011: Zookeeper and
+# BGL log real faults such as "Node card is not fully functional" at WARN), HTTP 5xx, or no level in the format (SSH).
+PROBLEM_LINE = f"(severity IN {PROBLEM} OR severity IN ('WARN', 'WARNING') OR status >= 500 OR severity IS NULL)"
 P_PROBLEM_MIN = 0.5
 ProblemFilter = Annotated[Literal["jev", "severity"], Field(
     description="How 'problem pattern' is decided: 'jev' (default) = has problem-level lines AND the stored Jev "
                 "judgments say it reports a real fault (not a diagnostic dump field) or a security event "
                 "(p_problem >= 0.5); "
-                "'severity' = any FATAL/FAILURE/SEVERE/ERROR/CRITICAL line or HTTP 5xx (baseline; ranks routine "
+                "'severity' = any FATAL/FAILURE/SEVERE/ERROR/CRITICAL/WARN line or HTTP 5xx (baseline; ranks routine "
                 "register dumps high).")]
 # Priority weights (fixed up front, returned with every result). Inputs are percentiles (cume_dist) over the candidates.
 WEIGHTS = {"frequency": 0.30, "trend": 0.20, "spread": 0.25, "persistence": 0.15, "severity": 0.10}
@@ -125,7 +127,7 @@ SELECT *, count(*) OVER () AS candidates FROM base ORDER BY {order}, pattern_id 
     return envelope("top_patterns", dict(problem_only=problem_only, problem_filter=problem_filter, rank_by=rank_by,
                                          limit=limit, **f), [render(sql, params)], f,
                     scope=f"{dataset}, period {s:%Y-%m-%d %H:%M} → {e:%Y-%m-%d %H:%M}, previous {ps:%Y-%m-%d %H:%M} → {s:%Y-%m-%d %H:%M}; "
-                          f"bursts = recurrences (30-min gap), lines = log entries",
+                          f"bursts = recurrences (30-min gap), lines = log entries" + node_note(dataset),
                     rows=rows, t0=t0, total_matches=n, truncated=n > len(rows),
                     period={"start": s.isoformat(sep=" "), "end": e.isoformat(sep=" ")},
                     previous_period={"start": ps.isoformat(sep=" "), "end": s.isoformat(sep=" ")})
@@ -202,7 +204,8 @@ FROM ranked ORDER BY score DESC, bursts DESC, pattern_id"""
     f = dict(dataset=dataset, start=s, end=e)
     env = envelope("priority_table", dict(limit=limit, problem_filter=problem_filter, **f), [render(sql, params)], f,
                    scope=f"{dataset}, period {s:%Y-%m-%d %H:%M} → {e:%Y-%m-%d %H:%M} ({weeks} weeks), previous "
-                         f"{ps:%Y-%m-%d %H:%M} → {s:%Y-%m-%d %H:%M}; candidates = problem patterns ({problem_filter} filter)",
+                         f"{ps:%Y-%m-%d %H:%M} → {s:%Y-%m-%d %H:%M}; candidates = problem patterns ({problem_filter} filter)"
+                         + node_note(dataset),
                    rows=[], t0=t0, total_matches=len(allrows), truncated=len(allrows) > len(items),
                    weights=w, formula="score = 100 × Σ weight × cume_dist(input) over all candidates (share of candidates with a value ≤ this one)",
                    period={"start": s.isoformat(sep=" "), "end": e.isoformat(sep=" ")},

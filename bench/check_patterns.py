@@ -29,7 +29,7 @@ def per_pattern(sql):
 
 lines = per_pattern("SELECT pattern_id, count(*) AS v FROM logs WHERE dataset='bgl' AND ts >= %(s)s AND ts < %(e)s GROUP BY 1")
 problem = per_pattern("SELECT pattern_id, count(*) AS v FROM logs WHERE dataset='bgl' AND ts >= %(s)s AND ts < %(e)s "
-                      "AND severity IN ('FATAL','FAILURE','SEVERE','ERROR','CRITICAL') GROUP BY 1")
+                      "AND (severity IN ('FATAL','FAILURE','SEVERE','ERROR','CRITICAL','WARN','WARNING') OR severity IS NULL) GROUP BY 1")
 nodes = per_pattern("SELECT pattern_id, count(DISTINCT node) AS v FROM logs WHERE dataset='bgl' AND ts >= %(s)s AND ts < %(e)s GROUP BY 1")
 weeks = per_pattern("SELECT pattern_id, count(DISTINCT date_trunc('week', ts)) AS v FROM logs WHERE dataset='bgl' "
                     "AND ts >= %(s)s AND ts < %(e)s GROUP BY 1")

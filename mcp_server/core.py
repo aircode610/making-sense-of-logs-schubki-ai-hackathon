@@ -77,6 +77,9 @@ def registry() -> dict:
                        f"GROUP BY 1, 2 ORDER BY 1, 3 DESC", {}):
             if r["dataset"] in out:
                 out[r["dataset"]].setdefault(col + "s", []).append(r["v"])
+    for r in query("SELECT dataset, count(node) > 0 AS has_node FROM logs GROUP BY 1", {}):
+        if r["dataset"] in out:
+            out[r["dataset"]]["has_node"] = r["has_node"]
     for r in query("SELECT dataset, team FROM ownership GROUP BY 1, 2 ORDER BY 1, 2", {}):
         if r["dataset"] in out:
             out[r["dataset"]].setdefault("teams", []).append(r["team"])
@@ -122,6 +125,16 @@ def corpus_text() -> str:
         return " · ".join(parts)
     except Exception:  # noqa: BLE001
         return "datasets: see describe_corpus"
+
+
+def node_note(dataset: Optional[str]) -> str:
+    """'' or a warning that `nodes` is 0 because the dataset logs no node / host (spread is unknown, not 'one node')."""
+    try:
+        if dataset and registry().get(dataset, {}).get("has_node") is False:
+            return f"; {dataset} logs no node / host, so nodes = 0 means unknown spread"
+    except Exception:  # noqa: BLE001
+        pass
+    return ""
 
 
 def check_dataset(dataset: Optional[str]) -> Optional[str]:

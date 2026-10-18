@@ -35,6 +35,9 @@ def missing_tools(role: str, tools_used: set[str]) -> list[str]:
     return [" or ".join(sorted(g)) for g in REQUIRED_TOOLS[role] if not g & tools_used]
 
 
+SKIP_KEYS = {"model_summary", "summary_source", "warning"}  # model-written text (summarize_burst) is not evidence
+
+
 def _ledger_values(obj, nums: set, texts: list):
     if isinstance(obj, bool) or obj is None:
         return
@@ -45,8 +48,9 @@ def _ledger_values(obj, nums: set, texts: list):
         for m in NUM.finditer(obj):
             nums.add(_to_float(m.group())[0])
     elif isinstance(obj, dict):
-        for v in obj.values():
-            _ledger_values(v, nums, texts)
+        for k, v in obj.items():
+            if k not in SKIP_KEYS:
+                _ledger_values(v, nums, texts)
     elif isinstance(obj, list):
         for v in obj:
             _ledger_values(v, nums, texts)

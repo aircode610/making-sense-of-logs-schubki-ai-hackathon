@@ -122,8 +122,8 @@ for ds in DATASETS:
     try:
         r = run(analytics.reliability_trend, ds, bucket="day")
         ok(f"{ds} reliability_trend total = problem bursts", r["total_matches"], one(
-            "SELECT count(*) FROM bursts b JOIN pattern_judgments j USING (dataset, pattern_id) WHERE b.dataset = %(d)s "
-            "AND j.p_problem >= 0.5", {"d": ds}))
+            "SELECT count(*) FROM bursts b JOIN pattern_judgments j USING (dataset, pattern_id) JOIN patterns p "
+            "USING (dataset, pattern_id) WHERE b.dataset = %(d)s AND j.p_problem >= 0.5 AND p.problem_lines > 0", {"d": ds}))
     except ValueError as e:
         print(f"skip {ds} reliability_trend: {e}")
 

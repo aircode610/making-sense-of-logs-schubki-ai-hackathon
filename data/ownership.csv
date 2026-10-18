@@ -29,3 +29,24 @@ apache,mod_jk,app-integration,Tomcat connector (mod_jk)
 apache,mod_jk2,app-integration,Tomcat connector (mod_jk2)
 apache,jk2_init(),app-integration,Tomcat connector child initialisation
 ssh,*,security-ops,"sshd: authentication, sessions, break-in attempts"
+hdfs,*,storage-platform,"HDFS: block storage, replication and verification (default)"
+hdfs,dfs.FSNamesystem,namenode-platform,"NameNode namespace: block allocation, replication decisions, block maps"
+hdfs,dfs.DataNode,datanode-ops,DataNode daemon
+hdfs,dfs.DataNode$DataXceiver,datanode-ops,DataNode block transfer (receive / serve)
+hdfs,dfs.DataNode$PacketResponder,datanode-ops,DataNode write pipeline acknowledgements
+hdfs,dfs.DataBlockScanner,datanode-ops,DataNode block verification
+otel,*,shop-platform,"OpenTelemetry demo webshop services (default)"
+otel,frontend,web-frontend,Web frontend and API gateway of the shop
+otel,cart,checkout-team,Shopping cart service
+otel,checkout,checkout-team,Checkout orchestration
+otel,payment,payments-team,Payment service
+otel,currency,payments-team,Currency conversion
+otel,shipping,fulfilment-team,Shipping quotes and orders
+otel,quote,fulfilment-team,Shipping quote service
+otel,email,fulfilment-team,Order confirmation e-mails
+otel,recommendation,catalog-team,Product recommendations
+otel,product-catalog,catalog-team,Product catalog
+otel,ad,catalog-team,Ad service
+otel,kafka,shop-platform,Event bus
+otel,accounting,payments-team,Accounting consumer
+otel,fraud-detection,payments-team,Fraud detection consumer

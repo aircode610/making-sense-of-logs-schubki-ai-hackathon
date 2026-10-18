@@ -16,7 +16,7 @@ CREATE OR REPLACE MACRO problem_patterns(ds, s, e) AS TABLE
     FROM bursts b JOIN patterns p ON p.dataset = b.dataset AND p.pattern_id = b.pattern_id
     JOIN pattern_judgments j ON j.dataset = b.dataset AND j.pattern_id = b.pattern_id
     LEFT JOIN ownership o ON o.dataset = p.dataset AND o.component = p.component
-    WHERE b.dataset = ds AND b.start_ts >= s AND b.start_ts < e AND j.p_problem >= 0.5
+    WHERE b.dataset = ds AND b.start_ts >= s AND b.start_ts < e AND j.p_problem >= 0.5 AND p.problem_lines > 0
     GROUP BY ALL ORDER BY bursts DESC, lines DESC;
 -- problem bursts per team, this period vs the previous period of equal length
 CREATE OR REPLACE MACRO team_problem_bursts(ds, s, e) AS TABLE
@@ -26,7 +26,7 @@ CREATE OR REPLACE MACRO team_problem_bursts(ds, s, e) AS TABLE
     FROM bursts b JOIN patterns p ON p.dataset = b.dataset AND p.pattern_id = b.pattern_id
     JOIN pattern_judgments j ON j.dataset = b.dataset AND j.pattern_id = b.pattern_id
     LEFT JOIN ownership o ON o.dataset = p.dataset AND o.component = p.component
-    WHERE b.dataset = ds AND b.start_ts >= s - (e - s) AND b.start_ts < e AND j.p_problem >= 0.5
+    WHERE b.dataset = ds AND b.start_ts >= s - (e - s) AND b.start_ts < e AND j.p_problem >= 0.5 AND p.problem_lines > 0
     GROUP BY 1 ORDER BY bursts DESC;
 -- one pattern's bursts per week over the whole dataset
 CREATE OR REPLACE MACRO pattern_weeks(ds, pid) AS TABLE

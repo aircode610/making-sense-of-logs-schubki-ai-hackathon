@@ -114,7 +114,7 @@ def failed_run(q: dict, kind: str, error: str) -> dict:
     return {"id": q["id"], "role": q["role"], "kind": kind, "error": error,
             "E1_correct": 0.0 if q.get("golden") else None, "E1_missed": ["(run failed)"],
             "E2a_ledger_grounded": 0.0, "E2a_numbers": 0, "E2a_unverified": [],
-            "E2b_citation_grounded": 0.0 if kind == "ours" else None,
+            "E2b_citation_grounded": 0.0 if kind == "ours" else None, "E2d_jev_support": 0.0 if kind == "ours" else None,
             "E3_separation": {"facts": False, "hypotheses_labelled": False, "unknowns": False},
             "E5_forbidden": [], "E5_must_not": [], "mentions": 0.0 if q.get("must_mention") else None,
             "E7_required_tools": False, "E7_first_tool": False, "E8_tool_calls": 0, "E8_elapsed_s": None,
@@ -137,6 +137,9 @@ def score_run(q: dict, run: dict) -> dict:
         "E2a_ledger_grounded": lv / ln if ln else 1.0, "E2a_numbers": ln, "E2a_unverified": lbad,
         "E2b_citation_grounded": (run["check"]["numbers_verified"] / run["check"]["numbers_total"]
                                   if run.get("check") and run["check"]["numbers_total"] else None),
+        "E2d_jev_support": (round(sum(x for x in sup if x is not None) / len([x for x in sup if x is not None]), 3)
+                            if (sup := (run.get("check") or {}).get("jev_support") or []) and any(x is not None for x in sup)
+                            else None),
         "E3_separation": separation(run), "E5_forbidden": forbidden_claims(run), "E5_must_not": must_not_hits(q, run),
         "mentions": mh / mn if mn else None,
         "E7_required_tools": sel["required_called"], "E7_first_tool": sel["first_tool_ok"],

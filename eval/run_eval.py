@@ -89,7 +89,7 @@ def deterministic(inputs: dict, outputs: dict, reference_outputs: dict) -> dict:
         return {"results": [{"key": "run_failed", "score": 1.0}]}
     s = score_run(reference_outputs["q"], outputs)
     res = [{"key": k, "score": float(v)} for k, v in s.items()
-           if k.startswith(("E1_correct", "E2a_ledger", "E2b_", "E7_", "E8_tool", "E8_elapsed")) and isinstance(v, (int, float, bool))]
+           if k.startswith(("E1_correct", "E2a_ledger", "E2b_", "E2d_", "E7_", "E8_tool", "E8_elapsed")) and isinstance(v, (int, float, bool))]
     # LangSmith caps feedback scores at 1e5: tokens as thousands
     res += [{"key": f"E8_ktokens_{d}", "score": round(s[f"E8_tokens_{d}"] / 1000, 1)} for d in ("in", "out") if s.get(f"E8_tokens_{d}")]
     res.append({"key": "E5_forbidden_claims", "score": len(s["E5_forbidden"]), "comment": ", ".join(s["E5_forbidden"])})
@@ -341,6 +341,7 @@ def aggregate(per_run: list[dict], pairwise: dict, e4: list[dict]) -> dict:
                 "E1_correct": _mean(r["E1_correct"] for r in rs),
                 "E2a_ledger_grounded": _mean(r["E2a_ledger_grounded"] for r in rs),
                 "E2b_citation_grounded": _mean(r["E2b_citation_grounded"] for r in rs),
+                "E2d_jev_support": _mean(r.get("E2d_jev_support") for r in rs),
                 "E2c_claim_support": j("E2c_claim_support"),
                 "E3_causes_as_fact": j("E3_causes_as_fact"),
                 "E3_unknowns_stated": _mean(r["E3_separation"]["unknowns"] for r in rs),
@@ -368,7 +369,8 @@ def aggregate(per_run: list[dict], pairwise: dict, e4: list[dict]) -> dict:
 
 
 ROWS = [("error_rate", "runs failed (scored 0)", "↓"), ("E1_correct", "E1 golden facts in answer (incl. E6 ranking order)", "↑"), ("E2a_ledger_grounded", "E2a numbers found in the run's results", "↑"),
-        ("E2b_citation_grounded", "E2b numbers found in the cited result", "↑"), ("E2c_claim_support", "E2c claims supported (judge)", "↑"),
+        ("E2b_citation_grounded", "E2b numbers found in the cited result", "↑"),
+        ("E2d_jev_support", "E2d Jev: fact supported by its evidence (mean p)", "↑"), ("E2c_claim_support", "E2c claims supported (judge)", "↑"),
         ("E3_causes_as_fact", "E3 causes stated as fact (judge, per answer)", "↓"), ("E3_unknowns_stated", "E3 unknowns stated", "↑"),
         ("E5_forbidden_runs", "E5 answers with invented impact (regex)", "↓"), ("E5_judge_invented_impact", "E5 invented impact (judge)", "↓"),
         ("E5_must_not_runs", "E5 answers with a must_not term", "↓"),

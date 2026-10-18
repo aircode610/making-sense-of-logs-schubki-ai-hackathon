@@ -59,8 +59,11 @@ def render(card: dict, check: Optional[dict] = None, ledger: Optional[dict] = No
                 f"{check['numbers_verified']}/{check['numbers_total']} · checklist "
                 f"{'passed' if not check['checklist_missing'] else 'missing: ' + ', '.join(check['checklist_missing'])}", ""]
     out.append("### Facts")
+    support = (check or {}).get("jev_support") or []
     for i, f in enumerate(card["facts"]):
         mark = " ⚠ unverified" if i in bad else ""
+        if i < len(support) and support[i] is not None:
+            mark += f" · Jev support {support[i]:.2f}"
         out.append(f"- {f['statement']} `[{', '.join(f['evidence_ids'])}]`{mark}")
     if card.get("ranked"):
         out += ["", "### Ranked"]

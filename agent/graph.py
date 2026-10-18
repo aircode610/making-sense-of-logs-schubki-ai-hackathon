@@ -36,16 +36,24 @@ from typing_extensions import NotRequired
 from agent import prompts
 from agent.card import AnswerCard, Role
 from agent.checker import check_card, feedback, ledger_json, missing_tools
+from agent.support import jev_support
 
-MAX_TOOL_CALLS = 10      # whole run: coverage stops nudging beyond this
-TURN_TOOL_CALLS = 8      # per gather turn (ToolCallLimitMiddleware run_limit resets on each nudge)
+MAX_TOOL_CALLS = 14      # whole run: coverage stops nudging beyond this (plan 011: more atomic tools)
+TURN_TOOL_CALLS = 12     # per gather turn (ToolCallLimitMiddleware run_limit resets on each nudge)
 MAX_NUDGES = 2
 MAX_REVISIONS = 1
+# Per-role tool subsets (plan 011): atomic tools, each role sees only the ones its recipe uses (selection stays sharp).
 ROLE_TOOLS = {
-    "engineer": ["search_logs", "get_context", "count_by", "trend", "rate_vs_baseline", "value_outliers"],
-    "lead": ["top_patterns", "trend", "count_by", "search_logs"],
-    "manager": ["priority_table", "count_by", "top_patterns", "trend"],
+    "engineer": ["describe_corpus", "search_logs", "get_context", "suggest_terms", "facet", "rate_vs_baseline",
+                 "value_outliers", "burst_timeline", "pattern_history", "spread", "precursors", "distinctive_terms",
+                 "top_entities", "request_timeline"],
+    "lead": ["describe_corpus", "top_patterns", "trend", "count_by", "rollup", "heatmap", "whats_new", "check_watchlist",
+             "find_patterns", "similar_patterns", "co_occurrence", "periodicity", "search_logs"],
+    "manager": ["describe_corpus", "priority_table", "reliability_trend", "team_risk", "rollup", "count_by",
+                "top_patterns", "trend", "whats_new", "check_watchlist"],
 }
+# The baseline (brief's reference design) gets every read-only corpus tool; workspace / remote write tools excluded.
+BASELINE_EXCLUDE = {"create_focus_index", "drop_focus_index", "remote_index", "explain_tool"}
 
 
 def make_model():
@@ -98,7 +106,7 @@ class CoverageMiddleware(AgentMiddleware[GatherState]):
 
 def build_gatherer(role: str, tools: list[BaseTool], model):
     by_name = {t.name: t for t in tools}
-    system = prompts.GATHER_SYSTEM.format(recipe=prompts.RECIPES[role], corpus=prompts.CORPUS, rules=prompts.RULES)
+    system = prompts.GATHER_SYSTEM.format(recipe=prompts.RECIPES[role], corpus=prompts.corpus(), rules=prompts.RULES)
     return create_agent(model, [by_name[n] for n in ROLE_TOOLS[role] if n in by_name], system_prompt=system,
                         middleware=[CoverageMiddleware(role), ToolCallLimitMiddleware(run_limit=TURN_TOOL_CALLS)],
                         name=f"gather_{role}")
@@ -134,6 +142,8 @@ def build_composer(model):
         report["revision"] = state.get("revisions", 0)
         if not report["passed"] and state.get("revisions", 0) < MAX_REVISIONS:
             return Command(goto="compose", update={"check": report, "revisions": state.get("revisions", 0) + 1})
+        # final card: per-fact Jev support probability (computed, shown next to each fact; plan 011)
+        report["jev_support"] = jev_support(state["card"], state.get("ledger", {}))
         return Command(goto=END, update={"check": report})
 
     g = StateGraph(ComposerState)
@@ -219,5 +229,7 @@ def build_graph(tools: list[BaseTool], model=None):
 
 def build_baseline(tools: list[BaseTool], role: str, model=None):
     """The brief's reference design: a ReAct agent with all tools and a role prompt, free-text answer."""
-    return create_agent(model or make_model(), tools, system_prompt=prompts.BASELINE_SYSTEM.format(role=role),
+    tools = [t for t in tools if t.name not in BASELINE_EXCLUDE]
+    return create_agent(model or make_model(), tools,
+                        system_prompt=prompts.BASELINE_SYSTEM.format(role=role, corpus=prompts.corpus()),
                         name="baseline-react")

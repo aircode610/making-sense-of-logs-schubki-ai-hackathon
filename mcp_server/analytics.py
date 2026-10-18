@@ -15,7 +15,9 @@ Start = Annotated[Optional[datetime], Field(description="Inclusive start time (d
 End = Annotated[Optional[datetime], Field(description="Exclusive end time (default: after the dataset's last line).")]
 Unit = Annotated[Literal["bursts", "lines"], Field(
     description="'bursts' = recurrences of a pattern (> 30 min apart), the incident-like unit; 'lines' = log entries.")]
-PROBLEM_J = "j.p_problem >= 0.5"  # max(fault × (1 − dump), threat), load/96
+# Same rule as priority_table / top_patterns: stored Jev p_problem (max(fault × (1 − dump), threat), load/96) AND the
+# pattern has problem-level lines (error-or-worse, WARN, HTTP 5xx or no level).
+PROBLEM_J = "j.p_problem >= 0.5 AND p.problem_lines > 0"
 OWN = "LEFT JOIN ownership o ON o.dataset = {t}.dataset AND o.component = {t}.component"
 
 

@@ -101,7 +101,7 @@ def burst_timeline(
                "WHERE dataset = %(d)s AND pattern_id = %(p)s AND ts >= %(bs)s AND ts < %(be)s)") if same_nodes else ""
     seq_sql = (f"SELECT l.pattern_id, min(l.ts) AS first_ts, count(*) AS lines, count(DISTINCT l.node) AS nodes, "
                f"mode(l.severity) AS severity, any_value(p.template) AS template, any_value(coalesce(o.team, 'unowned')) AS team, "
-               f"bool_or(l.severity IN ('FATAL', 'FAILURE', 'SEVERE', 'ERROR', 'CRITICAL') OR l.status >= 500) AS problem_level "
+               f"bool_or(l.severity IN ('FATAL', 'FAILURE', 'SEVERE', 'ERROR', 'CRITICAL', 'WARN', 'WARNING') OR l.status >= 500) AS problem_level "
                f"FROM logs l JOIN patterns p ON p.dataset = l.dataset AND p.pattern_id = l.pattern_id {TEAM} "
                f"WHERE l.dataset = %(d)s AND l.ts >= %(s)s AND l.ts < %(e)s {nodes_f} "
                f"GROUP BY 1 ORDER BY 2, 1")

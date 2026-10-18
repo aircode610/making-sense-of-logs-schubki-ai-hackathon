@@ -41,9 +41,9 @@ DROP TABLE IF EXISTS patterns CASCADE;
 CREATE TABLE patterns AS
 WITH l AS (
     SELECT dataset, pattern_id, mode(severity) AS severity, count(*) AS lines,
-           count(*) FILTER (WHERE severity IN ('FATAL', 'FAILURE', 'SEVERE', 'ERROR', 'CRITICAL')
+           count(*) FILTER (WHERE severity IN ('FATAL', 'FAILURE', 'SEVERE', 'ERROR', 'CRITICAL', 'WARN', 'WARNING')
                             OR status >= 500                   -- HTTP 5xx: nova logs them at INFO (plan 054)
-                            OR severity IS NULL) AS problem_lines,  -- no log level in the format (SSH): Jev decides
+                            OR severity IS NULL) AS problem_lines,  -- WARN + no level: Jev decides (plan 011)
            count(DISTINCT node) AS nodes, min(ts) AS first_ts, max(ts) AS last_ts,
            count(DISTINCT date_trunc('week', ts)) AS weeks_active, min(line_id) AS example_line_id
     FROM logs WHERE pattern_id IS NOT NULL GROUP BY 1, 2

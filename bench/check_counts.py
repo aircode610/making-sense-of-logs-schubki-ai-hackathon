@@ -99,8 +99,8 @@ check("openstack patterns", query("SELECT count(*) AS n FROM patterns WHERE data
 for tbl in ("patterns", "bursts", "episodes"):
     check(f"openstack lines in {tbl}",
           query(f"SELECT sum(lines) AS n FROM {tbl} WHERE dataset = 'openstack'", {})[0]["n"], 207820)
-check("openstack problem lines (ERROR + CRITICAL + 2 HTTP 503)",
-      query("SELECT sum(problem_lines) AS n FROM patterns WHERE dataset = 'openstack'", {})[0]["n"], 198)
+check("openstack problem-level lines (194 ERROR + 2 CRITICAL + 3118 WARNING + 2 HTTP 503; WARN counts since plan 011)",
+      query("SELECT sum(problem_lines) AS n FROM patterns WHERE dataset = 'openstack'", {})[0]["n"], 194 + 2 + 3118 + 2)
 check("openstack 503 on servers/detail is its own pattern",
       query("SELECT lines AS n FROM patterns WHERE dataset = 'openstack' AND strpos(template, 'servers/detail HTTP/<N>\" status: 503') > 0", {})[0]["n"], 2)
 

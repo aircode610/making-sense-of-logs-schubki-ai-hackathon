@@ -26,6 +26,7 @@ SELECT line_id,
        mask_template(body)                                             AS template0
 FROM stage
 WINDOW w AS (ORDER BY line_id ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW);
+DROP TABLE stage;  -- free the raw copy early (large datasets)
 
 -- Drain-lite: for every template and word position, the "key" is the template with that word replaced by <*>.
 -- If one key covers >= :variety distinct real words at that position, the position is a variable → mask it.
@@ -75,4 +76,4 @@ INSERT INTO pattern_templates SELECT :'ds', pattern_id, component, template FROM
 
 INSERT INTO datasets VALUES (:'ds', :'title', :'description', nullif(:'location_hint', ''), :'id_fields', :pbase);
 
-DROP TABLE stage; DROP TABLE s2; DROP TABLE tw; DROP TABLE tpos; DROP TABLE tvar; DROP TABLE tmap; DROP TABLE spat;
+DROP TABLE s2; DROP TABLE tw; DROP TABLE tpos; DROP TABLE tvar; DROP TABLE tmap; DROP TABLE spat;
