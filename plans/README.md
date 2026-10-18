@@ -28,6 +28,8 @@ Every plan respects: `CLAUDE.md` non-negotiables, `docs/ROLES.md` (role spec), `
 | 007 | [Agent: LangGraph recipes + checker, baseline, LangSmith](007-agent.md) | Amirali | done | `feat/007-agent` |
 | 008 | [Agent split: ReAct gatherer + coverage middleware, composer](008-agent-split.md) | Amirali | done | `feat/008-agent-split` |
 | 009 | [Eval harness: ours vs baseline, deterministic + LLM judge](009-eval.md) | Amirali | done | `feat/009-eval` |
+| 010 | [Eval fit for iteration: version vs version, noise, judge fix](010-eval-iteration.md) | Amirali | done | `feat/010-eval-iteration` |
+| 011 | [SereneDB full-capability tools, generalized](011-serenedb-features.md) | Amirali | done | `feat/011-serenedb-features` |
 | 050 | [OpenStack load + ownership](050-openstack-load.md) | Konark | done | `feat/050-openstack-load` |
 | 051 | [count_by + trend MCP tools](051-count-trend-tools.md) | Konark | done | `feat/051-count-trend-tools` |
 | 052 | [One-command reload](052-reload-publish.md) | Konark | done | `feat/051-count-trend-tools` |

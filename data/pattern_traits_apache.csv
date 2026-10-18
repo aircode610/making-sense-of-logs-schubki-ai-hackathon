@@ -1,0 +1,55 @@
+dataset,component,template,pattern_id,p_threat,cause,cause_confidence,actionable,role,owner_hint,owner_confidence
+apache,LDAP,LDAP: Built with OpenLDAP LDAP SDK,300001,0.02,not a failure,1.0,0.55,routine,web-platform,0.02
+apache,LDAP,LDAP: SSL support unavailable,300002,0.03,configuration,0.44,1.76,routine,app-integration,0.18
+apache,suEXEC,suEXEC mechanism enabled (wrapper: <PATH>),300003,0.03,not a failure,1.0,1.74,routine,web-platform,1.0
+apache,Digest,Digest: done,300004,0.02,not a failure,1.0,0.29,routine,web-platform,0.86
+apache,Digest,Digest: generating secret for digest authentication ...,300005,0.04,not a failure,0.95,0.46,routine,web-platform,0.9
+apache,httpd,config.update(): Can't create channel.jni:jni,300006,0.02,configuration,0.52,1.28,root problem,app-integration,0.14
+apache,httpd,config.update(): Can't create vm:,300007,0.03,configuration,0.79,1.0,root problem,web-platform,0.96
+apache,httpd,config.update(): Can't create worker.jni:onShutdown,300008,0.02,configuration,0.51,1.37,root problem,web-platform,0.18
+apache,httpd,config.update(): Can't create worker.jni:onStartup,300009,0.03,configuration,0.51,1.58,root problem,app-integration,0.3
+apache,httpd,"env.createBean2(): Factory error creating channel.jni:jni ( channel.jni, jni)",300010,0.02,software or service,0.93,1.38,root problem,app-integration,0.54
+apache,httpd,"env.createBean2(): Factory error creating vm: ( vm, )",300011,0.03,software or service,0.92,0.66,root problem,web-platform,0.06
+apache,httpd,"env.createBean2(): Factory error creating worker.jni:onShutdown ( worker.jni, onShutdown)",300012,0.02,software or service,0.98,1.41,root problem,app-integration,0.16
+apache,httpd,"env.createBean2(): Factory error creating worker.jni:onStartup ( worker.jni, onStartup)",300013,0.02,software or service,0.97,1.49,root problem,app-integration,0.36
+apache,mod_python,mod_python: Creating <N> session mutexes based on <N> max processes and <N> max threads.,300014,0.02,not a failure,1.0,0.99,routine,web-platform,0.96
+apache,httpd,Apache/<N> (Fedora) configured -- resuming normal operations,300015,0.02,not a failure,0.86,1.55,routine,web-platform,1.0
+apache,jk2_init(),jk2_init() Found child <N> in scoreboard slot <N>,300016,0.02,not a failure,1.0,0.56,routine,app-integration,1.0
+apache,mod_security,mod_security/<N>dev2 configured,300017,0.03,not a failure,0.77,1.76,routine,web-platform,0.98
+apache,httpd,workerEnv.init() ok <PATH>,300018,0.02,not a failure,1.0,1.73,routine,app-integration,0.16
+apache,mod_jk,mod_jk child init <N> <N>,300019,0.03,software or service,0.65,1.37,routine,app-integration,1.0
+apache,httpd,[client <IP>] Directory index forbidden by rule: <PATH>,300020,0.66,configuration,0.61,1.99,routine,web-platform,1.0
+apache,httpd,[client <IP>] File does not exist: <PATH>,300021,0.15,storage or filesystem,0.99,2.0,root problem,web-platform,1.0
+apache,jk2_init(),jk2_init() Can't find child <N> in scoreboard,300022,0.03,software or service,0.9,1.23,consequence,app-integration,1.0
+apache,mod_jk,mod_jk child init <N> -<N>,300023,0.03,software or service,0.91,1.37,root problem,app-integration,1.0
+apache,httpd,[client <IP>] Invalid method in request get <PATH>%<N>e/.%<N>e<PATH>?/c+dir,300024,0.97,security,0.99,1.82,routine,web-platform,1.0
+apache,httpd,[client <IP>] Invalid method in request get <PATH>%<N>c..<PATH>?/c+dir,300025,0.97,security,0.99,1.87,root problem,web-platform,1.0
+apache,httpd,[client <IP>] File does not exist: <PATH>%<N>c%<N>c..,300026,0.87,security,0.57,1.97,root problem,web-platform,1.0
+apache,httpd,[client <IP>] Invalid method in request get <PATH>%e0%<N>%af../..%e0%<N>%af../..%e0%<N>%af..<PATH>?/c+dir,300027,0.97,security,1.0,1.9,routine,web-platform,1.0
+apache,httpd,[client <IP>] File does not exist: <PATH>%<N>c..,300028,0.83,storage or filesystem,0.57,1.97,root problem,web-platform,1.0
+apache,httpd,[client <IP>] File does not exist: <PATH>\xc0\xaf..,300029,0.83,security,0.59,1.97,root problem,web-platform,1.0
+apache,httpd,[client <IP>] File does not exist: <PATH>\xc1\x1c..,300030,0.74,storage or filesystem,0.63,1.98,root problem,web-platform,1.0
+apache,httpd,[client <IP>] File does not exist: <PATH>\xc1\x9c..,300031,0.79,storage or filesystem,0.52,1.98,root problem,web-platform,1.0
+apache,httpd,[client <IP>] File does not exist: <PATH>%<N>f..,300032,0.81,storage or filesystem,0.47,1.97,root problem,web-platform,1.0
+apache,httpd,[client <IP>] script not found or unable to stat: <PATH>,300033,0.11,storage or filesystem,0.92,2.0,root problem,web-platform,1.0
+apache,mod_jk2,mod_jk2 Shutting down,300034,0.02,not a failure,0.7,1.18,routine,app-integration,1.0
+apache,httpd,[client <IP>] Invalid method in request get <PATH>%c0%af../..%c0%af../..%c0%af..<PATH>?/c+dir,300035,0.97,security,1.0,1.91,routine,web-platform,1.0
+apache,httpd,[client <IP>] Invalid method in request get <PATH>?/c+dir,300036,0.94,security,0.93,1.78,root problem,web-platform,1.0
+apache,httpd,"Graceful restart requested, doing restart",300037,0.01,not a failure,0.98,0.83,routine,web-platform,1.0
+apache,httpd,[client <IP>] request failed: URI too long (longer than <N>),300038,0.38,software or service,0.59,1.95,root problem,web-platform,1.0
+apache,httpd,[client <IP>] Invalid method in request get <PATH>%c1%<N>c..<PATH>?/c+dir,300039,0.97,security,0.99,1.93,root problem,web-platform,1.0
+apache,mod_jk,mod_jk child workerEnv in error state <N>,300040,0.03,software or service,1.0,1.76,consequence,app-integration,1.0
+apache,httpd,[client <IP>] request failed: error reading the headers,300041,0.15,network or I/O,0.85,1.81,consequence,web-platform,1.0
+apache,httpd,script not found or unable to stat,300042,0.06,storage or filesystem,0.92,1.89,root problem,web-platform,1.0
+apache,httpd,[client <IP>] attempt to invoke directory as script: <PATH>,300043,0.88,security,0.97,1.99,root problem,web-platform,1.0
+apache,httpd,[client <IP>] Attempt to serve directory: <PATH>,300044,0.34,security,0.28,1.97,routine,web-platform,1.0
+apache,httpd,"child process <N> still did not exit, sending a SIGTERM",300045,0.02,software or service,0.98,1.72,consequence,web-platform,1.0
+apache,mod_jk,script not found or unable to stat,300046,0.05,storage or filesystem,0.94,1.9,root problem,app-integration,0.68
+apache,jk2_init(),script not found or unable to stat,300047,0.04,storage or filesystem,0.97,1.81,root problem,app-integration,0.96
+apache,mod_jk2,script not found or unable to stat,300048,0.04,storage or filesystem,0.94,1.9,root problem,app-integration,0.78
+apache,httpd,[client <IP>] File does not exist: <PATH>~mana_,300049,0.27,storage or filesystem,0.98,1.98,root problem,web-platform,1.0
+apache,mod_security,"[client <IP>] mod_security: Access denied with code <N>. Error reading POST data, error_code=<N> [hostname ""<IP>""] [uri ""/xmlrpc.php""]",300050,0.94,security,0.95,1.98,consequence,web-platform,0.98
+apache,httpd,uriMap.mapUri() uri must start with /,300051,0.05,software or service,0.73,1.39,root problem,web-platform,0.88
+apache,httpd,[client <IP>] Invalid URI in request GET HTTP/<N>,300052,0.43,software or service,0.61,1.77,root problem,web-platform,1.0
+apache,httpd,[client <IP>] client sent HTTP/<N> request without hostname (see <ID> section <N>): /,300053,0.26,software or service,0.43,1.91,root problem,web-platform,1.0
+apache,httpd,[client <IP>] File does not exist: <PATH>~ipcom,300054,0.18,storage or filesystem,0.99,1.99,root problem,web-platform,1.0

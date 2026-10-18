@@ -5,8 +5,9 @@
 --   burst        = same pattern anywhere in the dataset, split when the gap > 30 min (one storm on 1,000 nodes = 1 burst).
 -- Bursts are the headline "how often" unit for team lead / manager; nodes give the spread.
 \timing on
+SET sdb_scan_split = 'never';  -- TsDict facet counts off by one with split segments (plan 011)
 
-DROP TABLE IF EXISTS episodes;
+DROP TABLE IF EXISTS episodes CASCADE;
 CREATE TABLE episodes AS
 WITH x AS (
     SELECT dataset, pattern_id, coalesce(node, component) AS node, ts, line_id,
@@ -21,7 +22,7 @@ SELECT dataset, pattern_id, node, episode_no::INTEGER AS episode_no,
 FROM y GROUP BY 1, 2, 3, 4
 ORDER BY start_ts;
 
-DROP TABLE IF EXISTS bursts;
+DROP TABLE IF EXISTS bursts CASCADE;
 CREATE TABLE bursts AS
 WITH x AS (
     SELECT dataset, pattern_id, node, ts, line_id,
@@ -36,12 +37,13 @@ SELECT dataset, pattern_id, burst_no::INTEGER AS burst_no, min(ts) AS start_ts, 
 FROM y GROUP BY 1, 2, 3
 ORDER BY start_ts;
 
-DROP TABLE IF EXISTS patterns;
+DROP TABLE IF EXISTS patterns CASCADE;
 CREATE TABLE patterns AS
 WITH l AS (
     SELECT dataset, pattern_id, mode(severity) AS severity, count(*) AS lines,
-           count(*) FILTER (WHERE severity IN ('FATAL', 'FAILURE', 'SEVERE', 'ERROR', 'CRITICAL')
-                            OR status >= 500) AS problem_lines,  -- HTTP 5xx: nova logs them at INFO (plan 054)
+           count(*) FILTER (WHERE severity IN ('FATAL', 'FAILURE', 'SEVERE', 'ERROR', 'CRITICAL', 'WARN', 'WARNING')
+                            OR status >= 500                   -- HTTP 5xx: nova logs them at INFO (plan 054)
+                            OR severity IS NULL) AS problem_lines,  -- WARN + no level: Jev decides (plan 011)
            count(DISTINCT node) AS nodes, min(ts) AS first_ts, max(ts) AS last_ts,
            count(DISTINCT date_trunc('week', ts)) AS weeks_active, min(line_id) AS example_line_id
     FROM logs WHERE pattern_id IS NOT NULL GROUP BY 1, 2

@@ -2,6 +2,18 @@
 
 _Last updated: 2026-10-17, plan 009 done (eval: ours vs baseline), plans 053–055 done (OpenStack patterns, Jev judgments, `value_outliers`, `rate_vs_baseline`; 8 MCP tools)._
 
+- **Plan 010 done:** eval fit for iteration: judge sees full evidence (claims supported ours 0.92 / baseline 0.71
+  after re-judging), failures score 0, `--compare/--reuse-baseline/--rejudge/--repeat`, E6 ranking golden facts,
+  tool-vs-LLM seconds (tools ≈ 1 %), `bench/replay_tools.py`. Noise floor: E1 ±0.05, rubric ±0.06 (`docs/EVAL.md`).
+
+- **Plan 011 (Amirali, in review):** SereneDB full-capability tools, generalized. 7 datasets (BGL, OpenStack,
+  Zookeeper, Apache, OpenSSH, HDFS 11M, OTel slice of the 1 B-record remote Parquet) through one generic loader; 40 MCP
+  tools (32 new: match modes, facets, significant terms, entities, watchlist, burst sequence, precursors (ASOF),
+  co-occurrence, rollup, PIVOT heatmap, reliability slope, semantic / hybrid pattern search, focus + remote indexes,
+  explain); Jev traits incl. threat (p_problem = max(fault, threat)), Gemini template embeddings, Jev support per fact;
+  database roles (persona + per-team views). Eval (25 q): pairwise vs baseline 16-1, vs previous version 14-4, new
+  datasets 4-0; tool overlap between roles 0.31 → 0.02. Details `plans/011-…` §7, `docs/SERENEDB_IDEAS.md`.
+
 ## Stage: S4 — eval done (dev set): ours beats the baseline on grounding and quality, at ~2.6× latency; next: checker covers all card sections, UI, worked investigation
 - **Plan 055 done (Konark, B3 leftovers):** MCP tool **`rate_vs_baseline`** (rate now vs same-length windows of the
   previous days, clipped at the data start; 4–6 ms) = engineer recipe step 4. Engineer eval (8 q, +2 new): ours vs
@@ -86,3 +98,6 @@ count/trend tools. **Jury Q&A today 18:50–19:00 CEST** (`docs/QA_JURY.md`).
 |---|---|---|---|---|---|---|---|---|
 | dev 2026-10-17 ours (`151ec54`) | 0.79 | 0.99 / 0.89 | 0.02 | priority top-10 5/10 (plan 006) | 1.00 | 4.53 | 10 | 34 s |
 | dev 2026-10-17 baseline | 0.59 | 0.85 / 0.59 | 0.04 | — | 0.83 | 3.91 | 4 | 13 s |
+| re-judged 2026-10-18 (plan 010) ours / baseline | 0.79 / 0.69 | 0.99 / 0.92 · 0.85 / 0.71 | 0.02 / 0.04 | — | 1.00 / 0.83 | 4.49 / 3.96 | 10-4 | 34 / 13 s |
+| dev ×3 2026-10-18 ours (`8934c04`) | 0.85 ± 0.05 | 1.00 / 0.96 | 0.02 | — | 1.00 | 4.54 | 14-2 | 34 s |
+| dev 25 q 2026-10-18 ours, plan 011 (`0165614`) | 0.87 | 1.00 / 0.95 | 0.015 | — | 1.00 | 4.57 | 16-1 | 36 s |

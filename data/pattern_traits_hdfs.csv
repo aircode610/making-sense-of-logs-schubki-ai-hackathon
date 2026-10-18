@@ -1,0 +1,65 @@
+dataset,component,template,pattern_id,p_threat,cause,cause_confidence,actionable,role,owner_hint,owner_confidence
+hdfs,dfs.DataNode$DataXceiver,Receiving block blk_<HEX> src: /<IP> dest: /<IP>,500001,0.02,not a failure,1.0,1.24,routine,datanode-ops,1.0
+hdfs,dfs.FSNamesystem,BLOCK* NameSystem.allocateBlock: <PATH> blk_<HEX>,500002,0.01,not a failure,0.95,1.22,routine,namenode-platform,0.98
+hdfs,dfs.DataNode$PacketResponder,PacketResponder <N> for block blk_<HEX> terminating,500003,0.02,not a failure,0.99,1.02,routine,datanode-ops,0.98
+hdfs,dfs.DataNode$PacketResponder,Received block blk_<HEX> of size <N> from /<IP>,500004,0.02,not a failure,1.0,1.17,routine,datanode-ops,1.0
+hdfs,dfs.FSNamesystem,BLOCK* NameSystem.addStoredBlock: blockMap updated: <IP> is added to blk_<HEX> size <N>,500005,0.01,not a failure,0.98,1.12,routine,namenode-platform,0.94
+hdfs,dfs.DataNode,"<IP> Starting thread to transfer block blk_<HEX> to <IP>, <IP>",500006,0.02,not a failure,1.0,1.31,routine,datanode-ops,0.94
+hdfs,dfs.DataNode$DataTransfer,<IP>:Transmitted block blk_<HEX> to /<IP>,500007,0.02,not a failure,1.0,1.29,routine,datanode-ops,0.97
+hdfs,dfs.DataNode$DataXceiver,Received block blk_<HEX> src: /<IP> dest: /<IP> of size <N>,500008,0.02,not a failure,1.0,1.16,routine,datanode-ops,1.0
+hdfs,dfs.DataNode$PacketResponder,Received block blk_<HEX> of size <HEX> from /<IP>,500009,0.02,not a failure,1.0,1.19,routine,datanode-ops,1.0
+hdfs,dfs.FSNamesystem,BLOCK* NameSystem.addStoredBlock: blockMap updated: <IP> is added to blk_<HEX> size <HEX>,500010,0.01,not a failure,0.98,1.22,routine,namenode-platform,0.92
+hdfs,dfs.FSNamesystem,BLOCK* ask <IP> to replicate blk_<HEX> to datanode(s) <IP> <IP>,500011,0.02,not a failure,0.98,1.72,routine,namenode-platform,0.71
+hdfs,dfs.DataNode$DataXceiver,<IP> Served block blk_<HEX> to /<IP>,500012,0.02,not a failure,1.0,1.26,routine,datanode-ops,1.0
+hdfs,dfs.FSNamesystem,BLOCK* ask <IP> to replicate blk_<HEX> to datanode(s) <IP>,500013,0.02,not a failure,0.98,1.58,routine,namenode-platform,0.67
+hdfs,dfs.DataNode,<IP> Starting thread to transfer block blk_<HEX> to <IP>,500014,0.02,not a failure,1.0,1.18,routine,datanode-ops,0.95
+hdfs,dfs.DataBlockScanner,Verification succeeded for blk_<HEX>,500015,0.02,not a failure,0.99,0.91,routine,datanode-ops,0.28
+hdfs,dfs.DataNode$DataXceiver,writeBlock blk_<HEX> received exception java.net.SocketTimeoutException,500016,0.02,network or I/O,1.0,1.54,consequence,datanode-ops,1.0
+hdfs,dfs.DataNode$PacketResponder,PacketResponder blk_<HEX> <N> Exception java.io.EOFException,500017,0.03,network or I/O,0.94,1.45,consequence,datanode-ops,0.98
+hdfs,dfs.DataNode$DataXceiver,writeBlock blk_<HEX> received exception java.io.IOException: Could not read from stream,500018,0.03,network or I/O,1.0,1.55,consequence,datanode-ops,1.0
+hdfs,dfs.DataNode$DataXceiver,Received block blk_<HEX> src: /<IP> dest: /<IP> of size <HEX>,500019,0.02,not a failure,1.0,1.18,routine,datanode-ops,1.0
+hdfs,dfs.FSDataset,Deleting block blk_<HEX> file <PATH>,500020,0.01,not a failure,0.78,1.76,routine,storage-platform,0.35
+hdfs,dfs.DataNode$BlockReceiver,Receiving empty packet for block blk_<HEX>,500021,0.03,not a failure,0.78,1.14,routine,datanode-ops,1.0
+hdfs,dfs.DataNode$BlockReceiver,Exception in receiveBlock for block blk_<HEX> java.io.IOException: Connection reset by peer,500022,0.03,network or I/O,1.0,1.56,consequence,datanode-ops,1.0
+hdfs,dfs.DataNode$DataXceiver,writeBlock blk_<HEX> received exception java.io.IOException: Connection reset by peer,500023,0.02,network or I/O,1.0,1.37,consequence,datanode-ops,0.98
+hdfs,dfs.FSNamesystem,BLOCK* NameSystem.addStoredBlock: Redundant addStoredBlock request received for blk_<HEX> on <IP> size <HEX>,500024,0.03,not a failure,0.6,1.92,consequence,namenode-platform,0.49
+hdfs,dfs.DataNode$PacketResponder,PacketResponder blk_<HEX> <N> Exception java.net.SocketTimeoutException: <HEX> millis timeout while waiting for channel to be ready for read. ch : java.nio.channels.SocketChannel[connected local=/<IP> remote=/<IP>],500025,0.02,network or I/O,1.0,1.96,consequence,datanode-ops,1.0
+hdfs,dfs.DataNode$PacketResponder,PacketResponder blk_<HEX> <N> Exception java.io.InterruptedIOException: Interruped while waiting for IO on channel java.nio.channels.SocketChannel[connected local=/<IP> remote=/<IP>]. <N> millis timeout left.,500026,0.03,network or I/O,0.95,1.81,consequence,datanode-ops,1.0
+hdfs,dfs.DataNode$BlockReceiver,Changing block file offset of block blk_<HEX> from <N> to <HEX> meta file offset to <HEX>,500027,0.01,not a failure,0.94,1.22,routine,datanode-ops,0.98
+hdfs,dfs.DataNode$BlockReceiver,Exception in receiveBlock for block blk_<HEX> java.io.EOFException,500028,0.03,network or I/O,0.98,1.54,consequence,datanode-ops,1.0
+hdfs,dfs.DataNode$DataXceiver,writeBlock blk_<HEX> received exception java.io.EOFException,500029,0.03,network or I/O,0.98,1.48,consequence,datanode-ops,1.0
+hdfs,dfs.DataNode$PacketResponder,PacketResponder <N> for block blk_<HEX> Interrupted.,500030,0.02,network or I/O,0.44,1.47,consequence,datanode-ops,1.0
+hdfs,dfs.DataNode$BlockReceiver,<IP>:Exception writing block blk_<HEX> to mirror <IP>,500031,0.03,network or I/O,0.94,1.98,consequence,datanode-ops,0.97
+hdfs,dfs.DataNode$BlockReceiver,Exception in receiveBlock for block blk_<HEX> java.io.InterruptedIOException: Interruped while waiting for IO on channel java.nio.channels.SocketChannel[connected local=/<IP> remote=/<IP>]. <HEX> millis timeout left.,500032,0.02,network or I/O,0.98,1.87,consequence,datanode-ops,1.0
+hdfs,dfs.DataNode$DataXceiver,writeBlock blk_<HEX> received exception java.io.InterruptedIOException: Interruped while waiting for IO on channel java.nio.channels.SocketChannel[connected local=/<IP> remote=/<IP>]. <HEX> millis timeout left.,500033,0.02,network or I/O,0.98,1.87,consequence,datanode-ops,1.0
+hdfs,dfs.DataNode$PacketResponder,PacketResponder blk_<HEX> <N> Exception java.io.IOException: Broken pipe,500034,0.02,network or I/O,0.99,1.52,consequence,datanode-ops,1.0
+hdfs,dfs.DataNode$DataTransfer,<IP>:Failed to transfer blk_<HEX> to <IP> got java.io.IOException: Connection reset by peer,500035,0.03,network or I/O,1.0,1.99,consequence,datanode-ops,0.94
+hdfs,dfs.DataNode$DataXceiver,"writeBlock blk_<HEX> received exception java.io.IOException: Block blk_<HEX> is valid, and cannot be written to.",500036,0.04,storage or filesystem,0.67,1.4,consequence,datanode-ops,0.98
+hdfs,dfs.FSNamesystem,BLOCK* NameSystem.delete: blk_<HEX> is added to invalidSet of <IP>,500037,0.04,storage or filesystem,0.46,1.9,consequence,namenode-platform,0.7
+hdfs,dfs.FSDataset,Unexpected error trying to delete block blk_<HEX>. BlockInfo not found in volumeMap.,500038,0.02,storage or filesystem,0.93,1.34,consequence,storage-platform,0.16
+hdfs,dfs.FSNamesystem,BLOCK* NameSystem.addStoredBlock: addStoredBlock request received for blk_<HEX> on <IP> size <HEX> But it does not belong to any file.,500039,0.12,storage or filesystem,0.54,1.91,consequence,namenode-platform,0.4
+hdfs,dfs.DataNode$DataXceiver,<IP>:Got exception while serving blk_<HEX> to /<IP>:,500040,0.06,network or I/O,0.66,1.89,consequence,datanode-ops,1.0
+hdfs,dfs.DataNode$PacketResponder,PacketResponder blk_<HEX> <N> Exception java.io.IOException: Connection reset by peer,500041,0.03,network or I/O,0.99,1.36,consequence,datanode-ops,1.0
+hdfs,dfs.DataNode$BlockReceiver,Exception in receiveBlock for block blk_<HEX> java.net.SocketTimeoutException: <HEX> millis timeout while waiting for channel to be ready for write. ch : java.nio.channels.SocketChannel[connected local=/<IP> remote=/<IP>],500042,0.02,network or I/O,1.0,1.98,consequence,datanode-ops,1.0
+hdfs,dfs.DataNode$DataXceiver,writeBlock blk_<HEX> received exception java.net.SocketTimeoutException: <HEX> millis timeout while waiting for channel to be ready for write. ch : java.nio.channels.SocketChannel[connected local=/<IP> remote=/<IP>],500043,0.02,network or I/O,1.0,1.97,consequence,datanode-ops,0.98
+hdfs,dfs.DataNode$PacketResponder,PacketResponder blk_<HEX> <N> Exception java.io.InterruptedIOException: Interruped while waiting for IO on channel java.nio.channels.SocketChannel[connected local=/<IP> remote=/<IP>]. <HEX> millis timeout left.,500044,0.03,network or I/O,0.97,1.81,consequence,datanode-ops,1.0
+hdfs,dfs.DataNode$BlockReceiver,Exception in receiveBlock for block blk_<HEX> java.io.InterruptedIOException: Interruped while waiting for IO on channel java.nio.channels.SocketChannel[connected local=/<IP> remote=/<IP>]. <N> millis timeout left.,500045,0.03,network or I/O,0.99,1.91,consequence,datanode-ops,1.0
+hdfs,dfs.DataNode$DataXceiver,writeBlock blk_<HEX> received exception java.io.InterruptedIOException: Interruped while waiting for IO on channel java.nio.channels.SocketChannel[connected local=/<IP> remote=/<IP>]. <N> millis timeout left.,500046,0.02,network or I/O,0.99,1.86,consequence,datanode-ops,1.0
+hdfs,dfs.DataNode$BlockReceiver,Exception in receiveBlock for block blk_<HEX> java.nio.channels.ClosedByInterruptException,500047,0.02,network or I/O,0.85,1.44,consequence,datanode-ops,1.0
+hdfs,dfs.DataNode$DataXceiver,writeBlock blk_<HEX> received exception java.nio.channels.ClosedByInterruptException,500048,0.02,network or I/O,0.92,1.36,consequence,datanode-ops,1.0
+hdfs,dfs.FSDataset,Reopen Block blk_<HEX>,500049,0.02,not a failure,0.66,1.25,routine,storage-platform,0.38
+hdfs,dfs.DataNode$BlockReceiver,Changing block file offset of block blk_<HEX> from <N> to <HEX> meta file offset to <N>,500050,0.01,not a failure,0.95,1.31,routine,datanode-ops,0.98
+hdfs,dfs.DataNode$PacketResponder,PacketResponder blk_<HEX> <N> Exception java.nio.channels.ClosedByInterruptException,500051,0.03,network or I/O,0.82,1.24,consequence,datanode-ops,1.0
+hdfs,dfs.FSNamesystem,BLOCK* Removing block blk_<HEX> from neededReplications as it does not belong to any file.,500052,0.02,not a failure,0.9,0.85,routine,namenode-platform,0.94
+hdfs,dfs.FSNamesystem,BLOCK* NameSystem.addStoredBlock: addStoredBlock request received for blk_<HEX> on <IP> size <N> But it does not belong to any file.,500053,0.12,storage or filesystem,0.51,1.88,consequence,namenode-platform,0.52
+hdfs,dfs.PendingReplicationBlocks$PendingReplicationMonitor,PendingReplicationMonitor timed out block blk_<HEX>,500054,0.02,network or I/O,0.84,1.66,consequence,storage-platform,0.62
+hdfs,dfs.DataNode$DataXceiver,writeBlock blk_<HEX> received exception java.net.SocketTimeoutException: <N> millis timeout while waiting for channel to be ready for read. ch : java.nio.channels.SocketChannel[connected local=/<IP> remote=/<IP>],500055,0.02,network or I/O,1.0,1.97,consequence,datanode-ops,0.98
+hdfs,dfs.DataNode$DataXceiver,writeBlock blk_<HEX> received exception java.net.SocketTimeoutException: <HEX> millis timeout while waiting for channel to be ready for read. ch : java.nio.channels.SocketChannel[connected local=/<IP> remote=/<IP>],500056,0.02,network or I/O,1.0,1.96,consequence,datanode-ops,1.0
+hdfs,dfs.DataNode$DataXceiver,writeBlock blk_<HEX> received exception java.io.IOException: Interrupted receiveBlock,500057,0.03,network or I/O,0.97,1.27,consequence,datanode-ops,1.0
+hdfs,dfs.DataNode$PacketResponder,PacketResponder blk_<HEX> <N> Exception java.io.InterruptedIOException: Interruped while waiting for IO on channel java.nio.channels.SocketChannel[closed]. <N> millis timeout left.,500058,0.02,network or I/O,0.99,1.41,consequence,datanode-ops,1.0
+hdfs,dfs.DataNode$PacketResponder,PacketResponder blk_<HEX> <N> Exception java.net.SocketTimeoutException: <N> millis timeout while waiting for channel to be ready for read. ch : java.nio.channels.SocketChannel[connected local=/<IP> remote=/<IP>],500059,0.03,network or I/O,1.0,1.97,consequence,datanode-ops,1.0
+hdfs,dfs.DataNode$DataXceiver,writeBlock blk_<HEX> received exception java.net.NoRouteToHostException: No route to host,500060,0.03,network or I/O,1.0,1.88,consequence,datanode-ops,0.95
+hdfs,dfs.DataNode$DataXceiver,writeBlock blk_<HEX> received exception java.io.IOException: Broken pipe,500061,0.02,network or I/O,1.0,1.42,consequence,datanode-ops,0.98
+hdfs,dfs.DataBlockScanner,Adding an already existing block blk_<HEX>,500062,0.03,not a failure,0.57,1.29,consequence,datanode-ops,0.33
+hdfs,dfs.DataNode$BlockReceiver,Exception in receiveBlock for block blk_<HEX> java.io.IOException: Broken pipe,500063,0.03,network or I/O,1.0,1.46,consequence,datanode-ops,1.0
+hdfs,dfs.DataNode$PacketResponder,PacketResponder blk_<HEX> <N> Exception java.io.IOException: The stream is closed,500064,0.02,network or I/O,0.85,1.38,consequence,datanode-ops,1.0

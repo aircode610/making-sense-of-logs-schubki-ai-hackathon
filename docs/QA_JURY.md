@@ -36,7 +36,7 @@ Goal: make an impression **and** get advice. Plan for 10 min: 1 min pitch · 1 m
   anomalous VMs, ranked as the 4 most extreme (2.6×, 2.1×, 1.6×, 1.5× normal), 2 mild extra flags; ~100 ms. The engineer
   agent answers "were any VMs abnormally slow?" with all of them, checker 55/55. All 100 lines of those VMs are INFO: no error or warning to search for.
 - **Eval (S4, 18 dev questions, LangSmith experiments, Opus judge):** ours vs baseline with the same tools: claims
-  supported 0.89 vs 0.59, numbers grounded 0.99 vs 0.85, golden facts 0.79 vs 0.59, next-step specificity 4.3 vs 2.6,
+  supported 0.89 vs 0.59 (re-judged with full evidence, plan 010: 0.92 vs 0.71; ours ×3 now 0.96), numbers grounded 0.99 vs 0.85, golden facts 0.79 vs 0.59, next-step specificity 4.3 vs 2.6,
   pairwise 10-4; cost: 34 s vs 13 s per answer. Honest gaps: tool overlap across roles higher for ours; checker misses
   scope / hypotheses sections (fix next).
 
@@ -45,26 +45,78 @@ Goal: make an impression **and** get advice. Plan for 10 min: 1 min pitch · 1 m
   baseline pairwise **8-0**, claims supported 0.88 vs 0.47. Honest: as a fault detector "unusual" only beats raw volume
   for alert onsets (17 % vs 14 % precision), so we present it as context for an engineer, not as anomaly detection.
 
-## Pitch (60 s, current version — S0)
-"Logs answer different questions for different people, but an LLM reading 50 retrieved lines can't tell you how often
-something happens, and it can't be trusted with numbers. Our design: **SereneDB counts, Jev judges, the LLM explains, and
-every sentence is checked against the query that produced it.** We mine log patterns at load time, have TypeSafe's Jev
-judge each *pattern* once inside SereneDB (`ai_system_one`), so 'problem patterns by team over the whole corpus' is one
-SQL query. Each role gets a different evidence recipe — engineer: search and surrounding events; team lead: recurring
-patterns by team and trend; manager: a computed, auditable priority table. Every answer comes as facts with query
-citations, hypotheses, unknowns and a next step, and we measure groundedness against a plain ReAct baseline."
+## Script for 18:50 (10 min, Zoom; Amirali talks, Konark notes + timer)
 
-## Questions for the jury (ranked; pick 2–3 for the slot)
-1. **Incidents vs lines:** we report **bursts** (same pattern anywhere, split by a 30-min gap: 4.7M BGL lines → 36,714
-   bursts) next to raw line counts and node spread. Is that a convincing unit for "recurring problems"?
-2. **In-database AI:** is classifying *patterns* inside SereneDB with `ai_system_one` (Jev) — then aggregating those
-   judgments in SQL — in the spirit of "the database calculates", or do you want all judgment in the agent?
-3. **Demo surface:** for judging, do you prefer Claude connected to our MCP server, or our own UI that shows the answer
-   card and evidence? (We plan both on the same tools — which should the 5-minute demo lead with?)
-4. **Labels:** may we use BGL alert labels / OpenStack anomaly ids to *evaluate* our answers (not as agent input)?
-5. **Worked investigation:** is there a BGL period or issue you'd find most convincing (e.g. a KERNDTLB storm), or is our choice part of the score?
-6. **Clean checkout:** the full load from raw files takes ≈ 31 s, so judges load from scratch. Any constraint on the
-   judges' machines we should know (Apple Silicon emulation, RAM)?
+**Goal of this slot:** learn *how they score*, above all: do they reward **efficiency and design** (DB does the work,
+cheap typed judgments, measured grounding) or mainly **answer richness** (more LLM, more tokens, more tools)? Every
+question carries context, so the questions are also the pitch. Each question says what we decide from the answer.
+
+**Have open before joining (screen share only if asked):** `eval/results/20261017-174933.md` (ours vs baseline table) ·
+one manager answer card in the terminal · one LangSmith trace.
+
+### 0:00–1:00 · Opening (pitch in one breath)
+"We're Amirali and Konark. Our thesis: **SereneDB counts, Jev judges, the LLM explains, and every number is checked
+against the query that produced it.** SereneDB itself loads both datasets in about 30 seconds and mines 1,126 BGL
+log patterns at load time, so the agent works on recurring patterns and bursts, not on 4.7 million lines. One LangGraph
+agent serves all three roles with different evidence recipes over six MCP tools, and we already evaluate it against the
+plain ReAct agent from the brief, with the same tools. We have four questions about how you judge."
+
+### 1:00–3:00 · Q1 — Efficiency vs richness (THE question)
+**Context:** "We could make answers richer by giving the agent more turns, more tools and more tokens. We did the
+opposite: push the work into the database. Example: instead of an LLM reading log lines, Jev, a small typed model,
+judges each of the 1,126 *patterns* once, inside SereneDB with `ai_system_one`: 20 seconds, about two cents. That moved
+real alerts in the manager's top 10 from 1 to 5. Our agent costs 34 s per answer vs 13 s for the plain baseline, because
+we add a composer and a deterministic number checker."
+**Ask:** "**Does the jury score efficiency (latency, cost, tokens, using the database well), or mainly the quality of
+the final answer? If we have one more day, should it go into a smarter, cheaper pipeline or into richer answers?**"
+**We decide:** where Sunday's hours go (performance / cost section in README + slides vs more agent features).
+
+### 3:00–4:30 · Q2 — Is Jev inside the rules?
+**Context:** "The brief says to use only the tools and resources it lists. Jev is called through SereneDB's own built-in
+function `ai_system_one`, judgments are stored in a table, and a clean checkout loads them from a committed file, so the
+judges need no extra key for the data pipeline."
+**Ask:** "**Is in-database AI judgment through `ai_system_one` within the rules and in the spirit of 'the database
+calculates', or would you rather all judgment stayed in the agent?**"
+**We decide:** keep Jev as the headline (if yes) or present it as an optional layer with the severity-only baseline as
+default (if unsure).
+
+### 4:30–6:00 · Q3 — How they judge correctness and "shows its work"
+**Context:** "We count lines exactly, but present recurrences as **bursts**: the same pattern anywhere, split by 30 quiet
+minutes. 4.7 million BGL lines are 36,714 bursts. Every number in an answer must appear in the tool result it cites; a
+checker enforces that. On 18 dev questions the baseline with the same tools grounds 85% of its numbers and an Opus judge
+finds 59% of its claims supported; ours 99% and 89%. We use the BGL alert labels and OpenStack anomaly ids only to
+*evaluate*, never as agent input."
+**Ask:** "**How will you check our numbers and claims: against your own queries, by reading the evidence we show, or
+both? And is evaluating with the dataset labels acceptable, as long as the agent never sees them?**"
+**We decide:** how prominent the evidence appendix / SQL is in the demo; whether the label-based results go on a slide.
+
+### 6:00–7:30 · Q4 — Demo surface and reproducibility
+**Context:** "The same MCP server serves Claude Code, our agent and our eval. A clean checkout loads everything in about
+30 seconds; only the agent itself needs an Anthropic key."
+**Ask:** "**For the 5 minutes, would you rather see Claude connected to our MCP server, or our own agent with a small UI
+showing the answer card and its SQL evidence? And will the judges have their own Claude / API key when reproducing?**"
+**We decide:** whether we build the Streamlit UI tomorrow or invest in MCP setup instructions.
+
+### 7:30–9:00 · Q5 (only if time) — what a good recommendation looks like
+**Ask:** "For the manager we rank problems with a computed, weighted score and never mention money or downtime. **What
+would make a recommendation convincing to you: shorter and decisive, or showing the measured basis for every item?**"
+
+### 9:00–10:00 · Close
+"Thanks. One line to remember: **the database does the counting and the cheap judging, the LLM only explains, and every
+number is checked.**" Konark reads back the 2–3 decisions from the notes.
+
+### If they ask us (short answers ready)
+- **Why Jev, not just the LLM?** Measured: Jev alone was no better than severity; splitting the question ("is this a
+  fault?" + "is this one field of a register dump?") is what moved the top 10 from 1/10 to 5/10, for two cents, judged
+  once and stored. An LLM per line would be 4.7M calls.
+- **Why bursts and not incidents?** The logs cannot tell incidents; bursts are a measured, stated rule (30-min gap,
+  frozen before evaluation), always shown next to lines and node spread.
+- **Is your baseline weak on purpose?** No: it gets all six of our tools, including the priority table. It loses on
+  grounding (rounded or derived numbers, causes stated as facts), not on access.
+- **Weaknesses?** 2.6× slower than the baseline; a 4.7M-line load runs under emulation on Apple Silicon; dev questions
+  were written by us, so a separate human-written set is held back for the final numbers.
+- **OpenStack?** Konark: anomalous VMs log no special messages; they are slow (37–51 s vs ≤ 28 s spawn). A per-pattern
+  outlier rule in SQL (median + MAD) finds all 4 labelled VMs as the 4 most extreme.
 
 ## Log (append after each conversation)
 | When | Who | Asked | Answer / advice | Action |

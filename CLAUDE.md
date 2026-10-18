@@ -30,6 +30,12 @@ Then, as needed: `docs/ROLES.md` (**what each role asks, evidence, answer**) · 
    ART indexes, rollups, streaming). Measure every change (`EXPLAIN ANALYZE`, `bench/`), record it in `docs/PERFORMANCE.md`.
 9. **Polished final answers:** the agent uses a strong model (not Haiku/Flash). Jev stays for fast typed judgments.
 10. **Public repo: never commit keys.** Keys live in `.env` (gitignored); `.env.example` lists names only.
+11. **Generalize everything (plan 011).** Tune on BGL / OpenStack, but no dataset names, components, severities or
+   other dataset-specific values in tool, agent, eval-harness or loader-library code paths. Dataset knowledge lives in
+   data: the dataset's own loader file (`load/3x_<name>.sql` = one parse query + `\ir lib/stage_to_logs.sql`), the
+   `datasets` registry row it writes, and config rows (`data/ownership.csv` incl. `*` defaults, `data/watchlist.csv`,
+   `data/remote_sources.csv`). A new dataset must need no code change; every new tool or rule is tested on at least one
+   extra Loghub dataset (`bench/check_tools.py` runs on every loaded dataset).
 
 ## Workflow
 - **Held-out (`eval/heldout/**`) is never read, searched or written by Claude** (`docs/HELDOUT.md`); only

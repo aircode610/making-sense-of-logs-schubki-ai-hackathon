@@ -1,0 +1,183 @@
+dataset,component,template,pattern_id,p_fault,p_dump,p_corrected,kind,kind_confidence
+zookeeper,QuorumPeerConfig,Reading configuration from: <PATH>,200001,0.01,0.05,0.01,not a problem,1
+zookeeper,QuorumPeerConfig,Defaulting to majority quorums,200002,0.02,0.08,0.1,not a problem,1
+zookeeper,DatadirCleanupManager,autopurge.purgeInterval set to <N>,200003,0.02,0.37,0.03,not a problem,1
+zookeeper,DatadirCleanupManager,autopurge.snapRetainCount set to <N>,200004,0.02,0.23,0.03,not a problem,1
+zookeeper,DatadirCleanupManager,Purge task is not scheduled.,200005,0.04,0.07,0.02,not a problem,1
+zookeeper,QuorumPeerMain,Starting quorum peer,200006,0.01,0.04,0.01,not a problem,1
+zookeeper,NIOServerCnxnFactory,binding to port <IP>/<IP>,200007,0.02,0.07,0.01,not a problem,1
+zookeeper,QuorumPeer,tickTime set to <N>,200008,0.02,0.35,0.02,not a problem,1
+zookeeper,QuorumPeer,initLimit set to <N>,200009,0.01,0.33,0.01,not a problem,1
+zookeeper,QuorumPeer,maxSessionTimeout set to -<N>,200010,0.02,0.31,0.02,not a problem,1
+zookeeper,QuorumPeer,minSessionTimeout set to -<N>,200011,0.02,0.29,0.03,not a problem,1
+zookeeper,QuorumPeer,currentEpoch not found! Creating with a reasonable default of <N>. This should only happen when you are upgrading your installation,200012,0.06,0.05,0.56,not a problem,1
+zookeeper,QuorumPeer,acceptedEpoch not found! Creating with a reasonable default of <N>. This should only happen when you are upgrading your installation,200013,0.05,0.06,0.66,not a problem,1
+zookeeper,QuorumCnxManager$Listener,My election bind port: <IP>/<IP>,200014,0.02,0.15,0.01,not a problem,1
+zookeeper,QuorumPeer,LOOKING,200015,0.03,0.25,0.03,not a problem,1
+zookeeper,FastLeaderElection,"New election. My id = <N>, proposed zxid=<N>x0",200016,0.02,0.04,0.02,not a problem,1
+zookeeper,FastLeaderElection,"Notification: <N> (n.leader), <N>x0 (n.zxid), <N>x1 (n.round), LOOKING (n.state), <N> (n.sid), <N>x0 (n.peerEPoch), LOOKING (my state)",200017,0.03,0.28,0.02,not a problem,1
+zookeeper,QuorumCnxManager,Cannot open channel to <N> at election address /<IP>,200018,0.78,0.06,0.03,network or I/O failure,1
+zookeeper,FastLeaderElection,Notification time out: <N>,200019,0.35,0.13,0.04,not a problem,0.31
+zookeeper,QuorumCnxManager$Listener,Received connection request /<IP>,200020,0.02,0.04,0.01,not a problem,1
+zookeeper,QuorumPeer,FOLLOWING,200021,0.03,0.26,0.03,not a problem,1
+zookeeper,Learner,TCP NoDelay set to: true,200022,0.02,0.61,0.01,not a problem,1
+zookeeper,Environment,Server <*>,200023,0.02,0.83,0.02,not a problem,1
+zookeeper,Environment,"Server environment:zookeeper.version=<N>, built on <N><PATH> <N> GMT",200024,0.02,0.73,0.01,not a problem,1
+zookeeper,Environment,Server environment:java.vendor=Oracle Corporation,200025,0.01,0.86,0.01,not a problem,1
+zookeeper,ZooKeeperServer,Created server with tickTime <N> minSessionTimeout <N> maxSessionTimeout <N> datadir <PATH> snapdir <PATH>,200026,0.01,0.05,0.01,not a problem,1
+zookeeper,Follower,FOLLOWING - LEADER ELECTION TOOK - <N>,200027,0.03,0.07,0.04,not a problem,1
+zookeeper,Learner,Getting a diff from the leader <N>x0,200028,0.02,0.06,0.03,not a problem,1
+zookeeper,FileTxnSnapLog,Snapshotting: <N>x0 to <PATH>,200029,0.02,0.05,0.01,not a problem,1
+zookeeper,QuorumPeer,LEADING,200030,0.03,0.22,0.04,not a problem,1
+zookeeper,Leader,TCP NoDelay set to: true,200031,0.02,0.56,0.02,not a problem,1
+zookeeper,Leader,LEADING - LEADER ELECTION TOOK - <N>,200032,0.02,0.08,0.03,not a problem,1
+zookeeper,LearnerHandler,Follower sid: <N> : info : org.apache.zookeeper.server.quorum.QuorumPeer$QuorumServer@<HEX>,200033,0.02,0.18,0.02,not a problem,1
+zookeeper,LearnerHandler,Synchronizing with Follower sid: <N> maxCommittedLog=<N>x0 minCommittedLog=<N>x0 peerLastZxid=<N>x0,200034,0.02,0.11,0.03,not a problem,1
+zookeeper,LearnerHandler,Sending DIFF,200035,0.02,0.09,0.03,not a problem,1
+zookeeper,Leader,Commiting zxid <HEX> from /<IP> not first!,200036,0.25,0.06,0.05,job or application failure,0.27
+zookeeper,Leader,First is <N>x0,200037,0.09,0.49,0.04,not a problem,0.87
+zookeeper,Leader,Have quorum of supporters; starting up and setting last processed zxid: <HEX>,200038,0.02,0.04,0.02,not a problem,1
+zookeeper,FastLeaderElection,"Notification: <N> (n.leader), <N>x0 (n.zxid), <N>x1 (n.round), FOLLOWING (n.state), <N> (n.sid), <N>x0 (n.peerEPoch), LOOKING (my state)",200039,0.03,0.24,0.02,not a problem,1
+zookeeper,FastLeaderElection,"Notification: <N> (n.leader), <N>x0 (n.zxid), <N>x1 (n.round), LOOKING (n.state), <N> (n.sid), <N>x0 (n.peerEPoch), FOLLOWING (my state)",200040,0.03,0.23,0.03,not a problem,1
+zookeeper,FastLeaderElection,"Notification: <N> (n.leader), <N>x0 (n.zxid), <N>x1 (n.round), LEADING (n.state), <N> (n.sid), <N>x0 (n.peerEPoch), LOOKING (my state)",200041,0.03,0.2,0.02,not a problem,1
+zookeeper,Follower,FOLLOWING - LEADER ELECTION TOOK - <HEX>,200042,0.03,0.06,0.04,not a problem,1
+zookeeper,Learner,Getting a snapshot from leader,200043,0.02,0.05,0.02,not a problem,1
+zookeeper,FileTxnSnapLog,Snapshotting: <HEX> to <PATH>,200044,0.02,0.05,0.01,not a problem,1
+zookeeper,FastLeaderElection,"Notification: <N> (n.leader), <N>x0 (n.zxid), <N>x1 (n.round), LOOKING (n.state), <N> (n.sid), <N>x0 (n.peerEPoch), LEADING (my state)",200045,0.03,0.25,0.03,not a problem,1
+zookeeper,LearnerHandler,Sending SNAP,200046,0.02,0.07,0.02,not a problem,1
+zookeeper,LearnerHandler,Sending snapshot last zxid of peer is <N>x0 zxid of leader is <HEX>sent zxid of db as <HEX>,200047,0.02,0.08,0.02,not a problem,1
+zookeeper,LearnerHandler,Unexpected exception causing shutdown while sock still open,200048,0.95,0.05,0.02,job or application failure,0.89
+zookeeper,LearnerHandler,******* GOODBYE /<IP> ********,200049,0.07,0.12,0.02,not a problem,0.89
+zookeeper,QuorumCnxManager$RecvWorker,"Connection broken for id <HEX>, my id = <N>, error = ",200050,0.82,0.09,0.03,network or I/O failure,1
+zookeeper,QuorumCnxManager$RecvWorker,Interrupting SendWorker,200051,0.29,0.08,0.05,job or application failure,0.39
+zookeeper,QuorumCnxManager$SendWorker,Interrupted while waiting for message on queue,200052,0.36,0.06,0.04,job or application failure,0.36
+zookeeper,QuorumCnxManager$SendWorker,Send worker leaving thread,200053,0.18,0.06,0.03,not a problem,0.57
+zookeeper,NIOServerCnxnFactory,Accepted socket connection from /<IP>,200054,0.01,0.04,0.01,not a problem,1
+zookeeper,ZooKeeperServer,Connection request from old client /<IP>; will be dropped if server is in r-o mode,200055,0.09,0.05,0.05,not a problem,0.91
+zookeeper,ZooKeeperServer,Client attempting to establish new session at /<IP>,200056,0.02,0.04,0.02,not a problem,1
+zookeeper,Follower,Got zxid <HEX> expected <N>x1,200057,0.35,0.08,0.05,job or application failure,0.29
+zookeeper,FileTxnLog,Creating new log file: log.<HEX>,200058,0.01,0.03,0.01,not a problem,1
+zookeeper,ZooKeeperServer,Established session <HEX> with negotiated timeout <N> for client /<IP>,200059,0.02,0.03,0.02,not a problem,1
+zookeeper,PrepRequestProcessor,Got user-level KeeperException when processing sessionid:<HEX> type:create cxid:<HEX> zxid:<HEX> txntype:<N> reqpath:n/a Error Path:/home Error:KeeperErrorCode = NodeExists for /home,200060,0.27,0.05,0.06,not a problem,0.69
+zookeeper,PrepRequestProcessor,Got user-level KeeperException when processing sessionid:<HEX> type:create cxid:<HEX> zxid:<HEX> txntype:<N> reqpath:n/a Error Path:<PATH> Error:KeeperErrorCode = NodeExists for <PATH>,200061,0.3,0.05,0.06,not a problem,0.68
+zookeeper,NIOServerCnxn,caught end of stream exception,200062,0.58,0.05,0.08,network or I/O failure,0.99
+zookeeper,NIOServerCnxn,Closed socket connection for client /<IP> which had sessionid <HEX>,200063,0.06,0.03,0.03,not a problem,0.97
+zookeeper,PrepRequestProcessor,Processed session termination for sessionid: <HEX>,200064,0.04,0.03,0.03,not a problem,1
+zookeeper,ZooKeeperServer,"Expiring session <HEX>, timeout of <N>ms exceeded",200065,0.24,0.04,0.05,not a problem,0.49
+zookeeper,ZooKeeperServer,Client attempting to renew session <HEX> at /<IP>,200066,0.02,0.04,0.03,not a problem,1
+zookeeper,Learner,Revalidating client: <HEX>,200067,0.03,0.09,0.07,not a problem,1
+zookeeper,NIOServerCnxn,Exception causing close of session <HEX> due to java.io.IOException: Connection reset by peer,200068,0.76,0.05,0.05,network or I/O failure,1
+zookeeper,Follower,Exception when following the leader,200069,0.8,0.06,0.03,job or application failure,0.52
+zookeeper,Follower,shutdown called,200070,0.08,0.07,0.02,not a problem,0.99
+zookeeper,CommitProcessor,Shutting down,200071,0.04,0.06,0.01,not a problem,1
+zookeeper,FinalRequestProcessor,shutdown of request processor complete,200072,0.03,0.03,0.02,not a problem,1
+zookeeper,FollowerRequestProcessor,FollowerRequestProcessor exited loop!,200073,0.16,0.04,0.03,not a problem,0.9
+zookeeper,FollowerRequestProcessor,Shutting down,200074,0.04,0.07,0.01,not a problem,1
+zookeeper,FollowerZooKeeperServer,Shutting down,200075,0.05,0.06,0.01,not a problem,1
+zookeeper,ZooKeeperServer,shutting down,200076,0.05,0.06,0.02,not a problem,1
+zookeeper,CommitProcessor,CommitProcessor exited loop!,200077,0.17,0.05,0.04,not a problem,0.87
+zookeeper,SyncRequestProcessor,Shutting down,200078,0.05,0.07,0.01,not a problem,1
+zookeeper,SyncRequestProcessor,SyncRequestProcessor exited!,200079,0.15,0.04,0.02,not a problem,0.86
+zookeeper,FileSnap,Reading snapshot <PATH>,200080,0.02,0.06,0.01,not a problem,1
+zookeeper,FastLeaderElection,"New election. My id = <N>, proposed zxid=<HEX>",200081,0.02,0.04,0.01,not a problem,1
+zookeeper,FastLeaderElection,"Notification: <N> (n.leader), <HEX> (n.zxid), <N>x2 (n.round), LOOKING (n.state), <N> (n.sid), <N>x1 (n.peerEPoch), LOOKING (my state)",200082,0.03,0.25,0.02,not a problem,1
+zookeeper,FastLeaderElection,"Notification: <N> (n.leader), <HEX> (n.zxid), <N>x2 (n.round), LOOKING (n.state), <N> (n.sid), <N>x1 (n.peerEPoch), FOLLOWING (my state)",200083,0.03,0.19,0.03,not a problem,1
+zookeeper,QuorumCnxManager$RecvWorker,"Connection broken for id <N>, my id = <N>, error = ",200084,0.8,0.09,0.03,network or I/O failure,1
+zookeeper,QuorumCnxManager$SendWorker,Exception when using channel: for id <N> my id = <N> error = java.net.SocketException: Broken pipe,200085,0.84,0.08,0.03,network or I/O failure,1
+zookeeper,NIOServerCnxn,Closed socket connection for client /<IP> (no session established for client),200086,0.06,0.03,0.04,not a problem,0.91
+zookeeper,NIOServerCnxn,Exception causing close of session <N>x0 due to java.io.IOException: ZooKeeperServer not running,200087,0.93,0.05,0.03,job or application failure,0.51
+zookeeper,FastLeaderElection,"Notification: <N> (n.leader), <HEX> (n.zxid), <N>x2 (n.round), LOOKING (n.state), <N> (n.sid), <N>x1 (n.peerEPoch), LEADING (my state)",200088,0.03,0.18,0.03,not a problem,1
+zookeeper,NIOServerCnxn,Unexpected Exception: ,200089,0.73,0.09,0.02,job or application failure,0.94
+zookeeper,FastLeaderElection,"Notification: <N> (n.leader), <N>x0 (n.zxid), <N>x1 (n.round), FOLLOWING (n.state), <N> (n.sid), <N>x0 (n.peerEPoch), FOLLOWING (my state)",200090,0.02,0.22,0.02,not a problem,1
+zookeeper,FastLeaderElection,"Notification: <N> (n.leader), <N>x0 (n.zxid), <N>x1 (n.round), LEADING (n.state), <N> (n.sid), <N>x0 (n.peerEPoch), FOLLOWING (my state)",200091,0.02,0.18,0.02,not a problem,1
+zookeeper,Learner,Getting a diff from the leader <HEX>,200092,0.02,0.05,0.03,not a problem,1
+zookeeper,Learner,Got zxid <HEX> expected <N>x1,200093,0.3,0.11,0.05,job or application failure,0.2
+zookeeper,LearnerHandler,Synchronizing with Follower sid: <N> maxCommittedLog=<HEX> minCommittedLog=<HEX> peerLastZxid=<HEX>,200094,0.02,0.06,0.03,not a problem,1
+zookeeper,PrepRequestProcessor,Got user-level KeeperException when processing sessionid:<HEX> type:create cxid:<HEX> zxid:<HEX> txntype:<N> reqpath:n/a Error Path:/hdfs-mesos Error:KeeperErrorCode = NodeExists for /hdfs-mesos,200095,0.25,0.05,0.07,not a problem,0.82
+zookeeper,FastLeaderElection,"Notification: <N> (n.leader), <HEX> (n.zxid), <N>x1 (n.round), LOOKING (n.state), <N> (n.sid), <N>x1 (n.peerEPoch), FOLLOWING (my state)",200096,0.03,0.27,0.02,not a problem,1
+zookeeper,FastLeaderElection,"Notification: <N> (n.leader), <HEX> (n.zxid), <N>x1 (n.round), LOOKING (n.state), <N> (n.sid), <*> (n.peerEPoch), LOOKING (my state)",200097,0.03,0.26,0.02,not a problem,1
+zookeeper,QuorumCnxManager,"Have smaller server identifier, so dropping the connection: (<N>, <N>)",200098,0.09,0.05,0.14,not a problem,0.99
+zookeeper,FastLeaderElection,"Notification: <N> (n.leader), <HEX> (n.zxid), <N>x1 (n.round), FOLLOWING (n.state), <N> (n.sid), <N>x1 (n.peerEPoch), FOLLOWING (my state)",200099,0.02,0.19,0.02,not a problem,1
+zookeeper,FastLeaderElection,"Notification: <N> (n.leader), <HEX> (n.zxid), <N>x1 (n.round), LOOKING (n.state), <N> (n.sid), <N>x1 (n.peerEPoch), LEADING (my state)",200100,0.03,0.22,0.03,not a problem,1
+zookeeper,Learner,"Unexpected exception, tries=<N>, connecting to /<IP>",200101,0.69,0.06,0.05,network or I/O failure,0.95
+zookeeper,FastLeaderElection,"Notification: <N> (n.leader), <HEX> (n.zxid), <N>x3 (n.round), LOOKING (n.state), <N> (n.sid), <N>x2 (n.peerEPoch), LOOKING (my state)",200102,0.03,0.21,0.02,not a problem,1
+zookeeper,LearnerHandler,Synchronizing with Follower sid: <N> maxCommittedLog=<N>x0 minCommittedLog=<N>x0 peerLastZxid=<HEX>,200103,0.02,0.11,0.03,not a problem,1
+zookeeper,FastLeaderElection,"Notification: <N> (n.leader), <HEX> (n.zxid), <N>x3 (n.round), LOOKING (n.state), <N> (n.sid), <N>x2 (n.peerEPoch), FOLLOWING (my state)",200104,0.03,0.19,0.02,not a problem,1
+zookeeper,FastLeaderElection,"Notification: <N> (n.leader), <HEX> (n.zxid), <N>x3 (n.round), LEADING (n.state), <N> (n.sid), <N>x2 (n.peerEPoch), FOLLOWING (my state)",200105,0.02,0.15,0.02,not a problem,1
+zookeeper,FastLeaderElection,"Notification: <N> (n.leader), <HEX> (n.zxid), <N>x3 (n.round), LOOKING (n.state), <N> (n.sid), <N>x2 (n.peerEPoch), LEADING (my state)",200106,0.03,0.23,0.03,not a problem,1
+zookeeper,FastLeaderElection,"Notification: <N> (n.leader), <HEX> (n.zxid), <N>x3 (n.round), FOLLOWING (n.state), <N> (n.sid), <N>x2 (n.peerEPoch), FOLLOWING (my state)",200107,0.02,0.16,0.02,not a problem,1
+zookeeper,FastLeaderElection,"Notification: <N> (n.leader), <HEX> (n.zxid), <N>x3 (n.round), LEADING (n.state), <N> (n.sid), <N>x2 (n.peerEPoch), LOOKING (my state)",200108,0.03,0.16,0.02,not a problem,1
+zookeeper,FastLeaderElection,"Notification: <N> (n.leader), <HEX> (n.zxid), <N>x3 (n.round), FOLLOWING (n.state), <N> (n.sid), <N>x2 (n.peerEPoch), LOOKING (my state)",200109,0.03,0.19,0.02,not a problem,1
+zookeeper,FastLeaderElection,"Notification: <N> (n.leader), <HEX> (n.zxid), <N>x1 (n.round), LOOKING (n.state), <N> (n.sid), <N>x2 (n.peerEPoch), LEADING (my state)",200110,0.03,0.23,0.02,not a problem,1
+zookeeper,FastLeaderElection,"Notification: <N> (n.leader), <HEX> (n.zxid), <N>x1 (n.round), LOOKING (n.state), <N> (n.sid), <N>x2 (n.peerEPoch), FOLLOWING (my state)",200111,0.02,0.2,0.02,not a problem,1
+zookeeper,LearnerHandler,Sending snapshot last zxid of peer is <HEX> zxid of leader is <HEX>sent zxid of db as <HEX>,200112,0.02,0.08,0.02,not a problem,1
+zookeeper,Leader,Shutting down,200113,0.05,0.08,0.02,not a problem,1
+zookeeper,Leader,Shutdown called,200114,0.06,0.06,0.02,not a problem,0.99
+zookeeper,Leader$LearnerCnxAcceptor,exception while shutting down acceptor: java.net.SocketException: Socket closed,200115,0.36,0.06,0.04,network or I/O failure,0.56
+zookeeper,SessionTrackerImpl,Shutting down,200116,0.04,0.05,0.01,not a problem,1
+zookeeper,PrepRequestProcessor,PrepRequestProcessor exited loop!,200117,0.14,0.04,0.03,not a problem,0.92
+zookeeper,PrepRequestProcessor,Shutting down,200118,0.04,0.06,0.01,not a problem,1
+zookeeper,ProposalRequestProcessor,Shutting down,200119,0.04,0.05,0.01,not a problem,1
+zookeeper,Leader$ToBeAppliedRequestProcessor,Shutting down,200120,0.04,0.07,0.01,not a problem,0.99
+zookeeper,FastLeaderElection,"Notification: <N> (n.leader), <HEX> (n.zxid), <N>x4 (n.round), LOOKING (n.state), <N> (n.sid), <N>x3 (n.peerEPoch), LOOKING (my state)",200121,0.03,0.25,0.02,not a problem,1
+zookeeper,SessionTrackerImpl,SessionTrackerImpl exited loop!,200122,0.09,0.04,0.04,not a problem,0.97
+zookeeper,FastLeaderElection,"Notification: <N> (n.leader), <HEX> (n.zxid), <N>x5 (n.round), LOOKING (n.state), <N> (n.sid), <N>x4 (n.peerEPoch), LOOKING (my state)",200123,0.03,0.26,0.02,not a problem,1
+zookeeper,FastLeaderElection,"Notification: <N> (n.leader), <HEX> (n.zxid), <N>x5 (n.round), LOOKING (n.state), <N> (n.sid), <N>x4 (n.peerEPoch), FOLLOWING (my state)",200124,0.02,0.23,0.03,not a problem,1
+zookeeper,FastLeaderElection,"Notification: <N> (n.leader), <HEX> (n.zxid), <N>x5 (n.round), LOOKING (n.state), <N> (n.sid), <N>x4 (n.peerEPoch), LEADING (my state)",200125,0.03,0.22,0.02,not a problem,1
+zookeeper,FastLeaderElection,"Notification: <N> (n.leader), <HEX> (n.zxid), <N>x5 (n.round), FOLLOWING (n.state), <N> (n.sid), <N>x4 (n.peerEPoch), LEADING (my state)",200126,0.02,0.19,0.02,not a problem,1
+zookeeper,FastLeaderElection,"Notification: <N> (n.leader), <HEX> (n.zxid), <N>x5 (n.round), LEADING (n.state), <N> (n.sid), <N>x4 (n.peerEPoch), LEADING (my state)",200127,0.02,0.19,0.02,not a problem,1
+zookeeper,FastLeaderElection,"Notification: <N> (n.leader), <HEX> (n.zxid), <N>x1 (n.round), LOOKING (n.state), <N> (n.sid), <N>x4 (n.peerEPoch), FOLLOWING (my state)",200128,0.03,0.23,0.03,not a problem,1
+zookeeper,FastLeaderElection,"Notification: <N> (n.leader), <HEX> (n.zxid), <N>x1 (n.round), LOOKING (n.state), <N> (n.sid), <N>x4 (n.peerEPoch), LEADING (my state)",200129,0.03,0.21,0.02,not a problem,1
+zookeeper,FastLeaderElection,"Notification: <N> (n.leader), <HEX> (n.zxid), <N>x5 (n.round), FOLLOWING (n.state), <N> (n.sid), <N>x4 (n.peerEPoch), LOOKING (my state)",200130,0.03,0.18,0.02,not a problem,1
+zookeeper,FastLeaderElection,"Notification: <N> (n.leader), <HEX> (n.zxid), <N>x5 (n.round), LEADING (n.state), <N> (n.sid), <N>x4 (n.peerEPoch), LOOKING (my state)",200131,0.03,0.18,0.02,not a problem,1
+zookeeper,FastLeaderElection,"Notification: <N> (n.leader), <HEX> (n.zxid), <N>x5 (n.round), FOLLOWING (n.state), <N> (n.sid), <N>x4 (n.peerEPoch), FOLLOWING (my state)",200132,0.02,0.19,0.02,not a problem,1
+zookeeper,FastLeaderElection,"Notification: <N> (n.leader), <HEX> (n.zxid), <N>x5 (n.round), LEADING (n.state), <N> (n.sid), <N>x4 (n.peerEPoch), FOLLOWING (my state)",200133,0.02,0.16,0.02,not a problem,1
+zookeeper,FastLeaderElection,"Notification: <N> (n.leader), <HEX> (n.zxid), <N>x5 (n.round), LOOKING (n.state), <N> (n.sid), <N>x5 (n.peerEPoch), LOOKING (my state)",200134,0.03,0.27,0.02,not a problem,1
+zookeeper,FastLeaderElection,"Notification: <N> (n.leader), <HEX> (n.zxid), <N>x1 (n.round), LOOKING (n.state), <N> (n.sid), <N>x5 (n.peerEPoch), FOLLOWING (my state)",200135,0.03,0.27,0.02,not a problem,1
+zookeeper,FastLeaderElection,"Notification: <N> (n.leader), <HEX> (n.zxid), <N>x5 (n.round), LOOKING (n.state), <N> (n.sid), <N>x5 (n.peerEPoch), FOLLOWING (my state)",200136,0.03,0.25,0.02,not a problem,1
+zookeeper,FastLeaderElection,"Notification: <N> (n.leader), <HEX> (n.zxid), <N>x1 (n.round), LOOKING (n.state), <N> (n.sid), <N>x5 (n.peerEPoch), LEADING (my state)",200137,0.03,0.27,0.02,not a problem,1
+zookeeper,FastLeaderElection,"Notification: <N> (n.leader), <HEX> (n.zxid), <N>x5 (n.round), LOOKING (n.state), <N> (n.sid), <N>x5 (n.peerEPoch), LEADING (my state)",200138,0.03,0.26,0.02,not a problem,1
+zookeeper,FastLeaderElection,"Notification: <N> (n.leader), <HEX> (n.zxid), <N>x1 (n.round), FOLLOWING (n.state), <N> (n.sid), <N>x5 (n.peerEPoch), LOOKING (my state)",200139,0.03,0.24,0.03,not a problem,1
+zookeeper,FastLeaderElection,"Notification: <N> (n.leader), <HEX> (n.zxid), <N>x1 (n.round), LEADING (n.state), <N> (n.sid), <N>x5 (n.peerEPoch), LOOKING (my state)",200140,0.03,0.17,0.02,not a problem,1
+zookeeper,FastLeaderElection,"Notification: <N> (n.leader), <HEX> (n.zxid), <N>x2 (n.round), LOOKING (n.state), <N> (n.sid), <N>x6 (n.peerEPoch), LOOKING (my state)",200141,0.03,0.21,0.02,not a problem,1
+zookeeper,FastLeaderElection,"Notification: <N> (n.leader), <HEX> (n.zxid), <N>x2 (n.round), FOLLOWING (n.state), <N> (n.sid), <N>x6 (n.peerEPoch), LOOKING (my state)",200142,0.03,0.18,0.02,not a problem,1
+zookeeper,FastLeaderElection,"Notification: <N> (n.leader), <HEX> (n.zxid), <N>x2 (n.round), LEADING (n.state), <N> (n.sid), <N>x6 (n.peerEPoch), LOOKING (my state)",200143,0.03,0.17,0.02,not a problem,1
+zookeeper,FastLeaderElection,"Notification: <N> (n.leader), <HEX> (n.zxid), <N>x2 (n.round), FOLLOWING (n.state), <N> (n.sid), <N>x6 (n.peerEPoch), FOLLOWING (my state)",200144,0.02,0.15,0.02,not a problem,1
+zookeeper,FastLeaderElection,"Notification: <N> (n.leader), <HEX> (n.zxid), <N>x2 (n.round), LEADING (n.state), <N> (n.sid), <N>x6 (n.peerEPoch), FOLLOWING (my state)",200145,0.02,0.17,0.02,not a problem,1
+zookeeper,FastLeaderElection,"Notification: <N> (n.leader), <HEX> (n.zxid), <N>x1 (n.round), LOOKING (n.state), <N> (n.sid), <N>x6 (n.peerEPoch), FOLLOWING (my state)",200146,0.03,0.23,0.02,not a problem,1
+zookeeper,FastLeaderElection,"Notification: <N> (n.leader), <HEX> (n.zxid), <N>x2 (n.round), LOOKING (n.state), <N> (n.sid), <N>x6 (n.peerEPoch), FOLLOWING (my state)",200147,0.03,0.21,0.03,not a problem,1
+zookeeper,FastLeaderElection,"Notification: <N> (n.leader), <HEX> (n.zxid), <N>x1 (n.round), LOOKING (n.state), <N> (n.sid), <N>x6 (n.peerEPoch), LEADING (my state)",200148,0.02,0.28,0.02,not a problem,1
+zookeeper,FastLeaderElection,"Notification: <N> (n.leader), <HEX> (n.zxid), <N>x2 (n.round), LOOKING (n.state), <N> (n.sid), <N>x6 (n.peerEPoch), LEADING (my state)",200149,0.03,0.26,0.02,not a problem,1
+zookeeper,FastLeaderElection,"Notification: <N> (n.leader), <HEX> (n.zxid), <N>x1 (n.round), LOOKING (n.state), <N> (n.sid), <N>x7 (n.peerEPoch), FOLLOWING (my state)",200150,0.03,0.26,0.02,not a problem,1
+zookeeper,FastLeaderElection,"Notification: <N> (n.leader), <HEX> (n.zxid), <N>x2 (n.round), LOOKING (n.state), <N> (n.sid), <N>x7 (n.peerEPoch), FOLLOWING (my state)",200151,0.02,0.21,0.02,not a problem,1
+zookeeper,FastLeaderElection,"Notification: <N> (n.leader), <HEX> (n.zxid), <N>x1 (n.round), LOOKING (n.state), <N> (n.sid), <N>x7 (n.peerEPoch), LEADING (my state)",200152,0.03,0.27,0.03,not a problem,1
+zookeeper,FastLeaderElection,"Notification: <N> (n.leader), <HEX> (n.zxid), <N>x2 (n.round), LOOKING (n.state), <N> (n.sid), <N>x7 (n.peerEPoch), LEADING (my state)",200153,0.03,0.28,0.03,not a problem,1
+zookeeper,FastLeaderElection,"Notification: <N> (n.leader), <HEX> (n.zxid), <N>x2 (n.round), LOOKING (n.state), <N> (n.sid), <N>x7 (n.peerEPoch), LOOKING (my state)",200154,0.03,0.25,0.02,not a problem,1
+zookeeper,FastLeaderElection,"Notification: <N> (n.leader), <HEX> (n.zxid), <N>x1 (n.round), FOLLOWING (n.state), <N> (n.sid), <N>x7 (n.peerEPoch), LOOKING (my state)",200155,0.03,0.23,0.03,not a problem,1
+zookeeper,FastLeaderElection,"Notification: <N> (n.leader), <HEX> (n.zxid), <N>x1 (n.round), LEADING (n.state), <N> (n.sid), <N>x7 (n.peerEPoch), LOOKING (my state)",200156,0.03,0.19,0.02,not a problem,1
+zookeeper,FileTxnLog,Creating new log file: log.<ID>,200157,0.01,0.04,0.01,not a problem,1
+zookeeper,FastLeaderElection,"Notification: <N> (n.leader), <HEX> (n.zxid), <N>x1 (n.round), LOOKING (n.state), <N> (n.sid), <N>xa (n.peerEPoch), FOLLOWING (my state)",200158,0.03,0.26,0.03,not a problem,1
+zookeeper,FastLeaderElection,"Notification: <N> (n.leader), <HEX> (n.zxid), <N>x1 (n.round), LOOKING (n.state), <N> (n.sid), <N>xa (n.peerEPoch), LEADING (my state)",200159,0.03,0.27,0.03,not a problem,1
+zookeeper,FastLeaderElection,"Notification: <N> (n.leader), <HEX> (n.zxid), <N>x1 (n.round), FOLLOWING (n.state), <N> (n.sid), <N>xa (n.peerEPoch), LEADING (my state)",200160,0.03,0.19,0.03,not a problem,1
+zookeeper,FastLeaderElection,"Notification: <N> (n.leader), <HEX> (n.zxid), <N>x1 (n.round), LEADING (n.state), <N> (n.sid), <N>xa (n.peerEPoch), LEADING (my state)",200161,0.02,0.17,0.02,not a problem,1
+zookeeper,FastLeaderElection,"Notification: <N> (n.leader), <HEX> (n.zxid), <N>x1 (n.round), FOLLOWING (n.state), <N> (n.sid), <N>xa (n.peerEPoch), LOOKING (my state)",200162,0.03,0.25,0.03,not a problem,1
+zookeeper,FastLeaderElection,"Notification: <N> (n.leader), <HEX> (n.zxid), <N>x1 (n.round), LEADING (n.state), <N> (n.sid), <N>xa (n.peerEPoch), LOOKING (my state)",200163,0.03,0.19,0.03,not a problem,1
+zookeeper,FastLeaderElection,"Notification: <N> (n.leader), <HEX> (n.zxid), <N>x2 (n.round), LOOKING (n.state), <N> (n.sid), <N>xb (n.peerEPoch), LOOKING (my state)",200164,0.03,0.24,0.02,not a problem,1
+zookeeper,Learner,Got zxid <HEX> expected <HEX>,200165,0.21,0.09,0.06,not a problem,0.26
+zookeeper,FastLeaderElection,"Notification: <N> (n.leader), <HEX> (n.zxid), <N>x2 (n.round), LOOKING (n.state), <N> (n.sid), <N>xb (n.peerEPoch), FOLLOWING (my state)",200166,0.02,0.23,0.03,not a problem,1
+zookeeper,FastLeaderElection,"Notification: <N> (n.leader), <HEX> (n.zxid), <N>x2 (n.round), LEADING (n.state), <N> (n.sid), <N>xb (n.peerEPoch), LOOKING (my state)",200167,0.03,0.15,0.02,not a problem,1
+zookeeper,Leader,LEADING - LEADER ELECTION TOOK - <HEX>,200168,0.02,0.08,0.02,not a problem,1
+zookeeper,FastLeaderElection,"Notification: <N> (n.leader), <HEX> (n.zxid), <N>x2 (n.round), LOOKING (n.state), <N> (n.sid), <N>xb (n.peerEPoch), LEADING (my state)",200169,0.03,0.24,0.03,not a problem,1
+zookeeper,FastLeaderElection,"Notification: <N> (n.leader), <HEX> (n.zxid), <N>x2 (n.round), FOLLOWING (n.state), <N> (n.sid), <N>xb (n.peerEPoch), FOLLOWING (my state)",200170,0.02,0.18,0.02,not a problem,1
+zookeeper,FastLeaderElection,"Notification: <N> (n.leader), <HEX> (n.zxid), <N>x1 (n.round), FOLLOWING (n.state), <N> (n.sid), <N>xc (n.peerEPoch), LOOKING (my state)",200171,0.02,0.2,0.02,not a problem,1
+zookeeper,FastLeaderElection,"Notification: <N> (n.leader), <HEX> (n.zxid), <N>x1 (n.round), LEADING (n.state), <N> (n.sid), <N>xc (n.peerEPoch), LOOKING (my state)",200172,0.03,0.19,0.02,not a problem,1
+zookeeper,FastLeaderElection,"Notification: <N> (n.leader), <HEX> (n.zxid), <N>x1 (n.round), LOOKING (n.state), <N> (n.sid), <N>xc (n.peerEPoch), FOLLOWING (my state)",200173,0.03,0.25,0.03,not a problem,1
+zookeeper,FastLeaderElection,"Notification: <N> (n.leader), <HEX> (n.zxid), <N>x1 (n.round), LOOKING (n.state), <N> (n.sid), <N>xc (n.peerEPoch), LEADING (my state)",200174,0.03,0.24,0.03,not a problem,1
+zookeeper,FastLeaderElection,"Notification: <N> (n.leader), <HEX> (n.zxid), <N>x2 (n.round), LOOKING (n.state), <N> (n.sid), <N>xd (n.peerEPoch), LOOKING (my state)",200175,0.03,0.22,0.02,not a problem,1
+zookeeper,FastLeaderElection,"Notification: <N> (n.leader), <HEX> (n.zxid), <N>x3 (n.round), LOOKING (n.state), <N> (n.sid), <N>xe (n.peerEPoch), LOOKING (my state)",200176,0.03,0.26,0.02,not a problem,1
+zookeeper,FastLeaderElection,"Notification: <N> (n.leader), <HEX> (n.zxid), <N>x1 (n.round), LOOKING (n.state), <N> (n.sid), <N>xd (n.peerEPoch), FOLLOWING (my state)",200177,0.03,0.24,0.03,not a problem,1
+zookeeper,FastLeaderElection,"Notification: <N> (n.leader), <HEX> (n.zxid), <N>x3 (n.round), LOOKING (n.state), <N> (n.sid), <N>xe (n.peerEPoch), FOLLOWING (my state)",200178,0.03,0.2,0.03,not a problem,1
+zookeeper,FastLeaderElection,"Notification: <N> (n.leader), <HEX> (n.zxid), <N>x3 (n.round), FOLLOWING (n.state), <N> (n.sid), <N>xe (n.peerEPoch), LOOKING (my state)",200179,0.03,0.2,0.02,not a problem,1
+zookeeper,FastLeaderElection,"Notification: <N> (n.leader), <HEX> (n.zxid), <N>x3 (n.round), LEADING (n.state), <N> (n.sid), <N>xe (n.peerEPoch), LOOKING (my state)",200180,0.03,0.18,0.02,not a problem,1
+zookeeper,FastLeaderElection,"Notification: <N> (n.leader), <HEX> (n.zxid), <N>x1 (n.round), LOOKING (n.state), <N> (n.sid), <N>xd (n.peerEPoch), LEADING (my state)",200181,0.02,0.23,0.03,not a problem,1
+zookeeper,FastLeaderElection,"Notification: <N> (n.leader), <HEX> (n.zxid), <N>x3 (n.round), LOOKING (n.state), <N> (n.sid), <N>xe (n.peerEPoch), LEADING (my state)",200182,0.03,0.23,0.03,not a problem,1

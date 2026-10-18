@@ -1,28 +1,32 @@
 """Pattern tools: recurring log patterns and a computed priority ranking, over patterns and bursts (plan 004 tables). Everything is computed in SQL:
 counts, previous-period comparison, percentile ranks and the priority score (weights inlined in the query). No LLM.
 "Problem" pattern (plan 006, DECISIONS H18): problem-severity lines AND p_problem >= 0.5, where
-p_problem = p_fault × (1 − p_dump) from the stored Jev judgment of the pattern (pattern_judgments, judged once)."""
+p_problem = max(p_fault × (1 − p_dump), p_threat) from the stored Jev judgments of the pattern (pattern_judgments,
+judged once; p_threat = security event, plan 011)."""
 import time
 from datetime import datetime, timedelta
 from typing import Annotated, Literal, Optional
 
 from pydantic import Field
 
-from core import MAX_ROWS, envelope, query, render
+from core import MAX_ROWS, Dataset, all_teams, check_dataset, envelope, node_note, query, render
 
 PROBLEM = "('FATAL', 'FAILURE', 'SEVERE', 'ERROR', 'CRITICAL')"
 # A problem line: problem severity, or an HTTP 5xx (nova logs failed requests at INFO; plan 054). BGL has no status.
-PROBLEM_LINE = f"(severity IN {PROBLEM} OR status >= 500)"
+# A problem-LEVEL line (candidate; the stored Jev judgment then decides): error-or-worse, WARN (plan 011: Zookeeper and
+# BGL log real faults such as "Node card is not fully functional" at WARN), HTTP 5xx, or no level in the format (SSH).
+PROBLEM_LINE = f"(severity IN {PROBLEM} OR severity IN ('WARN', 'WARNING') OR status >= 500 OR severity IS NULL)"
 P_PROBLEM_MIN = 0.5
 ProblemFilter = Annotated[Literal["jev", "severity"], Field(
-    description="How 'problem pattern' is decided: 'jev' (default) = has problem-severity lines AND the stored Jev "
-                "judgment says it reports a real fault, not a diagnostic dump field (p_problem >= 0.5); "
-                "'severity' = any FATAL/FAILURE/SEVERE/ERROR/CRITICAL line or HTTP 5xx (baseline; ranks routine "
+    description="How 'problem pattern' is decided: 'jev' (default) = has problem-level lines AND the stored Jev "
+                "judgments say it reports a real fault (not a diagnostic dump field) or a security event "
+                "(p_problem >= 0.5); "
+                "'severity' = any FATAL/FAILURE/SEVERE/ERROR/CRITICAL/WARN line or HTTP 5xx (baseline; ranks routine "
                 "register dumps high).")]
 # Priority weights (fixed up front, returned with every result). Inputs are percentiles (cume_dist) over the candidates.
 WEIGHTS = {"frequency": 0.30, "trend": 0.20, "spread": 0.25, "persistence": 0.15, "severity": 0.10}
 
-Ds = Annotated[Literal["bgl", "openstack"], Field(description="Dataset (patterns are per dataset).")]
+Ds = Dataset
 Start = Annotated[Optional[datetime], Field(description="Period start (inclusive). Default: 28 days before `end`.")]
 End = Annotated[Optional[datetime], Field(description="Period end (exclusive). Default: the dataset's last timestamp.")]
 
@@ -30,6 +34,7 @@ End = Annotated[Optional[datetime], Field(description="Period end (exclusive). D
 def _period(dataset: str, start, end) -> tuple[datetime, datetime, datetime]:
     """(prev_start, start, end): default end = last ts of the dataset ("corpus now"), default length 28 days;
     the previous period has the same length and ends where this one starts."""
+    check_dataset(dataset)
     if end is None:
         end = query("SELECT max(ts) AS t FROM logs WHERE dataset = %(d)s", {"d": dataset})[0]["t"] + timedelta(microseconds=1)
     if start is None:
@@ -64,7 +69,7 @@ WITH now AS (
            round(top_node.top_node_lines::DOUBLE / now.lines, 3) AS top_node_share,
            p.first_ts AS first_seen, p.first_ts >= %(s)s AS new,
            round(j.p_fault, 3) AS p_fault, round(j.p_dump, 3) AS p_dump,
-           round(j.p_fault * (1 - j.p_dump), 3) AS p_problem, j.kind
+           round(j.p_problem, 3) AS p_problem, round(j.p_threat, 3) AS p_threat, j.kind
     FROM now JOIN patterns p ON p.dataset = %(d)s AND p.pattern_id = now.pattern_id
     LEFT JOIN pattern_judgments j ON j.dataset = %(d)s AND j.pattern_id = now.pattern_id
     LEFT JOIN ownership o ON o.dataset = %(d)s AND o.component = p.component
@@ -76,7 +81,7 @@ WITH now AS (
 
 def _problem_where(problem_filter: str) -> str:
     w = "AND now.problem_lines > 0"
-    return w if problem_filter == "severity" else w + f" AND j.p_fault * (1 - j.p_dump) >= {P_PROBLEM_MIN}"
+    return w if problem_filter == "severity" else w + f" AND j.p_problem >= {P_PROBLEM_MIN}"
 
 
 def _params(dataset, ps, s, e, **kw) -> dict:
@@ -88,7 +93,7 @@ def top_patterns(
     start: Start = None,
     end: End = None,
     team: Annotated[Optional[str], Field(
-        description="Owning team: node-platform, hpc-workloads, cluster-control, cloud-api, cloud-compute, unowned.")] = None,
+        description="Owning team: " + all_teams() + ".")] = None,
     component: Annotated[Optional[str], Field(description="Exact component, e.g. KERNEL.")] = None,
     problem_only: Annotated[bool, Field(description="Only problem patterns (see problem_filter).")] = True,
     problem_filter: ProblemFilter = "jev",
@@ -122,7 +127,7 @@ SELECT *, count(*) OVER () AS candidates FROM base ORDER BY {order}, pattern_id 
     return envelope("top_patterns", dict(problem_only=problem_only, problem_filter=problem_filter, rank_by=rank_by,
                                          limit=limit, **f), [render(sql, params)], f,
                     scope=f"{dataset}, period {s:%Y-%m-%d %H:%M} → {e:%Y-%m-%d %H:%M}, previous {ps:%Y-%m-%d %H:%M} → {s:%Y-%m-%d %H:%M}; "
-                          f"bursts = recurrences (30-min gap), lines = log entries",
+                          f"bursts = recurrences (30-min gap), lines = log entries" + node_note(dataset),
                     rows=rows, t0=t0, total_matches=n, truncated=n > len(rows),
                     period={"start": s.isoformat(sep=" "), "end": e.isoformat(sep=" ")},
                     previous_period={"start": ps.isoformat(sep=" "), "end": s.isoformat(sep=" ")})
@@ -199,7 +204,8 @@ FROM ranked ORDER BY score DESC, bursts DESC, pattern_id"""
     f = dict(dataset=dataset, start=s, end=e)
     env = envelope("priority_table", dict(limit=limit, problem_filter=problem_filter, **f), [render(sql, params)], f,
                    scope=f"{dataset}, period {s:%Y-%m-%d %H:%M} → {e:%Y-%m-%d %H:%M} ({weeks} weeks), previous "
-                         f"{ps:%Y-%m-%d %H:%M} → {s:%Y-%m-%d %H:%M}; candidates = problem patterns ({problem_filter} filter)",
+                         f"{ps:%Y-%m-%d %H:%M} → {s:%Y-%m-%d %H:%M}; candidates = problem patterns ({problem_filter} filter)"
+                         + node_note(dataset),
                    rows=[], t0=t0, total_matches=len(allrows), truncated=len(allrows) > len(items),
                    weights=w, formula="score = 100 × Σ weight × cume_dist(input) over all candidates (share of candidates with a value ≤ this one)",
                    period={"start": s.isoformat(sep=" "), "end": e.isoformat(sep=" ")},

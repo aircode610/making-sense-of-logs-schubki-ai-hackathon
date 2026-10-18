@@ -38,14 +38,26 @@ g, _ = groups(group_by="component", dataset="openstack")
 check("openstack component", g, {"nova-compute": 104086, "nova-api": 102868, "nova-scheduler": 866})
 g, _ = groups(group_by="severity", dataset="openstack")
 check("openstack severity", g, {"INFO": 204506, "WARNING": 3118, "ERROR": 194, "CRITICAL": 2})
-g, r = groups(group_by="team")
+BASE = ("bgl", "openstack")  # reference counts exist for the base corpus; extra datasets are checked in check_tools.py
+
+
+def base_only(g: dict) -> dict:
+    """Teams of the base corpus only (extra datasets bring their own teams)."""
+    merged = {}
+    for ds in BASE:
+        for k, v in groups(**{**g, "dataset": ds})[0].items():
+            merged[k] = merged.get(k, 0) + v
+    return dict(sorted(merged.items(), key=lambda kv: -kv[1]))
+
+
+g = base_only({"group_by": "team"})
 check("team (both datasets)", g, {"node-platform": 4331285, "hpc-workloads": 228536, "cluster-control": 188142,
                                   "cloud-compute": 104952, "cloud-api": 102868})
 g, _ = groups(group_by="dataset", query_text="parity")
 check("fts parity", g, {"bgl": 121498})
 g, _ = groups(group_by="dataset", query_text='"cache parity error"')
 check("fts phrase", g, {"bgl": 106220})
-g, _ = groups(group_by="team", severity="ERROR")
+g = base_only({"group_by": "team", "severity": "ERROR"})
 check("team where severity=ERROR", g, {"cluster-control": 112355, "cloud-compute": 192, "cloud-api": 2})
 g, _ = groups(group_by="dataset", status=200)
 check("status=200 present only in openstack", list(g), ["openstack"])
@@ -87,8 +99,8 @@ check("openstack patterns", query("SELECT count(*) AS n FROM patterns WHERE data
 for tbl in ("patterns", "bursts", "episodes"):
     check(f"openstack lines in {tbl}",
           query(f"SELECT sum(lines) AS n FROM {tbl} WHERE dataset = 'openstack'", {})[0]["n"], 207820)
-check("openstack problem lines (ERROR + CRITICAL + 2 HTTP 503)",
-      query("SELECT sum(problem_lines) AS n FROM patterns WHERE dataset = 'openstack'", {})[0]["n"], 198)
+check("openstack problem-level lines (194 ERROR + 2 CRITICAL + 3118 WARNING + 2 HTTP 503; WARN counts since plan 011)",
+      query("SELECT sum(problem_lines) AS n FROM patterns WHERE dataset = 'openstack'", {})[0]["n"], 194 + 2 + 3118 + 2)
 check("openstack 503 on servers/detail is its own pattern",
       query("SELECT lines AS n FROM patterns WHERE dataset = 'openstack' AND strpos(template, 'servers/detail HTTP/<N>\" status: 503') > 0", {})[0]["n"], 2)
 

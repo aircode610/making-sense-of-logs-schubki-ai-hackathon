@@ -1,0 +1,20 @@
+dataset,name,query_text,match
+bgl,kernel panic,kernel panic,phrase
+bgl,machine check,machine check interrupt,phrase
+bgl,lustre mount failed,Lustre mount FAILED,web
+bgl,io link severed,link has been severed,phrase
+bgl,uncorrectable memory error,uncorrectable error,phrase
+bgl,rts panic,rts panic,phrase
+openstack,http 5xx,status 500 OR status 503,web
+openstack,vm build failed,failed to build OR instance failed,web
+openstack,timeouts,timeout,synonyms
+zookeeper,connection broken,connection broken,phrase
+zookeeper,cannot open channel,cannot open channel,phrase
+zookeeper,session expired,expiring session,phrase
+zookeeper,leader election,leader election,synonyms
+apache,segmentation fault,segmentation fault,phrase
+apache,connector error state,error state,phrase
+apache,script not found,script not found,phrase
+ssh,break-in attempt,POSSIBLE BREAK-IN ATTEMPT,phrase
+ssh,too many auth failures,too many authentication failures,phrase
+ssh,root login failed,failed password for root,phrase
