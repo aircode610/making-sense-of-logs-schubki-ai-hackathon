@@ -142,8 +142,8 @@ def need_dataset() -> str:
     a = active()
     if a is None:
         names = ", ".join(_registry_all_cached()) or "none"
-        raise ValueError("No dataset is loaded yet. Call load_logs(source='bgl') and load_logs(source='openstack') for the "
-                         "base corpus, or load_logs(source='/path/to/your.log'); loaded: " + names)
+        raise ValueError("No dataset is loaded yet: load_logs(source=<name>) for each base-corpus dataset (setup_status "
+                         "lists them), or load_logs(source='/path/to/your.log'); loaded: " + names)
     return a
 
 

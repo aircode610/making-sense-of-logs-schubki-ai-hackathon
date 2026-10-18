@@ -32,7 +32,6 @@ ROOT = Path(__file__).resolve().parent.parent
 LOAD = ROOT / "load"
 RAW = ROOT / "data/raw"
 ZENODO = "https://zenodo.org/records/8196385/files/{}?download=1"  # the brief's links (Loghub, Zenodo record 8196385)
-BASE_CORPUS = ("bgl", "openstack")
 LARGE_LINES = 20_000_000  # catalog entries above this need confirm_large (download size, load time on emulated amd64)
 
 Log = Callable[[str], None]
@@ -163,8 +162,14 @@ def roles(c: psycopg.Connection) -> None:
 # ---------------------------------------------------------------- catalog + download (the brief's steps)
 
 def catalog() -> dict[str, dict]:
+    """data/catalog.csv: the brief's Loghub table (name, Zenodo archive, lines, size), our loader if we wrote one, and
+    base = 1 for the base corpus the brief supplies (BGL + OpenStack)."""
     with (ROOT / "data/catalog.csv").open() as fh:
         return {r["name"]: r for r in csv.DictReader(fh)}
+
+
+def base_corpus() -> list[str]:
+    return [n for n, e in catalog().items() if e["base"]]
 
 
 def download(name: str, log: Log = print) -> Path:

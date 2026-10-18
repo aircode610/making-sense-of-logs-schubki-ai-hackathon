@@ -43,7 +43,7 @@ def setup_status() -> dict:
     Loghub table) and load jobs (state, last log lines, result).
     Caveats: a running load keeps the previous active dataset until it finishes.
     Example: setup_status()
-    Next: load_logs(source='bgl') then load_logs(source='openstack') for the base corpus; use_dataset(name).
+    Next: load_logs(source='base') for the base corpus; use_dataset(name).
     """
     t0 = time.perf_counter()
     out: dict = {"tool": "setup_status"}
@@ -72,8 +72,8 @@ def setup_status() -> dict:
         out["jobs"] = [_job_view(j) for j in _jobs]
     hints = []
     if not out["datasets"] and not any(j["state"] == "running" for j in _jobs):
-        hints.append("Nothing loaded: load_logs(source='bgl') and load_logs(source='openstack') load the base corpus "
-                     "(download per the brief, our loader, committed Jev judgments); or load_logs(source='/path/to/file.log').")
+        hints.append("Nothing loaded: load_logs(source='base') loads the base corpus (" + ", ".join(loader.base_corpus())
+                     + ": download per the brief, our loaders, committed Jev judgments); or load_logs(source='/path/to/file.log').")
     if any(j["state"] == "running" for j in _jobs):
         hints.append("A load is running: call setup_status again in ~30 s.")
     out["hints"] = hints
@@ -85,13 +85,20 @@ def _run(job: dict) -> None:
     def log(m: str) -> None:
         job["log"].append(f"{datetime.now():%H:%M:%S} {m}")
     try:
-        rep = loader.load(job["source"], job.get("name"), job.get("year"), job["judge"], job["confirm_large"], log=log)
-        job["result"] = rep
-        job["state"] = "done" if rep.get("ok") else "refused"
-        if rep.get("ok"):
-            core.refresh()
-            if core.single():
-                core.set_active(rep["dataset"])
+        sources = loader.base_corpus() if job["source"] == "base" else [job["source"]]
+        reps = []
+        for src in sources:
+            rep = loader.load(src, job.get("name"), job.get("year"), job["judge"], job["confirm_large"], log=log)
+            reps.append(rep)
+            if rep.get("ok"):
+                core.refresh()
+                if core.single() and (len(reps) == 1):  # the first dataset loaded becomes the active one
+                    core.set_active(rep["dataset"])
+            else:
+                break
+        job["result"] = reps[0] if len(reps) == 1 else {"ok": all(r.get("ok") for r in reps), "datasets": reps,
+                                                        "dataset": reps[0].get("dataset")}
+        job["state"] = "done" if job["result"].get("ok") else "refused"
     except Exception as e:  # noqa: BLE001
         job["state"] = "failed"
         job["error"] = f"{type(e).__name__}: {e}"[:600]
@@ -100,9 +107,9 @@ def _run(job: dict) -> None:
 
 
 def load_logs(
-    source: Annotated[str, Field(description="A dataset name from the catalog (setup_status: 'bgl', 'openstack' = the "
-                                             "base corpus; 'zookeeper', 'ssh', … other Loghub sets), or the path of "
-                                             "a log file on this machine (any folder; '~' allowed).")],
+    source: Annotated[str, Field(description="'base' = the base corpus (every catalog dataset marked base), a dataset "
+                                             "name from the catalog (setup_status lists them: other Loghub sets), or "
+                                             "the path of a log file on this machine (any folder; '~' allowed).")],
     name: Annotated[Optional[str], Field(description="Dataset name for a file (lower case, digits, _); default: "
                                                      "the file name. Loading the same name again replaces it.")] = None,
     year: Annotated[Optional[int], Field(description="Year for formats that log none (e.g. syslog); stated in the "
@@ -124,7 +131,7 @@ def load_logs(
     a file is streamed in, its format detected from 76 lnav formats and loaded only at >= 95 % sample coverage
     (else refused with the closest formats; nothing guessed). Without a Jev key a new file's problems use log levels
     only (stated in results). The finished dataset becomes the active one.
-    Example: load_logs(source='bgl'); load_logs(source='~/logs/app.log', name='app')
+    Example: load_logs(source='base'); load_logs(source='~/logs/app.log', name='app')
     Next: setup_status() while running; then describe_corpus(), ingest_report() for a file, top_patterns().
     """
     with _lock:
@@ -152,12 +159,12 @@ def use_dataset(
 ) -> dict:
     """Switch the dataset every tool works on.
 
-    Use when: several datasets are loaded and the question is about another one (e.g. the base corpus: BGL for search
-    and trends, OpenStack for counts and latency), or the user names a dataset.
+    Use when: several datasets are loaded and the question is about another one, a whole-corpus answer needs each
+    dataset in turn, or the user names a dataset.
     Not for: loading a new one (load_logs).
     Returns: the new active dataset and its field guide (span, levels, components, field meanings, teams).
     Caveats: tools have no dataset parameter; every later call uses this dataset until the next switch or load.
-    Example: use_dataset(name='openstack')
+    Example: use_dataset(name=<a dataset from setup_status>)
     Next: describe_corpus() for the dataset's details.
     """
     if not core.single():

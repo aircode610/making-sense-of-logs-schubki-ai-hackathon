@@ -59,9 +59,8 @@ question and your final answer, then end your reply with the link it returns ("S
 
 SETUP = """Setup and datasets (plan 016): the tools work on ONE dataset at a time, the active one; there is no
 dataset parameter. setup_status shows the database, the loaded datasets and the active one. Nothing loaded →
-load_logs(source='bgl') and load_logs(source='openstack') (the base corpus: BGL for search and trends, OpenStack for
-counts and latency) or load_logs(source='<path to the user's log file>'); a finished load becomes the active dataset.
-use_dataset(name) switches (e.g. whole-corpus counts: one call per dataset, reported together).
+load_logs(source='base') (the base corpus) or load_logs(source='<path to the user's log file>'); a finished load
+becomes the active dataset. use_dataset(name) switches (whole-corpus counts: one call per dataset, reported together).
 
 """
 if single():  # the shipped mode (plan 016): one active dataset, switchable at run time

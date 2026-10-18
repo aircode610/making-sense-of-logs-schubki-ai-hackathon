@@ -1,17 +1,17 @@
-name,archive,lines,size,log_file,loader,title
-bgl,BGL.zip,4747963,709 MB,data/raw/BGL.log,load/10_bgl.sql,BGL (Blue Gene/L supercomputer RAS logs) - base corpus
-openstack,OpenStack.tar.gz,207820,58.6 MB,data/raw/openstack/openstack_abnormal.log,load/20_openstack.sql,OpenStack nova logs - base corpus
-zookeeper,Zookeeper.tar.gz,74380,9.95 MB,data/raw/zookeeper/Zookeeper.log,load/30_zookeeper.sql,Zookeeper
-apache,Apache.tar.gz,56481,4.90 MB,data/raw/apache/Apache.log,load/31_apache.sql,Apache httpd error log
-ssh,SSH.tar.gz,655146,70.0 MB,data/raw/ssh/SSH.log,load/32_ssh.sql,OpenSSH auth log
-hdfs,HDFS_v1.zip,11175629,1.47 GB,data/raw/hdfs/HDFS.log,load/33_hdfs.sql,HDFS_v1 (scale test)
-linux,Linux.tar.gz,25567,2.25 MB,data/raw/linux/Linux.log,load/34_linux.sql,Linux syslog
-healthapp,HealthApp.tar.gz,253395,22.4 MB,data/raw/healthapp/HealthApp.log,load/35_healthapp.sql,HealthApp
-android,Android_v1.zip,1555005,183 MB,data/raw/android/Android.log,load/gen/android.sql,Android_v1 framework logcat (auto-detected format)
-proxifier,Proxifier.tar.gz,21329,2.42 MB,data/raw/proxifier/Proxifier.log,load/gen/proxifier.sql,Proxifier (auto-detected format)
-hadoop,Hadoop.zip,394308,48.6 MB,,,Hadoop MapReduce (format auto-detection)
-hpc,HPC.zip,433489,32.0 MB,,,HPC cluster (format auto-detection)
-mac,Mac.tar.gz,117283,16.09 MB,,,Mac OS (format auto-detection)
-spark,Spark.tar.gz,33236604,2.75 GB,,,Spark (format auto-detection; large)
-thunderbird,Thunderbird.tar.gz,211212192,29.60 GB,,,Thunderbird supercomputer (format auto-detection; huge)
-windows,Windows.tar.gz,114608388,26.09 GB,,,Windows CBS (format auto-detection; huge)
+name,base,archive,lines,size,log_file,loader,title
+bgl,1,BGL.zip,4747963,709 MB,data/raw/BGL.log,load/10_bgl.sql,BGL (Blue Gene/L supercomputer RAS logs) - base corpus
+openstack,1,OpenStack.tar.gz,207820,58.6 MB,data/raw/openstack/openstack_abnormal.log,load/20_openstack.sql,OpenStack nova logs - base corpus
+zookeeper,,Zookeeper.tar.gz,74380,9.95 MB,data/raw/zookeeper/Zookeeper.log,load/30_zookeeper.sql,Zookeeper
+apache,,Apache.tar.gz,56481,4.90 MB,data/raw/apache/Apache.log,load/31_apache.sql,Apache httpd error log
+ssh,,SSH.tar.gz,655146,70.0 MB,data/raw/ssh/SSH.log,load/32_ssh.sql,OpenSSH auth log
+hdfs,,HDFS_v1.zip,11175629,1.47 GB,data/raw/hdfs/HDFS.log,load/33_hdfs.sql,HDFS_v1 (scale test)
+linux,,Linux.tar.gz,25567,2.25 MB,data/raw/linux/Linux.log,load/34_linux.sql,Linux syslog
+healthapp,,HealthApp.tar.gz,253395,22.4 MB,data/raw/healthapp/HealthApp.log,load/35_healthapp.sql,HealthApp
+android,,Android_v1.zip,1555005,183 MB,data/raw/android/Android.log,load/gen/android.sql,Android_v1 framework logcat (auto-detected format)
+proxifier,,Proxifier.tar.gz,21329,2.42 MB,data/raw/proxifier/Proxifier.log,load/gen/proxifier.sql,Proxifier (auto-detected format)
+hadoop,,Hadoop.zip,394308,48.6 MB,,,Hadoop MapReduce (format auto-detection)
+hpc,,HPC.zip,433489,32.0 MB,,,HPC cluster (format auto-detection)
+mac,,Mac.tar.gz,117283,16.09 MB,,,Mac OS (format auto-detection)
+spark,,Spark.tar.gz,33236604,2.75 GB,,,Spark (format auto-detection; large)
+thunderbird,,Thunderbird.tar.gz,211212192,29.60 GB,,,Thunderbird supercomputer (format auto-detection; huge)
+windows,,Windows.tar.gz,114608388,26.09 GB,,,Windows CBS (format auto-detection; huge)
