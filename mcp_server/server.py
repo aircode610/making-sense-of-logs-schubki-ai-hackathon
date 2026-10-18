@@ -16,6 +16,7 @@ import patterns
 import remote
 import search
 import semantic
+import session
 import terms
 import timeline
 import workspace
@@ -48,7 +49,10 @@ of a pattern (lines split by > 30 min quiet); episode = a burst on one node; pro
 and a stored Jev judgment says it is a real fault or a security event; team = owner of a component (ownership table).
 Lines are not incidents: use bursts for "how often" and nodes for "how widely". Association in time is not cause.
 The logs hold no cost, downtime or customer impact.
-Every result states its SQL, filters, scope, total_matches and whether it was truncated: cite them."""
+Every result states its SQL, filters, scope, total_matches and whether it was truncated: cite them.
+Finish every answer the same way: after writing your answer, call session_report(question, answer) with the user's
+question and your final answer, then end your reply with the link it returns ("See every step and verify each number:
+<url>"). The page shows the session's tool calls and re-runs their queries to verify each number."""
 
 if pinned():  # one user's own logs (plan 014): no choosing between datasets
     INSTRUCTIONS = INSTRUCTIONS.replace(
@@ -127,6 +131,8 @@ def pin(fn):
 
 
 SPEC = [(pin(fn) if pinned() else fn, t, a) for fn, t, a in SPEC if not (pinned() and fn.__name__ in PINNED_SKIP)]
+# Plan 015: every tool call is recorded for the session report; session_report itself is not recorded.
+SPEC = [(session.record(fn), t, a) for fn, t, a in SPEC] + [(session.session_report, "Show the session report", READ_ONLY)]
 TOOLS = {fn.__name__: fn for fn, _, _ in SPEC}
 for fn, title, ann in SPEC:
     mcp.tool(annotations={"title": title, **ann})(fn)

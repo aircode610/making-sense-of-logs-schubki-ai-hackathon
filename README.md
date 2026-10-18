@@ -53,8 +53,21 @@ the meanings and real example values reach every MCP client through the server's
 were added this way (plan 012). Or replay any dataset as OpenTelemetry into SereneDB's built-in OTLP
 receiver: `.venv/bin/python scripts/otlp_replay.py <dataset> 2000`.
 
-Connect Claude Code to the tools: the `logs` MCP server is registered in [`.mcp.json`](.mcp.json), so running
-`claude` in this folder offers it (approve it once). Any other MCP client: stdio command `.venv/bin/python mcp_server/server.py`
+### Use it from your own Claude (the main way to try it)
+After the setup and load above, add the server to Claude Code **pinned to one dataset** (as a user would point it at
+their own logs; the tools then take no dataset argument and see nothing else):
+```bash
+claude mcp add logs -e LOGS_DATASET=bgl -- "$PWD/.venv/bin/python" "$PWD/mcp_server/server.py"
+claude                    # then ask, e.g.: "Is 'rts panic' one bad node or fleet-wide in October 2005, and who owns it?"
+```
+Datasets: `bgl`, `openstack`, `zookeeper`, `apache`, `ssh`, `hdfs`, `linux`, `healthapp`, `otel` (whichever you loaded).
+At the end Claude gives a link to the **session report** (or ask *"show me the session report"*): a local page with the
+answer, every tool call it made (what it found, time inside SereneDB, the SQL), and **Verify** buttons that re-run each
+step on a read-only connection and compare with what Claude saw. `http://127.0.0.1:8765/latest` shows the session live
+from the first tool call. Session files: `runs/sessions/` (local). Port: `LOGS_REPORT_PORT`.
+
+The repo's [`.mcp.json`](.mcp.json) also registers `logs` unpinned (all datasets) when you run `claude` in this folder.
+Any other MCP client: stdio command `.venv/bin/python mcp_server/server.py` (`LOGS_DATASET=<name>` to pin)
 (DB via `PGHOST`/`PGPORT`/`PGUSER`/`PGDATABASE`, default `localhost:7890`; `LOGS_DB_ROLE=logs_manager` or
 `team_<team>` runs it with database-enforced access, see Roles).
 

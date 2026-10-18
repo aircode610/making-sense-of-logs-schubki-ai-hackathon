@@ -1,0 +1,325 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Session report</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Urbanist:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+/* SereneDB tokens (serenedb.com: Urbanist, ink #11121d, mist #f0f2f5, accent #4a7aad / #80beff, brand gradient) */
+:root {
+  --bg: #ffffff; --surface: #ffffff; --mist: #f0f2f5; --line: #e7e7e7; --ink: #11121d; --ink-2: #506182;
+  --muted: #7a8296; --accent: #4a7aad; --brand-a: #a162f0; --brand-b: #3e318c; --ok: #22c55e; --warn: #d97706;
+  --db: #895af8; --tool: #c9cfdb; --radius: .625rem;
+  --sans: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; --display: "Urbanist", var(--sans);
+  --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #1c1c1c; --surface: #212121; --mist: #151515; --line: rgba(255,255,255,.1); --ink: #ffffff; --ink-2: #bbbbbb;
+  --muted: #8b93a7; --accent: #80beff; --tool: #3a3f4b; color-scheme: dark; } }
+:root[data-theme="dark"] {
+  --bg: #1c1c1c; --surface: #212121; --mist: #151515; --line: rgba(255,255,255,.1); --ink: #ffffff; --ink-2: #bbbbbb;
+  --muted: #8b93a7; --accent: #80beff; --tool: #3a3f4b; color-scheme: dark; }
+
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+html, body { margin: 0; background: var(--bg); color: var(--ink); font: 15px/1.55 var(--sans); }
+.wrap { max-width: 880px; margin: 0 auto; padding: 28px 16px 64px; }
+button { font: inherit; color: inherit; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 6px; }
+
+/* header */
+.top { display: flex; align-items: center; gap: 12px; margin-bottom: 36px; }
+.mark { width: 26px; height: 26px; border-radius: 7px; background: linear-gradient(135deg, var(--brand-a), var(--brand-b)); flex: none; }
+.brand { font-family: var(--display); font-weight: 600; font-size: 17px; letter-spacing: -.01em; }
+.brand span { color: var(--muted); font-weight: 500; }
+.meta { margin-left: auto; display: flex; gap: 8px; align-items: center; color: var(--muted); font-size: 13px; }
+.chip { display: inline-flex; align-items: center; gap: 6px; padding: 3px 10px; border: 1px solid var(--line); border-radius: 999px; font-size: 12.5px; color: var(--ink-2); background: var(--surface); }
+.live-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--ok); box-shadow: 0 0 0 3px color-mix(in srgb, var(--ok) 25%, transparent); }
+.icon-btn { border: 1px solid var(--line); background: var(--surface); border-radius: 8px; width: 30px; height: 30px; cursor: pointer; color: var(--muted); }
+
+/* question + answer */
+.eyebrow { font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); margin-bottom: 8px; }
+h1 { font-family: var(--display); font-weight: 600; font-size: clamp(24px, 3.4vw, 34px); line-height: 1.18; letter-spacing: -.02em; margin: 0 0 22px; }
+.answer { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 20px 22px; }
+.answer p { margin: 0 0 10px; } .answer p:last-child { margin-bottom: 0; }
+.answer ul { margin: 6px 0 10px; padding-left: 20px; } .answer li { margin: 3px 0; }
+.answer h3 { font-family: var(--display); font-size: 16px; margin: 14px 0 6px; }
+.num { border-bottom: 1.5px dotted var(--accent); cursor: pointer; font-variant-numeric: tabular-nums; }
+.num.miss { border-bottom-color: var(--warn); }
+.num:hover, .num.on { background: color-mix(in srgb, var(--accent) 14%, transparent); border-radius: 3px; }
+.answer-foot { display: flex; gap: 14px; flex-wrap: wrap; margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--line); font-size: 13px; color: var(--muted); }
+.k { display: inline-flex; align-items: center; gap: 6px; }
+.sw { width: 10px; height: 2px; display: inline-block; border-bottom: 2px dotted var(--accent); }
+.sw.miss { border-bottom-color: var(--warn); }
+.empty { color: var(--muted); }
+
+/* session strip (signature) */
+.strip-head { display: flex; align-items: baseline; justify-content: space-between; margin: 34px 0 10px; gap: 12px; flex-wrap: wrap; }
+.strip-head h2, .steps-head h2 { font-family: var(--display); font-size: 18px; font-weight: 600; margin: 0; letter-spacing: -.01em; }
+.totals { display: flex; gap: 18px; font-size: 13px; color: var(--muted); flex-wrap: wrap; }
+.totals b { color: var(--ink); font-weight: 600; font-variant-numeric: tabular-nums; }
+.strip { position: relative; height: 34px; border-radius: 8px; background: var(--mist); overflow: hidden; }
+.seg { position: absolute; top: 6px; bottom: 6px; border-radius: 4px; background: var(--tool); cursor: pointer; transition: transform .15s ease; }
+.seg i { position: absolute; left: 0; top: 0; bottom: 0; border-radius: 4px; background: linear-gradient(180deg, var(--brand-a), var(--brand-b)); }
+.seg:hover, .seg.on { transform: scaleY(1.25); }
+.legend { display: flex; gap: 16px; margin-top: 8px; font-size: 12.5px; color: var(--muted); flex-wrap: wrap; }
+.dot { width: 9px; height: 9px; border-radius: 3px; display: inline-block; margin-right: 6px; vertical-align: -1px; }
+
+/* steps */
+.steps-head { display: flex; align-items: center; justify-content: space-between; margin: 34px 0 10px; }
+.btn { border: 1px solid var(--line); background: var(--surface); border-radius: 8px; padding: 6px 12px; cursor: pointer; font-size: 13.5px; font-weight: 500; }
+.btn.primary { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+.btn:disabled { opacity: .55; cursor: default; }
+.steps { border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface); overflow: hidden; }
+.step { border-top: 1px solid var(--line); }
+.step:first-child { border-top: 0; }
+.step.on { box-shadow: inset 3px 0 0 var(--accent); }
+.row { display: grid; grid-template-columns: 52px minmax(120px, 170px) 1fr auto auto; gap: 12px; align-items: center; padding: 11px 16px; cursor: pointer; width: 100%; text-align: left; background: none; border: 0; }
+.row:hover { background: var(--mist); }
+.t { color: var(--muted); font-size: 12.5px; font-variant-numeric: tabular-nums; }
+.tool { font-family: var(--mono); font-size: 13px; color: var(--ink); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.find { color: var(--ink-2); font-size: 14px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ms { color: var(--muted); font-size: 12.5px; font-variant-numeric: tabular-nums; text-align: right; min-width: 64px; }
+.badge { font-size: 12px; padding: 2px 8px; border-radius: 999px; border: 1px solid var(--line); color: var(--muted); min-width: 66px; text-align: center; }
+.badge.idle { color: var(--accent); border-color: transparent; }
+.row:hover .badge.idle { border-color: var(--line); }
+.badge.match { color: var(--ok); border-color: color-mix(in srgb, var(--ok) 40%, transparent); }
+.badge.changed, .badge.err { color: var(--warn); border-color: color-mix(in srgb, var(--warn) 45%, transparent); }
+.detail { display: none; padding: 4px 16px 18px 80px; }
+.step.open .detail { display: block; }
+.dl { display: grid; grid-template-columns: 110px 1fr; gap: 6px 14px; font-size: 13.5px; margin: 6px 0 12px; }
+.dl dt { color: var(--muted); } .dl dd { margin: 0; color: var(--ink-2); overflow-wrap: anywhere; }
+.args { display: flex; gap: 6px; flex-wrap: wrap; }
+.arg { font-family: var(--mono); font-size: 12px; background: var(--mist); border-radius: 6px; padding: 2px 7px; color: var(--ink-2); }
+.tbl-wrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 8px; margin: 6px 0 12px; }
+table { border-collapse: collapse; width: 100%; font-size: 12.5px; }
+th, td { text-align: left; padding: 6px 10px; border-top: 1px solid var(--line); white-space: nowrap; max-width: 320px; overflow: hidden; text-overflow: ellipsis; }
+th { border-top: 0; color: var(--muted); font-weight: 500; background: var(--mist); }
+details.sql summary { cursor: pointer; color: var(--accent); font-size: 13px; list-style: none; }
+details.sql summary::-webkit-details-marker { display: none; }
+pre { font-family: var(--mono); font-size: 12px; background: var(--mist); border-radius: 8px; padding: 10px 12px; white-space: pre-wrap; overflow-wrap: anywhere; margin: 8px 0 0; color: var(--ink-2); }
+.verify-line { display: flex; gap: 10px; align-items: center; margin-top: 12px; font-size: 13px; color: var(--muted); flex-wrap: wrap; }
+.note { font-size: 12.5px; color: var(--muted); margin-top: 40px; line-height: 1.6; }
+.note code { font-family: var(--mono); font-size: 12px; }
+@media (max-width: 640px) {
+  .row { grid-template-columns: 1fr auto; gap: 4px 10px; }
+  .t, .find { display: none; }
+  .detail { padding-left: 16px; }
+  .dl { grid-template-columns: 1fr; }
+}
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <div class="mark" aria-hidden="true"></div>
+    <div class="brand">SereneDB <span>· log investigation</span></div>
+    <div class="meta">
+      <span class="chip" id="ds" hidden></span>
+      <span class="chip" id="live" hidden><span class="live-dot"></span>Live</span>
+      <button class="icon-btn" id="theme" title="Switch light / dark" aria-label="Switch light or dark theme">◐</button>
+    </div>
+  </header>
+
+  <div class="eyebrow">Question</div>
+  <h1 id="q">Waiting for the first tool call…</h1>
+
+  <section class="answer" id="answer-box">
+    <div id="answer" class="empty">The answer appears here when Claude calls <code>session_report</code>. Steps below fill in as tools run.</div>
+    <div class="answer-foot" id="answer-foot" hidden>
+      <span class="k"><span class="sw"></span><span id="n-ok"></span></span>
+      <span class="k"><span class="sw miss"></span><span id="n-miss"></span></span>
+      <span>Click a number to see the step it came from.</span>
+    </div>
+  </section>
+
+  <div class="strip-head">
+    <h2>Session</h2>
+    <div class="totals" id="totals"></div>
+  </div>
+  <div class="strip" id="strip" role="list" aria-label="Session timeline"></div>
+  <div class="legend">
+    <span><i class="dot" style="background:linear-gradient(180deg,var(--brand-a),var(--brand-b))"></i>Inside SereneDB</span>
+    <span><i class="dot" style="background:var(--tool)"></i>Rest of the tool call</span>
+    <span><i class="dot" style="background:var(--mist);border:1px solid var(--line)"></i>Claude thinking between calls</span>
+  </div>
+
+  <div class="steps-head">
+    <h2>Steps</h2>
+    <button class="btn primary" id="verify-all">Verify all numbers</button>
+  </div>
+  <div class="steps" id="steps"></div>
+
+  <p class="note">Every step is a fixed, parameterised query over your logs in SereneDB; nothing on this page is written by a
+  model except the answer. <b>Verify</b> re-runs that step's recorded SQL against the database with a read-only role and
+  compares the result with what Claude saw. Session file: <code id="sid"></code></p>
+</div>
+
+<script>
+const $ = s => document.querySelector(s);
+const parts = location.pathname.split("/").filter(Boolean);
+const SID = parts[0] === "s" && parts[1] ? parts[1] : "latest";
+const LIVE = SID === "latest";
+let data = null, verified = {}, openStep = null, lastSig = "";
+
+// theme toggle (remembered per browser)
+try { const t = new URLSearchParams(location.search).get("theme") || localStorage.getItem("sdb-theme");
+      if (t) document.documentElement.dataset.theme = t; } catch (e) {}
+const OPEN = new URLSearchParams(location.search).get("open");   // ?open=<step> opens a step (shareable link)
+$("#theme").onclick = () => {
+  const dark = matchMedia("(prefers-color-scheme: dark)").matches;
+  const cur = document.documentElement.dataset.theme || (dark ? "dark" : "light");
+  const next = cur === "dark" ? "light" : "dark";
+  document.documentElement.dataset.theme = next;
+  try { localStorage.setItem("sdb-theme", next); } catch (e) {}
+};
+
+const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({"&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;"}[c]));
+const fmt = n => typeof n === "number" ? n.toLocaleString("en-US") : n;
+const ms = v => v == null ? "" : v >= 1000 ? (v / 1000).toFixed(1) + " s" : Math.round(v) + " ms";
+
+// one plain line per step: what it found
+function finding(c) {
+  if (c.error) return "Error: " + c.error;
+  const r = c.result || {}, row = (r.rows || [])[0] || {};
+  const tot = r.total_matches ?? r.total_lines;
+  if (c.tool === "get_context" && r.anchor) {
+    const b = (r.before || []).length, a = (r.after || []).length;
+    return `${b} lines before, ${a} after the anchor` + (r.nearest_before_window && !b ? " · nearest earlier line further back" : "");
+  }
+  if (r.reading) return `Reading: ${r.reading}`;
+  if (row.template) return `Top: ${row.template}` + (row.bursts != null ? ` · ${fmt(row.bursts)} bursts` : "");
+  if (tot != null) return `${fmt(tot)} ${c.tool.includes("pattern") ? "patterns" : "matches"}` + (row.ts ? ` · first ${String(row.ts).slice(0, 16)}` : "");
+  return (r.scope || "").split(";")[0];
+}
+
+// tiny markdown: paragraphs, bullets, **bold**, `code`, ### headings; numbers marked via sentinels
+function renderAnswer(text, nums) {
+  let s = "", last = 0;
+  nums.forEach((n, i) => { s += text.slice(last, n.start) + `\u0001${i}\u0002`; last = n.end; });
+  s += text.slice(last);
+  const inline = t => esc(t).replace(/\*\*(.+?)\*\*/g, "<b>$1</b>").replace(/`([^`]+)`/g, "<code>$1</code>")
+    .replace(/\u0001(\d+)\u0002/g, (_, i) => {
+      const n = nums[+i];
+      return `<span class="num${n.step == null ? " miss" : ""}" data-step="${n.step ?? ""}" tabindex="0" title="${n.step == null ? "Not found in any tool result" : "From step " + (n.step + 1)}">${esc(n.text)}</span>`;
+    });
+  return text ? s.split(/\n{2,}/).map(block => {
+    const lines = block.split("\n");
+    if (lines.every(l => /^\s*[-*•]\s+/.test(l))) return "<ul>" + lines.map(l => "<li>" + inline(l.replace(/^\s*[-*•]\s+/, "")) + "</li>").join("") + "</ul>";
+    if (/^#{1,4}\s/.test(lines[0])) return "<h3>" + inline(lines[0].replace(/^#+\s/, "")) + "</h3>" + (lines.length > 1 ? "<p>" + inline(lines.slice(1).join(" ")) + "</p>" : "");
+    return "<p>" + inline(lines.join(" ")) + "</p>";
+  }).join("") : "";
+}
+
+function table(rows) {
+  if (!rows || !rows.length) return "";
+  const cols = Object.keys(rows[0]).filter(k => !["dataset", "body_cut", "entities"].includes(k)).slice(0, 7);
+  return `<div class="tbl-wrap"><table><thead><tr>${cols.map(c => `<th>${esc(c)}</th>`).join("")}</tr></thead><tbody>` +
+    rows.map(r => `<tr>${cols.map(c => `<td title="${esc(typeof r[c] === "object" ? JSON.stringify(r[c]) : r[c])}">${esc(typeof r[c] === "object" ? JSON.stringify(r[c]) : fmt(r[c]))}</td>`).join("")}</tr>`).join("") +
+    "</tbody></table></div>";
+}
+
+function badge(i) {
+  const v = verified[i];
+  if (!v) return `<span class="badge idle">Verify</span>`;
+  if (v === "busy") return `<span class="badge">checking…</span>`;
+  return `<span class="badge ${v.status === "match" ? "match" : v.status === "changed" ? "changed" : ""}">${v.status === "match" ? "✓ verified" : esc(v.status)}</span>`;
+}
+
+function render() {
+  const calls = data.calls, rep = data.report || {};
+  $("#sid").textContent = "runs/sessions/" + data.session + ".jsonl";
+  if (data.dataset) { $("#ds").hidden = false; $("#ds").textContent = data.dataset; }
+  $("#live").hidden = !LIVE;
+  $("#q").textContent = rep.question || (calls.length ? "Session in progress" : "Waiting for the first tool call…");
+  if (rep.answer) {
+    $("#answer").className = ""; $("#answer").innerHTML = renderAnswer(rep.answer, data.numbers || []);
+    const ok = (data.numbers || []).filter(n => n.step != null).length, miss = (data.numbers || []).length - ok;
+    $("#answer-foot").hidden = false;
+    $("#n-ok").textContent = `${ok} number${ok === 1 ? "" : "s"} found in a tool result`;
+    $("#n-miss").textContent = `${miss} not found`;
+  }
+  // totals + strip
+  const t0 = calls.length ? new Date(calls[0].ts) - calls[0].wall_ms : 0;
+  const tEnd = calls.length ? Math.max(...calls.map(c => +new Date(c.ts))) : 0;
+  const span = Math.max(1, tEnd - t0);
+  const db = calls.reduce((a, c) => a + ((c.result || {}).elapsed_ms || 0), 0);
+  const tools = calls.reduce((a, c) => a + (c.wall_ms || 0), 0);
+  $("#totals").innerHTML = `<span><b>${calls.length}</b> tool calls</span><span><b>${ms(db)}</b> in SereneDB</span>` +
+    `<span><b>${ms(tools)}</b> in tools</span><span><b>${ms(span)}</b> session</span>`;
+  $("#strip").innerHTML = calls.map((c, i) => {
+    const end = +new Date(c.ts), start = end - c.wall_ms;
+    const left = (start - t0) / span * 100, w = Math.max(0.6, c.wall_ms / span * 100);
+    const dbw = Math.min(100, ((c.result || {}).elapsed_ms || 0) / Math.max(1, c.wall_ms) * 100);
+    return `<div class="seg${openStep === i ? " on" : ""}" role="listitem" data-i="${i}" title="${esc(c.tool)} · ${ms(c.wall_ms)}" style="left:${left}%;width:${w}%"><i style="width:${dbw}%"></i></div>`;
+  }).join("");
+  // steps
+  $("#steps").innerHTML = calls.map((c, i) => {
+    const r = c.result || {}, offs = ((+new Date(c.ts) - c.wall_ms - t0) / 1000).toFixed(1);
+    const args = Object.entries(c.args || {}).map(([k, v]) => `<span class="arg">${esc(k)}=${esc(typeof v === "object" ? JSON.stringify(v) : v)}</span>`).join("");
+    const v = verified[i] && verified[i] !== "busy" ? verified[i] : null;
+    return `<div class="step${openStep === i ? " open on" : ""}" id="step-${i}">
+      <button class="row" data-i="${i}" aria-expanded="${openStep === i}">
+        <span class="t">+${offs}s</span><span class="tool">${esc(c.tool)}</span><span class="find">${esc(finding(c))}</span>
+        <span class="ms">${ms(r.elapsed_ms ?? c.wall_ms)}</span>${badge(i)}
+      </button>
+      <div class="detail">
+        <dl class="dl">
+          ${args ? `<dt>Asked</dt><dd class="args">${args}</dd>` : ""}
+          ${r.scope ? `<dt>Scope</dt><dd>${esc(r.scope)}</dd>` : ""}
+          ${(r.total_matches ?? r.total_lines) != null ? `<dt>Total</dt><dd>${fmt(r.total_matches ?? r.total_lines)}${r.truncated ? ` · showing ${r.rows_returned}` : ""}</dd>` : ""}
+          <dt>Time</dt><dd>${ms(r.elapsed_ms)} in SereneDB · ${ms(c.wall_ms)} total</dd>
+          ${(r.hints || []).length ? `<dt>Hint</dt><dd>${esc(r.hints[0])}</dd>` : ""}
+        </dl>
+        ${table(r.rows)}
+        ${(r.sql || []).length ? `<details class="sql"><summary>SQL (${r.sql.length})</summary>${r.sql.map(q => `<pre>${esc(q)}</pre>`).join("")}</details>` : ""}
+        <div class="verify-line"><button class="btn verify" data-i="${i}" ${verified[i] === "busy" ? "disabled" : ""}>Verify</button>
+          <span>${v ? esc(v.detail || "") + (v.ms != null ? ` · re-ran in ${ms(v.ms)}` : "") : "Re-run this step's query and compare with what Claude saw."}</span></div>
+      </div></div>`;
+  }).join("") || `<div class="row" style="cursor:default"><span></span><span class="find empty">No tool calls yet. Ask Claude a question about your logs.</span></div>`;
+}
+
+function focusStep(i) {
+  openStep = openStep === i ? null : i; render();
+  if (openStep != null) $("#step-" + i).scrollIntoView({behavior: "smooth", block: "nearest"});
+}
+document.addEventListener("click", e => {
+  const num = e.target.closest(".num"); if (num && num.dataset.step !== "") { openStep = null; focusStep(+num.dataset.step); return; }
+  const seg = e.target.closest(".seg"); if (seg) return focusStep(+seg.dataset.i);
+  const vb = e.target.closest(".verify"); if (vb) return verifyStep(+vb.dataset.i);
+  const ib = e.target.closest(".badge.idle"); if (ib) { e.stopPropagation(); return verifyStep(+ib.closest(".row").dataset.i); }
+  const row = e.target.closest(".row[data-i]"); if (row) return focusStep(+row.dataset.i);
+});
+document.addEventListener("keydown", e => { const n = e.target.closest(".num"); if (n && e.key === "Enter") n.click(); });
+
+async function verifyStep(i) {
+  verified[i] = "busy"; render();
+  try { verified[i] = await (await fetch(`/verify/${SID}/${i}`)).json(); if (verified[i].error) verified[i] = {status: "error", detail: verified[i].error}; }
+  catch (e) { verified[i] = {status: "error", detail: "The report server stopped (the Claude session ended)."}; }
+  render();
+}
+$("#verify-all").onclick = async () => {
+  $("#verify-all").disabled = true;
+  for (let i = 0; i < data.calls.length; i++) await verifyStep(i);
+  $("#verify-all").disabled = false;
+  const ok = Object.values(verified).filter(v => v.status === "match").length;
+  $("#verify-all").textContent = `Verified ${ok} of ${data.calls.length}`;
+};
+
+async function load() {
+  try {
+    const d = await (await fetch(`/api/${SID}`)).json();
+    const sig = d.calls.length + "|" + JSON.stringify(d.report || {});
+    if (sig !== lastSig) { data = d; lastSig = sig; render(); }
+  } catch (e) { if (!data) $("#q").textContent = "The report server is not running. Ask Claude for the session report again."; }
+}
+load().then(() => { if (OPEN != null && data) { focusStep(+OPEN); if (new URLSearchParams(location.search).has("verify")) verifyStep(+OPEN); } });
+if (LIVE) setInterval(load, 2000);
+</script>
+</body>
+</html>

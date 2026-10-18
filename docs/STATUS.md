@@ -1,10 +1,15 @@
 # Status (read first; keep short and current)
 
-_Last updated: 2026-10-18 (plan 014); before: 2026-10-17, plan 009 done (eval: ours vs baseline), plans 053–055 done (OpenStack patterns, Jev judgments, `value_outliers`, `rate_vs_baseline`; 8 MCP tools)._
+_Last updated: 2026-10-18 (plan 015); before: 2026-10-17, plan 009 done (eval: ours vs baseline), plans 053–055 done (OpenStack patterns, Jev judgments, `value_outliers`, `rate_vs_baseline`; 8 MCP tools)._
 
 - **Plan 010 done:** eval fit for iteration: judge sees full evidence (claims supported ours 0.92 / baseline 0.71
   after re-judging), failures score 0, `--compare/--reuse-baseline/--rejudge/--repeat`, E6 ranking golden facts,
   tool-vs-LLM seconds (tools ≈ 1 %), `bench/replay_tools.py`. Noise floor: E1 ±0.05, rubric ±0.06 (`docs/EVAL.md`).
+
+- **Plan 015 done (session report):** every MCP session is recorded; `session_report` gives judges a local SereneDB-
+  styled page: the answer with each number traced to its step, the session strip (time in SereneDB vs tool vs Claude),
+  one line per step (details + SQL on click), and **Verify** (re-runs the step read-only, compares). README: judges add
+  the pinned MCP with one `claude mcp add` line. Next: on-demand indexing (016), live incident replay (017).
 
 - **Plan 014 done (one dataset per server + 8 gaps):** `LOGS_DATASET` pins the MCP server to the user's own dataset
   (no dataset parameter); fixes from the plan-013 traces (latency_profile by median, top_entities for leads, get_context
