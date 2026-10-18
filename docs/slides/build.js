@@ -155,9 +155,24 @@ async function rounded(file, rx = 28) {
   await stage(0, "Step 1 · Load", "SereneDB loads and indexes every line",
     ["Download from Zenodo, or any log file on disk", "Format detected from 76 known formats", "Parsed with SQL inside SereneDB: typed columns", "Masked into kinds of message; bursts by window functions", "One inverted index: full text, BM25, phrase, fuzzy"],
     [["72 s", "clean clone → BGL + OpenStack ready (5 M lines)"], ["18 s", "4.7 M BGL lines parsed + indexed in SQL"], ["1.6 s", "a new 21 k-line file, format auto-detected"]], "0:50 \u00b7 4 \u00b7 Load\n\"Step one. Say 'Load the base corpus'. SereneDB downloads BGL and OpenStack, detects the format from 76 known ones, parses everything with SQL into typed columns, groups lines into kinds of message and builds one full-text index. 72 seconds for 5 million lines. Your own log file: under 2 seconds.\"");
-  await stage(1, "Step 2 · Judge", "Jev decides what is a real problem, once",
-    ["Typed questions, calibrated probabilities: real fault? routine dump? attack? whose?", "Asked once per kind of message, inside SereneDB with one SQL call", "Stored: answering never re-reads raw lines"],
-    [["$0.02 · 20 s", "Jev judges all 1,126 BGL kinds of message"], ["≈ 177 M tokens", "for an LLM to read BGL once (estimate), every time"], ["1 → 5", "real alerts in the manager's top 10"]], "1:15 \u00b7 5 \u00b7 Judge\n\"Step two is where it gets cheap. Jev, a small typed-judgment model, runs inside SereneDB and asks each kind of message once: is it a real fault or a routine dump? an attack? whose is it? 1,126 kinds of message in 20 seconds for 2 cents, stored. Reading BGL with a large model would be about 177 million tokens, every time. And it works: real alerts in the manager's top 10 go from 1 to 5.\"");
+  {
+    const s2 = await stage(1, "Step 2 · Judge", "Jev decides what is a real problem, once",
+      ["Typed questions, calibrated probabilities: real fault? routine dump? attack? whose?", "Asked once per kind of message, inside SereneDB with one SQL call", "Stored: answering never re-reads raw lines", "Real alerts in the manager's top 10: 1 → 5"],
+      [], "1:15 \u00b7 5 \u00b7 Judge\n\"Step two is where it gets cheap. Jev, a small typed-judgment model, runs inside SereneDB and asks each kind of message once: is it a real fault or a routine dump? an attack? whose is it? 1,126 kinds of message in 20 seconds for 2 cents, stored. Having an LLM read BGL instead is about 177 million tokens: roughly 89 dollars on Haiku, 354 on Sonnet, 708 on Opus, and again for every question. And it works: real alerts in the manager's top 10 go from 1 to 5.\"");
+    // price comparison: judging BGL once with Jev vs reading it with an LLM (≈177 M input tokens, an estimate)
+    card(s2, 5.1, 2.05, 4.4, 2.9, WHITE, LINE);
+    s2.addText("Cost to judge BGL once", { x: 5.35, y: 2.15, w: 3.95, h: 0.32, fontSize: 12.5, bold: true, fontFace: BODY, color: INK, margin: 0 });
+    const price = [["Jev, once per kind of message", "$0.02", VIOLET, true], ["Haiku 5.5 reads every line", "≈ $89", WARN, false],
+                   ["Sonnet 5.5 reads every line", "≈ $354", WARN, false], ["Opus 5.5 reads every line", "≈ $708", WARN, false]];
+    price.forEach(([l, n, c, hi], k) => {
+      const y = 2.55 + k * 0.5;
+      if (hi) s2.addShape(pres.shapes.ROUNDED_RECTANGLE, { x: 5.25, y: y - 0.04, w: 4.1, h: 0.46, rectRadius: 0.1, fill: { color: PALE }, line: { type: "none" } });
+      s2.addText(l, { x: 5.4, y, w: 2.75, h: 0.38, fontSize: 11.5, bold: hi, fontFace: BODY, color: INK2, margin: 0, valign: "middle" });
+      s2.addText(n, { x: 8.1, y, w: 1.2, h: 0.38, fontSize: 16, bold: true, fontFace: HEAD, color: c, margin: 0, align: "right", valign: "middle" });
+    });
+    s2.addText("LLM: ≈ 177 M input tokens (709 MB ÷ ~4 B/token, estimate) × list price; again for every question, and it does not fit one context window.",
+      { x: 5.35, y: 4.5, w: 3.95, h: 0.42, fontSize: 8.5, fontFace: BODY, color: MUTED, margin: 0, valign: "top" });
+  }
   await stage(2, "Step 3 · Ask", "Claude asks focused questions through MCP",
     ["44 tools: search, context, counts, trends, rankings, owners", "Each tool is a fixed, safe SQL query; Claude fills typed fields", "Results: the SQL, exact totals, ≤ 50 rows, truncation flag", "5 prompts (type /) and 6 resources (type @)"],
     [["7 ms", "full-text count over 4.7 M lines (inverted index)"], ["3–39 ms", "group-bys straight from the term dictionary"], ["1.8 s", "of database time for a 20-step investigation"]], "1:45 \u00b7 6 \u00b7 Ask\n\"Step three. Claude asks focused questions through our MCP server: 44 tools, each a fixed, safe SQL query. A full-text count over 4.7 million lines takes 7 milliseconds; group-bys come straight from the index. A whole 20-step investigation spends 1.8 seconds in the database.\"");
