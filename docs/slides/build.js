@@ -3,7 +3,7 @@
 // Minimal text: a title + a few labels and numbers per slide; the speaker notes carry the explanation.
 // Flow: problem → solution → accurate / fast → company → cheaper (Jev) → loading → performance (SereneDB) → MCP → wow
 // → scale → try it. Numbers from committed results: docs/INVESTIGATION.md, eval/results/ab-20261018-193248.md,
-// eval/results/cc-20261018-195733.md (plan 018 pilot, 3 questions), plans/006, docs/PERFORMANCE.md, README.
+// eval/results/cc-20261018-205503.md (Claude Code + MCP vs plain Claude Code, 50 questions), plans/006, docs/PERFORMANCE.md, README.
 // Preview with LibreOffice-visible fonts: SLIDE_FONT=Arial SLIDE_MONO="Liberation Mono" node docs/slides/build.js
 const path = require("path");
 const G = require("child_process").execSync("npm root -g").toString().trim();
@@ -110,8 +110,8 @@ async function rounded(file, rx = 28) {
   // 3 · problem in numbers
   s = slide("Problem");
   title(s, "The problem", "Raw logs mislead");
-  stats(s, [["855,501", "FATAL lines, but only 36,714 bursts of problems"], ["1 / 10", "real alerts in the top 10 when ranked by log level"], ["69.6 %", "of claims correct when an AI greps the raw files (pilot)", WARN]]);
-  s.addNotes("Even when you can read them, raw logs mislead. BGL has 855 thousand FATAL lines, but they come from far fewer recurring problems. Rank by severity and only one of the top ten is a real alert. And plain Claude Code grepping the raw files got 70 percent of its claims right in our pilot.");
+  stats(s, [["855,501", "FATAL lines, but only 36,714 bursts of problems"], ["1 / 10", "real alerts in the top 10 when ranked by log level"], ["186", "wrong claims when Claude Code greps the raw files (50 questions)", WARN]]);
+  s.addNotes("Even when you can read them, raw logs mislead. BGL has 855 thousand FATAL lines, but they come from far fewer recurring problems. Rank by severity and only one of the top ten is a real alert. And when plain Claude Code greps the raw files itself, a judge found 186 wrong claims over 50 answers.");
 
   // 4 · solution
   s = slide("Solution");
@@ -138,8 +138,26 @@ async function rounded(file, rx = 28) {
   // 6 · accurate + faster
   s = slide("Solution");
   title(s, "Why it's better", "More accurate and faster");
-  stats(s, [["62 / 62", "numbers traced to a query"], ["13 – 2", "wins vs the reference design (blind judge)"], ["13 s", "per answer, vs 71 s for an AI grepping raw files (pilot)"]]);
-  s.addNotes("More accurate: every number comes from the database. In the worked investigation, 62 of 62 numbers trace to a query, and Verify re-runs each one. On 50 questions with known answers, a blind judge preferred us 13 to 2 on the brief's data, with fewer wrong claims, 53 vs 69. Faster: in our pilot, Claude Code with our server answered in 13 seconds; grepping the raw files took 71, with 94 vs 70 percent of claims correct.");
+  stats(s, [["62 / 62", "numbers traced to a query"], ["30 – 15", "wins vs plain Claude Code (blind judge, 50 questions)"], ["14 s", "per answer, vs 86 s for plain Claude Code"]]);
+  s.addNotes("More accurate: every number comes from the database. In the worked investigation, 62 of 62 numbers trace to a query, and Verify re-runs each one. On 50 questions with known answers, a blind judge preferred Claude Code with our server over plain Claude Code 30 to 15. Faster: 14 seconds per answer instead of 86.");
+
+  // 6b · the headline comparison: Claude Code with vs without our server
+  s = slide("Solution");
+  title(s, "Measured", "Claude Code, with and without our server");
+  card(s, 0.5, 1.55, 4.4, 3.4, WHITE, LINE);
+  s.addText("Seconds per answer (mean)", { x: 0.8, y: 1.7, w: 3.9, h: 0.35, fontSize: 13, bold: true, fontFace: BODY, color: INK, margin: 0 });
+  s.addChart(pres.charts.BAR, [{ name: "s", labels: ["With our MCP", "Plain Claude Code"], values: [14.3, 86.0] }],
+    { x: 0.6, y: 2.1, w: 4.2, h: 2.2, barDir: "bar", chartColors: [VIOLET], valAxisHidden: true, valGridLine: { style: "none" }, catGridLine: { style: "none" },
+      showValue: true, dataLabelFormatCode: '0 "s"', dataLabelColor: INK, dataLabelFontSize: 14, catAxisLabelColor: INK2, catAxisLabelFontSize: 12,
+      catAxisLineShow: false, barGapWidthPct: 50, catAxisOrientation: "maxMin" });
+  s.addText("same model · same 50 questions · blind judge", { x: 0.8, y: 4.4, w: 3.9, h: 0.35, fontSize: 11, fontFace: BODY, color: MUTED, margin: 0 });
+  [["30 – 15", "wins (18 – 4 on BGL + OpenStack)"], ["116 vs 186", "wrong claims"], ["0.64 vs 0.46", "golden facts found"]].forEach(([n, l], k) => {
+    const y = 1.55 + k * 1.16;
+    card(s, 5.1, y, 4.4, 1.04, k % 2 ? MIST : PALE);
+    s.addText(n, { x: 5.4, y: y + 0.08, w: 3.9, h: 0.55, fontSize: 26, bold: true, fontFace: HEAD, color: VIOLET, margin: 0 });
+    s.addText(l, { x: 5.4, y: y + 0.62, w: 3.9, h: 0.35, fontSize: 12.5, fontFace: BODY, color: INK2, margin: 0 });
+  });
+  s.addNotes("The headline test: the same Claude Code, the same model, the same 50 questions with frozen answers. One gets our MCP server; the other gets the raw log files and its own Bash, Read and Grep. A blind Opus judge preferred ours 30 to 15, and 18 to 4 on the brief's base corpus. Fewer wrong claims, 116 vs 186; more of the key facts found; and 14 seconds per answer instead of 86. On the big BGL and HDFS logs plain Claude Code needs 168 seconds on average and once timed out at 25 minutes. Honest limit: on small logs, where grep reads every line, plain Claude Code wins some engineer questions, 9 to 8.");
 
   // 7 · fits the company
   s = slide("Company");
@@ -166,7 +184,7 @@ async function rounded(file, rx = 28) {
   s.addText("$0.02 · 20 s", { x: 5.45, y: 2.35, w: 3.8, h: 0.8, fontSize: 34, bold: true, fontFace: HEAD, color: VIOLET, margin: 0 });
   s.addText("once, reused by every answer", { x: 5.45, y: 3.15, w: 3.8, h: 0.4, fontSize: 13, fontFace: BODY, color: INK2, margin: 0 });
   s.addText("real alerts in the top 10: 1 → 5", { x: 5.45, y: 3.85, w: 3.8, h: 0.5, fontSize: 14, bold: true, fontFace: BODY, color: DEEP, margin: 0 });
-  s.addNotes("Why it's cheaper. Reading all of BGL with a large model is around 177 million tokens, every time you ask; that is an estimate from the file size. Jev, a small model for typed judgments, runs inside SereneDB and judges each kind of message once: 1,126 patterns in 20 seconds for about two cents, stored and reused by every answer. That single step moved real alerts in the top ten from one to five. An answer with Claude plus our server cost about 7 cents in the pilot.");
+  s.addNotes("Why it's cheaper. Reading all of BGL with a large model is around 177 million tokens, every time you ask; that is an estimate from the file size. Jev, a small model for typed judgments, runs inside SereneDB and judges each kind of message once: 1,126 patterns in 20 seconds for about two cents, stored and reused by every answer. That single step moved real alerts in the top ten from one to five. An answer with Claude Code plus our server costs about 5 cents.");
 
   // 9 · loading
   s = slide("Loading");

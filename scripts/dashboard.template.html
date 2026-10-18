@@ -93,7 +93,7 @@ select, input { font: inherit; font-size: 14px; border: 1px solid var(--line); b
 <div class="top"><div class="mark"></div><div class="brand">Making Sense of Logs <span>· eval dashboard</span></div>
 <button id="theme" aria-label="Toggle theme">Theme</button></div>
 
-<h1>Does our agent beat the reference design?</h1>
+<h1 id="h1">Does our agent beat the reference design?</h1>
 <p class="lead" id="lead"></p>
 <div class="tiles" id="tiles"></div>
 
@@ -137,7 +137,9 @@ uv run python -m loader load zookeeper       # … apache, ssh, hdfs, linux, hea
 # 2. Keys: ANTHROPIC_API_KEY in .env (agent = AGENT_MODEL, judge = JUDGE_MODEL, default Opus)
 uv sync --extra agent
 
-# 3. The A/B: our product agent vs the brief's reference ReAct agent, same MCP tools, blind judge
+# 3a. Claude Code + our MCP vs plain Claude Code on the raw files (needs the claude CLI), blind judge
+uv run python -m eval.cc_ab                                       # all 50 questions
+# 3b. Our LangGraph agent vs the brief's reference ReAct agent, same MCP tools, blind judge
 uv run python -m eval.ab --arms product,baseline                 # all 50 questions (~45 min, concurrency 5)
 uv run python -m eval.ab --arms product,baseline --ids D-E01,D-L04   # a smoke test on 2 questions
 uv run python -m eval.ab --rejudge eval/results/ab-&lt;stamp&gt;.runs.json  # re-judge stored answers only
@@ -156,7 +158,9 @@ const D = /*DATA*/null;
 const $ = s => document.querySelector(s);
 const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({"&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;"}[c]));
 const F = D.final, [A, B] = F.arms, SA = F.stats[A], SB = F.stats[B];
-const NAME = {product: "Our agent", baseline: "Reference ReAct", new: "40 tools", old: "8 tools"};
+const NAME = {product: "Our agent", baseline: "Reference ReAct", new: "40 tools", old: "8 tools", mcp: "Claude Code + our MCP", bare: "Plain Claude Code"};
+const CC = A === "mcp";
+if (CC) document.getElementById("h1").textContent = "Does our MCP server make Claude Code better at logs?";
 const nm = a => NAME[a] || a;
 
 try { const t = localStorage.getItem("dash-theme"); if (t) document.documentElement.dataset.theme = t; } catch (e) {}
@@ -168,7 +172,7 @@ $("#theme").onclick = () => {
 };
 
 const t = F.tally;
-$("#lead").innerHTML = `${F.n} questions with frozen answer keys over 9 log datasets (BGL, OpenStack and 7 more; the 3 OTel questions need the optional OTel slice, which was not loaded for this run, so neither system could answer them), for three roles. ` +
+$("#lead").innerHTML = CC ? `${F.n} questions with frozen answer keys over 9 log datasets, for three roles. <b>${nm(A)}</b> (our server, pinned to the question's dataset) vs <b>${nm(B)}</b> (the same Claude Code with Bash / Read / Grep over the raw log files). Same model (${esc(F.agent)}), no prompt beyond the question; the judge is ${esc(F.judge)}.` : `${F.n} questions with frozen answer keys over 9 log datasets (BGL, OpenStack and 7 more; the 3 OTel questions need the optional OTel slice, which was not loaded for this run, so neither system could answer them), for three roles. ` +
   `<b>${nm(A)}</b> (LangGraph: role recipes, coverage checks, a claim checker) vs <b>${nm(B)}</b> (the brief's reference design: a ReAct agent with the same MCP tools). ` +
   `Both use ${esc(F.agent)}; the judge is ${esc(F.judge)}.`;
 
@@ -179,7 +183,7 @@ const tiles = [
   ["Wrong claims, all answers", `${SA.claims_wrong} <small>vs ${SB.claims_wrong}</small>`, "lower is better"],
   ["Found the real problem (0–2)", `${fmt(SA.found_problem)} <small>vs ${fmt(SB.found_problem)}</small>`, "matched the key's answer"],
   ["Role rubric (1–5)", `${fmt(SA.rubric)} <small>vs ${fmt(SB.rubric)}</small>`, "role fit, next step, evidence, separation, clarity"],
-  ["Seconds per answer", `${fmt(SA.wall_s, 0)} <small>vs ${fmt(SB.wall_s, 0)}</small>`, `inside SereneDB: ${fmt(SA["tool_db_s (server)"], 2)} s vs ${fmt(SB["tool_db_s (server)"], 2)} s`],
+  ["Seconds per answer", `${fmt(SA.wall_s, 0)} <small>vs ${fmt(SB.wall_s, 0)}</small>`, CC ? `median ${fmt(SA["wall_s median"], 0)} s vs ${fmt(SB["wall_s median"], 0)} s; max ${fmt(SA["wall_s max"], 0)} s vs ${fmt(SB["wall_s max"], 0)} s` : `inside SereneDB: ${fmt(SA["tool_db_s (server)"], 2)} s vs ${fmt(SB["tool_db_s (server)"], 2)} s`],
 ];
 $("#tiles").innerHTML = tiles.map(([k, v, d]) => `<div class="tile"><div class="k">${k}</div><div class="v">${v}</div><div class="d">${d}</div></div>`).join("");
 
@@ -195,7 +199,7 @@ $("#bars-all").innerHTML = bar("all questions", t);
 const sl = F.slices;
 $("#bars-scope").innerHTML = Object.keys(sl).filter(k => k.startsWith("scope:")).map(k => bar(k.slice(6), sl[k])).join("");
 const rk = k => sl[k] || {};
-$("#read").innerHTML = `<b>Reading.</b> On the brief's base corpus our agent wins ${rk("scope:base corpus (BGL + OpenStack)")[A]}–${rk("scope:base corpus (BGL + OpenStack)")[B]}, and on engineer questions ${rk("role:engineer")[A]}–${rk("role:engineer")[B]}. ` +
+$("#read").innerHTML = CC ? `<b>Reading.</b> With our server Claude Code wins ${t[A]}–${t[B]} overall and ${rk("scope:base corpus (BGL + OpenStack)")[A]}–${rk("scope:base corpus (BGL + OpenStack)")[B]} on the brief's base corpus, makes fewer wrong claims (${SA.claims_wrong} vs ${SB.claims_wrong}) and answers in ${fmt(SA.wall_s, 0)} s instead of ${fmt(SB.wall_s, 0)} s. Plain Claude Code wins engineer questions on small logs (${rk("role:engineer")[B]}–${rk("role:engineer")[A]}), where grep can read every line; on the big logs it is slow and wrong more often. Inconsistent = the judge changed its mind when the order was swapped.` : `<b>Reading.</b> On the brief's base corpus our agent wins ${rk("scope:base corpus (BGL + OpenStack)")[A]}–${rk("scope:base corpus (BGL + OpenStack)")[B]}, and on engineer questions ${rk("role:engineer")[A]}–${rk("role:engineer")[B]}. ` +
   `The reference agent wins more on the 7 extra datasets (${rk("scope:other 7 datasets")[A]}–${rk("scope:other 7 datasets")[B]}), mostly manager questions (${rk("role:manager")[A]}–${rk("role:manager")[B]}): ` +
   `our manager recipe always starts from the computed priority ranking, while on a small dataset with one problem a free search digs deeper into that problem. ` +
   `Our agent makes fewer wrong claims (${SA.claims_wrong} vs ${SB.claims_wrong}) and costs about twice the time. Inconsistent = the judge changed its mind when the order was swapped: too close to call.`;
@@ -210,7 +214,10 @@ document.addEventListener("mousemove", e => {
   tip.style.left = Math.min(e.clientX + 12, innerWidth - 290) + "px"; tip.style.top = (e.clientY + 14) + "px";
 });
 
-const ROWS = [["claim_accuracy", "claim accuracy", 1, 3], ["claims_wrong", "wrong claims (total)", -1, 0], ["found_problem", "found the real problem (0–2)", 1, 2],
+const ROWS = CC ? [["claim_accuracy", "claim accuracy", 1, 3], ["claims_wrong", "wrong claims (total)", -1, 0], ["found_problem", "found the real problem (0–2)", 1, 2],
+  ["rubric", "role rubric (1–5)", 1, 2], ["E1", "golden facts mentioned", 1, 2], ["failed (scored 0)", "failed runs", -1, 0], ["tool_calls", "tool calls", 0, 1],
+  ["tool_errors", "tool errors", -1, 0], ["wall_s", "seconds per answer (mean)", -1, 1], ["wall_s median", "seconds per answer (median)", -1, 1],
+  ["cost_usd per answer", "$ per answer", -1, 3], ["tokens_in", "input tokens", -1, 0]] : [["claim_accuracy", "claim accuracy", 1, 3], ["claims_wrong", "wrong claims (total)", -1, 0], ["found_problem", "found the real problem (0–2)", 1, 2],
   ["rubric", "role rubric (1–5)", 1, 2], ["E1", "golden facts mentioned", 1, 2], ["tool_calls", "tool calls", 0, 1], ["wall_s", "seconds per answer", -1, 1],
   ["llm_s", "  of which LLM", -1, 1], ["tool_db_s (server)", "  of which SereneDB", -1, 2], ["tokens_in", "input tokens", -1, 0], ["tokens_out", "output tokens", -1, 0]];
 $("#arms").innerHTML = `<tr><th>metric</th><th class="n">${esc(nm(A))}</th><th class="n">${esc(nm(B))}</th></tr>` + ROWS.map(([k, l, dir, d]) => {
@@ -227,7 +234,7 @@ const steps = [
   ...D.hist.map(h => ({what: `Blind A/B: ${nm(h.arms[0])} vs ${nm(h.arms[1])} (50 golden questions)`, num: `${h.tally[h.arms[0]]}–${h.tally[h.arms[1]]}`,
     txt: `Ties ${h.tally.tie}, inconsistent ${h.tally.inconsistent}. Wrong claims ${h.wrong[0]} vs ${h.wrong[1]}; found the problem ${fmt(h.found[0])} vs ${fmt(h.found[1])}.`, src: "eval/results/" + h.file.replace(".json", ".md")})),
   {what: `Final: ${nm(A)} vs ${nm(B)} (50 golden questions)`, num: `${t[A]}–${t[B]}`,
-   txt: `Wrong claims ${SA.claims_wrong} vs ${SB.claims_wrong}; claim accuracy ${fmt(SA.claim_accuracy * 100, 1)}% vs ${fmt(SB.claim_accuracy * 100, 1)}%. Cost: ${fmt(SA.wall_s, 0)} s vs ${fmt(SB.wall_s, 0)} s per answer, and the time is spent in the LLM, not in SereneDB.`, src: "eval/results/" + F.file.replace(".json", ".md")},
+   txt: CC ? `Wrong claims ${SA.claims_wrong} vs ${SB.claims_wrong}; claim accuracy ${fmt(SA.claim_accuracy * 100, 1)}% vs ${fmt(SB.claim_accuracy * 100, 1)}%; ${fmt(SA.wall_s, 0)} s vs ${fmt(SB.wall_s, 0)} s per answer.` : `Wrong claims ${SA.claims_wrong} vs ${SB.claims_wrong}; claim accuracy ${fmt(SA.claim_accuracy * 100, 1)}% vs ${fmt(SB.claim_accuracy * 100, 1)}%. Cost: ${fmt(SA.wall_s, 0)} s vs ${fmt(SB.wall_s, 0)} s per answer, and the time is spent in the LLM, not in SereneDB.`, src: "eval/results/" + F.file.replace(".json", ".md")},
 ];
 $("#timeline").innerHTML = steps.map(s => `<div class="step"><div class="what">${esc(s.what)} <span class="num">${esc(s.num)}</span></div><div>${esc(s.txt)}</div><div class="src">${esc(s.src)}</div></div>`).join("");
 

@@ -42,3 +42,4 @@ Every plan respects: `CLAUDE.md` non-negotiables, `docs/ROLES.md` (role spec), `
 | 056 | [Clean-checkout test](056-clean-checkout.md) | Konark | draft | `feat/056-clean-checkout` |
 | 057 | [Any log file in: format detection, severity scale, inferred ownership](057-any-log-file.md) | Konark | parts 1–3 done (1 merged, 2 + 3 in PRs) | `feat/057-any-log-file` |
 | 017 | [Ship the deliverables](017-ship-deliverables.md) | Amirali | done | `feat/017-ship` |
+| 018 | [Claude Code + our MCP vs plain Claude Code (50 keys)](018-claude-code-ab.md) | Amirali | done | `feat/017-ship` |

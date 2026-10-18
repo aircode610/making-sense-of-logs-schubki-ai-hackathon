@@ -75,3 +75,26 @@ agent. Ground truth = `eval/answer_keys/<id>.yaml` (frozen; rules in its README)
 accuracy, found_problem (0-2), rubric, E1, and **time split** wall = llm + tool (client) + other, plus tool db (server
 `elapsed_ms`) and per-tool calls / ms. Shell note: unset `ANTHROPIC_BASE_URL` / `ANTHROPIC_AUTH_TOKEN` if a proxy is
 exported (401 otherwise). First result: `eval/results/ab-20261018-144958.md`.
+
+## Claude Code with our MCP vs plain Claude Code (plan 018) — the headline comparison
+`.venv/bin/python -m eval.cc_ab` runs headless Claude Code (`--bare`, Sonnet 5.5, empty temp dir) twice per question:
+with only our MCP server (pinned to the dataset), and with nothing but Bash / Read / Grep / Glob over the dataset's raw
+log files (BGL's inline ground-truth label column cut, OpenStack files renamed, label files left out). Same 50 keys,
+same blind both-orders Opus judge as `eval/ab.py`. Result `eval/results/cc-20261018-205503.md`:
+
+| | Claude Code + our MCP | plain Claude Code (raw files, Bash/grep) |
+|---|---|---|
+| blind judge wins (order-consistent) | **30** | 15 (tie 1, inconsistent 4) |
+| wins, base corpus (BGL + OpenStack) | **18** | 4 |
+| wins by role: engineer / lead / manager | 8 / **13** / **9** | **9** / 2 / 4 |
+| claim accuracy (judge + SQL) | **0.87** | 0.80 |
+| wrong claims (50 answers) | **116** | 186 |
+| found the real problem (0-2) | **1.51** | 1.22 |
+| rubric (1-5) | **3.50** | 3.23 |
+| E1 golden facts in the answer | **0.64** | 0.46 |
+| seconds per answer, median / mean / max | **14.6 / 14.3 / 27** | 33.4 / 86.0 / 1500 (timeout) |
+| seconds, large datasets (BGL 4.7M, HDFS 11M lines; 21 q) median / mean | **13.8 / 14.0** | 77.7 / 168.1 |
+| failed runs | 0 | 1 (D-X17, HDFS, 25 min timeout) |
+| tool errors | 2 | 14 |
+| $ per answer (Claude Code's own count) | 0.049 | 0.038 |
+
