@@ -275,6 +275,34 @@ async function rounded(file, rx = 28) {             // screenshot with rounded c
   });
   s.addNotes("3:35–3:55. Performance comes from SereneDB's engine. The inverted index counts a full-text search over 4.7 million lines in 7 milliseconds, and group-bys come straight from the index without scanning rows. Data loads inside the database. Timelines use ASOF joins, rankings use ROLLUP and PIVOT. Remote Parquet on S3 is read in place, and an on-demand index pays for itself after four searches.");
 
+  // ───────────── 10b · loading pipeline (SereneDB + Jev at load time)
+  s = slide("Performance");
+  title(s, "Loading", "Loading is where the work happens, once", "“Load the base corpus” or “Load ~/app.log”: every step runs inside SereneDB, so answering later is cheap.");
+  const load = [
+    [fa.FaFileImport, "1 · Stream in", "COPY FROM STDIN from anywhere on disk, or the brief's Zenodo links", "SereneDB COPY"],
+    [fa.FaSearch, "2 · Detect", "76 lnav formats scored on a 2,000-line sample; loaded only at ≥ 95 %", "SQL regex scoring"],
+    [fa.FaCogs, "3 · Parse", "regex + strptime into typed columns; ids, IPs, paths extracted", "read_csv · regexp"],
+    [fa.FaLayerGroup, "4 · Patterns", "numbers / ids masked → 1,126 kinds of message; bursts by window LAG", "window functions"],
+    [fa.FaBalanceScale, "5 · Jev judges", "real fault or routine? owner area? one call per pattern", "ai_system_one in SQL"],
+    [fa.FaSearchPlus, "6 · Index", "one inverted index (BM25, phrase, fuzzy) + time-sorted storage", "inverted index · zonemaps"],
+  ];
+  for (let i = 0; i < 6; i++) {
+    const [ic, h, d, f] = load[i], x = 0.5 + i * 1.52;
+    card(s, x, 1.65, 1.42, 2.2, i === 4 ? PALE : MIST);
+    await dot(s, ic, x + 0.16, 1.82, 0.42);
+    s.addText(h, { x: x + 0.16, y: 2.32, w: 1.2, h: 0.3, fontSize: 11, bold: true, fontFace: HEAD, color: INK, margin: 0 });
+    s.addText(d, { x: x + 0.16, y: 2.62, w: 1.18, h: 0.85, fontSize: 8.5, fontFace: BODY, color: INK2, margin: 0, valign: "top" });
+    s.addText(f, { x: x + 0.16, y: 3.48, w: 1.18, h: 0.3, fontSize: 8, bold: true, fontFace: BODY, color: VIOLET, margin: 0, valign: "top" });
+  }
+  const lm = [["72 s", "clean clone → BGL + OpenStack ready (5 M lines)"], ["18 s", "4.7 M BGL lines parsed + indexed in SQL"], ["20 s · $0.02", "Jev judges all 1,126 BGL patterns"], ["1.6 s", "a new 21 k-line file, format auto-detected"]];
+  lm.forEach(([n, l], i) => {
+    const x = 0.5 + i * 2.29;
+    card(s, x, 4.0, 2.17, 0.95, WHITE, LINE);
+    s.addText(n, { x: x + 0.18, y: 4.06, w: 1.9, h: 0.42, fontSize: 18, bold: true, fontFace: HEAD, color: VIOLET, margin: 0 });
+    s.addText(l, { x: x + 0.18, y: 4.48, w: 1.9, h: 0.42, fontSize: 9, fontFace: BODY, color: INK2, margin: 0, valign: "top" });
+  });
+  s.addNotes("Loading. One sentence to Claude starts it, and every step runs inside SereneDB: the file is streamed in, its format detected from 76 known formats, parsed with SQL into typed columns, reduced to 1,126 kinds of message, judged once by Jev in SQL, and indexed. The base corpus is ready in 72 seconds; a new 21 thousand line file in 1.6. Because the expensive work happens once at load, every later answer is fast and cheap.");
+
   // ───────────── 11 · MCP overview (technical)
   s = slide("Technical · MCP");
   title(s, "Technical · MCP", "One MCP server, four ways to use it", "MCP is how Claude discovers and calls our functions. Ours offers all four kinds of MCP features.");
