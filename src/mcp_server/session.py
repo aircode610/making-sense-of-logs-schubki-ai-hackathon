@@ -421,8 +421,8 @@ def serve() -> int:
 
 def session_report(
     question: Annotated[Optional[str], Field(description="The user's question, verbatim.")] = None,
-    answer: Annotated[Optional[str], Field(description="Your final answer as you gave it to the user (plain text or "
-                                                       "markdown), so the page can check every number in it.")] = None,
+    answer: Annotated[Optional[str], Field(description="Your COMPLETE final answer exactly as you gave it to the user "
+                                                       "(markdown), not a summary: the page checks every number in it.")] = None,
 ) -> dict:
     """Show the user what happened in this session: a local page with the answer, every tool call, and one-click
     verification of every number.

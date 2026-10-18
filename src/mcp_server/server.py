@@ -55,7 +55,7 @@ Lines are not incidents: use bursts for "how often" and nodes for "how widely". 
 The logs hold no cost, downtime or customer impact.
 Every result states its SQL, filters, scope, total_matches and whether it was truncated: cite them.
 Finish every answer the same way: after writing your answer, call session_report(question, answer) with the user's
-question and your final answer, then end your reply with the link it returns ("See every step and verify each number:
+question and your COMPLETE final answer (verbatim, not a summary), then end your reply with the link it returns ("See every step and verify each number:
 <url>"). The page shows the session's tool calls and re-runs their queries to verify each number."""
 
 SETUP = """Setup and datasets (plan 016): the tools work on ONE dataset at a time, the active one; there is no
@@ -229,7 +229,7 @@ def worked_investigation(topic: str, period: str = "", dataset: str = "") -> str
     evidence that role needs (not the same evidence at three lengths), with the queries behind every number."""
     where = (f" on dataset {dataset}" if dataset else "") + (f", period {period}" if period else "")
     return (f"Worked investigation of: {topic}{where}.\n\n"
-            "Use the logs tools; switch datasets with use_dataset when needed. Write three short sections, each with "
+            "Use the logs tools; switch datasets with use_dataset when needed. Number your steps as you go. Write three short sections, each with "
             "Facts (every number followed by the step it came from, e.g. [step 3]), Hypothesis (labelled, with what "
             "would confirm it), Unknown, Next step:\n"
             "1. ENGINEER: one concrete occurrence: search_logs (full-text, time filter) → get_context / burst_timeline "

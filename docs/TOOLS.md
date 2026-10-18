@@ -1,6 +1,6 @@
 # Tools, prompts and resources of the `logs` MCP server
 
-Generated from the server's own MCP listing by `scripts/tools_doc.py` (what Claude sees, verbatim). 44 tools, 5 prompts, 3 resources + 3 resource templates, argument completions for dataset / component / team / severity.
+Generated from the server's own MCP listing by `scripts/tools_doc.py` (what Claude sees, verbatim). 44 tools, 5 prompts, 7 resources + 3 resource templates, argument completions for dataset / component / team / severity.
 
 Every tool result is an envelope: `tool`, `params`, `sql` (exact queries, values inlined), `filters`, `scope`, `total_matches` (exact, over all matches), `truncated`, `elapsed_ms`, `evidence_id`, `rows` (≤ 50, messages cut at 300 chars), `hints` (next step).
 
@@ -68,6 +68,10 @@ Every tool result is an envelope: `tool`, `params`, `sql` (exact queries, values
 - `logs://datasets`: The loaded datasets (lines, time span, Jev-judged or not) and which one is active.
 - `logs://glossary`: What line, pattern, burst, episode and problem pattern mean, and the rules every tool follows.
 - `logs://session/latest`: Every tool call of this session so far: tool, arguments, dataset, SQL, total_matches, truncated, server ms. The full trail behind an answer.
+- `logs://ownership/bgl`: Component → owning team in bgl, with source, confidence and disputes.
+- `logs://field-guide/bgl`: What each field means in bgl, with real example values.
+- `logs://ownership/openstack`: Component → owning team in openstack, with source, confidence and disputes.
+- `logs://field-guide/openstack`: What each field means in openstack, with real example values.
 - `logs://field-guide/{dataset}`: What node / location / request_id / object_id / status / duration / entities mean in one dataset, its span, levels, components and teams, with real example values.
 - `logs://ownership/{dataset}`: Component → owning team for one dataset, with source (curated / rule / Jev), confidence and disputes (plan 057).
 - `logs://session/{sid}/step/{n}`: One step of a session in full: arguments, SQL, totals and the rows the client saw.
@@ -1040,5 +1044,5 @@ Show the user what happened in this session: a local page with the answer, every
 | Input | Type | Default | Description |
 |---|---|---|---|
 | `question` | string (optional) | `None` | The user's question, verbatim. |
-| `answer` | string (optional) | `None` | Your final answer as you gave it to the user (plain text or markdown), so the page can check every number in it. |
+| `answer` | string (optional) | `None` | Your COMPLETE final answer exactly as you gave it to the user (markdown), not a summary: the page checks every number in it. |
 

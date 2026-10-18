@@ -85,6 +85,19 @@ def register(mcp) -> None:
         i = int(n) - 1
         return _j(calls[i] if 0 <= i < len(calls) else {"error": f"step {n} not in session ({len(calls)} steps)"})
 
+    # Concrete copies of the per-dataset templates for the base corpus, so they show up in Claude Code's @ picker
+    # (clients list static resources; templates need the URI typed by hand).
+    def bound(fn, ds):
+        def read() -> str:
+            return fn(ds)
+        return read
+
+    for ds in ("bgl", "openstack"):
+        mcp.resource(f"logs://ownership/{ds}", name=f"ownership-{ds}", title=f"Ownership table: {ds}", mime_type="application/json",
+                     description=f"Component → owning team in {ds}, with source, confidence and disputes.")(bound(ownership, ds))
+        mcp.resource(f"logs://field-guide/{ds}", name=f"field-guide-{ds}", title=f"Field guide: {ds}", mime_type="text/plain",
+                     description=f"What each field means in {ds}, with real example values.")(bound(field_guide, ds))
+
     from mcp.types import Completion
 
     @mcp.completion()

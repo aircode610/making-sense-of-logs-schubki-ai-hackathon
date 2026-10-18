@@ -5,7 +5,7 @@ SchubKI National AI Hackathon 2026 · SereneDB challenge · Amirali, Konark
 > SereneDB searches and counts, Jev judges which messages are real faults, Claude explains, and every number in an
 > answer traces back to the query that produced it.
 
-**For judges:** [demo script](docs/DEMO.md) · [worked investigation](docs/INVESTIGATION.md) · [eval dashboard](docs/dashboard.html) (download and
+**For judges:** [try it step by step](docs/TRY_IT.md) · [demo script](docs/DEMO.md) · [worked investigation](docs/INVESTIGATION.md) · [eval dashboard](docs/dashboard.html) (download and
 open) · [all tools](docs/TOOLS.md) · [slides](docs/slides/making-sense-of-logs.pptx)
 
 ## Workflow
@@ -88,7 +88,7 @@ The full list with inputs and outputs is in [`docs/TOOLS.md`](docs/TOOLS.md), ge
 
 - **Prompts:** `investigate_failure`, `review_recurring_problems`, `set_priorities`, `worked_investigation`,
   `whole_corpus_counts`.
-- **Resources:** `logs://datasets`, `logs://glossary`, `logs://field-guide/{dataset}`, `logs://ownership/{dataset}`,
+- **Resources:** `logs://datasets`, `logs://glossary`, `logs://ownership/bgl`, `logs://field-guide/openstack`, … (templates per dataset),
   `logs://session/latest`.
 - **Limits:** results return at most 50 rows, and the totals are always exact over all matches.
 
