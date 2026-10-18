@@ -13,6 +13,10 @@ run if any tool name or evidence id reaches the judge.
   .venv/bin/python -m eval.ab --ids D-E01,D-L04          # smoke
   .venv/bin/python -m eval.ab                            # all questions in eval/dev_questions.yaml
   .venv/bin/python -m eval.ab --reuse eval/results/ab-<t>.runs.json   # re-judge stored answers (no agent runs)
+Performance (per run): wall = llm + tool + other, from callback intervals (parallel calls merged, not summed):
+llm = a model call in flight; tool = a tool call in flight while no model call is (client side, incl. MCP transport);
+other = graph / Python. tool_db = the tools' own server-side elapsed_ms (SereneDB + tool code) and per-tool calls / ms.
+The two arms of a question run one after the other (random order); --concurrency 1 for the cleanest timings.
 Writes eval/results/ab-<time>.md / .json (scores, judge reasons, X/Y mapping) / .runs.json (answers + evidence).
 """
 import argparse
@@ -40,7 +44,7 @@ import yaml
 from langchain.agents import create_agent
 from langchain.agents.middleware import ToolCallLimitMiddleware
 from langchain.chat_models import init_chat_model
-from langchain_core.callbacks import get_usage_metadata_callback
+from langchain_core.callbacks import AsyncCallbackHandler, get_usage_metadata_callback
 from langchain_core.messages import HumanMessage
 from langchain_core.tools import tool
 from langchain_mcp_adapters.client import MultiServerMCPClient
@@ -65,16 +69,89 @@ def _tokens(cb) -> tuple[int, int]:
     return sum(x.get("input_tokens", 0) for x in u), sum(x.get("output_tokens", 0) for x in u)
 
 
+class Timer(AsyncCallbackHandler):
+    """Wall-clock intervals of every LLM call and tool call in one run (parallel calls overlap, so totals are interval
+    unions, not sums). Split: llm = any model call in flight; tool = a tool in flight while no model call is."""
+
+    def __init__(self):
+        self.open: dict = {}
+        self.spans: dict[str, list] = {"llm": [], "tool": []}
+
+    def _start(self, kind, run_id):
+        self.open[run_id] = (kind, time.perf_counter())
+
+    def _end(self, run_id):
+        if run_id in self.open:
+            kind, t = self.open.pop(run_id)
+            self.spans[kind].append((t, time.perf_counter()))
+
+    async def on_chat_model_start(self, serialized, messages, *, run_id, **kw):
+        self._start("llm", run_id)
+
+    async def on_llm_start(self, serialized, prompts, *, run_id, **kw):
+        self._start("llm", run_id)
+
+    async def on_llm_end(self, response, *, run_id, **kw):
+        self._end(run_id)
+
+    async def on_llm_error(self, error, *, run_id, **kw):
+        self._end(run_id)
+
+    async def on_tool_start(self, serialized, input_str, *, run_id, **kw):
+        self._start("tool", run_id)
+
+    async def on_tool_end(self, output, *, run_id, **kw):
+        self._end(run_id)
+
+    async def on_tool_error(self, error, *, run_id, **kw):
+        self._end(run_id)
+
+
+def _union(spans: list) -> list:
+    out = []
+    for a, b in sorted(spans):
+        if out and a <= out[-1][1]:
+            out[-1][1] = max(out[-1][1], b)
+        else:
+            out.append([a, b])
+    return out
+
+
+def _length(spans: list) -> float:
+    return sum(b - a for a, b in spans)
+
+
+def timing(t: Timer, wall: float, ledger: dict) -> dict:
+    """llm_s + tool_s + other_s = wall_s. tool_db_s = the tools' own server-side elapsed_ms (SereneDB + Python, no
+    transport). per_tool = calls and server ms by tool name."""
+    llm = _union(t.spans["llm"])
+    tool_all = _union(t.spans["tool"])
+    tool_only = _length(tool_all) - _length(_union([[max(a, c), min(b, d)] for a, b in tool_all for c, d in llm
+                                                     if min(b, d) > max(a, c)]))
+    per_tool: dict = {}
+    for ev in ledger.values():
+        d = per_tool.setdefault(ev.get("tool", "?"), {"calls": 0, "db_ms": 0.0})
+        d["calls"] += 1
+        d["db_ms"] = round(d["db_ms"] + (ev.get("elapsed_ms") or 0), 1)
+    return {"wall_s": round(wall, 2), "llm_s": round(_length(llm), 2), "tool_s": round(tool_only, 2),
+            "other_s": round(wall - _length(llm) - tool_only, 2), "tool_calls_wall_s": round(_length(tool_all), 2),
+            "tool_db_s": round(sum(ev.get("elapsed_ms") or 0 for ev in ledger.values()) / 1000, 2),
+            "llm_calls": len(t.spans["llm"]), "per_tool": per_tool}
+
+
 async def run_arm(graph, q: dict) -> dict:
     t0 = time.perf_counter()
+    tm = Timer()
     try:
         with get_usage_metadata_callback() as cb:
             s = await graph.ainvoke({"question": q["question"], "role": q["role"], "messages": [HumanMessage(q["question"])]},
-                                    config={"recursion_limit": 60})
+                                    config={"recursion_limit": 60, "callbacks": [tm]})
         tin, tout = _tokens(cb)
+        wall = time.perf_counter() - t0
         return {"text": answer_text_from_card(s["card"]), "card": s["card"], "check": s["check"],
                 "ledger": s.get("ledger", {}), "tools_used": s.get("tools_used", []),
-                "elapsed_s": round(time.perf_counter() - t0, 1), "tokens_in": tin, "tokens_out": tout}
+                "elapsed_s": round(wall, 1), "tokens_in": tin, "tokens_out": tout,
+                "timing": timing(tm, wall, s.get("ledger", {}))}
     except Exception as e:  # noqa: BLE001  (a failed run loses the comparison; recorded, not hidden)
         return {"text": "", "error": f"{type(e).__name__}: {e}"[:500], "elapsed_s": round(time.perf_counter() - t0, 1)}
 
@@ -210,6 +287,7 @@ def arm_stats(rows: list[dict], arm: str) -> dict:
     g = [x for r in rows if r.get("judge") for x in r["judge"]["grades"][arm]]
     runs = [r["runs"][arm] for r in rows]
     ok = [x for x in runs if not x.get("error")]
+    tm = [x for x in ok if x.get("timing")]
     mean = lambda xs: round(statistics.mean(xs), 3) if xs else None  # noqa: E731
     c, w = sum(x["claims_correct"] for x in g), sum(x["claims_wrong"] for x in g)
     return {"runs": len(runs), "failed": len(runs) - len(ok),
@@ -217,8 +295,26 @@ def arm_stats(rows: list[dict], arm: str) -> dict:
             "found_problem": mean([x["found_problem"] for x in g]),
             "rubric": mean([statistics.mean(x[k] for k in RUBRIC) for x in g]),
             "E1": mean([r["E1"][arm] for r in rows if r["E1"][arm] is not None]),
-            "tool_calls": mean([len(x["tools_used"]) for x in ok]), "elapsed_s": mean([x["elapsed_s"] for x in ok]),
+            "tool_calls": mean([len(x["tools_used"]) for x in ok]), "llm_calls": mean([x["timing"]["llm_calls"] for x in tm]),
+            "wall_s": mean([x["timing"]["wall_s"] for x in tm]), "llm_s": mean([x["timing"]["llm_s"] for x in tm]),
+            "tool_s (client, not overlapping llm)": mean([x["timing"]["tool_s"] for x in tm]),
+            "other_s": mean([x["timing"]["other_s"] for x in tm]),
+            "tool_db_s (server)": mean([x["timing"]["tool_db_s"] for x in tm]),
+            "db_ms per tool call": round(1000 * sum(x["timing"]["tool_db_s"] for x in tm)
+                                         / max(1, sum(sum(v["calls"] for v in x["timing"]["per_tool"].values()) for x in tm)), 1),
             "tokens_in": mean([x["tokens_in"] for x in ok]), "tokens_out": mean([x["tokens_out"] for x in ok])}
+
+
+def per_tool_table(rows: list[dict]) -> list[dict]:
+    """Calls, total and median server ms per tool name and arm (same tool in both arms = same code: compare counts)."""
+    acc: dict = {}
+    for r in rows:
+        for arm in ARMS:
+            for ev in (r["runs"][arm].get("ledger") or {}).values():
+                acc.setdefault((ev.get("tool", "?"), arm), []).append(ev.get("elapsed_ms") or 0)
+    return sorted([{"tool": t, "arm": arm, "calls": len(v), "total_s": round(sum(v) / 1000, 2),
+                    "median_ms": round(statistics.median(v), 1), "max_ms": round(max(v), 1)}
+                   for (t, arm), v in acc.items()], key=lambda d: (-d["total_s"], d["tool"]))
 
 
 def tally(rows: list[dict]) -> dict:
@@ -227,6 +323,11 @@ def tally(rows: list[dict]) -> dict:
         if r.get("judge"):
             t[r["judge"]["result"]] += 1
     return t
+
+
+def tsplit(run: dict) -> str:
+    t = run.get("timing")
+    return f"{t['wall_s']} / {t['llm_s']} / {t['tool_s']}" if t else "-"
 
 
 def render_md(rep: dict) -> str:
@@ -244,13 +345,23 @@ def render_md(rep: dict) -> str:
     L += ["", "## Per arm", "", "| metric | new | old |", "|---|---|---|"]
     for k in rep["arms"]["new"]:
         L.append(f"| {k} | {rep['arms']['new'][k]} | {rep['arms']['old'][k]} |")
-    L += ["", "## Per question", "", "| id | role | dataset | result | new found / wrong | old found / wrong | new tools | old tools |",
-          "|---|---|---|---|---|---|---|---|"]
+    L += ["", "## Where the time goes (mean seconds per run; llm + tool + other = wall)", "",
+          "| arm | wall | llm | tool (client) | other | tool db (server) | tool calls | llm calls |", "|---|---|---|---|---|---|---|---|"]
+    for arm in ("new", "old"):
+        m = rep["arms"][arm]
+        L.append(f"| {arm} | {m['wall_s']} | {m['llm_s']} | {m['tool_s (client, not overlapping llm)']} | {m['other_s']} | "
+                 f"{m['tool_db_s (server)']} | {m['tool_calls']} | {m['llm_calls']} |")
+    L += ["", "## Tool time by tool (server-side elapsed_ms)", "", "| tool | arm | calls | total s | median ms | max ms |",
+          "|---|---|---|---|---|---|"]
+    L += [f"| {d['tool']} | {d['arm']} | {d['calls']} | {d['total_s']} | {d['median_ms']} | {d['max_ms']} |" for d in rep["per_tool"]]
+    L += ["", "## Per question", "", "| id | role | dataset | result | new found / wrong | old found / wrong | new tools | old tools | new wall / llm / tool s | old wall / llm / tool s |",
+          "|---|---|---|---|---|---|---|---|---|---|"]
     for r in rows:
         j = r.get("judge") or {}
         f = lambda a: "/".join(str(sum(g[k] for g in j["grades"][a])) for k in ("found_problem", "claims_wrong")) if j else "-"  # noqa: E731
         L.append(f"| {r['id']} | {r['role']} | {r['dataset']} | {j.get('result', 'not judged')} | {f('new')} | {f('old')} | "
-                 f"{len(r['runs']['new'].get('tools_used', []))} | {len(r['runs']['old'].get('tools_used', []))} |")
+                 f"{len(r['runs']['new'].get('tools_used', []))} | {len(r['runs']['old'].get('tools_used', []))} | "
+                 f"{tsplit(r['runs']['new'])} | {tsplit(r['runs']['old'])} |")
     return "\n".join(L) + "\n"
 
 
@@ -296,8 +407,11 @@ async def main() -> int:
             if stored:
                 runs = {arm: stored[(q["id"], arm)] for arm in ARMS}
             else:
-                order = sorted(ARMS, key=lambda _: random.Random(f"{a.seed}-run-{q['id']}").random())
-                runs = dict(zip(order, await asyncio.gather(*(run_arm(graphs[arm], q) for arm in order))))
+                rnd = random.Random(f"{a.seed}-run-{q['id']}")
+                order = sorted(ARMS, key=lambda _: rnd.random())      # which arm runs first: random per question
+                runs = {}
+                for arm in order:                                     # sequential: the two arms never share the DB
+                    runs[arm] = await run_arm(graphs[arm], q)
             row = {"id": q["id"], "role": q["role"], "dataset": q["dataset"], "runs": runs,
                    "E1": {arm: (golden_hits(q, runs[arm]["text"])[0] / len(q["golden"]) if q.get("golden") and runs[arm]["text"] else None)
                           for arm in ARMS}}
@@ -324,6 +438,7 @@ async def main() -> int:
            "agent_model": os.environ.get("AGENT_MODEL", "anthropic:claude-sonnet-5-5"), "judge_model": JUDGE_MODEL,
            "seed": a.seed, "prompts_identical": prompts_identical, "leaks": all_leaks,
            "tally": tally(rows), "arms": {arm: arm_stats(rows, arm) for arm in ("new", "old")},
+           "per_tool": per_tool_table(rows),
            "rows": [{k: v for k, v in r.items() if k != "runs"} | {"tools": {arm: r["runs"][arm].get("tools_used", [])
                                                                              for arm in ARMS}} for r in rows]}
     out = ROOT / "eval/results"
